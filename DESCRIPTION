@@ -1,0 +1,28 @@
+Package: shinyelectron
+Title: Export Shiny Applications as Desktop Applications using Electron
+Version: 0.1.0
+Authors@R: c(
+    person("James Joseph", "Balamuta",
+            email = "james.balamuta@gmail.com", 
+            role = c("aut", "cre"),
+            comment = c(ORCID = "0000-0003-2826-8458")
+           )
+    )
+Description: Provides tools to export Shiny applications as standalone desktop
+    applications using Electron. This allows Shiny applications to run as native
+    desktop applications on Windows, Mac, and Linux without requiring users to
+    have R installed.
+License: MIT + file LICENSE
+URL: https://r-pkg.thecoatlessprofessor.com/shinyelectron/
+Imports:
+    jsonlite,
+    processx,
+    fs,
+    cli,
+    utils
+Suggests:
+    testthat (>= 3.0.0)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Config/testthat/edition: 3
