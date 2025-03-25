@@ -12,7 +12,7 @@ Description: Provides tools to export Shiny applications as standalone desktop
     applications using Electron. This allows Shiny applications to run as native
     desktop applications on Windows, Mac, and Linux without requiring users to
     have R installed.
-License: MIT + file LICENSE
+License: AGPL (>= 3)
 URL: https://r-pkg.thecoatlessprofessor.com/shinyelectron/
 Imports:
     jsonlite,
