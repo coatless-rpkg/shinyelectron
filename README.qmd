@@ -74,7 +74,7 @@ library(shinyelectron)
 
 # Export a Shiny application to an Electron application
 shinyelectron::export(
-  appdir = "path/to/your/shinyapp",
+  appdir = "path/to/your/shiny/app",
   destdir = "path/to/export/destination"
 )
 ```
@@ -85,9 +85,9 @@ into a standalone Electron app:
 ```r
 # Copy "Hello World" from `{shiny}`
 system.file("examples", "01_hello", package="shiny") |>
-    fs::dir_copy("myapp", overwrite = TRUE)
+    fs::dir_copy("hello-shiny-app", overwrite = TRUE)
 
-shinyelectron::export("myapp", "hello-world-app")
+shinyelectron::export("hello-shiny-app", "shinyelectron-converted-app")
 ```
 
 ### Advanced Options
@@ -96,15 +96,16 @@ You can customize the export process using the following options:
 
 ```r
 shinyelectron::export(
-  appdir = "path/to/your/shinyapp",
-  destdir = "path/to/export/destination",
-  app_name = "My Amazing App",
-  platform = c("win", "mac"),  # Build for Windows and Mac only
-  include_r = TRUE,    # Bundle minimal R environment
-  r_version = "4.4.3", # Bundle R 4.4.3
-  overwrite = TRUE,    # Overwrite existing files in destdir
-  verbose = TRUE,      # Display detailed progress information 
-  open_after = TRUE    # Open the generated project after export
+  appdir = "path/to/your/shiny/app",
+  destdir = ""path/to/export/destination",
+  app_name = "My-App-Title", # Defaults to the name of the appdir
+  app_type = "r-shinylive",  # We only support "r-shinylive" currently
+  platform = c("mac"),       # c("win", "mac", "linux")
+  arch = c("arm64"),         # c("x64", "arm64")
+  overwrite = TRUE,          # Overwrite existing files in destdir
+  run_after = TRUE,          # Launch the app after building for testing
+  open_after = TRUE,         # Open the generated project after export
+  verbose = TRUE             # Display detailed progress information 
 )
 ```
 
