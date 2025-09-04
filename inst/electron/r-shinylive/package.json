@@ -20,8 +20,8 @@
   "author": "",
   "license": "AGPL (>=3)",
   "devDependencies": {
-    "electron": "^37.0.0",
-    "electron-builder": "^26.0.0"
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.12"
   },
   "dependencies": {
     "express": "^5.1.0",
