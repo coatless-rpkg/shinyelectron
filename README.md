@@ -1,18 +1,19 @@
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
 
-> \[!IMPORTANT\]
+<!-- README.md is generated from README.qmd. Please edit that file -->
+
+> [!IMPORTANT]
 >
 > This package is currently in the prototype/experimental stage. It is
 > not yet available on CRAN and may have bugs or limitations.
 
-# shinyelectron
+# shinyelectron <img src="man/figures/shinyelectron-logo.svg" align="right" width="139" alt="a hex logo for the shinyelectron R package" />
 
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/coatless-rpkg/shinyelectron/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/coatless-rpkg/shinyelectron/actions/workflows/R-CMD-check.yaml)
-![Prototype](https://img.shields.io/badge/Status-Prototype-orange)
-![Experimental](https://img.shields.io/badge/Status-Experimental-blue)
+![Prototype](https://img.shields.io/badge/Status-Prototype-orange.png)
+![Experimental](https://img.shields.io/badge/Status-Experimental-blue.png)
 <!-- badges: end -->
 
 ## Export Shiny Applications as Desktop Applications using Electron
@@ -38,15 +39,15 @@ remotes::install_github("coatless-rpkg/shinyelectron")
 
 ## Prerequisites
 
-> \[!IMPORTANT\]
+> [!IMPORTANT]
 >
 > We are currently working on making the installation process as smooth
 > as possible. Please bear with us as we work through identifying the
 > necessary dependencies for each platform.
 
-- R (\>= 4.0.0)
-- Node.js (\>= 14.0.0)
-- npm (\>= 6.0.0)
+- R (\>= 4.4.0)
+- Node.js (\>= 22.0.0)
+- npm (\>= 11.5.0)
 
 For building platform-specific installers:
 
@@ -56,7 +57,7 @@ For building platform-specific installers:
 
 ## Usage
 
-### Basic Usage
+### Quickstart
 
 The `export()` function allows you to convert a Shiny application into a
 standalone Electron application.

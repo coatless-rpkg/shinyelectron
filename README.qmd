@@ -1,8 +1,8 @@
 ---
-output: github_document
+format: gfm
 ---
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
+<!-- README.md is generated from README.qmd. Please edit that file -->
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
@@ -14,10 +14,10 @@ knitr::opts_chunk$set(
 ```
 
 
-> [!IMPORTANT]
->
-> This package is currently in the prototype/experimental stage. It is not yet
-> available on CRAN and may have bugs or limitations. 
+:::{.callout-important}
+This package is currently in the prototype/experimental stage. It is not yet
+available on CRAN and may have bugs or limitations. 
+:::
 
 # shinyelectron
 
@@ -48,14 +48,14 @@ remotes::install_github("coatless-rpkg/shinyelectron")
 
 ## Prerequisites
 
-> [!IMPORTANT]
->
-> We are currently working on making the installation process as smooth as possible. 
-> Please bear with us as we work through identifying the necessary dependencies for each platform.
+:::{.callout-important} 
+We are currently working on making the installation process as smooth as possible. 
+Please bear with us as we work through identifying the necessary dependencies for each platform.
+:::
 
-- R (>= 4.0.0)
-- Node.js (>= 14.0.0)
-- npm (>= 6.0.0)
+- R (>= 4.4.0)
+- Node.js (>= 22.0.0)
+- npm (>= 11.5.0)
 
 For building platform-specific installers:
 
@@ -65,10 +65,9 @@ For building platform-specific installers:
 
 ## Usage
 
-### Basic Usage
+### Quickstart
 
-The `export()` function allows you to convert a Shiny application into a standalone
-Electron application.
+The `export()` function allows you to convert a Shiny application into a standalone Electron application.
 
 ```r
 library(shinyelectron)
