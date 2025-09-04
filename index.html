@@ -48,6 +48,7 @@
   <main id="main" class="col-md-9"><blockquote>
 <p>[!IMPORTANT]</p>
 <p>This package is currently in the prototype/experimental stage. It is not yet available on CRAN and may have bugs or limitations.</p>
+<p><strong>We do not recommend using this package for production applications at this time.</strong></p>
 </blockquote>
 <div class="section level1">
 <div class="page-header"><h1 id="shinyelectron">shinyelectron<a class="anchor" aria-label="anchor" href="#shinyelectron"></a>
@@ -117,18 +118,19 @@
 <h3 id="advanced-options">Advanced Options<a class="anchor" aria-label="anchor" href="#advanced-options"></a>
 </h3>
 <p>You can customize the export process using the following options:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>shinyelectron<span class="sc">::</span><span class="fu">export</span>(</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="at">appdir =</span> <span class="st">"path/to/your/shiny/app"</span>,</span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">destdir =</span> <span class="st">""</span>path<span class="sc">/</span>to<span class="sc">/</span>export<span class="sc">/</span>destination<span class="st">",</span></span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="st">  app_name = "</span>My<span class="sc">-</span>App<span class="sc">-</span>Title<span class="st">", # Defaults to the name of the appdir</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="st">  app_type = "</span>r<span class="sc">-</span>shinylive<span class="st">",  # We only support "</span>r<span class="sc">-</span>shinylive<span class="st">" currently</span></span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="st">  platform = c("</span>mac<span class="st">"),       # c("</span>win<span class="st">", "</span>mac<span class="st">", "</span>linux<span class="st">")</span></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="st">  arch = c("</span>arm64<span class="st">"),         # c("</span>x64<span class="st">", "</span>arm64<span class="st">")</span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="st">  overwrite = TRUE,          # Overwrite existing files in destdir</span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="st">  run_after = TRUE,          # Launch the app after building for testing</span></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="st">  open_after = TRUE,         # Open the generated project after export</span></span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="st">  verbose = TRUE             # Display detailed progress information </span></span>
-<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="st">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">shinyelectron</span><span class="fu">::</span><span class="fu"><a href="reference/export.html">export</a></span><span class="op">(</span></span>
+<span>  appdir <span class="op">=</span> <span class="st">"path/to/your/shiny/app"</span>,</span>
+<span>  destdir <span class="op">=</span> <span class="st">"path/to/export/destination"</span>,</span>
+<span>  app_name <span class="op">=</span> <span class="st">"My-App-Title"</span>, <span class="co"># Defaults to the name of the appdir</span></span>
+<span>  app_type <span class="op">=</span> <span class="st">"r-shinylive"</span>,  <span class="co"># We only support "r-shinylive"</span></span>
+<span>  platform <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mac"</span><span class="op">)</span>,       <span class="co"># c("win", "mac", "linux")</span></span>
+<span>  arch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"arm64"</span><span class="op">)</span>,         <span class="co"># c("x64", "arm64")</span></span>
+<span>  overwrite <span class="op">=</span> <span class="cn">TRUE</span>,          <span class="co"># Overwrite existing files in destdir</span></span>
+<span>  run_after <span class="op">=</span> <span class="cn">TRUE</span>,          <span class="co"># Launch the app after building for testing</span></span>
+<span>  open_after <span class="op">=</span> <span class="cn">TRUE</span>,         <span class="co"># Open the generated project after export</span></span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>             <span class="co"># Display detailed progress information </span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -165,10 +167,9 @@
 </h3>
 <ul>
 <li>
-<strong>User! 2018 Talk</strong>: A presentation by @ksasso at the 2018 UseR! conference that demonstrates how to convert Shiny apps into standalone desktop applications using Electron. <a href="https://www.youtube.com/watch?v=ARrbbviGvjc" class="external-link">ksassouser2018talk</a>
-</li>
+<strong>User! 2018 Talk</strong>: A <a href="https://www.youtube.com/watch?v=ARrbbviGvjc" class="external-link">presentation by @ksasso at the 2018 UseR! conference</a> that demonstrates how to convert Shiny apps into standalone desktop applications using Electron.</li>
 <li>
-<strong>Developer Tutorials</strong>: Valuable step-by-step guides from contributors like @lawalter and @dirkschumacher that demonstrate practical integration techniques and solutions.<a href="https://github.com/dirkschumacher/r-shiny-electron" class="external-link">shiny-electron-walter-tutorial</a>
+<strong>Developer Tutorials</strong>: Valuable step-by-step guides from contributors like @lawalter and @dirkschumacher that demonstrate practical integration techniques and solutions, c.f. <a href="https://github.com/dirkschumacher/r-shiny-electron" class="external-link">shiny-electron-walter-tutorial</a>
 </li>
 <li>
 <strong>Zarathu Corporation Templates</strong>: Specialized templates for <a href="https://github.com/zarathucorp/shiny-electron-template-m1" class="external-link">macOS ARM (M1/M2/..)</a> and <a href="https://github.com/zarathucorp/shiny-electron-template-windows" class="external-link">Windows</a> platforms that have significantly contributed to cross-platform deployment solutions described in <a href="https://www.r-bloggers.com/2023/03/creating-standalone-apps-from-shiny-with-electron-2023-macos-m1/" class="external-link">R-Bloggers: Creating Standalone Apps from Shiny with Electron</a> post.</li>
