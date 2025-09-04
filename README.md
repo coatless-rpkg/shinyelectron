@@ -7,7 +7,7 @@
 > This package is currently in the prototype/experimental stage. It is
 > not yet available on CRAN and may have bugs or limitations.
 
-# shinyelectron <img src="man/figures/shinyelectron-logo.svg" align="right" width="139" alt="a hex logo for the shinyelectron R package" />
+# shinyelectron
 
 <!-- badges: start -->
 
@@ -157,11 +157,7 @@ applications with the Electron framework.
 
 ## License
 
-MIT
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+AGPL (\>= 3)
 
 ## References
 
