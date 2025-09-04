@@ -17,6 +17,8 @@ knitr::opts_chunk$set(
 :::{.callout-important}
 This package is currently in the prototype/experimental stage. It is not yet
 available on CRAN and may have bugs or limitations. 
+
+**We do not recommend using this package for production applications at this time.**
 :::
 
 # shinyelectron
@@ -97,9 +99,9 @@ You can customize the export process using the following options:
 ```r
 shinyelectron::export(
   appdir = "path/to/your/shiny/app",
-  destdir = ""path/to/export/destination",
+  destdir = "path/to/export/destination",
   app_name = "My-App-Title", # Defaults to the name of the appdir
-  app_type = "r-shinylive",  # We only support "r-shinylive" currently
+  app_type = "r-shinylive",  # We only support "r-shinylive"
   platform = c("mac"),       # c("win", "mac", "linux")
   arch = c("arm64"),         # c("x64", "arm64")
   overwrite = TRUE,          # Overwrite existing files in destdir
@@ -133,8 +135,8 @@ applications with the Electron framework.
 
 ### Talks, Tutorials, and Templates:
 
-- **User! 2018 Talk**: A presentation by @ksasso at the 2018 UseR! conference that demonstrates how to convert Shiny apps into standalone desktop applications using Electron. [ksassouser2018talk]
-- **Developer Tutorials**: Valuable step-by-step guides from contributors like @lawalter and @dirkschumacher that demonstrate practical integration techniques and solutions.[shiny-electron-walter-tutorial][shiny-electron-dirk-tutorial]
+- **User! 2018 Talk**: A [presentation by @ksasso at the 2018 UseR! conference][ksassouser2018talk] that demonstrates how to convert Shiny apps into standalone desktop applications using Electron.
+- **Developer Tutorials**: Valuable step-by-step guides from contributors like @lawalter and @dirkschumacher that demonstrate practical integration techniques and solutions, c.f. [shiny-electron-walter-tutorial][shiny-electron-dirk-tutorial]
 - **Zarathu Corporation Templates**: Specialized templates for [macOS ARM (M1/M2/..)][shiny-electron-zarathucorp-m1] and [Windows][shiny-electron-zarathucorp-windows] platforms that have significantly contributed to cross-platform deployment solutions
   described in [R-Bloggers: Creating Standalone Apps from Shiny with Electron][shiny-electron-zarathucorp-rbloggers] post.
 

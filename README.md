@@ -6,6 +6,9 @@
 >
 > This package is currently in the prototype/experimental stage. It is
 > not yet available on CRAN and may have bugs or limitations.
+>
+> **We do not recommend using this package for production applications
+> at this time.**
 
 # shinyelectron
 
@@ -90,9 +93,9 @@ You can customize the export process using the following options:
 ``` r
 shinyelectron::export(
   appdir = "path/to/your/shiny/app",
-  destdir = ""path/to/export/destination",
+  destdir = "path/to/export/destination",
   app_name = "My-App-Title", # Defaults to the name of the appdir
-  app_type = "r-shinylive",  # We only support "r-shinylive" currently
+  app_type = "r-shinylive",  # We only support "r-shinylive"
   platform = c("mac"),       # c("win", "mac", "linux")
   arch = c("arm64"),         # c("x64", "arm64")
   overwrite = TRUE,          # Overwrite existing files in destdir
@@ -137,14 +140,14 @@ applications with the Electron framework.
 
 ### Talks, Tutorials, and Templates:
 
-- **User! 2018 Talk**: A presentation by @ksasso at the 2018 UseR!
-  conference that demonstrates how to convert Shiny apps into standalone
-  desktop applications using Electron.
-  [ksassouser2018talk](https://www.youtube.com/watch?v=ARrbbviGvjc)
+- **User! 2018 Talk**: A [presentation by @ksasso at the 2018 UseR!
+  conference](https://www.youtube.com/watch?v=ARrbbviGvjc) that
+  demonstrates how to convert Shiny apps into standalone desktop
+  applications using Electron.
 - **Developer Tutorials**: Valuable step-by-step guides from
   contributors like @lawalter and @dirkschumacher that demonstrate
-  practical integration techniques and
-  solutions.[shiny-electron-walter-tutorial](https://github.com/dirkschumacher/r-shiny-electron)
+  practical integration techniques and solutions, c.f.
+  [shiny-electron-walter-tutorial](https://github.com/dirkschumacher/r-shiny-electron)
 - **Zarathu Corporation Templates**: Specialized templates for [macOS
   ARM
   (M1/M2/..)](https://github.com/zarathucorp/shiny-electron-template-m1)
