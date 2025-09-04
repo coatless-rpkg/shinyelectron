@@ -102,33 +102,33 @@
 <span></span>
 <span><span class="co"># Export a Shiny application to an Electron application</span></span>
 <span><span class="fu">shinyelectron</span><span class="fu">::</span><span class="fu"><a href="reference/export.html">export</a></span><span class="op">(</span></span>
-<span>  appdir <span class="op">=</span> <span class="st">"path/to/your/shinyapp"</span>,</span>
+<span>  appdir <span class="op">=</span> <span class="st">"path/to/your/shiny/app"</span>,</span>
 <span>  destdir <span class="op">=</span> <span class="st">"path/to/export/destination"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>For example, to convert the “Hello World” Shiny app from the <a href="https://shiny.posit.co/" class="external-link">shiny</a> package into a standalone Electron app:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Copy "Hello World" from `{shiny}`</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"examples"</span>, <span class="st">"01_hello"</span>, package<span class="op">=</span><span class="st">"shiny"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu">fs</span><span class="fu">::</span><span class="fu"><a href="https://fs.r-lib.org/reference/copy.html" class="external-link">dir_copy</a></span><span class="op">(</span><span class="st">"myapp"</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span>    <span class="fu">fs</span><span class="fu">::</span><span class="fu"><a href="https://fs.r-lib.org/reference/copy.html" class="external-link">dir_copy</a></span><span class="op">(</span><span class="st">"hello-shiny-app"</span>, overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">shinyelectron</span><span class="fu">::</span><span class="fu"><a href="reference/export.html">export</a></span><span class="op">(</span><span class="st">"myapp"</span>, <span class="st">"hello-world-app"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">shinyelectron</span><span class="fu">::</span><span class="fu"><a href="reference/export.html">export</a></span><span class="op">(</span><span class="st">"hello-shiny-app"</span>, <span class="st">"shinyelectron-converted-app"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="advanced-options">Advanced Options<a class="anchor" aria-label="anchor" href="#advanced-options"></a>
 </h3>
 <p>You can customize the export process using the following options:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">shinyelectron</span><span class="fu">::</span><span class="fu"><a href="reference/export.html">export</a></span><span class="op">(</span></span>
-<span>  appdir <span class="op">=</span> <span class="st">"path/to/your/shinyapp"</span>,</span>
-<span>  destdir <span class="op">=</span> <span class="st">"path/to/export/destination"</span>,</span>
-<span>  app_name <span class="op">=</span> <span class="st">"My Amazing App"</span>,</span>
-<span>  platform <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"win"</span>, <span class="st">"mac"</span><span class="op">)</span>,  <span class="co"># Build for Windows and Mac only</span></span>
-<span>  include_r <span class="op">=</span> <span class="cn">TRUE</span>,    <span class="co"># Bundle minimal R environment</span></span>
-<span>  r_version <span class="op">=</span> <span class="st">"4.4.3"</span>, <span class="co"># Bundle R 4.4.3</span></span>
-<span>  overwrite <span class="op">=</span> <span class="cn">TRUE</span>,    <span class="co"># Overwrite existing files in destdir</span></span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,      <span class="co"># Display detailed progress information </span></span>
-<span>  open_after <span class="op">=</span> <span class="cn">TRUE</span>    <span class="co"># Open the generated project after export</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>shinyelectron<span class="sc">::</span><span class="fu">export</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="at">appdir =</span> <span class="st">"path/to/your/shiny/app"</span>,</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">destdir =</span> <span class="st">""</span>path<span class="sc">/</span>to<span class="sc">/</span>export<span class="sc">/</span>destination<span class="st">",</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="st">  app_name = "</span>My<span class="sc">-</span>App<span class="sc">-</span>Title<span class="st">", # Defaults to the name of the appdir</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="st">  app_type = "</span>r<span class="sc">-</span>shinylive<span class="st">",  # We only support "</span>r<span class="sc">-</span>shinylive<span class="st">" currently</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="st">  platform = c("</span>mac<span class="st">"),       # c("</span>win<span class="st">", "</span>mac<span class="st">", "</span>linux<span class="st">")</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="st">  arch = c("</span>arm64<span class="st">"),         # c("</span>x64<span class="st">", "</span>arm64<span class="st">")</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="st">  overwrite = TRUE,          # Overwrite existing files in destdir</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="st">  run_after = TRUE,          # Launch the app after building for testing</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="st">  open_after = TRUE,         # Open the generated project after export</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="st">  verbose = TRUE             # Display detailed progress information </span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="st">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
