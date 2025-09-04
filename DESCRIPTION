@@ -13,7 +13,8 @@ Description: Provides tools to export Shiny applications as standalone desktop
     desktop applications on Windows, Mac, and Linux without requiring users to
     have R installed.
 License: AGPL (>= 3)
-URL: https://r-pkg.thecoatlessprofessor.com/shinyelectron/
+URL: https://r-pkg.thecoatlessprofessor.com/shinyelectron/, https://github.com/coatless-rpkg/shinyelectron
+BugReports: https://github.com/coatless-rpkg/shinyelectron/issues
 Imports:
     cli (>= 3.6.5),
     fs (>= 1.6.6),
