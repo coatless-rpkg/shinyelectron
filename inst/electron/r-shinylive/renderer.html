@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: blob:;">
+  <title>{{app_name}}</title>
+</head>
+<body>
+  <div id="loading">
+    <h2>Loading {{app_name}}...</h2>
+    <p>Please wait while the application starts.</p>
+  </div>
+
+  <script>
+    // This file serves as a fallback renderer
+    // The actual shinylive app will be loaded from src/app/index.html
+    window.location.href = './src/app/index.html';
+  </script>
+</body>
+</html>

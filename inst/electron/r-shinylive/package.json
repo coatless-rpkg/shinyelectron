@@ -1,0 +1,61 @@
+{
+  "name": "{{app_name}}",
+  "version": "1.0.0",
+  "description": "{{app_name}} - R Shinylive Electron App",
+  "main": "main.js",
+  "scripts": {
+    "electron": "electron .",
+    "build": "electron-builder",
+    "build-all": "electron-builder -mwl",
+    "build-win": "electron-builder --win",
+    "build-mac": "electron-builder --mac",
+    "build-linux": "electron-builder --linux",
+    "build-win-x64": "electron-builder --win --x64",
+    "build-win-arm64": "electron-builder --win --arm64",
+    "build-mac-x64": "electron-builder --mac --x64",
+    "build-mac-arm64": "electron-builder --mac --arm64",
+    "build-linux-x64": "electron-builder --linux --x64",
+    "build-linux-arm64": "electron-builder --linux --arm64"
+  },
+  "author": "",
+  "license": "AGPL (>=3)",
+  "devDependencies": {
+    "electron": "^37.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "serve-static": "^2.2.0"
+  },
+  "build": {
+    "appId": "com.example.{{app_name}}",
+    "productName": "{{app_name}}",
+    "publish": {
+      "provider": "github",
+      "owner": "your-github-username",
+      "repo": "your-repository-name"
+    },
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "renderer.html",
+      "src/**/*",
+      "assets/**/*",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": "nsis"{{#has_icon}},
+      "icon": "assets/icon.ico"{{/has_icon}}
+    },
+    "mac": {
+      "target": "dmg"{{#has_icon}},
+      "icon": "assets/icon.icns"{{/has_icon}}
+    },
+    "linux": {
+      "target": "AppImage"{{#has_icon}},
+      "icon": "assets/icon.png"{{/has_icon}}
+    }
+  }
+}
