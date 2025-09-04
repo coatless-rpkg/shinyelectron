@@ -15,15 +15,17 @@ Description: Provides tools to export Shiny applications as standalone desktop
 License: AGPL (>= 3)
 URL: https://r-pkg.thecoatlessprofessor.com/shinyelectron/
 Imports:
-    jsonlite,
-    processx,
-    fs,
-    cli,
-    utils,
-    rappdirs
+    cli (>= 3.6.5),
+    fs (>= 1.6.6),
+    jsonlite (>= 2.0.0),
+    rappdirs (>= 0.3.3),
+    whisker (>= 0.4.1),
+    processx (>= 3.8.6),
+    shinylive (>= 0.3.0)
 Suggests:
     testthat (>= 3.0.0),
     mockery
+SystemRequirements: Node.js (>= 22.0.0), npm (>= 11.5.1)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
