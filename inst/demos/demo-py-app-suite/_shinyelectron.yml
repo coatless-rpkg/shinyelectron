@@ -1,0 +1,27 @@
+app:
+  name: "Python Shiny Demo Suite"
+  version: "1.0.0"
+
+build:
+  type: "py-shiny"
+  runtime_strategy: "system"
+
+window:
+  width: 1100
+  height: 750
+
+apps:
+  - id: dashboard
+    name: "Dashboard"
+    description: "Analytics overview with live-updating stats and charts"
+    path: "./apps/dashboard"
+
+  - id: data-explorer
+    name: "Data Explorer"
+    description: "Browse and analyze built-in datasets"
+    path: "./apps/data-explorer"
+
+  - id: about
+    name: "About"
+    description: "System information and runtime details"
+    path: "./apps/about"
