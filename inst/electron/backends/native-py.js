@@ -4,7 +4,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { waitForServer, findAvailablePort } = require('./utils');
+const { waitForServer, findAvailablePort, killProcessTree } = require('./utils');
 
 class NativePyBackend extends EventEmitter {
   constructor() {
@@ -521,22 +521,7 @@ class NativePyBackend extends EventEmitter {
     if (this.pyProcess) {
       console.log('Stopping Python Shiny server...');
       this.emit('status', { phase: 'stopping_server', message: 'Stopping Python Shiny server...' });
-      const pid = this.pyProcess.pid;
-      try {
-        if (process.platform === 'win32') {
-          const { execFileSync } = require('child_process');
-          execFileSync('taskkill', ['/pid', String(pid), '/f', '/t'], { stdio: 'ignore' });
-        } else {
-          this.pyProcess.kill('SIGTERM');
-          setTimeout(() => {
-            try {
-              process.kill(pid, 'SIGKILL');
-            } catch { /* already dead */ }
-          }, 500);
-        }
-      } catch (err) {
-        console.error('Error stopping Python process:', err.message);
-      }
+      killProcessTree(this.pyProcess);
       this.pyProcess = null;
     }
     this.emit('status', { phase: 'app_exit' });

@@ -104,4 +104,27 @@ function isOnline() {
   });
 }
 
-module.exports = { waitForServer, isPortAvailable, findAvailablePort, isOnline };
+/**
+ * Kill a child process and its tree.
+ * On Windows: taskkill /pid N /f /t
+ * On Unix: SIGTERM, then SIGKILL after 500ms if still alive.
+ * @param {object} proc - child_process instance with .pid
+ */
+function killProcessTree(proc) {
+  if (!proc || !proc.pid) return;
+  try {
+    if (process.platform === 'win32') {
+      const { execFileSync } = require('child_process');
+      execFileSync('taskkill', ['/pid', String(proc.pid), '/f', '/t'], { stdio: 'ignore' });
+    } else {
+      proc.kill('SIGTERM');
+      setTimeout(() => {
+        try { process.kill(proc.pid, 'SIGKILL'); } catch { /* already dead */ }
+      }, 500);
+    }
+  } catch (err) {
+    console.error('Error killing process:', err.message);
+  }
+}
+
+module.exports = { waitForServer, isPortAvailable, findAvailablePort, isOnline, killProcessTree };

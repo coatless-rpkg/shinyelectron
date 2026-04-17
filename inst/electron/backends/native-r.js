@@ -4,7 +4,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { waitForServer, findAvailablePort } = require('./utils');
+const { waitForServer, findAvailablePort, killProcessTree } = require('./utils');
 
 class NativeRBackend extends EventEmitter {
   constructor() {
@@ -501,24 +501,7 @@ class NativeRBackend extends EventEmitter {
     this.emit('status', { phase: 'stopping_server', message: 'Stopping R server...' });
     if (this.rProcess) {
       console.log('Stopping R Shiny server...');
-      const pid = this.rProcess.pid;
-      try {
-        if (process.platform === 'win32') {
-          // Use execFileSync so we wait for the process tree to be killed
-          const { execFileSync } = require('child_process');
-          execFileSync('taskkill', ['/pid', String(pid), '/f', '/t'], { stdio: 'ignore' });
-        } else {
-          // Kill immediately — SIGTERM first, SIGKILL if still alive after 500ms
-          this.rProcess.kill('SIGTERM');
-          setTimeout(() => {
-            try {
-              process.kill(pid, 'SIGKILL');
-            } catch { /* already dead */ }
-          }, 500);
-        }
-      } catch (err) {
-        console.error('Error stopping R process:', err.message);
-      }
+      killProcessTree(this.rProcess);
       this.rProcess = null;
     }
     this.emit('status', { phase: 'app_exit' });
