@@ -8,6 +8,7 @@ install_r_binary_packages(
   packages,
   lib_path,
   repos = c("https://cloud.r-project.org"),
+  available_pkgs = NULL,
   verbose = TRUE
 )
 }
@@ -17,6 +18,10 @@ install_r_binary_packages(
 \item{lib_path}{Character string. Target library directory.}
 
 \item{repos}{Character vector of repository URLs.}
+
+\item{available_pkgs}{Optional matrix from \code{utils::available.packages()}.
+When supplied the CRAN lookup is skipped, avoiding a redundant network
+call during the same export session.}
 
 \item{verbose}{Logical. Whether to show progress.}
 }

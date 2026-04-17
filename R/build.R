@@ -199,9 +199,13 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
           pkgs <- unlist(dep_manifest$packages)
           repos <- unlist(dep_manifest$repos)
 
+          # Fetch the available-packages database once (avoids repeated
+          # CRAN network calls during the same export session).
+          avail_pkgs <- utils::available.packages(repos = repos)
+
           # Resolve full dependency tree
           all_deps <- tools::package_dependencies(
-            pkgs, db = utils::available.packages(repos = repos),
+            pkgs, db = avail_pkgs,
             which = c("Depends", "Imports", "LinkingTo"),
             recursive = TRUE
           )

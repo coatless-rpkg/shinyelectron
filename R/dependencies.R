@@ -252,10 +252,14 @@ generate_dependency_manifest <- function(packages, language,
 #' @param packages Character vector of package names.
 #' @param lib_path Character string. Target library directory.
 #' @param repos Character vector of repository URLs.
+#' @param available_pkgs Optional matrix from \code{utils::available.packages()}.
+#'   When supplied the CRAN lookup is skipped, avoiding a redundant network
+#'   call during the same export session.
 #' @param verbose Logical. Whether to show progress.
 #' @keywords internal
 install_r_binary_packages <- function(packages, lib_path,
                                       repos = c("https://cloud.r-project.org"),
+                                      available_pkgs = NULL,
                                       verbose = TRUE) {
   if (length(packages) == 0) {
     if (verbose) cli::cli_alert_info("No R packages to install")
@@ -275,7 +279,10 @@ install_r_binary_packages <- function(packages, lib_path,
     # are installed (not just the top-level packages). This is critical
     # for bundled strategy where the portable R has no pre-installed packages.
     if (verbose) cli::cli_alert_info("Resolving dependency tree...")
-    all_deps <- tools::package_dependencies(packages, db = utils::available.packages(repos = repos),
+    if (is.null(available_pkgs)) {
+      available_pkgs <- utils::available.packages(repos = repos)
+    }
+    all_deps <- tools::package_dependencies(packages, db = available_pkgs,
                                              which = c("Depends", "Imports", "LinkingTo"),
                                              recursive = TRUE)
     all_pkgs <- unique(c(packages, unlist(all_deps)))
