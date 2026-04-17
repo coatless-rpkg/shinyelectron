@@ -81,11 +81,7 @@ sitrep_electron_system <- function(verbose = TRUE) {
 
   # Check Node.js (prefer local, fall back to system)
   node_cmd <- get_node_command(prefer_local = TRUE)
-  node_result <- tryCatch({
-    processx::run(node_cmd, "--version", error_on_status = FALSE)
-  }, error = function(e) {
-    list(status = 1, stdout = "", stderr = "Node.js not found")
-  })
+  node_result <- run_command_safe(node_cmd, "--version")
 
   if (node_result$status == 0) {
     results$node$installed <- TRUE
@@ -116,11 +112,7 @@ sitrep_electron_system <- function(verbose = TRUE) {
   }
 
   # Check npm
-  npm_result <- tryCatch({
-    processx::run(get_npm_command(), "--version", error_on_status = FALSE)
-  }, error = function(e) {
-    list(status = 1, stdout = "", stderr = "npm not found")
-  })
+  npm_result <- run_command_safe(get_npm_command(), "--version")
 
   if (npm_result$status == 0) {
     results$npm$installed <- TRUE
@@ -166,10 +158,7 @@ sitrep_electron_system <- function(verbose = TRUE) {
 
   python_cmd <- find_python_command()
   if (!is.null(python_cmd)) {
-    py_result <- tryCatch(
-      processx::run(python_cmd, c("--version"), error_on_status = FALSE, timeout = 10),
-      error = function(e) list(status = 1, stdout = "", stderr = e$message)
-    )
+    py_result <- run_command_safe(python_cmd, c("--version"), timeout = 10)
     if (py_result$status == 0) {
       py_version <- trimws(paste0(py_result$stdout, py_result$stderr))
       if (verbose) cli::cli_alert_success("{py_version}")
@@ -448,11 +437,7 @@ sitrep_electron_build_tools <- function(verbose = TRUE) {
     }
 
     # Check for Python (needed for node-gyp)
-    python_result <- tryCatch({
-      processx::run("python", "--version", error_on_status = FALSE)
-    }, error = function(e) {
-      list(status = 1)
-    })
+    python_result <- run_command_safe("python", "--version")
 
     results$tools$python <- python_result$status == 0
 
@@ -470,11 +455,7 @@ sitrep_electron_build_tools <- function(verbose = TRUE) {
 
   } else if (platform == "mac") {
     # Check for Xcode Command Line Tools
-    xcode_result <- tryCatch({
-      processx::run("xcode-select", "-p", error_on_status = FALSE)
-    }, error = function(e) {
-      list(status = 1)
-    })
+    xcode_result <- run_command_safe("xcode-select", "-p")
 
     results$tools$xcode <- xcode_result$status == 0
 
@@ -493,17 +474,9 @@ sitrep_electron_build_tools <- function(verbose = TRUE) {
 
   } else if (platform == "linux") {
     # Check for build-essential
-    gcc_result <- tryCatch({
-      processx::run("gcc", "--version", error_on_status = FALSE)
-    }, error = function(e) {
-      list(status = 1)
-    })
+    gcc_result <- run_command_safe("gcc", "--version")
 
-    make_result <- tryCatch({
-      processx::run("make", "--version", error_on_status = FALSE)
-    }, error = function(e) {
-      list(status = 1)
-    })
+    make_result <- run_command_safe("make", "--version")
 
     results$tools$gcc <- gcc_result$status == 0
     results$tools$make <- make_result$status == 0

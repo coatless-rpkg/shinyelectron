@@ -337,6 +337,24 @@ backend_needs_express <- function(backend_module) {
   backend_module == "shinylive.js"
 }
 
+#' Run a command safely and return the result
+#'
+#' Wraps processx::run with consistent error handling. Returns a list
+#' with status, stdout, and stderr. Never throws — failures are
+#' indicated by a non-zero status.
+#'
+#' @param command Character command to run.
+#' @param args Character vector of arguments.
+#' @param timeout Numeric timeout in seconds. Default 30.
+#' @return List with status, stdout, stderr.
+#' @keywords internal
+run_command_safe <- function(command, args = character(), timeout = 30) {
+  tryCatch(
+    processx::run(command, args, error_on_status = FALSE, timeout = timeout),
+    error = function(e) list(status = 1L, stdout = "", stderr = e$message)
+  )
+}
+
 #' Setup Electron project structure
 #'
 #' @param output_dir Character path to output directory

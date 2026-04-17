@@ -153,11 +153,7 @@ validate_node_npm <- function() {
   using_local <- nodejs_is_installed()
 
   # Check Node.js
-  node_result <- tryCatch({
-    processx::run(node_cmd, "--version", error_on_status = FALSE)
-  }, error = function(e) {
-    list(status = 1, stderr = "Node.js not found")
-  })
+  node_result <- run_command_safe(node_cmd, "--version")
 
   if (node_result$status != 0) {
     cli::cli_abort(c(
@@ -168,11 +164,7 @@ validate_node_npm <- function() {
   }
 
   # Check npm
-  npm_result <- tryCatch({
-    processx::run(npm_cmd, "--version", error_on_status = FALSE)
-  }, error = function(e) {
-    list(status = 1, stderr = "npm not found")
-  })
+  npm_result <- run_command_safe(npm_cmd, "--version")
 
   if (npm_result$status != 0) {
     cli::cli_abort(c(
@@ -300,10 +292,7 @@ find_python_command <- function() {
     path <- Sys.which(cmd)
     if (nzchar(path)) {
       # Verify it actually runs (Windows Store aliases exist but fail)
-      check <- tryCatch(
-        processx::run(cmd, "--version", error_on_status = FALSE, timeout = 5),
-        error = function(e) list(status = 1)
-      )
+      check <- run_command_safe(cmd, "--version", timeout = 5)
       if (check$status == 0) return(cmd)
     }
   }
