@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#eff6ff" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#f5f3ff" stop-opacity="0.4"/>
+    </linearGradient>
+    <filter id="s1">
+      <feDropShadow dx="0" dy="2" stdDeviation="5" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <rect width="800" height="320" fill="url(#bg1)" rx="12"/>
+
+  <!-- Header -->
+  <text x="400" y="30" text-anchor="middle" font-size="14" font-weight="600" fill="#475569" letter-spacing="0.5">HOW YOUR APP RUNS</text>
+
+  <!-- Shinylive Column -->
+  <g transform="translate(30,50)" filter="url(#s1)">
+    <rect width="360" height="250" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+    <rect width="360" height="36" rx="10" fill="#3b82f6"/>
+    <rect y="26" width="360" height="10" fill="#3b82f6"/>
+    <text x="180" y="24" text-anchor="middle" font-size="13" font-weight="600" fill="#fff">Shinylive (Browser-Based)</text>
+
+    <!-- Electron shell -->
+    <g transform="translate(30,52)">
+      <rect width="300" height="170" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="150" y="20" text-anchor="middle" font-size="10" fill="#94a3b8" letter-spacing="1">ELECTRON WINDOW</text>
+
+      <!-- Browser with WebR/Pyodide -->
+      <g transform="translate(20,32)">
+        <rect width="260" height="120" rx="6" fill="#fff" stroke="#dbeafe" stroke-width="1.5"/>
+        <rect width="260" height="20" rx="6" fill="#eff6ff"/>
+        <rect y="14" width="260" height="6" fill="#eff6ff"/>
+        <circle cx="12" cy="10" r="3" fill="#93c5fd"/>
+        <circle cx="22" cy="10" r="3" fill="#93c5fd"/>
+        <circle cx="32" cy="10" r="3" fill="#93c5fd"/>
+        <text x="130" y="13" text-anchor="middle" font-size="8" fill="#64748b">Chromium Browser</text>
+
+        <!-- WebR/Pyodide box -->
+        <g transform="translate(15,30)">
+          <rect width="105" height="72" rx="5" fill="#dbeafe" stroke="#93c5fd" stroke-width="1"/>
+          <text x="52" y="18" text-anchor="middle" font-size="10" font-weight="600" fill="#2563eb">WebR</text>
+          <text x="52" y="32" text-anchor="middle" font-size="9" fill="#3b82f6">R in WASM</text>
+          <line x1="10" y1="40" x2="95" y2="40" stroke="#bfdbfe" stroke-width="1"/>
+          <text x="52" y="56" text-anchor="middle" font-size="9" fill="#64748b">Your app.R</text>
+          <text x="52" y="68" text-anchor="middle" font-size="9" fill="#64748b">runs here</text>
+        </g>
+
+        <!-- OR -->
+        <text x="135" y="70" text-anchor="middle" font-size="9" fill="#94a3b8">or</text>
+
+        <!-- Pyodide box -->
+        <g transform="translate(140,30)">
+          <rect width="105" height="72" rx="5" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1"/>
+          <text x="52" y="18" text-anchor="middle" font-size="10" font-weight="600" fill="#7c3aed">Pyodide</text>
+          <text x="52" y="32" text-anchor="middle" font-size="9" fill="#8b5cf6">Python in WASM</text>
+          <line x1="10" y1="40" x2="95" y2="40" stroke="#ddd6fe" stroke-width="1"/>
+          <text x="52" y="56" text-anchor="middle" font-size="9" fill="#64748b">Your app.py</text>
+          <text x="52" y="68" text-anchor="middle" font-size="9" fill="#64748b">runs here</text>
+        </g>
+      </g>
+    </g>
+
+    <text x="180" y="240" text-anchor="middle" font-size="10" fill="#10b981" font-weight="500">No runtime needed on user's machine</text>
+  </g>
+
+  <!-- Native Column -->
+  <g transform="translate(410,50)" filter="url(#s1)">
+    <rect width="360" height="250" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+    <rect width="360" height="36" rx="10" fill="#10b981"/>
+    <rect y="26" width="360" height="10" fill="#10b981"/>
+    <text x="180" y="24" text-anchor="middle" font-size="13" font-weight="600" fill="#fff">Native (Runtime-Based)</text>
+
+    <!-- Electron shell -->
+    <g transform="translate(30,52)">
+      <rect width="300" height="170" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="150" y="20" text-anchor="middle" font-size="10" fill="#94a3b8" letter-spacing="1">ELECTRON WINDOW</text>
+
+      <!-- Browser showing localhost -->
+      <g transform="translate(20,32)">
+        <rect width="260" height="50" rx="6" fill="#fff" stroke="#d1fae5" stroke-width="1.5"/>
+        <rect width="260" height="20" rx="6" fill="#ecfdf5"/>
+        <rect y="14" width="260" height="6" fill="#ecfdf5"/>
+        <text x="130" y="13" text-anchor="middle" font-size="8" fill="#64748b">localhost:3838</text>
+        <text x="130" y="40" text-anchor="middle" font-size="10" fill="#64748b">Renders your Shiny UI</text>
+      </g>
+
+      <!-- Arrow down -->
+      <g transform="translate(140,88)">
+        <line x1="0" y1="0" x2="0" y2="14" stroke="#94a3b8" stroke-width="1.5"/>
+        <polygon points="-4,14 0,20 4,14" fill="#94a3b8"/>
+      </g>
+
+      <!-- R/Python process -->
+      <g transform="translate(20,112)">
+        <rect width="120" height="40" rx="5" fill="#dcfce7" stroke="#86efac" stroke-width="1"/>
+        <text x="60" y="18" text-anchor="middle" font-size="10" font-weight="600" fill="#166534">R Process</text>
+        <text x="60" y="32" text-anchor="middle" font-size="9" fill="#16a34a">shiny::runApp()</text>
+      </g>
+
+      <text x="150" y="138" text-anchor="middle" font-size="9" fill="#94a3b8">or</text>
+
+      <g transform="translate(160,112)">
+        <rect width="120" height="40" rx="5" fill="#fef3c7" stroke="#fcd34d" stroke-width="1"/>
+        <text x="60" y="18" text-anchor="middle" font-size="10" font-weight="600" fill="#92400e">Python Process</text>
+        <text x="60" y="32" text-anchor="middle" font-size="9" fill="#b45309">uvicorn + shiny</text>
+      </g>
+    </g>
+
+    <text x="180" y="240" text-anchor="middle" font-size="10" fill="#f59e0b" font-weight="500">Needs R or Python (bundled, downloaded, or system)</text>
+  </g>
+</svg>
