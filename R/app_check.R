@@ -77,7 +77,7 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
 
   if (verbose) {
     cli::cli_alert_info("Type: {.val {app_type}}")
-    if (app_type %in% c("r-shiny", "py-shiny")) {
+    if (app_type %in% NATIVE_TYPES) {
       cli::cli_alert_info("Runtime strategy: {.val {runtime_strategy}}")
     }
     cli::cli_alert_info("Platform(s): {.val {platform}}")
@@ -85,7 +85,7 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
 
   # --- Check: App structure ---
   tryCatch({
-    if (app_type %in% c("r-shinylive", "r-shiny")) {
+    if (app_type %in% R_TYPES) {
       validate_shiny_app_structure(appdir)
       if (verbose) cli::cli_alert_success("App structure: {.file app.R} found")
     } else {
@@ -114,7 +114,7 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
 
   # --- Check: Runtime ---
   if (runtime_strategy == "system") {
-    if (app_type %in% c("r-shinylive", "r-shiny")) {
+    if (app_type %in% R_TYPES) {
       tryCatch({
         rscript_path <- validate_r_available()
         if (verbose) cli::cli_alert_success("R: available at {.path {rscript_path}}")
@@ -123,7 +123,7 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
         if (verbose) cli::cli_alert_danger("R: {e$message}")
       })
     }
-    if (app_type %in% c("py-shinylive", "py-shiny")) {
+    if (app_type %in% PY_TYPES) {
       tryCatch({
         validate_python_available()
         if (verbose) cli::cli_alert_success("Python: available")
@@ -182,7 +182,7 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
       dep_msg <- paste(dep_result$packages, collapse = ", ")
       info <- c(info, paste0("Dependencies (", dep_result$language, "): ", dep_msg))
       if (verbose) cli::cli_alert_success("Dependencies: {dep_msg}")
-    } else if (app_type %in% c("r-shinylive", "py-shinylive")) {
+    } else if (app_type %in% SHINYLIVE_TYPES) {
       # For shinylive types, resolve_app_dependencies returns NULL because
       # shinylive handles its own deps. Still scan for informational purposes.
       detected <- tryCatch({

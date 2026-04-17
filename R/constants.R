@@ -7,6 +7,13 @@
 #' @keywords internal
 NULL
 
+# App type group constants — use these instead of inline c("r-shinylive", ...)
+SHINYLIVE_TYPES <- c("r-shinylive", "py-shinylive")
+NATIVE_TYPES    <- c("r-shiny", "py-shiny")
+R_TYPES         <- c("r-shinylive", "r-shiny")
+PY_TYPES        <- c("py-shinylive", "py-shiny")
+ALL_APP_TYPES   <- c(SHINYLIVE_TYPES, NATIVE_TYPES)
+
 #' Default configuration values for shinyelectron
 #'
 #' A list containing all default values used when no configuration file

@@ -107,9 +107,9 @@ export <- function(appdir, destdir, app_name = NULL, app_type = "r-shinylive",
   }
 
   # Validate app structure based on type (single-app only)
-  if (app_type %in% c("r-shinylive", "r-shiny")) {
+  if (app_type %in% R_TYPES) {
     validate_shiny_app_structure(appdir)
-  } else if (app_type %in% c("py-shinylive", "py-shiny")) {
+  } else if (app_type %in% PY_TYPES) {
     validate_python_app_structure(appdir)
   }
 
@@ -166,7 +166,7 @@ export <- function(appdir, destdir, app_name = NULL, app_type = "r-shinylive",
     cli::cli_h1("Exporting Shiny application to Electron")
     cli::cli_alert_info("Application: {.val {app_name}}")
     cli::cli_alert_info("Type: {.val {app_type}}")
-    if (app_type %in% c("r-shiny", "py-shiny")) {
+    if (app_type %in% NATIVE_TYPES) {
       cli::cli_alert_info("Runtime: {.val {runtime_strategy}}")
     }
     cli::cli_alert_info("Source: {.path {appdir}}")
@@ -209,7 +209,7 @@ export <- function(appdir, destdir, app_name = NULL, app_type = "r-shinylive",
     # Step 1: Convert application based on type
     converted_app_dir <- NULL
 
-    if (app_type %in% c("r-shinylive", "py-shinylive")) {
+    if (app_type %in% SHINYLIVE_TYPES) {
       if (verbose) cli::cli_alert_info("Converting to shinylive format...")
 
       shinylive_dir <- fs::path(destdir, "shinylive-app")
@@ -430,7 +430,7 @@ export_multi_app <- function(appdir, destdir, config,
       if (verbose) cli::cli_alert_info("Processing app: {.val {app_entry$name}} ({this_type})")
 
       # Convert or copy based on type
-      if (this_type %in% c("r-shinylive", "py-shinylive")) {
+      if (this_type %in% SHINYLIVE_TYPES) {
         if (this_type == "r-shinylive") {
           convert_shiny_to_shinylive(appdir = app_src, output_dir = app_dest,
                                      overwrite = TRUE, verbose = verbose)

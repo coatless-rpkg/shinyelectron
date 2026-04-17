@@ -176,7 +176,7 @@ function createMenu() {
           accelerator: 'CmdOrCtrl+L',
           click: () => {
             if (currentBackend) {
-              currentBackend.removeAllListeners('status');
+              currentBackend.removeAllListeners();
               currentBackend.stop();
             }
             if (mainWindow) mainWindow.loadFile('launcher.html');
@@ -294,7 +294,7 @@ function createMenu() {
           accelerator: 'CmdOrCtrl+L',
           click: () => {
             if (currentBackend) {
-              currentBackend.removeAllListeners('status');
+              currentBackend.removeAllListeners();
               currentBackend.stop();
             }
             if (mainWindow) mainWindow.loadFile('launcher.html');
@@ -526,9 +526,10 @@ function createWindow() {
     } else if (actionType === 'select_runtime') {
       backend.emit('runtime-selected', { runtimePath: action.runtimePath });
     } else if (actionType === 'select_app') {
-      // Stop current backend if running
+      // Stop current backend and purge all listeners (status, error,
+      // install-packages, runtime-selected) to prevent dangling handlers
       if (currentBackend) {
-        currentBackend.removeAllListeners('status');
+        currentBackend.removeAllListeners();
         currentBackend.stop();
       }
 
@@ -576,7 +577,7 @@ function createWindow() {
 
     } else if (actionType === 'back_to_launcher') {
       if (currentBackend) {
-        currentBackend.removeAllListeners('status');
+        currentBackend.removeAllListeners();
         currentBackend.stop();
       }
       mainWindow.loadFile('launcher.html');

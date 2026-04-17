@@ -44,7 +44,7 @@ wizard <- function(appdir = ".") {
 
   # Runtime strategy (only for native types)
   runtime_strategy <- NULL
-  if (app_type %in% c("r-shiny", "py-shiny")) {
+  if (app_type %in% NATIVE_TYPES) {
     cat("\nRuntime strategies:\n")
     cat("  1. auto-download -- Download runtime on first launch (recommended)\n")
     cat("  2. system        -- Use R/Python already installed on user's machine\n")
@@ -139,7 +139,7 @@ wizard <- function(appdir = ".") {
 
   # Dependency management (native types only)
   deps_config <- NULL
-  if (app_type %in% c("r-shiny", "py-shiny") && do_advanced) {
+  if (app_type %in% NATIVE_TYPES && do_advanced) {
     cat("\n")
     cli::cli_h2("Dependencies")
     prompt_install <- readline("Prompt user before installing packages? [y/N]: ")

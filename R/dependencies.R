@@ -375,7 +375,7 @@ install_py_binary_packages <- function(packages,
 #'   or NULL for shinylive types (which don't need dependency management).
 #' @keywords internal
 resolve_app_dependencies <- function(appdir, app_type, config) {
-  if (app_type %in% c("r-shinylive", "py-shinylive")) {
+  if (app_type %in% SHINYLIVE_TYPES) {
     return(NULL)
   }
 

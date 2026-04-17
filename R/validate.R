@@ -256,7 +256,7 @@ validate_runtime_strategy <- function(strategy) {
 #' @param app_type Character string. The app type.
 #' @keywords internal
 validate_runtime_strategy_for_app_type <- function(strategy, app_type) {
-  shinylive_types <- c("r-shinylive", "py-shinylive")
+  shinylive_types <- SHINYLIVE_TYPES
   if (app_type %in% shinylive_types && strategy != "shinylive") {
     cli::cli_abort(c(
       "Runtime strategy {.val {strategy}} is not applicable to app type {.val {app_type}}",
@@ -519,7 +519,7 @@ infer_runtime_strategy <- function(strategy, app_type) {
   if (!is.null(strategy)) {
     return(strategy)
   }
-  shinylive_types <- c("r-shinylive", "py-shinylive")
+  shinylive_types <- SHINYLIVE_TYPES
   if (app_type %in% shinylive_types) {
     "shinylive"
   } else {
