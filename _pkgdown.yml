@@ -1,4 +1,47 @@
-url: https://r-pkg.thecoatlessprofessor.com/shinyelectron
+url: https://r-pkg.thecoatlessprofessor.com/shinyelectron/
+
 template:
   bootstrap: 5
 
+reference:
+  - title: "Export & Build"
+    desc: "Main functions for exporting Shiny apps as Electron desktop applications"
+    contents:
+      - export
+      - build_electron_app
+      - run_electron_app
+
+  - title: "Conversion"
+    desc: "Convert Shiny apps to shinylive format"
+    contents:
+      - convert_shiny_to_shinylive
+      - convert_py_to_shinylive
+
+  - title: "Runtime Management"
+    desc: "Install and manage R, Python, and Node.js runtimes"
+    contents:
+      - install_r
+      - install_python
+      - install_nodejs
+
+  - title: "Configuration"
+    desc: "Configure shinyelectron projects"
+    contents:
+      - init_config
+      - enable_auto_updates
+      - disable_auto_updates
+      - check_auto_update_status
+
+  - title: "Diagnostics"
+    desc: "Check system requirements and troubleshoot issues"
+    contents:
+      - sitrep_shinyelectron
+      - sitrep_electron_system
+      - sitrep_electron_dependencies
+      - sitrep_electron_build_tools
+      - sitrep_electron_project
+
+  - title: "Cache Management"
+    desc: "Manage cached assets"
+    contents:
+      - cache_clear

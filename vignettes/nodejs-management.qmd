@@ -1,0 +1,330 @@
+---
+title: "Node.js Management"
+vignette: >
+  %\VignetteIndexEntry{Node.js Management}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"
+---
+
+```{r}
+#| include: false
+library(shinyelectron)
+```
+
+The shinyelectron package can manage its own Node.js installation, separate from
+any system-wide installation. This guide explains how to install, manage, and
+troubleshoot Node.js within shinyelectron.
+
+## Why Local Node.js?
+
+Managing Node.js locally through shinyelectron provides several advantages:
+
+| Benefit | Description |
+|---------|-------------|
+| **No admin rights** | Install without sudo/administrator privileges |
+| **Isolation** | Doesn't affect system Node.js or other projects |
+| **Reproducibility** | Pin specific versions for consistent builds |
+| **Portability** | Works in environments where system installation isn't possible |
+
+## Installing Node.js
+
+### Basic Installation
+
+Install the latest LTS (Long Term Support) version:
+
+```{r}
+#| eval: false
+install_nodejs()
+```
+```
+ℹ Detecting latest Node.js LTS version...
+✔ Latest LTS: v22.11.0
+── Installing Node.js v22.11.0 ───────────────────────────────────────────────
+ℹ Platform: mac
+ℹ Architecture: arm64
+ℹ Fetching checksums...
+ℹ Downloading from https://nodejs.org/dist/v22.11.0/node-v22.11.0-darwin-arm64.tar.gz
+✔ Checksum verified
+ℹ Extracting archive...
+✔ Node.js v22.11.0 installed successfully
+ℹ Location: ~/.shinyelectron/cache/assets/nodejs/v22.11.0/darwin-arm64
+ℹ shinyelectron will automatically use this installation
+```
+
+### Installing a Specific Version
+
+Pin a specific version for reproducible builds:
+
+```{r}
+#| eval: false
+install_nodejs(version = "20.18.0")
+```
+
+### Reinstalling (Force)
+
+Force reinstall to fix corrupted installations:
+
+```{r}
+#| eval: false
+install_nodejs(force = TRUE)
+```
+
+## Version Management
+
+### Checking Installed Versions
+
+shinyelectron reports on local Node.js installations in system diagnostics:
+
+```{r}
+#| eval: false
+sitrep_electron_system()
+```
+```
+── System Requirements Report ────────────────────────────────────────────────
+✔ Platform: darwin
+✔ Architecture: arm64
+✔ Local Node.js (shinyelectron): v22.11.0 ✓
+  Other versions: 20.18.0
+✔ Active Node.js: v22.11.0 (local) ✓
+✔ npm: v10.9.0 ✓
+```
+
+### Multiple Versions
+
+You can have multiple Node.js versions installed simultaneously:
+
+```{r}
+#| eval: false
+# Install multiple versions
+install_nodejs(version = "22.11.0")
+install_nodejs(version = "20.18.0")
+install_nodejs(version = "18.20.0")
+```
+
+The most recently installed version (or the latest version if versions are
+equal) is used by default.
+
+## How It Works
+
+### Installation Location
+
+Node.js installations are stored in your user cache directory:
+
+```
+~/.shinyelectron/cache/assets/nodejs/
+├── v22.11.0/
+│   └── darwin-arm64/      # macOS ARM (M1/M2/M3)
+│       ├── bin/
+│       │   ├── node       # Node.js executable
+│       │   ├── npm        # npm executable
+│       │   └── npx        # npx executable
+│       ├── include/
+│       └── lib/
+├── v20.18.0/
+│   ├── darwin-arm64/
+│   └── win-x64/           # Windows 64-bit
+│       ├── node.exe
+│       ├── npm.cmd
+│       └── npx.cmd
+└── ...
+```
+
+### Checksum Verification
+
+Downloads are verified using SHA256 checksums from the official Node.js
+distribution:
+
+1. shinyelectron downloads `SHASUMS256.txt` from nodejs.org
+2. Downloads the Node.js archive
+3. Computes the SHA256 hash of the downloaded file
+4. Compares against the expected checksum
+5. Aborts if checksums don't match
+
+This ensures the downloaded files haven't been corrupted or tampered with.
+
+### Platform Detection
+
+shinyelectron automatically detects your platform and architecture:
+
+| Platform | Detection | Node.js Platform |
+|----------|-----------|------------------|
+| macOS | `Sys.info()[["sysname"]] == "Darwin"` | darwin |
+| Windows | `Sys.info()[["sysname"]] == "Windows"` | win |
+| Linux | `Sys.info()[["sysname"]] == "Linux"` | linux |
+
+| Architecture | Detection | Node.js Arch |
+|--------------|-----------|--------------|
+| x86-64 | Intel/AMD 64-bit | x64 |
+| ARM64 | Apple Silicon, ARM servers | arm64 |
+
+## Auto-Installation
+
+### Via Configuration File
+
+Enable automatic installation in `_shinyelectron.yml`:
+
+```yaml
+nodejs:
+  auto_install: true
+```
+
+With this setting, `export()` will automatically install Node.js if not found.
+
+### Via Configuration File with Specific Version
+
+Pin a specific version for auto-installation:
+
+```yaml
+nodejs:
+  version: "22.11.0"
+  auto_install: true
+```
+
+::: {.callout-note}
+## Opt-In Only
+
+Auto-installation is disabled by default. You must explicitly set
+`auto_install: true` or call `install_nodejs()` manually.
+:::
+
+## Priority and Fallback
+
+When shinyelectron needs Node.js, it checks in this order:
+
+1. **Local installation** (shinyelectron-managed)
+2. **System installation** (if local not found)
+
+This means your local shinyelectron installation takes priority over any
+system-wide Node.js.
+
+To use the system Node.js instead of local (not recommended):
+
+```{r}
+#| eval: false
+# Internal function - not typically needed
+get_node_command(prefer_local = FALSE)
+```
+
+## Clearing the Cache
+
+### Remove All Node.js Installations
+
+```{r}
+#| eval: false
+cache_clear("nodejs")
+```
+```
+✔ Cleared nodejs cache
+```
+
+### Remove All Cached Assets
+
+```{r}
+#| eval: false
+cache_clear("all")
+```
+
+This removes:
+
+- Node.js installations
+- npm packages cache
+- R-related caches
+
+## Troubleshooting
+
+### Installation Fails: Network Error
+
+**Symptom:**
+```
+✖ Failed to download Node.js
+x URL: https://nodejs.org/dist/v22.11.0/node-v22.11.0-darwin-arm64.tar.gz
+x Error: could not resolve host
+```
+
+**Solutions:**
+
+1. Check your internet connection
+2. Try again later (nodejs.org may be temporarily unavailable)
+3. Check proxy settings if behind a corporate firewall
+
+### Installation Fails: Checksum Mismatch
+
+**Symptom:**
+```
+✖ Checksum verification failed
+x Downloaded file may be corrupted
+```
+
+**Solutions:**
+
+```{r}
+#| eval: false
+# Retry with force to re-download
+install_nodejs(force = TRUE)
+```
+
+If the problem persists, nodejs.org may be having issues. Wait and try again
+later.
+
+### Wrong Architecture
+
+**Symptom:** Node.js runs but Electron fails with architecture mismatch errors.
+
+**Solution:**
+
+Check what architecture was installed:
+
+```{r}
+#| eval: false
+sitrep_electron_system()
+```
+
+If the architecture is wrong, clear and reinstall:
+
+```{r}
+#| eval: false
+cache_clear("nodejs")
+install_nodejs()
+```
+
+### Local Node.js Not Being Used
+
+**Symptom:** System Node.js is used instead of local installation.
+
+**Cause:** The local installation may be incomplete or corrupted.
+
+**Solution:**
+
+```{r}
+#| eval: false
+# Clear and reinstall
+cache_clear("nodejs")
+install_nodejs()
+
+# Verify
+sitrep_electron_system()
+```
+
+## Comparison with System Installation
+
+| Aspect | Local (shinyelectron) | System |
+|--------|----------------------|--------|
+| Installation | `install_nodejs()` | Download from nodejs.org |
+| Location | `~/.shinyelectron/cache/` | `/usr/local/`, `C:\Program Files\` |
+| Permissions | User-only | Often requires admin |
+| Updates | Manual via `install_nodejs()` | System package manager |
+| Isolation | Per-user, isolated | System-wide, shared |
+| Version control | Multiple versions supported | Usually one version |
+
+For most shinyelectron users, the local installation is recommended because it's
+isolated and reproducible.
+
+## Next Steps
+
+- **[Getting Started](getting-started.html)**: First-time user walkthrough
+- **[Configuration](configuration.html)**: Set Node.js options in config files
+- **[Troubleshooting](troubleshooting.html)**: Diagnose other issues

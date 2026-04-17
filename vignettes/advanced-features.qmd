@@ -1,0 +1,298 @@
+---
+title: "Advanced Features"
+vignette: >
+  %\VignetteIndexEntry{Advanced Features}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"
+---
+
+```{r}
+#| include: false
+library(shinyelectron)
+```
+
+shinyelectron provides several advanced features to make your Electron
+applications feel more native and polished. This guide covers splash screens,
+system tray integration, native menus, and preloader configuration.
+
+## Splash Screens
+
+Splash screens display while your application loads, providing a professional
+first impression and visual feedback during startup.
+
+### Why Use a Splash Screen?
+
+- **WebAssembly loading**: Shinylive apps can take 5-10 seconds to initialize
+- **Professional appearance**: Branded loading experience
+- **User feedback**: Shows the app is starting, not frozen
+
+### Configuration
+
+Add to `_shinyelectron.yml`:
+
+```yaml
+splash:
+  enabled: true
+  duration: 3000          # Minimum display time (ms)
+  background: "#ffffff"   # Background color
+  image: "splash.png"     # Path relative to app directory
+  width: 400
+  height: 300
+  text: "Loading..."
+  text_color: "#333333"
+```
+
+### Configuration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `enabled` | Enable splash screen | `false` |
+| `duration` | Minimum display time in milliseconds | `3000` |
+| `background` | Background color (hex or CSS color) | `#ffffff` |
+| `image` | Path to splash image | `null` |
+| `width` | Splash window width in pixels | `400` |
+| `height` | Splash window height in pixels | `300` |
+| `text` | Loading text displayed below image | `Loading...` |
+| `text_color` | Text and spinner color | `#333333` |
+
+### Custom Splash Image
+
+1. Create a splash image (recommended: PNG, 300x200px minimum)
+2. Place it in your app directory
+3. Reference it in the configuration:
+
+```yaml
+splash:
+  enabled: true
+  image: "assets/splash-logo.png"
+  background: "#1a1a2e"
+  text: "Starting Dashboard..."
+  text_color: "#eaeaea"
+```
+
+::: {.callout-tip}
+For best results, use a transparent PNG on a solid background color.
+:::
+
+## System Tray Integration
+
+System tray (menubar on macOS) allows your app to run in the background and
+provides quick access via an icon.
+
+### Use Cases
+
+- **Background services**: Apps that should keep running when closed
+- **Quick access**: Open app from tray with double-click
+- **Status indicators**: Show app state in tray menu
+
+### Configuration
+
+```yaml
+tray:
+  enabled: true
+  minimize_to_tray: true    # Minimize hides to tray
+  close_to_tray: false      # Close button hides (not quits)
+  tooltip: "My Dashboard"   # Hover text
+  icon: "tray-icon.png"     # Custom tray icon (optional)
+```
+
+### Configuration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `enabled` | Enable system tray | `false` |
+| `minimize_to_tray` | Minimize button hides to tray | `true` |
+| `close_to_tray` | Close button hides instead of quitting | `false` |
+| `tooltip` | Text shown on hover | App name |
+| `icon` | Custom tray icon path | App icon |
+
+### Behavior Matrix
+
+| Setting | Minimize Button | Close Button |
+|---------|-----------------|--------------|
+| `minimize_to_tray: true, close_to_tray: false` | Hides to tray | Quits app |
+| `minimize_to_tray: true, close_to_tray: true` | Hides to tray | Hides to tray |
+| `minimize_to_tray: false, close_to_tray: true` | Minimizes normally | Hides to tray |
+
+### Tray Menu
+
+The default tray menu includes:
+
+- **Show**: Brings the window to front
+- **Quit**: Exits the application
+
+### Tray Icon Guidelines
+
+| Platform | Format | Size |
+|----------|--------|------|
+| macOS | PNG (template) | 16x16 or 32x32 |
+| Windows | ICO or PNG | 16x16 to 256x256 |
+| Linux | PNG | 16x16 to 512x512 |
+
+::: {.callout-note}
+On macOS, use template images (black icons with transparency) for proper
+appearance in light and dark modes.
+:::
+
+## Native Application Menus
+
+Native menus provide keyboard shortcuts and platform-consistent navigation.
+
+### Configuration
+
+```yaml
+menu:
+  enabled: true
+  template: "default"       # "default", "minimal", or "custom"
+  show_dev_tools: false     # Include DevTools in View menu
+  help_url: "https://docs.example.com"
+```
+
+### Menu Templates
+
+**Default** - Full application menu:
+
+- File (Quit/Close)
+- Edit (Undo, Redo, Cut, Copy, Paste, Select All)
+- View (Reload, Zoom, Fullscreen)
+- Window (Minimize, Zoom)
+- Help (Documentation, About)
+
+**Minimal** - Essential items only:
+
+- File (Quit)
+- Edit (Copy, Paste)
+- Help (About)
+
+### Platform Differences
+
+| Platform | App Menu | Keyboard Shortcuts |
+|----------|----------|-------------------|
+| macOS | App name menu with About, Services, Hide | Cmd+Q, Cmd+H |
+| Windows | No app menu, Quit in File | Alt+F4 |
+| Linux | Same as Windows | Same as Windows |
+
+### DevTools Access
+
+For development builds, enable DevTools in the View menu:
+
+```yaml
+menu:
+  show_dev_tools: true
+```
+
+Users can then access DevTools via View → Toggle Developer Tools or the
+keyboard shortcut (Cmd+Option+I on macOS, Ctrl+Shift+I on Windows/Linux).
+
+## Preloader
+
+The preloader shows a loading indicator while the Shinylive WebAssembly
+runtime initializes.
+
+### Configuration
+
+```yaml
+preloader:
+  enabled: true
+  style: "spinner"          # "spinner", "bar", or "dots"
+  message: "Loading application..."
+  background: "#f8f9fa"
+```
+
+### Preloader Styles
+
+| Style | Description |
+|-------|-------------|
+| `spinner` | Animated circular spinner |
+| `bar` | Horizontal progress bar |
+| `dots` | Animated bouncing dots |
+
+### Preloader vs Splash Screen
+
+| Feature | Splash Screen | Preloader |
+|---------|---------------|-----------|
+| When shown | Before app window | Inside app window |
+| Duration | Fixed minimum time | Until app ready |
+| Purpose | Branding, first impression | Loading feedback |
+| Customization | Full custom HTML | Style only |
+
+::: {.callout-tip}
+For the best user experience, use both:
+1. Splash screen for initial branding (2-3 seconds)
+2. Preloader for WebAssembly loading
+:::
+
+## Complete Example
+
+Here's a full `_shinyelectron.yml` with all advanced features enabled:
+
+```yaml
+app:
+  name: "My Dashboard"
+  version: "1.0.0"
+
+window:
+  width: 1400
+  height: 900
+
+# Show branded splash screen on startup
+splash:
+  enabled: true
+  duration: 2500
+  background: "#1e3a5f"
+  image: "assets/logo.png"
+  text: "Loading Dashboard..."
+  text_color: "#ffffff"
+
+# Enable system tray for background operation
+tray:
+  enabled: true
+  minimize_to_tray: true
+  close_to_tray: true
+  tooltip: "My Dashboard - Running"
+
+# Full native menus with documentation link
+menu:
+  enabled: true
+  template: "default"
+  show_dev_tools: false
+  help_url: "https://docs.example.com"
+
+# Show loading indicator in app
+preloader:
+  enabled: true
+  style: "spinner"
+  message: "Initializing..."
+```
+
+## Programmatic Configuration
+
+You can also configure these features programmatically:
+
+```{r}
+#| eval: false
+# Read current config
+config <- read_config("path/to/app")
+
+# Enable splash screen
+config$splash$enabled <- TRUE
+config$splash$duration <- 3000
+config$splash$text <- "Loading Dashboard..."
+
+# Enable system tray
+config$tray$enabled <- TRUE
+config$tray$close_to_tray <- TRUE
+
+# Write updated config
+yaml::write_yaml(config, file.path("path/to/app", "_shinyelectron.yml"))
+```
+
+## Next Steps
+
+- **[Auto Updates](auto-updates.html)**: Keep your app up to date
+- **[Configuration](configuration.html)**: Full configuration reference
+- **[Troubleshooting](troubleshooting.html)**: Common issues and solutions

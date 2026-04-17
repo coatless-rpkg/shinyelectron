@@ -1,195 +1,153 @@
-
-
-<!-- README.md is generated from README.qmd. Please edit that file -->
-
-> [!IMPORTANT]
->
-> This package is currently in the prototype/experimental stage. It is
-> not yet available on CRAN and may have bugs or limitations.
->
-> **We do not recommend using this package for production applications
-> at this time.**
-
 # shinyelectron
 
 <!-- badges: start -->
-
 [![R-CMD-check](https://github.com/coatless-rpkg/shinyelectron/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/coatless-rpkg/shinyelectron/actions/workflows/R-CMD-check.yaml)
-![Prototype](https://img.shields.io/badge/Status-Prototype-orange.png)
-![Experimental](https://img.shields.io/badge/Status-Experimental-blue.png)
 <!-- badges: end -->
 
-## Export Shiny Applications as Desktop Applications using Electron
-
-This R package allows you to convert Shiny web applications into
-standalone desktop applications for using Electron. This means your
-users can run your Shiny apps without having R installed on their
-machines.
+Export [Shiny](https://shiny.posit.co/) applications as standalone desktop applications using [Electron](https://www.electronjs.org/). Supports R and Python Shiny apps with multiple runtime strategies.
 
 ## Installation
 
-You can install the development version of shinyelectron from
-[GitHub](https://github.com/) with:
-
-``` r
-# From CRAN (not available yet)
-# install.packages("shinyelectron")
-
-# From GitHub
+```r
 # install.packages("remotes")
 remotes::install_github("coatless-rpkg/shinyelectron")
 ```
 
-## Prerequisites
+## Quick Start
 
-> [!IMPORTANT]
->
-> We are currently working on making the installation process as smooth
-> as possible. Please bear with us as we work through identifying the
-> necessary dependencies for each platform.
-
-- R (\>= 4.4.0)
-- Node.js (\>= 22.0.0)
-- npm (\>= 11.5.0)
-
-For building platform-specific installers:
-
-- Windows: Windows 11+ and Visual Studio Build Tools
-- macOS: macOS 10.13+ and Xcode CLI
-- Linux: Appropriate development tools for your distribution
-
-## Usage
-
-### Quickstart
-
-The `export()` function allows you to convert a Shiny application into a
-standalone Electron application.
-
-``` r
+```r
 library(shinyelectron)
 
-# Export a Shiny application to an Electron application
-shinyelectron::export(
-  appdir = "path/to/your/shiny/app",
-  destdir = "path/to/export/destination"
+# Validate your app before building
+app_check("path/to/my/app")
+
+# Export as a desktop app (shinylive — runs entirely in browser, no runtime needed)
+export(
+  appdir = "path/to/my/app",
+  destdir = "output"
+)
+
+# Or use native R with system runtime
+export(
+  appdir = "path/to/my/app",
+  destdir = "output",
+  app_type = "r-shiny",
+  runtime_strategy = "system"
 )
 ```
 
-For example, to convert the “Hello World” Shiny app from the `{shiny}`
-package into a standalone Electron app:
+## App Types
 
-``` r
-# Copy "Hello World" from `{shiny}`
-system.file("examples", "01_hello", package="shiny") |>
-    fs::dir_copy("hello-shiny-app", overwrite = TRUE)
+| Type | Description | Runtime needed? |
+|------|-------------|-----------------|
+| `r-shinylive` | R Shiny via WebR in browser | No |
+| `py-shinylive` | Python Shiny via Pyodide in browser | No |
+| `r-shiny` | Native R Shiny | Yes (R) |
+| `py-shiny` | Native Python Shiny | Yes (Python) |
 
-shinyelectron::export("hello-shiny-app", "shinyelectron-converted-app")
+## Runtime Strategies (Native Apps)
+
+| Strategy | Description | Best for |
+|----------|-------------|----------|
+| `auto-download` | Downloads R/Python on first launch | Default, zero-config |
+| `system` | Uses R/Python on user's machine | Dev/testing |
+| `bundled` | Embeds portable R/Python in the app | Self-contained distribution |
+| `container` | Runs in Docker/Podman | Reproducible environments |
+
+## Configuration
+
+Use the interactive wizard or create a config file manually:
+
+```r
+# Interactive wizard
+wizard("path/to/my/app")
+
+# Or create a template config file
+init_config("path/to/my/app")
+
+# View effective configuration
+show_config("path/to/my/app")
 ```
 
-### Advanced Options
+### `_shinyelectron.yml` example
 
-You can customize the export process using the following options:
+```yaml
+app:
+  name: "My Dashboard"
+  version: "1.0.0"
 
-``` r
-shinyelectron::export(
-  appdir = "path/to/your/shiny/app",
-  destdir = "path/to/export/destination",
-  app_name = "My-App-Title", # Defaults to the name of the appdir
-  app_type = "r-shinylive",  # We only support "r-shinylive"
-  platform = c("mac"),       # c("win", "mac", "linux")
-  arch = c("arm64"),         # c("x64", "arm64")
-  overwrite = TRUE,          # Overwrite existing files in destdir
-  run_after = TRUE,          # Launch the app after building for testing
-  open_after = TRUE,         # Open the generated project after export
-  verbose = TRUE             # Display detailed progress information 
-)
+build:
+  type: "r-shiny"
+  runtime_strategy: "auto-download"
+  platforms:
+    - mac
+    - win
+
+window:
+  width: 1200
+  height: 800
 ```
 
-## How It Works
+## Multi-App Bundling
 
-1.  The package creates an Electron application structure in the
-    destination directory
-2.  It copies your Shiny application files into this structure
-3.  It configures the Electron app to start an R process and run your
-    Shiny app
-4.  It optionally bundles a minimal R environment
-5.  It builds platform-specific installers using electron-builder
+Bundle multiple Shiny apps into one desktop application with a launcher:
 
-## Acknowledgements
+```yaml
+# _shinyelectron.yml
+app:
+  name: "My App Suite"
+build:
+  type: "r-shiny"
+  runtime_strategy: "system"
+apps:
+  - id: dashboard
+    name: "Dashboard"
+    path: "./apps/dashboard"
+  - id: explorer
+    name: "Data Explorer"
+    path: "./apps/explorer"
+```
 
-This project builds upon several notable efforts to integrate R Shiny
-applications with the Electron framework.
+## Key Functions
 
-### Prior packaging attempts:
+| Function | Purpose |
+|----------|---------|
+| `export()` | Convert and build Shiny app to Electron |
+| `available_examples()` | Show bundled example apps |
+| `example_app()` | Get path to a bundled example app |
+| `app_check()` | Pre-flight validation without building |
+| `wizard()` | Interactive configuration generator |
+| `show_config()` | Display merged effective configuration |
+| `init_config()` | Create template `_shinyelectron.yml` |
+| `sitrep_shinyelectron()` | Full system diagnostics |
+| `install_nodejs()` | Install Node.js locally (no admin needed) |
+| `enable_auto_updates()` | Configure auto-update via GitHub Releases |
+| `run_electron_app()` | Launch a built Electron app for testing |
+| `cache_clear()` | Clear cached Node.js/R/Python/npm assets |
 
-- [**electricShine**](https://chasemc.github.io/electricShine/): A
-  package that streamlines the creation of distributable Shiny Electron
-  apps through its `electrify` function, which automates building and
-  packaging processes for Windows.
-- [**Photon**](https://github.com/COVAIL/photon): An RStudio add-in that
-  leverages Electron to build standalone Shiny apps for macOS and
-  Windows by cloning an R specific [`electron-quick-start`
-  repository](https://github.com/COVAIL/electron-quick-start) and
-  including portable R versions.
-- [**RInno**](https://github.com/ficonsulting/RInno): Creates standalone
-  R applications with Electron on Windows.
-- [**DesktopDeployR**](https://github.com/wleepang/DesktopDeployR): An
-  alternative framework for deploying self-contained R-based
-  applications that provides a portable R environment and private
-  package library.
+## Demos
 
-### Talks, Tutorials, and Templates:
+```r
+# List bundled examples
+available_examples()
 
-- **User! 2018 Talk**: A [presentation by @ksasso at the 2018 UseR!
-  conference](https://www.youtube.com/watch?v=ARrbbviGvjc) that
-  demonstrates how to convert Shiny apps into standalone desktop
-  applications using Electron.
-- **Developer Tutorials**: Valuable step-by-step guides from
-  contributors like @lawalter and @dirkschumacher that demonstrate
-  practical integration techniques and solutions, c.f.
-  [shiny-electron-walter-tutorial](https://github.com/dirkschumacher/r-shiny-electron)
-- **Zarathu Corporation Templates**: Specialized templates for [macOS
-  ARM
-  (M1/M2/..)](https://github.com/zarathucorp/shiny-electron-template-m1)
-  and
-  [Windows](https://github.com/zarathucorp/shiny-electron-template-windows)
-  platforms that have significantly contributed to cross-platform
-  deployment solutions described in [R-Bloggers: Creating Standalone
-  Apps from Shiny with
-  Electron](https://www.r-bloggers.com/2023/03/creating-standalone-apps-from-shiny-with-electron-2023-macos-m1/)
-  post.
+# Get an example app and export with any app_type + strategy
+path <- example_app("r")
+export(path, "my-output", app_type = "r-shiny", runtime_strategy = "system")
+
+path <- example_app("python")
+export(path, "py-output", app_type = "py-shiny", runtime_strategy = "system")
+```
+
+## System Requirements
+
+- R >= 4.4.0
+- Node.js >= 18.0.0 (auto-installable via `install_nodejs()`)
+- Platform build tools:
+  - macOS: Xcode Command Line Tools (`xcode-select --install`)
+  - Windows: Visual Studio Build Tools
+  - Linux: build-essential
 
 ## License
 
-AGPL (\>= 3)
-
-## References
-
-- [`electricShine` (R
-  Package)](https://chasemc.github.io/electricShine/)
-- [`RInno` (R package)](https://github.com/ficonsulting/RInno)
-- [`Photon` (RStudio Addin)](https://github.com/COVAIL/photon)
-- [`COVAIL` Electron Quick Start
-  (GitHub)](https://github.com/COVAIL/electron-quick-start)
-- [`DesktopDeployR`
-  (GitHub)](https://github.com/wleepang/DesktopDeployR)
-- [Electron ShinyApp Deployment UseR! 2018 (GitHub,
-  @ksasso)](https://github.com/ksasso/Electron_ShinyApp_Deployment)
-- [How to Make an R Shiny Electron App (GitHub,
-  @lawalter)](https://github.com/lawalter/r-shiny-electron-app)
-- [R shiny and electron (GitHub,
-  @dirkschumacher)](https://github.com/dirkschumacher/r-shiny-electron)
-- [Creating Standalone Apps from Shiny with Electron in macOS 2023
-  (GitHub, macOS ARM
-  (M1/M2/…))](https://github.com/zarathucorp/shiny-electron-template-m1)
-- [Creating Standalone Apps from Shiny with Electron in Windows 2023
-  (GitHub,
-  @jhk0530)](https://github.com/zarathucorp/shiny-electron-template-windows)
-- [Creating Standalone Apps from Shiny with Electron 2023 (R-bloggers,
-  @jhk0530)](https://www.r-bloggers.com/2023/03/creating-standalone-apps-from-shiny-with-electron-2023-macos-m1/)
-- [Shiny meets Electron: Turn your Shiny app into a standalone desktop
-  app in no time @ UseR!
-  2018](https://www.youtube.com/watch?v=ARrbbviGvjc) ([Presentation
-  Source](https://github.com/ksasso/useR_electron_meet_shiny/))
-- [Electron
-  Documentation](https://electronjs.org/docs/latest/tutorial/application-distribution)
+AGPL (>= 3)

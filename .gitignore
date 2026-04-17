@@ -5,3 +5,4 @@
 docs
 .DS_Store
 *-app
+e2e-tests/node_modules/

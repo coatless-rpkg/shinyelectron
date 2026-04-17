@@ -1,0 +1,337 @@
+---
+title: "Getting Started with shinyelectron"
+vignette: >
+  %\VignetteIndexEntry{Getting Started with shinyelectron}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"
+---
+
+```{r}
+#| include: false
+library(shinyelectron)
+```
+
+The shinyelectron package converts Shiny applications (R and Python) into
+standalone desktop applications using Electron. This guide walks you through
+the complete workflow from installation to running your first desktop Shiny app.
+
+## Prerequisites
+
+Before using shinyelectron, ensure you have:
+
+- **R** (>= 4.4.0)
+- **Node.js** (>= 22.0.0) - Can be installed automatically via shinyelectron
+- **npm** (>= 11.5.0) - Included with Node.js
+
+For building platform-specific installers, you also need:
+
+| Platform | Requirements |
+|----------|-------------|
+| Windows | Windows 11+, Visual Studio Build Tools |
+| macOS | macOS 10.13+, Xcode Command Line Tools |
+| Linux | gcc, make (build-essential package) |
+
+## Installation
+
+Install shinyelectron from GitHub:
+
+```{r}
+#| eval: false
+# install.packages("remotes")
+remotes::install_github("coatless-rpkg/shinyelectron")
+```
+
+## Step 1: Check System Readiness
+
+Before exporting your first app, run the system diagnostics to verify everything
+is properly configured:
+
+```{r}
+#| eval: false
+library(shinyelectron)
+
+# Run full system diagnostics
+sitrep_shinyelectron()
+```
+```
+── shinyelectron System Report ───────────────────────────────────────────────
+✔ Platform: darwin (arm64)
+✔ Node.js: v22.11.0 (local installation)
+✔ npm: 10.9.0
+✔ R packages: All required packages installed
+ℹ Build tools: Xcode CLI available
+```
+
+This function checks:
+
+- Node.js and npm availability
+- R package dependencies
+- Platform-specific build tools
+- Local Node.js installation status
+
+## Step 2: Install Node.js (Optional)
+
+If Node.js is not installed on your system, shinyelectron can install it locally
+without requiring administrator privileges:
+```{r}
+#| eval: false
+# Install latest LTS version of Node.js
+install_nodejs()
+```
+```
+ℹ Detecting latest Node.js LTS version...
+✔ Latest LTS: v22.11.0
+── Installing Node.js v22.11.0 ───────────────────────────────────────────────
+ℹ Platform: mac
+ℹ Architecture: arm64
+ℹ Fetching checksums...
+ℹ Downloading from https://nodejs.org/dist/v22.11.0/node-v22.11.0-darwin-arm64.tar.gz
+✔ Checksum verified
+ℹ Extracting archive...
+✔ Node.js v22.11.0 installed successfully
+ℹ Location: ~/.shinyelectron/cache/assets/nodejs/v22.11.0/darwin-arm64
+```
+
+This installation is managed entirely by shinyelectron and does not affect any
+system-wide Node.js installation you may have.
+
+## Step 3: Create or Obtain a Shiny App
+
+shinyelectron supports both R and Python Shiny apps. For this tutorial, we
+start with the classic "Hello Shiny" example from the R shiny package:
+
+```{r}
+#| eval: false
+# Copy the Hello Shiny example to a local directory
+system.file("examples", "01_hello", package = "shiny") |>
+  fs::dir_copy("my-shiny-app", overwrite = TRUE)
+```
+
+This creates a directory called `my-shiny-app` containing:
+
+```
+my-shiny-app/
+├── app.R
+└── (other files)
+```
+
+::: {.callout-tip}
+## Using Your Own App
+
+You can use any Shiny application directory. The expected entry point depends on
+the language:
+
+- **R Shiny**: `app.R` (single-file app), or both `server.R` and `ui.R`
+- **Python Shiny**: `app.py`
+:::
+
+## Step 4: Export to Electron
+
+The `export()` function handles the complete conversion process. The default
+`app_type` is `"r-shinylive"`, which converts R Shiny apps to run entirely in
+the browser via WebR -- no R installation required on the end user's machine.
+
+### R Shinylive Export
+
+```{r}
+#| eval: false
+export(
+  appdir = "my-shiny-app",
+  destdir = "my-electron-app",
+  app_name = "Hello Shiny",
+  run_after = TRUE,
+  verbose = TRUE
+)
+```
+```
+── Exporting Shiny application to Electron ───────────────────────────────────
+ℹ Application: Hello Shiny
+ℹ Type: r-shinylive
+ℹ Source: my-shiny-app
+ℹ Destination: my-electron-app
+ℹ Converting to shinylive format...
+✔ Shinylive conversion complete
+ℹ Building Electron application...
+ℹ Setting up Electron project structure...
+✔ Created project structure
+ℹ Copying application files...
+✔ Copied application files
+ℹ Processing Electron templates...
+✔ Processed Electron templates
+ℹ Installing npm dependencies...
+✔ Installed npm dependencies
+ℹ Building for platforms: mac
+✔ Built for mac-arm64
+✔ Successfully exported Shiny application to Electron!
+ℹ Output directory: my-electron-app
+ℹ Electron app: my-electron-app/electron-app
+ℹ Distributables: my-electron-app/electron-app/dist
+```
+
+The `run_after = TRUE` option automatically launches your app for testing after
+the build completes.
+
+### Python Shinylive Export
+
+If you have a Python Shiny app (a directory containing `app.py`), set
+`app_type = "py-shinylive"` to convert it via Pyodide:
+
+```{r}
+#| eval: false
+export(
+  appdir = "my-py-app",
+  destdir = "my-py-electron-app",
+  app_name = "Hello PyShiny",
+  app_type = "py-shinylive"
+)
+```
+
+The workflow is identical to the R shinylive case -- the app runs entirely in
+the browser with no Python installation needed on the end user's machine.
+
+## Native App Types
+
+Shinylive exports are the simplest path, but they run inside a WebAssembly
+sandbox and cannot use every R or Python package. For apps that need full
+native R or Python, use `app_type = "r-shiny"` or `app_type = "py-shiny"`:
+
+```{r}
+#| eval: false
+# Native R Shiny app (auto-downloads R on first launch)
+export(
+  appdir = "my-shiny-app",
+  destdir = "my-native-electron-app",
+  app_type = "r-shiny"
+)
+
+# Native Python Shiny app
+export(
+  appdir = "my-py-app",
+  destdir = "my-native-py-electron-app",
+  app_type = "py-shiny"
+)
+```
+
+Native app types require a runtime on the end user's machine. The
+`runtime_strategy` parameter controls how that runtime is provided:
+
+| Strategy | Description |
+|----------|-------------|
+| `"auto-download"` | **(default)** Downloads R/Python on first launch; caches for reuse |
+| `"bundled"` | Embeds a portable R/Python runtime inside the Electron app at build time |
+| `"system"` | Uses R/Python already installed on the end user's machine |
+| `"container"` | Runs the app inside a Docker or Podman container |
+
+```{r}
+#| eval: false
+# Example: bundle R into the app so users need nothing pre-installed
+export(
+  appdir = "my-shiny-app",
+  destdir = "my-bundled-app",
+  app_type = "r-shiny",
+  runtime_strategy = "bundled"
+)
+```
+
+For a deeper look at trade-offs, setup, and configuration for each strategy,
+see the [Runtime Strategies](runtime-strategies.html) article.
+
+## Understanding the Output
+
+After export, your destination directory contains:
+
+```
+my-electron-app/
+├── shinylive-app/     # Converted shinylive application
+└── electron-app/      # Complete Electron project
+    ├── src/
+    │   └── app/       # Your application files
+    ├── main.js        # Electron main process
+    ├── package.json   # npm configuration
+    ├── node_modules/  # npm dependencies
+    └── dist/          # Built distributables
+        └── mac-arm64/
+            └── Hello Shiny.app  # macOS application
+```
+
+### Finding Your Application
+
+The final distributable application is in the `dist/` folder:
+
+| Platform | Location | File Type |
+|----------|----------|-----------|
+| macOS | `dist/mac-arm64/` or `dist/mac-x64/` | `.app` bundle |
+| Windows | `dist/win-x64/` | `.exe` installer |
+| Linux | `dist/linux-x64/` | AppImage |
+
+## Customizing Your Export
+
+### Building for Multiple Platforms
+
+Build for Windows, macOS, and Linux in a single command:
+
+```{r}
+#| eval: false
+export(
+ appdir = "my-shiny-app",
+ destdir = "my-electron-app",
+ platform = c("mac", "win", "linux"),
+ arch = c("x64", "arm64"),
+ overwrite = TRUE
+)
+```
+
+::: {.callout-note}
+Cross-platform building has limitations. Building Windows apps on macOS or Linux
+requires additional tools, and building macOS apps requires macOS.
+:::
+
+### Adding a Custom Icon
+
+Provide platform-specific icons:
+
+```{r}
+#| eval: false
+export(
+  appdir = "my-shiny-app",
+  destdir = "my-electron-app",
+  icon = "path/to/icon.icns"  # .icns for macOS, .ico for Windows
+)
+```
+
+### Using a Configuration File
+
+For complex projects, use a `_shinyelectron.yml` configuration file instead of
+passing many parameters. See the [Configuration](configuration.html) article for
+details.
+
+## Next Steps
+
+- **[Configuration](configuration.html)**: Learn about the `_shinyelectron.yml`
+  configuration file for advanced customization
+- **[Runtime Strategies](runtime-strategies.html)**: Deep dive into bundled,
+  system, auto-download, and container strategies for native app types
+- **[Multi-App Suites](multi-app-suites.html)**: Package multiple Shiny apps
+  into a single Electron application
+- **[Node.js Management](nodejs-management.html)**: Manage local Node.js
+  installations
+- **[Troubleshooting](troubleshooting.html)**: Diagnose and fix common issues
+
+## Quick Reference
+
+| Function | Purpose |
+|----------|---------|
+| `export()` | Convert and build Shiny app to Electron |
+| `app_check()` | Pre-flight validation without building |
+| `wizard()` | Interactive configuration generator |
+| `show_config()` | Display merged effective configuration |
+| `sitrep_shinyelectron()` | Run full system diagnostics |
+| `install_nodejs()` | Install Node.js locally |
+| `init_config()` | Create configuration file |
+| `enable_auto_updates()` | Configure auto-update via GitHub Releases |
+| `run_electron_app()` | Test an Electron app |
+| `cache_clear()` | Clear cached assets |

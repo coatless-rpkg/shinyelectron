@@ -22,3 +22,7 @@
 ^\.idea$
 ^\.DS_Store$
 ^.*app$
+^\.claude$
+^\.superpowers$
+^e2e-tests$
+^vignettes/\.quarto$
