@@ -1,0 +1,206 @@
+# GitHub Actions workflow for building shinyelectron apps
+#
+# This workflow builds your Shiny app as an Electron desktop application
+# for Windows, macOS, and Linux.
+#
+# Usage:
+# 1. Copy this file to .github/workflows/build-electron.yml in your repository
+# 2. Ensure your Shiny app is in the 'app/' directory (or update APP_DIR below)
+# 3. Push to trigger the workflow
+#
+# For more information, see:
+# https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/github-actions.html
+
+name: Build Electron App
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Platforms to build (comma-separated: mac,win,linux)'
+        required: false
+        default: 'mac,win,linux'
+
+env:
+  # Configure these for your project
+  APP_DIR: 'app'           # Directory containing your Shiny app
+  APP_NAME: 'MyApp'        # Name of your application
+  NODE_VERSION: '22'       # Node.js version
+  R_VERSION: 'release'     # R version (release, devel, or specific version)
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }}-${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS ARM64 (Apple Silicon)
+          - os: macos-latest
+            platform: mac
+            arch: arm64
+            artifact_ext: dmg
+
+          # macOS x64 (Intel)
+          - os: macos-13
+            platform: mac
+            arch: x64
+            artifact_ext: dmg
+
+          # Windows x64
+          - os: windows-latest
+            platform: win
+            arch: x64
+            artifact_ext: exe
+
+          # Linux x64
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            artifact_ext: AppImage
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ env.R_VERSION }}
+          use-public-rspm: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev
+
+      - name: Install R dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::shinyelectron
+            any::shinylive
+          needs: build
+
+      - name: Verify Shiny app exists
+        run: |
+          if [ ! -d "${{ env.APP_DIR }}" ]; then
+            echo "Error: App directory '${{ env.APP_DIR }}' not found"
+            echo "Please ensure your Shiny app is in the correct directory"
+            exit 1
+          fi
+          echo "Found app directory: ${{ env.APP_DIR }}"
+          ls -la "${{ env.APP_DIR }}"
+        shell: bash
+
+      - name: Build Electron app
+        run: |
+          Rscript -e "
+            library(shinyelectron)
+
+            # Run diagnostics first
+            cat('=== System Diagnostics ===\n')
+            sitrep_electron_system(verbose = TRUE)
+
+            cat('\n=== Building Electron App ===\n')
+            result <- export(
+              appdir = '${{ env.APP_DIR }}',
+              destdir = 'build',
+              app_name = '${{ env.APP_NAME }}',
+              platform = '${{ matrix.platform }}',
+              arch = '${{ matrix.arch }}',
+              overwrite = TRUE,
+              verbose = TRUE
+            )
+
+            cat('\n=== Build Complete ===\n')
+            cat('Output directory:', result[['electron_app']], '\n')
+          "
+        shell: bash
+
+      - name: List build artifacts
+        run: |
+          echo "=== Build output structure ==="
+          find build -type f -name "*.${{ matrix.artifact_ext }}" 2>/dev/null || true
+          ls -laR build/electron-app/dist/ 2>/dev/null || echo "No dist directory found"
+        shell: bash
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            build/electron-app/dist/**/*.${{ matrix.artifact_ext }}
+            build/electron-app/dist/**/*.dmg
+            build/electron-app/dist/**/*.exe
+            build/electron-app/dist/**/*.AppImage
+            build/electron-app/dist/**/*.deb
+            build/electron-app/dist/**/*.rpm
+          if-no-files-found: warn
+          retention-days: 30
+
+  # Create a GitHub Release when a version tag is pushed
+  release:
+    name: Create Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display downloaded artifacts
+        run: |
+          echo "=== Downloaded artifacts ==="
+          find artifacts -type f | head -50
+        shell: bash
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Summary job that reports build status
+  summary:
+    name: Build Summary
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check build results
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS (arm64) | ${{ needs.build.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS (x64) | ${{ needs.build.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Windows (x64) | ${{ needs.build.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Linux (x64) | ${{ needs.build.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
