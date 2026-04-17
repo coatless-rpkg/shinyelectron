@@ -20,7 +20,7 @@ that runs on macOS, Windows, and Linux. No web server, no browser tab, no
 deployment infrastructure. Just an `.app`, `.exe`, or AppImage your users
 double-click to open.
 
-![](../man/figures/pipeline-overview.svg){width="100%"}
+![The shinyelectron export pipeline: a Shiny app (R or Python) is converted and packaged into a standalone desktop application.](../man/figures/pipeline-overview.svg){fig-alt="Flow diagram showing three steps: Shiny App containing app.R or app.py passes through shinyelectron (convert and package via electron-builder) to produce a Desktop App distributed as .app, .exe, or AppImage." width="100%"}
 
 ## Install
 
@@ -126,7 +126,7 @@ export(
 )
 ```
 
-![](../man/figures/app-types.svg){width="100%"}
+![Three execution modes: Shinylive runs entirely in-browser, Native spawns a real R or Python process, and Container runs inside Docker or Podman.](../man/figures/app-types.svg){fig-alt="Architecture diagram comparing three modes. Shinylive: Electron window contains a Chromium browser running WebR or Pyodide with the app compiled to WebAssembly. Native: Electron window loads localhost, a child R or Python process runs the Shiny server, runtime sourced from bundled, auto-download, or system install. Container: Electron window loads localhost, a Docker or Podman container runs the app with full isolation and all system dependencies." width="100%"}
 
 ## Choosing an app type
 

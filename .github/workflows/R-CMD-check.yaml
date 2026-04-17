@@ -45,4 +45,4 @@ jobs:
 
       - uses: r-lib/actions/check-r-package@v2
         with:
-          args: '"--no-manual", "--no-vignettes"'
+          args: 'c("--no-manual", "--no-vignettes")'

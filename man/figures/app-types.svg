@@ -1,112 +1,211 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 320" font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 440" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Architecture comparison of three execution modes: Shinylive runs in-browser via WebR or Pyodide, Native spawns an R or Python child process, and Container runs inside Docker or Podman">
   <defs>
-    <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#eff6ff" stop-opacity="0.6"/>
-      <stop offset="100%" stop-color="#f5f3ff" stop-opacity="0.4"/>
-    </linearGradient>
     <filter id="s1">
-      <feDropShadow dx="0" dy="2" stdDeviation="5" flood-opacity="0.06"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.06"/>
     </filter>
   </defs>
 
-  <rect width="800" height="320" fill="url(#bg1)" rx="12"/>
-
-  <!-- Header -->
-  <text x="400" y="30" text-anchor="middle" font-size="14" font-weight="600" fill="#475569" letter-spacing="0.5">HOW YOUR APP RUNS</text>
-
-  <!-- Shinylive Column -->
-  <g transform="translate(30,50)" filter="url(#s1)">
-    <rect width="360" height="250" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
-    <rect width="360" height="36" rx="10" fill="#3b82f6"/>
-    <rect y="26" width="360" height="10" fill="#3b82f6"/>
-    <text x="180" y="24" text-anchor="middle" font-size="13" font-weight="600" fill="#fff">Shinylive (Browser-Based)</text>
+  <!-- Column 1: Shinylive -->
+  <g transform="translate(16,12)" filter="url(#s1)">
+    <rect width="248" height="410" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+    <rect width="248" height="32" rx="8" fill="#3b82f6"/>
+    <rect y="24" width="248" height="8" fill="#3b82f6"/>
+    <text x="124" y="22" text-anchor="middle" font-size="12" font-weight="600" fill="#fff">Shinylive</text>
 
     <!-- Electron shell -->
-    <g transform="translate(30,52)">
-      <rect width="300" height="170" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
-      <text x="150" y="20" text-anchor="middle" font-size="10" fill="#94a3b8" letter-spacing="1">ELECTRON WINDOW</text>
+    <g transform="translate(16,46)">
+      <rect width="216" height="200" rx="6" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="108" y="16" text-anchor="middle" font-size="9" fill="#94a3b8" letter-spacing="0.8">ELECTRON</text>
 
-      <!-- Browser with WebR/Pyodide -->
-      <g transform="translate(20,32)">
-        <rect width="260" height="120" rx="6" fill="#fff" stroke="#dbeafe" stroke-width="1.5"/>
-        <rect width="260" height="20" rx="6" fill="#eff6ff"/>
-        <rect y="14" width="260" height="6" fill="#eff6ff"/>
-        <circle cx="12" cy="10" r="3" fill="#93c5fd"/>
-        <circle cx="22" cy="10" r="3" fill="#93c5fd"/>
-        <circle cx="32" cy="10" r="3" fill="#93c5fd"/>
-        <text x="130" y="13" text-anchor="middle" font-size="8" fill="#64748b">Chromium Browser</text>
+      <!-- Browser -->
+      <g transform="translate(12,26)">
+        <rect width="192" height="160" rx="5" fill="#fff" stroke="#dbeafe" stroke-width="1"/>
+        <rect width="192" height="16" rx="5" fill="#eff6ff"/>
+        <rect y="12" width="192" height="4" fill="#eff6ff"/>
+        <text x="96" y="12" text-anchor="middle" font-size="8" fill="#64748b">Chromium</text>
 
-        <!-- WebR/Pyodide box -->
-        <g transform="translate(15,30)">
-          <rect width="105" height="72" rx="5" fill="#dbeafe" stroke="#93c5fd" stroke-width="1"/>
-          <text x="52" y="18" text-anchor="middle" font-size="10" font-weight="600" fill="#2563eb">WebR</text>
-          <text x="52" y="32" text-anchor="middle" font-size="9" fill="#3b82f6">R in WASM</text>
-          <line x1="10" y1="40" x2="95" y2="40" stroke="#bfdbfe" stroke-width="1"/>
-          <text x="52" y="56" text-anchor="middle" font-size="9" fill="#64748b">Your app.R</text>
-          <text x="52" y="68" text-anchor="middle" font-size="9" fill="#64748b">runs here</text>
+        <!-- WebR -->
+        <g transform="translate(8,24)">
+          <rect width="82" height="56" rx="4" fill="#dbeafe" stroke="#93c5fd" stroke-width="0.75"/>
+          <text x="41" y="16" text-anchor="middle" font-size="10" font-weight="600" fill="#2563eb">WebR</text>
+          <text x="41" y="30" text-anchor="middle" font-size="9" fill="#3b82f6">R in WASM</text>
+          <text x="41" y="48" text-anchor="middle" font-size="8" fill="#64748b">app.R runs here</text>
         </g>
 
-        <!-- OR -->
-        <text x="135" y="70" text-anchor="middle" font-size="9" fill="#94a3b8">or</text>
+        <text x="96" y="58" text-anchor="middle" font-size="9" fill="#94a3b8">or</text>
 
-        <!-- Pyodide box -->
-        <g transform="translate(140,30)">
-          <rect width="105" height="72" rx="5" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1"/>
-          <text x="52" y="18" text-anchor="middle" font-size="10" font-weight="600" fill="#7c3aed">Pyodide</text>
-          <text x="52" y="32" text-anchor="middle" font-size="9" fill="#8b5cf6">Python in WASM</text>
-          <line x1="10" y1="40" x2="95" y2="40" stroke="#ddd6fe" stroke-width="1"/>
-          <text x="52" y="56" text-anchor="middle" font-size="9" fill="#64748b">Your app.py</text>
-          <text x="52" y="68" text-anchor="middle" font-size="9" fill="#64748b">runs here</text>
+        <!-- Pyodide -->
+        <g transform="translate(102,24)">
+          <rect width="82" height="56" rx="4" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="0.75"/>
+          <text x="41" y="16" text-anchor="middle" font-size="10" font-weight="600" fill="#7c3aed">Pyodide</text>
+          <text x="41" y="30" text-anchor="middle" font-size="9" fill="#8b5cf6">Python in WASM</text>
+          <text x="41" y="48" text-anchor="middle" font-size="8" fill="#64748b">app.py runs here</text>
+        </g>
+
+        <!-- Shared memory note -->
+        <g transform="translate(8,88)">
+          <rect width="176" height="60" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.75"/>
+          <text x="88" y="16" text-anchor="middle" font-size="9" font-weight="500" fill="#475569">Everything in browser</text>
+          <text x="88" y="32" text-anchor="middle" font-size="8" fill="#94a3b8">SharedArrayBuffer</text>
+          <text x="88" y="44" text-anchor="middle" font-size="8" fill="#94a3b8">COOP/COEP headers</text>
+          <text x="88" y="56" text-anchor="middle" font-size="8" fill="#94a3b8">No external process</text>
         </g>
       </g>
     </g>
 
-    <text x="180" y="240" text-anchor="middle" font-size="10" fill="#10b981" font-weight="500">No runtime needed on user's machine</text>
+    <!-- Footer -->
+    <g transform="translate(16,260)">
+      <rect width="216" height="52" rx="5" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="0.75"/>
+      <text x="108" y="18" text-anchor="middle" font-size="10" font-weight="500" fill="#166534">User needs: nothing</text>
+      <text x="108" y="34" text-anchor="middle" font-size="9" fill="#16a34a">Self-contained in browser</text>
+      <text x="108" y="48" text-anchor="middle" font-size="8" fill="#94a3b8">Some packages unavailable in WASM</text>
+    </g>
+
+    <!-- Types -->
+    <text x="124" y="340" text-anchor="middle" font-size="10" fill="#64748b">r-shinylive | py-shinylive</text>
+
+    <!-- Size indicator -->
+    <g transform="translate(44,356)">
+      <rect width="160" height="6" rx="3" fill="#f1f5f9"/>
+      <rect width="100" height="6" rx="3" fill="#fbbf24"/>
+      <text x="80" y="18" text-anchor="middle" font-size="8" fill="#94a3b8">~50–100 MB (WebR assets)</text>
+    </g>
   </g>
 
-  <!-- Native Column -->
-  <g transform="translate(410,50)" filter="url(#s1)">
-    <rect width="360" height="250" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
-    <rect width="360" height="36" rx="10" fill="#10b981"/>
-    <rect y="26" width="360" height="10" fill="#10b981"/>
-    <text x="180" y="24" text-anchor="middle" font-size="13" font-weight="600" fill="#fff">Native (Runtime-Based)</text>
+  <!-- Column 2: Native -->
+  <g transform="translate(280,12)" filter="url(#s1)">
+    <rect width="248" height="410" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+    <rect width="248" height="32" rx="8" fill="#10b981"/>
+    <rect y="24" width="248" height="8" fill="#10b981"/>
+    <text x="124" y="22" text-anchor="middle" font-size="12" font-weight="600" fill="#fff">Native</text>
 
     <!-- Electron shell -->
-    <g transform="translate(30,52)">
-      <rect width="300" height="170" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
-      <text x="150" y="20" text-anchor="middle" font-size="10" fill="#94a3b8" letter-spacing="1">ELECTRON WINDOW</text>
+    <g transform="translate(16,46)">
+      <rect width="216" height="200" rx="6" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="108" y="16" text-anchor="middle" font-size="9" fill="#94a3b8" letter-spacing="0.8">ELECTRON</text>
 
       <!-- Browser showing localhost -->
-      <g transform="translate(20,32)">
-        <rect width="260" height="50" rx="6" fill="#fff" stroke="#d1fae5" stroke-width="1.5"/>
-        <rect width="260" height="20" rx="6" fill="#ecfdf5"/>
-        <rect y="14" width="260" height="6" fill="#ecfdf5"/>
-        <text x="130" y="13" text-anchor="middle" font-size="8" fill="#64748b">localhost:3838</text>
-        <text x="130" y="40" text-anchor="middle" font-size="10" fill="#64748b">Renders your Shiny UI</text>
+      <g transform="translate(12,26)">
+        <rect width="192" height="52" rx="5" fill="#fff" stroke="#d1fae5" stroke-width="1"/>
+        <rect width="192" height="16" rx="5" fill="#ecfdf5"/>
+        <rect y="12" width="192" height="4" fill="#ecfdf5"/>
+        <text x="96" y="12" text-anchor="middle" font-size="8" fill="#64748b">localhost:port</text>
+        <text x="96" y="38" text-anchor="middle" font-size="9" fill="#64748b">Shiny UI renders here</text>
       </g>
 
-      <!-- Arrow down -->
-      <g transform="translate(140,88)">
-        <line x1="0" y1="0" x2="0" y2="14" stroke="#94a3b8" stroke-width="1.5"/>
-        <polygon points="-4,14 0,20 4,14" fill="#94a3b8"/>
+      <!-- Arrow -->
+      <g transform="translate(104,82)">
+        <line x1="0" y1="0" x2="0" y2="10" stroke="#94a3b8" stroke-width="1"/>
+        <polygon points="-3,10 0,15 3,10" fill="#94a3b8"/>
       </g>
 
-      <!-- R/Python process -->
-      <g transform="translate(20,112)">
-        <rect width="120" height="40" rx="5" fill="#dcfce7" stroke="#86efac" stroke-width="1"/>
-        <text x="60" y="18" text-anchor="middle" font-size="10" font-weight="600" fill="#166534">R Process</text>
-        <text x="60" y="32" text-anchor="middle" font-size="9" fill="#16a34a">shiny::runApp()</text>
+      <!-- R process -->
+      <g transform="translate(12,100)">
+        <rect width="90" height="36" rx="4" fill="#dcfce7" stroke="#86efac" stroke-width="0.75"/>
+        <text x="45" y="15" text-anchor="middle" font-size="9" font-weight="600" fill="#166534">R Process</text>
+        <text x="45" y="28" text-anchor="middle" font-size="8" fill="#16a34a">runApp()</text>
       </g>
 
-      <text x="150" y="138" text-anchor="middle" font-size="9" fill="#94a3b8">or</text>
+      <text x="108" y="122" text-anchor="middle" font-size="8" fill="#94a3b8">or</text>
 
-      <g transform="translate(160,112)">
-        <rect width="120" height="40" rx="5" fill="#fef3c7" stroke="#fcd34d" stroke-width="1"/>
-        <text x="60" y="18" text-anchor="middle" font-size="10" font-weight="600" fill="#92400e">Python Process</text>
-        <text x="60" y="32" text-anchor="middle" font-size="9" fill="#b45309">uvicorn + shiny</text>
+      <!-- Python process -->
+      <g transform="translate(114,100)">
+        <rect width="90" height="36" rx="4" fill="#fef3c7" stroke="#fcd34d" stroke-width="0.75"/>
+        <text x="45" y="15" text-anchor="middle" font-size="9" font-weight="600" fill="#92400e">Python</text>
+        <text x="45" y="28" text-anchor="middle" font-size="8" fill="#b45309">uvicorn</text>
+      </g>
+
+      <!-- Runtime source -->
+      <g transform="translate(12,146)">
+        <rect width="192" height="44" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.75"/>
+        <text x="96" y="14" text-anchor="middle" font-size="9" font-weight="500" fill="#475569">Runtime source:</text>
+        <text x="96" y="28" text-anchor="middle" font-size="8" fill="#94a3b8">bundled | auto-download | system</text>
+        <text x="96" y="40" text-anchor="middle" font-size="8" fill="#94a3b8">Portable R/Python or user's install</text>
       </g>
     </g>
 
-    <text x="180" y="240" text-anchor="middle" font-size="10" fill="#f59e0b" font-weight="500">Needs R or Python (bundled, downloaded, or system)</text>
+    <!-- Footer -->
+    <g transform="translate(16,260)">
+      <rect width="216" height="52" rx="5" fill="#fffbeb" stroke="#fde68a" stroke-width="0.75"/>
+      <text x="108" y="18" text-anchor="middle" font-size="10" font-weight="500" fill="#92400e">User needs: depends on strategy</text>
+      <text x="108" y="34" text-anchor="middle" font-size="9" fill="#b45309">bundled = nothing, system = R/Python</text>
+      <text x="108" y="48" text-anchor="middle" font-size="8" fill="#94a3b8">Full package compatibility</text>
+    </g>
+
+    <!-- Types -->
+    <text x="124" y="340" text-anchor="middle" font-size="10" fill="#64748b">r-shiny | py-shiny</text>
+
+    <!-- Size indicator -->
+    <g transform="translate(44,356)">
+      <rect width="160" height="6" rx="3" fill="#f1f5f9"/>
+      <rect width="40" height="6" rx="3" fill="#10b981"/>
+      <text x="80" y="18" text-anchor="middle" font-size="8" fill="#94a3b8">~10 MB (auto-dl) to ~300 MB (bundled)</text>
+    </g>
+  </g>
+
+  <!-- Column 3: Container -->
+  <g transform="translate(544,12)" filter="url(#s1)">
+    <rect width="240" height="410" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+    <rect width="240" height="32" rx="8" fill="#6366f1"/>
+    <rect y="24" width="240" height="8" fill="#6366f1"/>
+    <text x="120" y="22" text-anchor="middle" font-size="12" font-weight="600" fill="#fff">Container</text>
+
+    <!-- Electron shell -->
+    <g transform="translate(12,46)">
+      <rect width="216" height="200" rx="6" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="108" y="16" text-anchor="middle" font-size="9" fill="#94a3b8" letter-spacing="0.8">ELECTRON</text>
+
+      <!-- Browser showing localhost -->
+      <g transform="translate(12,26)">
+        <rect width="192" height="40" rx="5" fill="#fff" stroke="#c7d2fe" stroke-width="1"/>
+        <rect width="192" height="16" rx="5" fill="#eef2ff"/>
+        <rect y="12" width="192" height="4" fill="#eef2ff"/>
+        <text x="96" y="12" text-anchor="middle" font-size="8" fill="#64748b">localhost:hostPort</text>
+        <text x="96" y="32" text-anchor="middle" font-size="9" fill="#64748b">Shiny UI</text>
+      </g>
+
+      <!-- Arrow -->
+      <g transform="translate(104,70)">
+        <line x1="0" y1="0" x2="0" y2="8" stroke="#94a3b8" stroke-width="1"/>
+        <polygon points="-3,8 0,13 3,8" fill="#94a3b8"/>
+      </g>
+
+      <!-- Docker container -->
+      <g transform="translate(12,86)">
+        <rect width="192" height="100" rx="5" fill="#eef2ff" stroke="#a5b4fc" stroke-width="1" stroke-dasharray="4,2"/>
+        <text x="96" y="16" text-anchor="middle" font-size="9" font-weight="600" fill="#4338ca">Docker / Podman</text>
+
+        <!-- Inner process -->
+        <g transform="translate(10,24)">
+          <rect width="172" height="30" rx="3" fill="#fff" stroke="#c7d2fe" stroke-width="0.75"/>
+          <text x="86" y="12" text-anchor="middle" font-size="9" fill="#4338ca">R or Python process</text>
+          <text x="86" y="24" text-anchor="middle" font-size="8" fill="#64748b">+ all system dependencies</text>
+        </g>
+
+        <g transform="translate(10,60)">
+          <rect width="172" height="30" rx="3" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.75"/>
+          <text x="86" y="12" text-anchor="middle" font-size="8" fill="#94a3b8">Isolated filesystem</text>
+          <text x="86" y="24" text-anchor="middle" font-size="8" fill="#94a3b8">Port-mapped to host</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Footer -->
+    <g transform="translate(12,260)">
+      <rect width="216" height="52" rx="5" fill="#eef2ff" stroke="#c7d2fe" stroke-width="0.75"/>
+      <text x="108" y="18" text-anchor="middle" font-size="10" font-weight="500" fill="#3730a3">User needs: Docker or Podman</text>
+      <text x="108" y="34" text-anchor="middle" font-size="9" fill="#4f46e5">Full isolation, reproducible</text>
+      <text x="108" y="48" text-anchor="middle" font-size="8" fill="#94a3b8">Not for public distribution</text>
+    </g>
+
+    <!-- Types -->
+    <text x="120" y="340" text-anchor="middle" font-size="10" fill="#64748b">r-shiny | py-shiny</text>
+
+    <!-- Size indicator -->
+    <g transform="translate(40,356)">
+      <rect width="160" height="6" rx="3" fill="#f1f5f9"/>
+      <rect width="20" height="6" rx="3" fill="#6366f1"/>
+      <text x="80" y="18" text-anchor="middle" font-size="8" fill="#94a3b8">~10 MB app + container image</text>
+    </g>
   </g>
 </svg>
