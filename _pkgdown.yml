@@ -3,6 +3,75 @@ url: https://r-pkg.thecoatlessprofessor.com/shinyelectron/
 template:
   bootstrap: 5
 
+navbar:
+  structure:
+    left: [intro, articles, reference, news]
+    right: [search, github]
+  components:
+    intro:
+      text: Get Started
+      href: articles/getting-started.html
+    articles:
+      text: Articles
+      menu:
+        - text: "Basics"
+        - text: Getting Started
+          href: articles/getting-started.html
+        - text: Configuration Guide
+          href: articles/configuration.html
+        - text: Runtime Strategies
+          href: articles/runtime-strategies.html
+        - text: "---"
+        - text: "Building & Distribution"
+        - text: Code Signing
+          href: articles/code-signing.html
+        - text: Automatic Updates
+          href: articles/auto-updates.html
+        - text: Building with GitHub Actions
+          href: articles/github-actions.html
+        - text: "---"
+        - text: "Advanced Topics"
+        - text: Multi-App Suites
+          href: articles/multi-app-suites.html
+        - text: Container Strategy
+          href: articles/container-strategy.html
+        - text: Security Considerations
+          href: articles/security.html
+        - text: Advanced Features
+          href: articles/advanced-features.html
+        - text: "---"
+        - text: "Reference"
+        - text: Node.js Management
+          href: articles/nodejs-management.html
+        - text: Troubleshooting
+          href: articles/troubleshooting.html
+
+articles:
+  - title: "Basics"
+    navbar: ~
+    contents:
+      - getting-started
+      - configuration
+      - runtime-strategies
+
+  - title: "Building & Distribution"
+    contents:
+      - code-signing
+      - auto-updates
+      - github-actions
+
+  - title: "Advanced Topics"
+    contents:
+      - multi-app-suites
+      - container-strategy
+      - security
+      - advanced-features
+
+  - title: "Reference"
+    contents:
+      - nodejs-management
+      - troubleshooting
+
 reference:
   - title: "Export & Build"
     desc: "Main functions for exporting Shiny apps as Electron desktop applications"
