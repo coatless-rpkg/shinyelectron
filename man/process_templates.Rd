@@ -4,20 +4,37 @@
 \alias{process_templates}
 \title{Process and copy Electron templates}
 \usage{
-process_templates(output_dir, app_name, app_type, icon = NULL, verbose = TRUE)
+process_templates(
+  output_dir,
+  app_name,
+  app_type,
+  runtime_strategy = "shinylive",
+  icon = NULL,
+  config = NULL,
+  sign = FALSE,
+  is_multi_app = FALSE,
+  apps_manifest = NULL,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{output_dir}{Character destination directory}
 
-\item{app_name}{Character application name}
+\item{app_name}{Character application display name}
 
 \item{app_type}{Character application type}
 
+\item{runtime_strategy}{Character resolved runtime strategy}
+
 \item{icon}{Character path to icon file or NULL}
+
+\item{config}{List of configuration values from config file (optional)}
 
 \item{verbose}{Logical whether to show progress}
 }
 \description{
-Process and copy Electron templates
+Assembles the Electron app from the shared shell template and the appropriate
+backend module. Renders Whisker templates and generates package.json
+programmatically.
 }
 \keyword{internal}

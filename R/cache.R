@@ -31,7 +31,7 @@
 #'
 #' @keywords internal
 cache_dir <- function(create = TRUE) {
-  cache_dir <- fs::path(rappdirs::user_cache_dir("shinyelectron"), "assets")
+  cache_dir <- path.expand(fs::path(rappdirs::user_cache_dir("shinyelectron"), "assets"))
   if (create && !fs::dir_exists(cache_dir)) {
     fs::dir_create(cache_dir, recurse = TRUE)
   }
@@ -78,7 +78,8 @@ cache_npm_path <- function() {
 #'
 #' Removes cached R installations and/or npm packages from the cache directory.
 #'
-#' @param what Character string. What to clear: "all" (default), "r", or "npm".
+#' @param what Character string. What to clear: "all" (default), "r", "npm",
+#'   "nodejs", or "python".
 #'
 #' @return Invisibly returns NULL.
 #'
@@ -87,7 +88,9 @@ cache_npm_path <- function() {
 #' \itemize{
 #'   \item \code{"r"}: Removes only cached R installations
 #'   \item \code{"npm"}: Removes only cached npm packages
-#'   \item \code{"all"}: Removes both R installations and npm packages
+#'   \item \code{"nodejs"}: Removes only cached Node.js installations
+#'   \item \code{"python"}: Removes only cached Python installations
+#'   \item \code{"all"}: Removes all cached assets
 #' }
 #' If the cache directory doesn't exist, a message is shown and nothing is done.
 #'
@@ -101,18 +104,24 @@ cache_npm_path <- function() {
 #'
 #' # Clear only npm packages
 #' cache_clear("npm")
+#'
+#' # Clear only Node.js installations
+#' cache_clear("nodejs")
+#'
+#' # Clear only Python installations
+#' cache_clear("python")
 #' }
 #'
 #' @export
-cache_clear <- function(what = c("all", "r", "npm")) {
+cache_clear <- function(what = c("all", "r", "npm", "nodejs", "python")) {
   what <- match.arg(what)
   dir <- cache_dir(create = FALSE)
-  
+
   if (!fs::dir_exists(dir)) {
     cli::cli_alert_info("Cache directory doesn't exist: nothing to clear")
     return(invisible(NULL))
   }
-  
+
   if (what %in% c("all", "r")) {
     r_path <- fs::path(dir, "r")
     if (fs::dir_exists(r_path)) {
@@ -120,7 +129,7 @@ cache_clear <- function(what = c("all", "r", "npm")) {
       cli::cli_alert_success("Cleared R installation cache")
     }
   }
-  
+
   if (what %in% c("all", "npm")) {
     npm_path <- fs::path(dir, "npm")
     if (fs::dir_exists(npm_path)) {
@@ -128,6 +137,22 @@ cache_clear <- function(what = c("all", "r", "npm")) {
       cli::cli_alert_success("Cleared npm packages cache")
     }
   }
-  
+
+  if (what %in% c("all", "nodejs")) {
+    nodejs_path <- fs::path(dir, "nodejs")
+    if (fs::dir_exists(nodejs_path)) {
+      fs::dir_delete(nodejs_path)
+      cli::cli_alert_success("Cleared Node.js installation cache")
+    }
+  }
+
+  if (what %in% c("all", "python")) {
+    python_path <- fs::path(dir, "python")
+    if (fs::dir_exists(python_path)) {
+      fs::dir_delete(python_path)
+      cli::cli_alert_success("Cleared Python installation cache")
+    }
+  }
+
   invisible(NULL)
 }

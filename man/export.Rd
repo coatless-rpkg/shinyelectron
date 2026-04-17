@@ -9,6 +9,8 @@ export(
   destdir,
   app_name = NULL,
   app_type = "r-shinylive",
+  runtime_strategy = NULL,
+  sign = FALSE,
   platform = NULL,
   arch = NULL,
   icon = NULL,
@@ -27,6 +29,14 @@ export(
 \item{app_name}{Character string. Name of the application. If NULL, uses the base name of appdir.}
 
 \item{app_type}{Character string. Type of application: "r-shinylive" (default), "r-shiny", "py-shinylive", or "py-shiny".}
+
+\item{runtime_strategy}{Character string or NULL. Runtime strategy for native app types:
+"bundled", "system", "auto-download", or "container". If NULL, defaults to
+"auto-download" for native types. Ignored for shinylive types.}
+
+\item{sign}{Logical. Whether to enable code signing for the built application.
+When TRUE, electron-builder will attempt to sign the app using credentials
+from environment variables or the config file. Default is FALSE.}
 
 \item{platform}{Character vector. Target platforms: "win", "mac", "linux". If NULL, builds for current platform.}
 
@@ -99,6 +109,7 @@ export(
   destdir = "path/to/output",
   app_type = "r-shiny"
 )
+
 }
 
 }

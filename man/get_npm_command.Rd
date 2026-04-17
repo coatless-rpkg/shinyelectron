@@ -4,12 +4,17 @@
 \alias{get_npm_command}
 \title{Get npm command}
 \usage{
-get_npm_command()
+get_npm_command(prefer_local = TRUE)
+}
+\arguments{
+\item{prefer_local}{Logical. Whether to prefer the local shinyelectron-managed
+installation over the system installation. Default TRUE.}
 }
 \value{
-Character string for npm command (handles different platforms)
+Character string path to npm executable
 }
 \description{
-Get npm command
+Returns the path to the npm executable, preferring locally installed
+versions managed by shinyelectron.
 }
 \keyword{internal}

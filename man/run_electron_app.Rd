@@ -2,16 +2,17 @@
 % Please edit documentation in R/run.R
 \name{run_electron_app}
 \alias{run_electron_app}
-\title{Run Electron Application in Development Mode}
+\title{Run Electron Application for Testing}
 \usage{
 run_electron_app(app_dir, port = 3000, open_devtools = TRUE, verbose = TRUE)
 }
 \arguments{
-\item{app_dir}{Character string. Path to the Electron application directory.}
+\item{app_dir}{Character string. Path to the Electron application directory
+(the \code{electron-app} subdirectory from \code{export()}).}
 
 \item{port}{Integer. Port number for the development server. Default is 3000.}
 
-\item{open_devtools}{Logical. Whether to open developer tools automatically. Default is TRUE.}
+\item{open_devtools}{Logical. Whether to open Chromium DevTools automatically. Default is TRUE.}
 
 \item{verbose}{Logical. Whether to display detailed progress information. Default is TRUE.}
 }
@@ -19,17 +20,17 @@ run_electron_app(app_dir, port = 3000, open_devtools = TRUE, verbose = TRUE)
 Invisibly returns the process object for the running application.
 }
 \description{
-Runs the Electron application in development mode for testing and debugging.
-This allows you to test your application before building distributable packages.
+Launches a previously exported Electron application for testing and debugging
+without building distributable packages. Pass the \code{electron-app} directory
+from a prior \code{export()} call.
 }
 \section{Details}{
 
-This function starts the Electron application in development mode, which:
+This function starts the Electron application for testing, which:
 \itemize{
-\item Starts a local development server
 \item Opens the application in an Electron window
-\item Enables hot reloading for development
-\item Provides access to developer tools for debugging
+\item Optionally opens Chromium DevTools for debugging
+\item Does NOT build distributable packages (use \code{export(build = TRUE)} for that)
 }
 }
 

@@ -4,7 +4,7 @@
 \alias{build_for_platforms}
 \title{Build for target platforms}
 \usage{
-build_for_platforms(output_dir, platform, arch, verbose = TRUE)
+build_for_platforms(output_dir, platform, arch, sign = FALSE, verbose = TRUE)
 }
 \arguments{
 \item{output_dir}{Character Electron project directory}
