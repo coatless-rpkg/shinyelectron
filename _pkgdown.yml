@@ -28,9 +28,18 @@ reference:
     desc: "Configure shinyelectron projects"
     contents:
       - init_config
+      - show_config
+      - wizard
       - enable_auto_updates
       - disable_auto_updates
       - check_auto_update_status
+
+  - title: "Developer Tools"
+    desc: "Pre-flight checks, examples, and diagnostics"
+    contents:
+      - app_check
+      - available_examples
+      - example_app
 
   - title: "Diagnostics"
     desc: "Check system requirements and troubleshoot issues"

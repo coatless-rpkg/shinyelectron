@@ -4,6 +4,7 @@
 #' with any app type and runtime strategy combination.
 #'
 #' @name examples
+#' @keywords internal
 NULL
 
 # Registry of bundled examples

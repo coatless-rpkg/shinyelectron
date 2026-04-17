@@ -7,3 +7,4 @@
 List and retrieve bundled example Shiny applications that can be exported
 with any app type and runtime strategy combination.
 }
+\keyword{internal}
