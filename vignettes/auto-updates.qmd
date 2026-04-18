@@ -349,7 +349,7 @@ jobs:
         os: [macos-latest, windows-latest, ubuntu-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup R
         uses: r-lib/actions/setup-r@v2
@@ -359,7 +359,7 @@ jobs:
           Rscript -e "shinyelectron::export('app', destdir = 'build')"
 
       - name: Upload to Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: build/electron-app/dist/*
 ```

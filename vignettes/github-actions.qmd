@@ -113,12 +113,14 @@ The template workflow has three jobs:
 
 Runs on each platform in parallel:
 
-| Runner | Platform | Architecture | Output |
-|--------|----------|--------------|--------|
-| `macos-latest` | macOS | arm64 (Apple Silicon) | `.dmg` |
-| `macos-13` | macOS | x64 (Intel) | `.dmg` |
-| `windows-latest` | Windows | x64 | `.exe` |
-| `ubuntu-latest` | Linux | x64 | `.AppImage` |
+| Runner | Platform | Architecture | CPU / RAM | Output |
+|--------|----------|--------------|-----------|--------|
+| `macos-latest` | macOS | arm64 (M1) | 3 cores / 7 GB | `.dmg` |
+| `macos-15-intel` | macOS | x64 (Intel) | 4 cores / 14 GB | `.dmg` |
+| `windows-latest` | Windows 2025 | x64 | 4 cores / 16 GB | `.exe` |
+| `ubuntu-latest` | Ubuntu 24.04 | x64 | 4 cores / 16 GB | `.AppImage` |
+| `ubuntu-24.04-arm` | Ubuntu 24.04 | arm64 | 4 cores / 16 GB | `.AppImage` |
+| `windows-11-arm` | Windows 11 | arm64 | 4 cores / 16 GB | `.exe` |
 
 **Key steps:**
 

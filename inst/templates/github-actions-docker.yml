@@ -26,17 +26,17 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Log in to Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push R Shiny image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: inst/dockerfiles/r-shiny
           push: true
@@ -50,17 +50,17 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Log in to Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Python Shiny image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: inst/dockerfiles/py-shiny
           push: true
@@ -74,17 +74,17 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Log in to Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push R+Python Shiny image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: inst/dockerfiles/r-py-shiny
           push: true
