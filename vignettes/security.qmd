@@ -58,9 +58,11 @@ webPreferences: {
 | `webSecurity` | `true` | Enforces same-origin policy |
 | `partition` | per-app | Isolates session storage between different shinyelectron apps |
 
-**Preload script uses contextBridge.** The preload script exposes only a narrow
-IPC interface (`lifecycle.onStatus`, `lifecycle.retry`, `lifecycle.quit`, etc.)
-via `contextBridge.exposeInMainWorld()`. The renderer never gets direct access to
+**Preload script uses contextBridge.** The preload script acts as a secure
+intermediary --- the renderer can call predefined functions but cannot access
+Node.js directly. It exposes only a narrow IPC interface (`lifecycle.onStatus`,
+`lifecycle.retry`, `lifecycle.quit`, etc.) via
+`contextBridge.exposeInMainWorld()`. The renderer never gets direct access to
 `ipcRenderer` or any Node.js module.
 
 **Dev tools are off by default.** The Electron DevTools menu item is only
@@ -130,7 +132,9 @@ ran in a restricted environment.
 ### Code Signing
 
 Unsigned apps trigger OS security warnings (macOS Gatekeeper, Windows
-SmartScreen). For production distribution, sign your app. See the
+SmartScreen). macOS tags downloaded files with a quarantine attribute;
+Gatekeeper checks this flag before allowing the app to run. For production
+distribution, sign your app. See the
 [Auto-Updates vignette](auto-updates.html#code-signing) and
 [GitHub Actions vignette](github-actions.html#code-signing) for platform-specific
 setup instructions.

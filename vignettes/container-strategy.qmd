@@ -24,7 +24,8 @@ reproducible container image; the end user only needs a container engine.
 The container strategy is a good fit when:
 
 - Your app has **complex system dependencies** (C libraries, database drivers,
-  spatial tools like GDAL/PROJ) that are difficult to bundle portably.
+  spatial tools like GDAL/PROJ --- geospatial libraries that are notoriously
+  difficult to install) that are hard to bundle portably.
 - **Reproducibility** is critical -- the container image pins every dependency
   down to the OS layer.
 - Your team already uses **Docker workflows** for deployment and you want the
@@ -51,6 +52,10 @@ is built or pulled on the end user's machine at first launch.
 
 ## How it works
 
+Think of a container as a sealed box: your app, its runtime, and all system
+dependencies live inside, completely isolated from the user's machine. Electron
+is just the window that shows what's inside the box.
+
 The startup sequence when a user opens the packaged Electron app:
 
 1. **Electron launches** and shows the lifecycle splash screen.
@@ -61,7 +66,9 @@ The startup sequence when a user opens the packaged Electron app:
 4. If the image is not present locally, it is **built from an embedded
    Dockerfile** or **pulled from a registry**.
 5. The container starts with `docker run -d`, mapping the host port and
-   bind-mounting the app directory to `/app`.
+   bind-mounting the app directory to `/app`. Bind-mounting maps a directory
+   from the host into the container, like creating a shared folder between
+   two machines.
 6. The backend **polls** until the Shiny server responds (up to 120 seconds).
 7. Electron loads `http://localhost:<port>`.
 8. On quit, the container is stopped and removed.

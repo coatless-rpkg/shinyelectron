@@ -72,7 +72,8 @@ export(
 1. `export()` calls the `{shinylive}` R package (for R) or the `shinylive` CLI
    (for Python) to convert your app into static assets.
 2. The Electron app serves these assets via a local Express server with the
-   required COOP/COEP headers.
+   required COOP/COEP headers. These are browser security headers that enable
+   the shared memory WebR needs to run efficiently.
 3. WebR or Pyodide boots inside the browser and runs your app code.
 
 ### Pros
@@ -138,6 +139,11 @@ have R or Python installed. Also useful during development and testing.
 
 The bundled strategy embeds a complete portable R or Python runtime inside the
 Electron app at build time. The end user needs nothing beyond the app itself.
+
+Bundled is like shipping a laptop with the OS pre-installed --- larger package,
+but the user opens it and everything works. Auto-download (covered below) is
+like including a setup script that fetches the OS on first boot --- smaller
+download, but needs internet once.
 
 ```{r}
 #| eval: false

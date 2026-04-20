@@ -22,7 +22,9 @@ auto-updates using shinyelectron and electron-updater.
 ## Overview
 
 shinyelectron uses [electron-updater](https://www.electron.build/auto-update)
-to provide automatic updates. Updates can be distributed via:
+to provide automatic updates. electron-updater is the library electron-builder
+uses to check for, download, and install updates. Updates can be distributed
+via:
 
 | Provider | Best For | Requirements |
 |----------|----------|--------------|
@@ -131,6 +133,9 @@ updates:
 ```
 
 ### Update Behavior Matrix
+
+These three settings control the update pipeline: `check_on_startup` asks "is
+there an update?", `auto_download` fetches it, and `auto_install` applies it.
 
 | Setting | Behavior |
 |---------|----------|

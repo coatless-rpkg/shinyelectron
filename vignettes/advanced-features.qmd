@@ -15,19 +15,19 @@ knitr:
 library(shinyelectron)
 ```
 
-shinyelectron provides several advanced features to make your Electron
-applications feel more native and polished. This guide covers splash screens,
-system tray integration, native menus, and preloader configuration.
+shinyelectron provides several features beyond the basic export pipeline:
+splash screens, system tray integration, native menus, and preloader
+configuration. This guide covers each one.
 
 ## Splash Screens
 
-Splash screens display while your application loads, providing a professional
-first impression and visual feedback during startup.
+The splash screen occupies the window while the backend starts, replacing a
+blank screen with useful feedback.
 
 ### Why Use a Splash Screen?
 
 - **WebAssembly loading**: Shinylive apps can take 5-10 seconds to initialize
-- **Professional appearance**: Branded loading experience
+- **Branding**: Display a logo or app name during the wait
 - **User feedback**: Shows the app is starting, not frozen
 
 ### Configuration
@@ -217,7 +217,7 @@ preloader:
 |---------|---------------|-----------|
 | When shown | Before app window | Inside app window |
 | Duration | Fixed minimum time | Until app ready |
-| Purpose | Branding, first impression | Loading feedback |
+| Purpose | Branding, startup feedback | Loading feedback |
 | Customization | Full custom HTML | Style only |
 
 ::: {.callout-tip}

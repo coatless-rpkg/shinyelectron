@@ -72,8 +72,10 @@ a distributable, and opens the app. The whole process takes about a minute.
 ### Shinylive (browser-based)
 
 The default path converts your Shiny app to run entirely inside
-the browser via WebR (R) or Pyodide (Python). The end user needs
-nothing installed --- everything is self-contained.
+the browser via WebR (R) or Pyodide (Python). WebR compiles R to
+WebAssembly so it runs directly in the browser. Pyodide does the same
+for Python. The end user needs nothing installed --- everything is
+self-contained.
 
 ::: {.panel-tabset}
 
@@ -129,6 +131,9 @@ export(
 ![Three execution modes: Shinylive runs entirely in-browser, Native spawns a real R or Python process, and Container runs inside Docker or Podman.](../man/figures/app-types.svg){fig-alt="Architecture diagram comparing three modes. Shinylive: Electron window contains a Chromium browser running WebR or Pyodide with the app compiled to WebAssembly. Native: Electron window loads localhost, a child R or Python process runs the Shiny server, runtime sourced from bundled, auto-download, or system install. Container: Electron window loads localhost, a Docker or Podman container runs the app with full isolation and all system dependencies." width="100%"}
 
 ## Choosing an app type
+
+The key distinction: shinylive apps run entirely in the browser (no server
+needed), while native apps talk to a real R or Python process behind the scenes.
 
 | App Type | Entry File | Runs In | User Needs | Best For |
 |----------|-----------|---------|-----------|----------|
