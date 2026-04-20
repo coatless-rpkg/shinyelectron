@@ -120,6 +120,9 @@ reference:
       - sitrep_electron_project
 
   - title: "Cache Management"
-    desc: "Manage cached assets"
+    desc: "Inspect, manage, and clear cached runtimes and assets"
     contents:
+      - cache_info
+      - cache_dir
+      - cache_remove
       - cache_clear
