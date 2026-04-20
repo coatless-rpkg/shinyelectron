@@ -272,6 +272,9 @@ validate_config <- function(config) {
 #'
 #' @return Invisibly returns the path to the created config file.
 #'
+#' @seealso [wizard()] for an interactive configuration generator;
+#'   [show_config()] to display the merged effective configuration.
+#'
 #' @examples
 #' \dontrun{
 #' # Create config in app directory

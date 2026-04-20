@@ -22,3 +22,7 @@ wizard("path/to/my/app")
 }
 
 }
+\seealso{
+\code{\link[=init_config]{init_config()}} to create a template config file;
+\code{\link[=show_config]{show_config()}} to display the merged effective configuration.
+}

@@ -78,8 +78,9 @@ cache_npm_path <- function() {
 #'
 #' Removes cached R installations and/or npm packages from the cache directory.
 #'
-#' @param what Character string. What to clear: "all" (default), "r", "npm",
-#'   "nodejs", or "python".
+#' @param what Character string specifying what to clear. One of
+#'   \code{"all"}, \code{"nodejs"}, \code{"r"}, \code{"python"}, or a
+#'   specific cache subdirectory name.
 #'
 #' @return Invisibly returns NULL.
 #'

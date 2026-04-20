@@ -10,7 +10,9 @@ check_auto_update_status(appdir)
 \item{appdir}{Character path to app directory}
 }
 \value{
-Invisibly returns a list with update configuration.
+Invisibly returns a list with: \code{enabled} (logical),
+\code{provider} (character or NULL), \code{repo} (character or NULL),
+and \code{settings} (list of check_on_startup, auto_download, auto_install).
 }
 \description{
 Reports the current auto-update configuration status.

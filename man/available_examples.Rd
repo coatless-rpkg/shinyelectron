@@ -7,7 +7,9 @@
 available_examples()
 }
 \value{
-Invisible data frame with example names, languages, and descriptions.
+A data frame with columns: \code{name} (character ID),
+\code{language} (R or Python), \code{type} (app type),
+and \code{description} (human-readable summary).
 }
 \description{
 Shows all bundled example applications with their descriptions.

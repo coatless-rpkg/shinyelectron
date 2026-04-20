@@ -30,3 +30,17 @@ Character string. Path to the installed R directory.
 Downloads and caches a portable R build. Follows the same pattern
 as \code{\link{install_nodejs}()}.
 }
+\examples{
+\dontrun{
+# Install latest R release
+install_r()
+
+# Install specific version for a target platform
+install_r(version = "4.4.0", platform = "win", arch = "x64")
+}
+
+}
+\seealso{
+\code{\link[=install_python]{install_python()}}, \code{\link[=install_nodejs]{install_nodejs()}} for other runtime installers;
+\code{\link[=r_executable]{r_executable()}} to find the installed Rscript path.
+}

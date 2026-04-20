@@ -6,6 +6,9 @@
 #' @param appdir Character string. Path to the app directory. Default ".".
 #' @return Invisible path to the generated config file.
 #'
+#' @seealso [init_config()] to create a template config file;
+#'   [show_config()] to display the merged effective configuration.
+#'
 #' @examples
 #' \dontrun{
 #' wizard("path/to/my/app")

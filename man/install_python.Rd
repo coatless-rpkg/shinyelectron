@@ -29,3 +29,17 @@ Character string. Path to the installed Python directory.
 \description{
 Downloads and caches a portable Python build from python-build-standalone.
 }
+\examples{
+\dontrun{
+# Install default Python version
+install_python()
+
+# Install specific version
+install_python(version = "3.12.0")
+}
+
+}
+\seealso{
+\code{\link[=install_r]{install_r()}}, \code{\link[=install_nodejs]{install_nodejs()}} for other runtime installers;
+\code{\link[=python_executable]{python_executable()}} to find the installed Python path.
+}

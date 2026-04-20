@@ -216,7 +216,9 @@ disable_auto_updates <- function(appdir, verbose = TRUE) {
 #'
 #' @param appdir Character path to app directory
 #'
-#' @return Invisibly returns a list with update configuration.
+#' @return Invisibly returns a list with: \code{enabled} (logical),
+#'   \code{provider} (character or NULL), \code{repo} (character or NULL),
+#'   and \code{settings} (list of check_on_startup, auto_download, auto_install).
 #'
 #' @examples
 #' \dontrun{

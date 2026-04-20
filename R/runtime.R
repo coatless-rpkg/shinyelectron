@@ -145,6 +145,19 @@ r_executable <- function(version, platform = NULL, arch = NULL) {
 #' @param force Logical. Whether to reinstall if already cached.
 #' @param verbose Logical. Whether to show progress.
 #' @return Character string. Path to the installed R directory.
+#'
+#' @seealso [install_python()], [install_nodejs()] for other runtime installers;
+#'   [r_executable()] to find the installed Rscript path.
+#'
+#' @examples
+#' \dontrun{
+#' # Install latest R release
+#' install_r()
+#'
+#' # Install specific version for a target platform
+#' install_r(version = "4.4.0", platform = "win", arch = "x64")
+#' }
+#'
 #' @export
 install_r <- function(version = NULL, platform = NULL, arch = NULL,
                       force = FALSE, verbose = TRUE) {
@@ -354,6 +367,19 @@ python_executable <- function(version, platform = NULL, arch = NULL) {
 #' @param force Logical. Whether to reinstall if already cached.
 #' @param verbose Logical. Whether to show progress.
 #' @return Character string. Path to the installed Python directory.
+#'
+#' @seealso [install_r()], [install_nodejs()] for other runtime installers;
+#'   [python_executable()] to find the installed Python path.
+#'
+#' @examples
+#' \dontrun{
+#' # Install default Python version
+#' install_python()
+#'
+#' # Install specific version
+#' install_python(version = "3.12.0")
+#' }
+#'
 #' @export
 install_python <- function(version = "3.12.10", platform = NULL, arch = NULL,
                            force = FALSE, verbose = TRUE) {

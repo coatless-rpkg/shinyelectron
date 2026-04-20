@@ -31,3 +31,7 @@ init_config("path/to/app", app_name = "My Amazing App")
 }
 
 }
+\seealso{
+\code{\link[=wizard]{wizard()}} for an interactive configuration generator;
+\code{\link[=show_config]{show_config()}} to display the merged effective configuration.
+}
