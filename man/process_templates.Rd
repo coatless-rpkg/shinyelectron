@@ -33,8 +33,9 @@ process_templates(
 \item{verbose}{Logical whether to show progress}
 }
 \description{
-Assembles the Electron app from the shared shell template and the appropriate
-backend module. Renders Whisker templates and generates package.json
-programmatically.
+Orchestrates the Electron project assembly: renders shared Whisker
+templates, copies the appropriate backend modules, sets up Dockerfiles
+for container strategy, generates package.json, and copies brand
+assets. Each step is a focused helper in this file.
 }
 \keyword{internal}
