@@ -67,6 +67,15 @@ Strategies
 guide](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/runtime-strategies.html)
 for the decision matrix.
 
+> [!NOTE]
+>
+> **Linux note for `r-shiny`:** `bundled` and `auto-download` strategies
+> rely on the [portable-r](https://github.com/portable-r) project, which
+> currently publishes builds for macOS and Windows only. On Linux, use
+> `system` (the user has R installed) or `container` (Docker/Podman).
+> Python apps work with all strategies on Linux via
+> [python-build-standalone](https://github.com/astral-sh/python-build-standalone).
+
 ## Prerequisites
 
 These are required on the **build machine** (where you run `export()`).
