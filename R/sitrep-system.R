@@ -22,17 +22,14 @@ sitrep_electron_system <- function(verbose = TRUE) {
     cli::cli_h1("System Requirements Report")
   }
 
-  # Initialize results
-  results <- list(
+  results <- new_sitrep_results(list(
     platform = NULL,
     arch = NULL,
     node = list(installed = FALSE, version = NULL, source = NULL),
     npm = list(installed = FALSE, version = NULL),
     nodejs_local = list(installed = FALSE, versions = character(0), path = NULL),
-    r_version = paste(R.version$major, R.version$minor, sep = "."),
-    issues = character(0),
-    recommendations = character(0)
-  )
+    r_version = paste(R.version$major, R.version$minor, sep = ".")
+  ))
 
   # Check platform and architecture
   tryCatch({

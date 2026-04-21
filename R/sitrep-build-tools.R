@@ -20,12 +20,10 @@ sitrep_electron_build_tools <- function(verbose = TRUE) {
 
   platform <- detect_current_platform()
 
-  results <- list(
+  results <- new_sitrep_results(list(
     platform = platform,
-    tools = list(),
-    issues = character(0),
-    recommendations = character(0)
-  )
+    tools = list()
+  ))
 
   if (verbose) {
     cli::cli_alert_info("Checking build tools for platform: {platform}")

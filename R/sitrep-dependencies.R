@@ -24,14 +24,12 @@ sitrep_electron_dependencies <- function(verbose = TRUE) {
   # Optional but recommended packages
   optional_packages <- c("shinylive", "DT", "ggplot2")
 
-  results <- list(
+  results <- new_sitrep_results(list(
     required = list(),
     optional = list(),
     missing_required = character(0),
-    missing_optional = character(0),
-    issues = character(0),
-    recommendations = character(0)
-  )
+    missing_optional = character(0)
+  ))
 
   # Check required packages
   if (verbose) {

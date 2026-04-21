@@ -24,17 +24,15 @@ sitrep_electron_project <- function(project_dir = ".", verbose = TRUE) {
     cli::cli_alert_info("Checking directory: {.path {fs::path_abs(project_dir)}}")
   }
 
-  results <- list(
+  results <- new_sitrep_results(list(
     project_dir = fs::path_abs(project_dir),
     is_electron_project = FALSE,
     package_json = list(exists = FALSE, valid = FALSE),
     main_js = list(exists = FALSE),
     app_files = list(exists = FALSE, type = NULL),
     node_modules = list(exists = FALSE),
-    build_scripts = list(valid = FALSE, missing = character(0)),
-    issues = character(0),
-    recommendations = character(0)
-  )
+    build_scripts = list(valid = FALSE, missing = character(0))
+  ))
 
   # Check if directory exists
   if (!fs::dir_exists(project_dir)) {

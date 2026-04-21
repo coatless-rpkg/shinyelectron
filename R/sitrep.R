@@ -1,3 +1,18 @@
+#' Initialize a sitrep results list with the standard shape
+#'
+#' Each sitrep function accumulates issues and recommendations as it
+#' runs. This helper ensures all sitrep results expose the same two
+#' fields so the top-level `sitrep_shinyelectron()` aggregator can
+#' iterate over them uniformly.
+#'
+#' @param extra Named list of additional fields to merge in.
+#' @return List with `issues` and `recommendations` character vectors
+#'   plus any extras.
+#' @keywords internal
+new_sitrep_results <- function(extra = list()) {
+  c(list(issues = character(0), recommendations = character(0)), extra)
+}
+
 #' Complete Situation Report
 #'
 #' Runs all diagnostic checks and provides a comprehensive report of your
