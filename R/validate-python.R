@@ -1,36 +1,17 @@
 #' Validate Python is available on the system
 #'
-#' @return Invisible TRUE if Python is found, otherwise aborts.
+#' @return Invisible character string with the Python command name.
 #' @keywords internal
 validate_python_available <- function() {
-  python_cmd <- find_python_command()
-
-  if (is.null(python_cmd)) {
-    cli::cli_abort(c(
+  validate_command_available(
+    command_resolver = find_python_command,
+    not_found = c(
       "Python is required for this operation but was not found",
       "i" = "Install Python from {.url https://www.python.org/downloads/}",
       "i" = "Ensure {.code python3} or {.code python} is on your PATH"
-    ))
-  }
-
-  tryCatch({
-    result <- processx::run(python_cmd, c("--version"),
-                            error_on_status = FALSE, timeout = 10)
-    if (result$status != 0) {
-      cli::cli_abort(c(
-        "Python is required but failed to run",
-        "x" = "Command: {.code {python_cmd} --version}",
-        "x" = "Error: {result$stderr}"
-      ))
-    }
-  }, error = function(e) {
-    cli::cli_abort(c(
-      "Python is required but could not be executed",
-      "x" = "Error: {e$message}"
-    ))
-  })
-
-  invisible(TRUE)
+    ),
+    label = "Python"
+  )
 }
 
 #' Validate the Python shinylive package CLI is usable

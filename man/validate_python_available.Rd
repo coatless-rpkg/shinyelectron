@@ -7,7 +7,7 @@
 validate_python_available()
 }
 \value{
-Invisible TRUE if Python is found, otherwise aborts.
+Invisible character string with the Python command name.
 }
 \description{
 Validate Python is available on the system

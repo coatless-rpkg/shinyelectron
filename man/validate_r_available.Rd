@@ -10,7 +10,7 @@ validate_r_available()
 Invisible character string with the path to Rscript.
 }
 \description{
-Checks that Rscript can be found and executed. This is used for the
-"system" runtime strategy where the end user must have R installed.
+Checks that Rscript can be found and executed. Used by the "system"
+runtime strategy where the end user must have R installed.
 }
 \keyword{internal}

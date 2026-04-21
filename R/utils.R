@@ -169,3 +169,37 @@ find_python_command <- function() {
   }
   NULL
 }
+
+#' Validate a command is available and executable
+#'
+#' Shared pattern: resolve a command, abort if not found, run it with a
+#' version flag, abort if execution fails. Returns the resolved command.
+#'
+#' @param command_resolver Function returning the command path or NULL.
+#' @param not_found Character vector passed to cli::cli_abort when the
+#'   command is not found. Use "i" = "..." entries for install hints.
+#' @param label Character string used in the generic "found but failed"
+#'   message. Defaults to "Command".
+#' @param version_arg Character. Argument used to check the command
+#'   runs. Defaults to "--version".
+#' @return Invisibly returns the resolved command path.
+#' @keywords internal
+validate_command_available <- function(command_resolver, not_found,
+                                       label = "Command",
+                                       version_arg = "--version") {
+  cmd <- command_resolver()
+  if (is.null(cmd) || !nzchar(cmd)) {
+    cli::cli_abort(not_found)
+  }
+
+  result <- run_command_safe(cmd, version_arg, timeout = 10)
+  if (result$status != 0) {
+    cli::cli_abort(c(
+      "{label} was found but failed to run",
+      "x" = "Path: {.path {cmd}}",
+      "x" = "Error: {trimws(result$stderr %||% '')}"
+    ))
+  }
+
+  invisible(cmd)
+}
