@@ -178,18 +178,21 @@ test_that("e2e: r-shiny native Electron app starts and emits lifecycle events", 
 
   electron_dir <- r$electron_app
 
-  # Launch for 15 seconds and capture output
+  # Launch for 15 seconds and capture output.
+  # SHINYELECTRON_DEBUG=1 surfaces the backend diagnostic log lines
+  # we grep for below — otherwise the app runs silently by design.
   result <- processx::run(
     "npx", c("electron", "."),
     wd = electron_dir,
     timeout = 15,
-    error_on_status = FALSE
+    error_on_status = FALSE,
+    env = c(Sys.getenv(), SHINYELECTRON_DEBUG = "1")
   )
 
   output <- paste(result$stdout, result$stderr)
 
   # Verify the app at least started (lifecycle events or R output)
   # The exact lifecycle event format may vary with backend changes
-  app_started <- grepl("server_ready|Listening on|Shiny server", output)
+  app_started <- grepl("server_ready|Listening on|Shiny server|R Shiny server ready", output)
   expect_true(app_started)
 })

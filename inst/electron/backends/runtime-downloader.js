@@ -6,6 +6,7 @@ const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
 const crypto = require('crypto');
+const { logDebug } = require('./utils');
 
 /**
  * Download a file with progress reporting.
@@ -165,7 +166,7 @@ async function downloadRuntime(manifest, onProgress) {
         `The download may be corrupted or tampered with.`
       );
     }
-    console.log('SHA-256 checksum verified');
+    logDebug('SHA-256 checksum verified');
   } else {
     console.warn('No SHA-256 checksum in manifest — skipping integrity verification');
   }

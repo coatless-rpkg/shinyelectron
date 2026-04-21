@@ -2,6 +2,20 @@
 const http = require('http');
 
 /**
+ * Debug logger gated by the SHINYELECTRON_DEBUG env var.
+ * Set SHINYELECTRON_DEBUG=1 (or "true") to see diagnostic output in the
+ * terminal where the packaged app was launched. Warnings and errors still
+ * go straight to the console regardless of this flag.
+ * @param  {...any} args - Arguments passed to console.log.
+ */
+const DEBUG_ENABLED = process.env.SHINYELECTRON_DEBUG === '1' ||
+                      process.env.SHINYELECTRON_DEBUG === 'true';
+
+function logDebug(...args) {
+  if (DEBUG_ENABLED) console.log('[shinyelectron]', ...args);
+}
+
+/**
  * Wait for a server to be ready on localhost.
  * @param {number} port - Port to poll.
  * @param {object} options - Configuration.
@@ -158,16 +172,16 @@ function sortCandidatesByVersion(candidates) {
 function reportRuntimeCandidates(emitter, label, candidates) {
   if (!candidates || candidates.length === 0) return;
   if (candidates.length > 1) {
-    console.log(`Found ${candidates.length} ${label} installations:`);
-    candidates.forEach(c => console.log(`  ${label} ${c.version}: ${c.path}`));
-    console.log(`Using latest: ${label} ${candidates[0].version}`);
+    logDebug(`Found ${candidates.length} ${label} installations:`);
+    candidates.forEach(c => logDebug(`  ${label} ${c.version}: ${c.path}`));
+    logDebug(`Using latest: ${label} ${candidates[0].version}`);
     emitter.emit('status', {
       phase: 'runtime_found',
       message: `Found ${candidates.length} ${label} installations, using ${label} ${candidates[0].version}`,
       detail: { versions: candidates.map(c => ({ version: c.version, path: c.path })) }
     });
   } else {
-    console.log(`Found ${label} installation: ${candidates[0].path}`);
+    logDebug(`Found ${label} installation: ${candidates[0].path}`);
   }
 }
 
@@ -204,5 +218,6 @@ module.exports = {
   sortCandidatesByVersion,
   reportRuntimeCandidates,
   MANIFEST_SCHEMA_VERSION,
-  checkManifestSchema
+  checkManifestSchema,
+  logDebug
 };

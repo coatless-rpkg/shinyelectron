@@ -6,7 +6,7 @@ const path = require('path');
 const os = require('os');
 const {
   waitForServer, findAvailablePort, killProcessTree,
-  sortCandidatesByVersion, reportRuntimeCandidates
+  sortCandidatesByVersion, reportRuntimeCandidates, logDebug
 } = require('./utils');
 
 class NativeRBackend extends EventEmitter {
@@ -140,7 +140,7 @@ class NativeRBackend extends EventEmitter {
               const rscriptName = process.platform === 'win32' ? 'Rscript.exe' : 'Rscript';
               const candidate = path.join(subdir, sub, 'bin', rscriptName);
               if (fs.existsSync(candidate)) {
-                console.log(`Found bundled R: ${candidate}`);
+                logDebug(`Found bundled R: ${candidate}`);
                 this.emit('status', { phase: 'runtime_found', message: `Found bundled R: ${sub}` });
                 return candidate;
               }
@@ -149,7 +149,7 @@ class NativeRBackend extends EventEmitter {
           // Also check flat layout: runtime/R/{version}/bin/Rscript
           const flatCandidate = path.join(subdir, 'bin', process.platform === 'win32' ? 'Rscript.exe' : 'Rscript');
           if (fs.existsSync(flatCandidate)) {
-            console.log(`Found bundled R: ${flatCandidate}`);
+            logDebug(`Found bundled R: ${flatCandidate}`);
             this.emit('status', { phase: 'runtime_found', message: `Found bundled R` });
             return flatCandidate;
           }
@@ -239,10 +239,10 @@ class NativeRBackend extends EventEmitter {
               });
               throw new Error('No internet connection for runtime download');
             }
-            console.log('R runtime not found, downloading...');
+            logDebug('R runtime not found, downloading...');
             this.emit('status', { phase: 'downloading_runtime', message: 'Downloading R runtime...' });
             rscript = await downloadRuntime(manifest, (msg, pct) => {
-              console.log(`[Runtime] ${msg}`);
+              logDebug(`[Runtime] ${msg}`);
               this.emit('status', { phase: 'downloading_runtime', message: `[Runtime] ${msg}` });
             });
           }
@@ -395,9 +395,9 @@ class NativeRBackend extends EventEmitter {
         rCode = `shiny::runApp('${safeAppPath}', port = ${actualPort}, host = '127.0.0.1', launch.browser = FALSE)`;
       }
 
-      console.log(`Starting R Shiny server on port ${actualPort}...`);
-      console.log(`Rscript command: ${rscript}`);
-      console.log(`App path: ${appPath}`);
+      logDebug(`Starting R Shiny server on port ${actualPort}...`);
+      logDebug(`Rscript command: ${rscript}`);
+      logDebug(`App path: ${appPath}`);
 
       this.rProcess = spawn(rscript, ['-e', rCode], {
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -407,13 +407,13 @@ class NativeRBackend extends EventEmitter {
       let stderr = '';
 
       this.rProcess.stdout.on('data', (data) => {
-        console.log(`[R stdout] ${data.toString().trim()}`);
+        logDebug(`[R stdout] ${data.toString().trim()}`);
       });
 
       this.rProcess.stderr.on('data', (data) => {
         const msg = data.toString().trim();
         stderr += msg + '\n';
-        console.log(`[R stderr] ${msg}`);
+        logDebug(`[R stderr] ${msg}`);
 
         // Surface R's progress as lifecycle status updates so the splash
         // screen shows what's happening instead of sitting frozen.
@@ -451,7 +451,7 @@ class NativeRBackend extends EventEmitter {
 
       waitForServer(actualPort, { timeout: 60000, interval: 500 })
         .then(() => {
-          console.log(`R Shiny server ready on http://localhost:${actualPort}`);
+          logDebug(`R Shiny server ready on http://localhost:${actualPort}`);
           this.emit('status', { phase: 'server_ready', message: 'R Shiny server ready' });
           resolve({ port: actualPort });
         })
@@ -481,7 +481,7 @@ class NativeRBackend extends EventEmitter {
   stop() {
     this.emit('status', { phase: 'stopping_server', message: 'Stopping R server...' });
     if (this.rProcess) {
-      console.log('Stopping R Shiny server...');
+      logDebug('Stopping R Shiny server...');
       killProcessTree(this.rProcess);
       this.rProcess = null;
     }

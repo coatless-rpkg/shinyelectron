@@ -4,7 +4,7 @@ const { spawn, execFileSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { waitForServer } = require('./utils');
+const { waitForServer, logDebug } = require('./utils');
 
 class ContainerBackend extends EventEmitter {
   constructor() {
@@ -26,7 +26,7 @@ class ContainerBackend extends EventEmitter {
       });
       const host = ctx.trim();
       if (host) {
-        console.log(`Docker endpoint from context: ${host}`);
+        logDebug(`Docker endpoint from context: ${host}`);
         return host;
       }
     } catch { /* fall through */ }
@@ -40,7 +40,7 @@ class ContainerBackend extends EventEmitter {
       for (const pipe of pipes) {
         try {
           execFileSync('docker', ['-H', pipe, 'info'], { stdio: 'ignore', timeout: 5000 });
-          console.log(`Docker endpoint found: ${pipe}`);
+          logDebug(`Docker endpoint found: ${pipe}`);
           return pipe;
         } catch { /* try next */ }
       }
@@ -55,7 +55,7 @@ class ContainerBackend extends EventEmitter {
       for (const sock of sockets) {
         const sockPath = sock.replace('unix://', '');
         if (fs.existsSync(sockPath)) {
-          console.log(`Docker socket found: ${sock}`);
+          logDebug(`Docker socket found: ${sock}`);
           return sock;
         }
       }
@@ -144,7 +144,7 @@ class ContainerBackend extends EventEmitter {
       execFileSync(this.containerEngine, ['image', 'inspect', image], {
         stdio: 'ignore', env, timeout: 10000
       });
-      console.log(`Image ${image} found locally`);
+      logDebug(`Image ${image} found locally`);
       return;
     } catch {
       // Image not found locally
@@ -189,7 +189,7 @@ class ContainerBackend extends EventEmitter {
         buildProc.stdout.on('data', (data) => {
           const line = data.toString().trim();
           if (line) {
-            console.log(`[docker build] ${line}`);
+            logDebug(`[docker build] ${line}`);
             this.emit('status', {
               phase: 'downloading_runtime',
               message: line.substring(0, 100)
@@ -200,7 +200,7 @@ class ContainerBackend extends EventEmitter {
           const line = data.toString().trim();
           stderr += line + '\n';
           if (line) {
-            console.log(`[docker build] ${line}`);
+            logDebug(`[docker build] ${line}`);
             this.emit('status', {
               phase: 'downloading_runtime',
               message: line.substring(0, 100)
@@ -209,7 +209,7 @@ class ContainerBackend extends EventEmitter {
         });
         buildProc.on('close', (code) => {
           if (code === 0) {
-            console.log(`Built image: ${image}`);
+            logDebug(`Built image: ${image}`);
             resolve();
           } else {
             reject(new Error(
@@ -294,10 +294,10 @@ class ContainerBackend extends EventEmitter {
       message: `Using ${this.containerEngine === 'docker' ? 'Docker' : 'Podman'}`
     });
 
-    console.log(`Starting container with ${this.containerEngine}...`);
-    console.log(`Image: ${image}`);
-    console.log(`App path: ${appPath}`);
-    console.log(`Port: ${port}`);
+    logDebug(`Starting container with ${this.containerEngine}...`);
+    logDebug(`Image: ${image}`);
+    logDebug(`App path: ${appPath}`);
+    logDebug(`Port: ${port}`);
 
     // Ensure image is available (build locally or pull from registry)
     await this.ensureImage(image, config);
@@ -344,7 +344,7 @@ class ContainerBackend extends EventEmitter {
     args.push(image);
 
     return new Promise((resolve, reject) => {
-      console.log(`Running: ${this.containerEngine} ${args.join(' ')}`);
+      logDebug(`Running: ${this.containerEngine} ${args.join(' ')}`);
 
       const proc = spawn(this.containerEngine, args, {
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -371,7 +371,7 @@ class ContainerBackend extends EventEmitter {
         }
 
         this.containerId = stdout.trim().substring(0, 12);
-        console.log(`Container started: ${this.containerId}`);
+        logDebug(`Container started: ${this.containerId}`);
 
         // Stream container logs while waiting for startup
         const logProc = spawn(this.containerEngine, ['logs', '-f', this.containerId], {
@@ -383,7 +383,7 @@ class ContainerBackend extends EventEmitter {
           try {
             const msg = data.toString().trim();
             if (msg) {
-              console.log(`[container] ${msg}`);
+              logDebug(`[container] ${msg}`);
               this.emit('status', { phase: 'starting_server', message: msg });
             }
           } catch { /* ignore write errors after shutdown */ }
@@ -391,7 +391,7 @@ class ContainerBackend extends EventEmitter {
         logProc.stderr.on('data', (data) => {
           try {
             const msg = data.toString().trim();
-            if (msg) console.log(`[container] ${msg}`);
+            if (msg) logDebug(`[container] ${msg}`);
           } catch { /* ignore */ }
         });
 
@@ -399,7 +399,7 @@ class ContainerBackend extends EventEmitter {
         waitForServer(hostPort, { timeout: 120000, interval: 1000 })
           .then(() => {
             logProc.kill();
-            console.log(`Container server ready on http://localhost:${hostPort}`);
+            logDebug(`Container server ready on http://localhost:${hostPort}`);
             this.emit('status', { phase: 'server_ready', message: 'Container ready' });
             resolve({ port: hostPort });
           })
@@ -440,7 +440,7 @@ class ContainerBackend extends EventEmitter {
   stop() {
     if (this.containerId && this.containerEngine) {
       this.emit('status', { phase: 'stopping_server', message: `Stopping container...` });
-      console.log(`Stopping container ${this.containerId}...`);
+      logDebug(`Stopping container ${this.containerId}...`);
       try {
         execFileSync(this.containerEngine, ['stop', this.containerId], { stdio: 'ignore', timeout: 10000, env: this.getDockerEnv() });
       } catch (err) {

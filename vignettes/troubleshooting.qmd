@@ -729,11 +729,31 @@ After clearing the cache, reinstall Node.js:
 install_nodejs()
 ```
 
+## Debugging a Packaged App
+
+The packaged Electron app is silent by default — only warnings and errors
+print to the console. To see what is happening during runtime detection,
+dependency installation, and server startup, launch the app with the
+`SHINYELECTRON_DEBUG` environment variable set to `1`:
+
+```bash
+# macOS / Linux
+SHINYELECTRON_DEBUG=1 /path/to/YourApp.app/Contents/MacOS/YourApp
+
+# Windows (PowerShell)
+$env:SHINYELECTRON_DEBUG = "1"; & "C:\Path\To\YourApp.exe"
+```
+
+Messages are prefixed with `[shinyelectron]` and include which runtime was
+found, the spawn command for R or Python, port retries, and server ready
+events — useful context when filing a bug report.
+
 ## Getting Help
 
 If diagnostics show all systems ready but you still encounter issues:
 
-1. **Check the console output** for specific error messages
+1. **Check the console output** for specific error messages (enable
+   `SHINYELECTRON_DEBUG=1` for verbose backend logs)
 2. **Verify your Shiny app** runs locally with `shiny::runApp()`
 3. **Check file permissions** in your project directory
 4. **Report issues** at <https://github.com/coatless-rpkg/shinyelectron/issues>

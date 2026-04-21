@@ -6,7 +6,7 @@ const path = require('path');
 const os = require('os');
 const {
   waitForServer, findAvailablePort, killProcessTree,
-  sortCandidatesByVersion, reportRuntimeCandidates
+  sortCandidatesByVersion, reportRuntimeCandidates, logDebug
 } = require('./utils');
 
 class NativePyBackend extends EventEmitter {
@@ -125,7 +125,7 @@ class NativePyBackend extends EventEmitter {
           ];
           for (const c of candidates) {
             if (fs.existsSync(c)) {
-              console.log(`Found bundled Python: ${c}`);
+              logDebug(`Found bundled Python: ${c}`);
               this.emit('status', { phase: 'runtime_found', message: `Found bundled Python` });
               return c;
             }
@@ -226,10 +226,10 @@ class NativePyBackend extends EventEmitter {
                 });
                 throw new Error('No internet connection for runtime download');
               }
-              console.log('Python runtime not found, downloading...');
+              logDebug('Python runtime not found, downloading...');
               this.emit('status', { phase: 'downloading_runtime', message: 'Downloading Python runtime...' });
               python = await downloadRuntime(manifest, (msg, pct) => {
-                console.log(`[Runtime] ${msg}`);
+                logDebug(`[Runtime] ${msg}`);
                 this.emit('status', { phase: 'downloading_runtime', message: msg, progress: pct });
               });
             }
@@ -296,7 +296,7 @@ class NativePyBackend extends EventEmitter {
           const { execFileSync } = require('child_process');
           fs.mkdirSync(venvDir, { recursive: true });
           execFileSync(python, ['-m', 'venv', venvDir], { timeout: 60000, stdio: 'ignore' });
-          console.log(`Created venv at ${venvDir}`);
+          logDebug(`Created venv at ${venvDir}`);
           this.emit('status', { phase: 'checking_packages', message: 'Python environment ready' });
         } catch (err) {
           console.warn('Failed to create venv:', err.message);
@@ -369,7 +369,7 @@ class NativePyBackend extends EventEmitter {
 
     // Port retry: find an available port starting from the requested one
     const actualPort = await findAvailablePort(port, 10, (attempted, next) => {
-      console.log(`Port ${attempted} is in use, trying ${next}...`);
+      logDebug(`Port ${attempted} is in use, trying ${next}...`);
       this.emit('status', { phase: 'port_conflict', message: `Port ${attempted} in use, trying ${next}...`, attempted, next });
     });
 
@@ -386,9 +386,9 @@ class NativePyBackend extends EventEmitter {
         'app:app'
       ];
 
-      console.log(`Starting Python Shiny server on port ${actualPort}...`);
-      console.log(`Python command: ${python}`);
-      console.log(`App path: ${appPath}`);
+      logDebug(`Starting Python Shiny server on port ${actualPort}...`);
+      logDebug(`Python command: ${python}`);
+      logDebug(`App path: ${appPath}`);
       this.emit('status', { phase: 'starting_server', message: 'Starting Python Shiny server...', port: actualPort });
 
       const checker3 = require('./dependency-checker');
@@ -433,13 +433,13 @@ class NativePyBackend extends EventEmitter {
       let stderr = '';
 
       this.pyProcess.stdout.on('data', (data) => {
-        console.log(`[Python stdout] ${data.toString().trim()}`);
+        logDebug(`[Python stdout] ${data.toString().trim()}`);
       });
 
       this.pyProcess.stderr.on('data', (data) => {
         const msg = data.toString().trim();
         stderr += msg + '\n';
-        console.log(`[Python stderr] ${msg}`);
+        logDebug(`[Python stderr] ${msg}`);
 
         // Surface Python's progress as lifecycle status updates
         if (/Uvicorn running on/.test(msg)) {
@@ -474,7 +474,7 @@ class NativePyBackend extends EventEmitter {
 
       waitForServer(actualPort, { timeout: 60000, interval: 500 })
         .then(() => {
-          console.log(`Python Shiny server ready on http://localhost:${actualPort}`);
+          logDebug(`Python Shiny server ready on http://localhost:${actualPort}`);
           this.emit('status', { phase: 'server_ready', message: 'Python Shiny server ready', port: actualPort });
           resolve({ port: actualPort });
         })
@@ -500,7 +500,7 @@ class NativePyBackend extends EventEmitter {
    */
   stop() {
     if (this.pyProcess) {
-      console.log('Stopping Python Shiny server...');
+      logDebug('Stopping Python Shiny server...');
       this.emit('status', { phase: 'stopping_server', message: 'Stopping Python Shiny server...' });
       killProcessTree(this.pyProcess);
       this.pyProcess = null;

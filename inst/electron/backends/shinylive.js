@@ -11,7 +11,7 @@ class ShinyliveBackend extends EventEmitter {
 
   async start({ appPath, port, config }) {
     this.removeAllListeners();
-    const { isOnline } = require('./utils');
+    const { isOnline, logDebug } = require('./utils');
 
     this.emit('status', { phase: 'starting_server', message: 'Starting server...' });
 
@@ -42,7 +42,7 @@ class ShinyliveBackend extends EventEmitter {
       // simultaneously (findAvailablePort has TOCTOU race conditions).
       this.server = app.listen(0, '127.0.0.1', () => {
         const actualPort = this.server.address().port;
-        console.log(`Shinylive server running on http://127.0.0.1:${actualPort}`);
+        logDebug(`Shinylive server running on http://127.0.0.1:${actualPort}`);
         this.emit('status', { phase: 'server_ready', message: 'Server ready' });
         resolve({ port: actualPort });
       });
