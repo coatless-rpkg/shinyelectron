@@ -16,8 +16,12 @@ Invisibly returns a list with dependency information.
 Checks R package dependencies required for shinyelectron functionality.
 }
 \examples{
+# Check R package dependencies (quiet = returns a list invisibly)
+deps <- sitrep_electron_dependencies(verbose = FALSE)
+length(deps$missing_required)
+
 \dontrun{
-# Check package dependencies
+# Pretty-printed report
 sitrep_electron_dependencies()
 }
 

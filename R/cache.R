@@ -100,12 +100,13 @@ cache_npm_path <- function() {
 #'   \code{size} (character, human-readable), and \code{path} (character).
 #'
 #' @examples
-#' \dontrun{
-#' # Display cached runtimes
-#' cache_info()
-#'
-#' # Programmatic access
+#' # Programmatic access (safe to run — just inspects the cache dir)
 #' df <- cache_info(quiet = TRUE)
+#' nrow(df)  # number of cached runtimes
+#'
+#' \dontrun{
+#' # Pretty-print the cache contents
+#' cache_info()
 #' }
 #'
 #' @seealso [cache_clear()] to remove cached assets, [cache_dir()] for

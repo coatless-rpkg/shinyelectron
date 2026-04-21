@@ -22,12 +22,13 @@ platforms, architectures, and disk usage. Modeled after
 \code{shinylive::assets_info()}.
 }
 \examples{
-\dontrun{
-# Display cached runtimes
-cache_info()
-
-# Programmatic access
+# Programmatic access (safe to run — just inspects the cache dir)
 df <- cache_info(quiet = TRUE)
+nrow(df)  # number of cached runtimes
+
+\dontrun{
+# Pretty-print the cache contents
+cache_info()
 }
 
 }

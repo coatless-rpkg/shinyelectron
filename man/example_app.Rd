@@ -17,15 +17,14 @@ Returns the path to a bundled example application directory. Use this
 path as the \code{appdir} argument to \code{\link[=export]{export()}}.
 }
 \examples{
+# Get the path to a bundled example
+example_app("r")
+example_app("python")
+
 \dontrun{
-# Get the R demo and export with any strategy
+# Pass the path to export() to build a desktop app
 path <- example_app("r")
 export(path, "output", app_type = "r-shiny", runtime_strategy = "system")
-export(path, "output", app_type = "r-shinylive")
-
-# Get the Python demo
-path <- example_app("python")
-export(path, "output", app_type = "py-shiny", runtime_strategy = "system")
 }
 
 }

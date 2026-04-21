@@ -7,8 +7,12 @@
 #' @return Invisibly returns a list with dependency information.
 #'
 #' @examples
+#' # Check R package dependencies (quiet = returns a list invisibly)
+#' deps <- sitrep_electron_dependencies(verbose = FALSE)
+#' length(deps$missing_required)
+#'
 #' \dontrun{
-#' # Check package dependencies
+#' # Pretty-printed report
 #' sitrep_electron_dependencies()
 #' }
 #'
