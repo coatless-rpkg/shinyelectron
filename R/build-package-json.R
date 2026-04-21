@@ -37,23 +37,23 @@ generate_package_json <- function(app_slug, app_version, backend, config,
     author = "",
     license = "AGPL (>=3)",
     devDependencies = list(
-      electron = "^38.0.0",
-      `electron-builder` = "^26.0.12"
+      electron = "^41.0.0",
+      `electron-builder` = "^26.8.0"
     )
   )
 
   # Dependencies vary by backend
   deps <- list()
   if (backend == "shinylive") {
-    deps[["express"]] <- "^5.1.0"
+    deps[["express"]] <- "^5.2.0"
     deps[["serve-static"]] <- "^2.2.0"
   }
 
   # Auto-update dependencies
   updates_enabled <- isTRUE(config$updates$enabled)
   if (updates_enabled) {
-    deps[["electron-updater"]] <- "^6.3.9"
-    deps[["electron-log"]] <- "^5.2.4"
+    deps[["electron-updater"]] <- "^6.8.0"
+    deps[["electron-log"]] <- "^5.4.0"
   }
 
   if (length(deps) > 0) {
