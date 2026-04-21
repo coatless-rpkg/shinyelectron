@@ -1,12 +1,3 @@
-#' Diagnostic Functions for shinyelectron
-#'
-#' @name sitrep
-#' @description
-#' These functions provide diagnostic information about your system setup
-#' and help troubleshoot common issues with shinyelectron.
-#' @keywords internal
-NULL
-
 #' System Requirements Situation Report
 #'
 #' Checks system requirements for shinyelectron including Node.js, npm,

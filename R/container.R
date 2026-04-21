@@ -1,12 +1,3 @@
-#' Container Runtime Support
-#'
-#' Functions for detecting, managing, and configuring Docker/Podman
-#' containers for the container runtime strategy.
-#'
-#' @name container
-#' @keywords internal
-NULL
-
 #' Detect available container engine
 #'
 #' Searches for Docker or Podman on the system.

@@ -1,9 +1,3 @@
-#' Validation functions for shinyelectron package
-#'
-#' @name validate
-#' @keywords internal
-NULL
-
 #' Validate that a directory exists
 #'
 #' @param dir Character path to directory

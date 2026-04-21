@@ -1,11 +1,3 @@
-#' Node.js Installation Functions
-#'
-#' Functions for downloading and managing local Node.js installations.
-#'
-#' @name nodejs
-#' @keywords internal
-NULL
-
 #' Get latest Node.js LTS version
 #'
 #' Queries the Node.js distribution API to find the latest LTS version.

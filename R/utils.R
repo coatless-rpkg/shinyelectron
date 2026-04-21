@@ -1,9 +1,3 @@
-#' Utility functions for shinyelectron package
-#'
-#' @name utils
-#' @keywords internal
-NULL
-
 #' Detect current platform
 #'
 #' @return Character string representing current platform ("win", "mac", or "linux")

@@ -1,11 +1,3 @@
-#' Configuration File Handling
-#'
-#' Functions for reading and managing shinyelectron configuration files.
-#'
-#' @name config
-#' @keywords internal
-NULL
-
 #' Configuration file name
 #' @keywords internal
 CONFIG_FILENAME <- "_shinyelectron.yml"

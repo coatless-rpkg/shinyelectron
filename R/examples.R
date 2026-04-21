@@ -1,12 +1,3 @@
-#' Bundled Example Applications
-#'
-#' List and retrieve bundled example Shiny applications that can be exported
-#' with any app type and runtime strategy combination.
-#'
-#' @name examples
-#' @keywords internal
-NULL
-
 # Registry of bundled examples
 SHINYELECTRON_EXAMPLES <- list(
   r = list(

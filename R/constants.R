@@ -1,12 +1,3 @@
-#' Package-Level Constants and Defaults
-#'
-#' Centralized storage for package constants, default values, and
-#' configuration options used throughout shinyelectron.
-#'
-#' @name constants
-#' @keywords internal
-NULL
-
 # App type group constants — use these instead of inline c("r-shinylive", ...)
 SHINYLIVE_TYPES <- c("r-shinylive", "py-shinylive")
 NATIVE_TYPES    <- c("r-shiny", "py-shiny")

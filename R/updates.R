@@ -1,12 +1,3 @@
-#' Auto-Update Configuration
-#'
-#' Functions for configuring automatic updates in Electron applications
-#' using electron-updater.
-#'
-#' @name updates
-#' @keywords internal
-NULL
-
 #' Enable Auto-Updates
 #'
 #' Configures automatic update checking for your Electron application.

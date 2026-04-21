@@ -1,12 +1,3 @@
-#' Dependency Detection and Installation
-#'
-#' Functions for detecting, merging, and installing R and Python package
-#' dependencies for native Shiny app types.
-#'
-#' @name dependencies
-#' @keywords internal
-NULL
-
 # Base and recommended packages that ship with R -- never need to be installed
 BASE_R_PACKAGES <- c(
   "base", "compiler", "datasets", "grDevices", "graphics", "grid",
