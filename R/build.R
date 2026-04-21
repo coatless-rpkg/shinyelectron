@@ -244,10 +244,18 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
             )
 
             # Scrub R_LIBS_* from the child env so the bundled Rscript cannot
-            # inherit the caller's user library or site library.
+            # inherit the caller's user library or site library. Keep the
+            # rest of the parent env (PATH, HOME, ...) so CRAN downloads
+            # work — passing only R_LIBS_* would replace the entire env.
+            child_env <- Sys.getenv()
+            child_env <- child_env[!names(child_env) %in%
+                                   c("R_LIBS", "R_LIBS_USER", "R_LIBS_SITE")]
+            child_env <- c(child_env,
+                           R_LIBS = "", R_LIBS_USER = "", R_LIBS_SITE = "")
+
             result <- processx::run(
               bundled_rscript, c("--vanilla", "-e", r_code),
-              env = c("R_LIBS" = "", "R_LIBS_USER" = "", "R_LIBS_SITE" = ""),
+              env = child_env,
               error_on_status = FALSE,
               echo = verbose,
               timeout = 600
