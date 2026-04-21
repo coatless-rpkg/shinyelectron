@@ -161,69 +161,19 @@ install_r <- function(version = NULL, platform = NULL, arch = NULL,
   }
 
   if (verbose) {
-    cli::cli_h1("Installing portable R {version}")
     cli::cli_alert_info("Platform: {platform}, Architecture: {arch}")
   }
 
-  install_path <- r_install_path(version, platform, arch)
-  if (r_is_installed(version, platform, arch) && !force) {
-    if (verbose) {
-      cli::cli_alert_success("R {version} already installed at {.path {install_path}}")
-    }
-    return(invisible(install_path))
-  }
-
-  url <- r_download_url(version, platform, arch)
-  if (verbose) cli::cli_alert_info("Downloading from {.url {url}}")
-
-  temp_file <- tempfile(fileext = paste0(".", tools::file_ext(url)))
-  tryCatch({
-    utils::download.file(url, temp_file, mode = "wb", quiet = !verbose)
-  }, error = function(e) {
-    cli::cli_abort(c(
-      "Failed to download R {version}",
-      "x" = "URL: {.url {url}}",
-      "x" = "Error: {e$message}"
-    ))
-  })
-
-  install_path <- path.expand(install_path)
-  fs::dir_create(install_path, recurse = TRUE)
-
-  if (verbose) cli::cli_alert_info("Extracting R {version}...")
-
-  tryCatch({
-    ext <- tools::file_ext(temp_file)
-    if (ext == "gz") {
-      # macOS: portable-r tar.gz. Use internal tar to avoid a GNU-tar-on-Windows
-      # path resolution bug (misparses "C:\\..." as a remote host).
-      utils::untar(temp_file, exdir = install_path, tar = "internal")
-    } else if (ext == "zip") {
-      utils::unzip(temp_file, exdir = install_path)
-    }
-  }, error = function(e) {
-    unlink(install_path, recursive = TRUE)
-    cli::cli_abort(c(
-      "Failed to extract R {version}",
-      "x" = "Error: {e$message}"
-    ))
-  })
-
-  unlink(temp_file)
-
-  exe <- r_executable(version, platform, arch)
-  if (is.null(exe)) {
-    cli::cli_warn(c(
-      "R {version} was extracted but Rscript executable was not found",
-      "i" = "Installation path: {.path {install_path}}",
-      "i" = "You may need to adjust the path manually"
-    ))
-  } else if (verbose) {
-    cli::cli_alert_success("R {version} installed at {.path {install_path}}")
-    cli::cli_alert_info("Rscript: {.path {exe}}")
-  }
-
-  invisible(install_path)
+  download_and_extract_portable_tool(
+    label = "R",
+    version = version,
+    install_path = r_install_path(version, platform, arch),
+    download_url = r_download_url(version, platform, arch),
+    executable_finder = function() r_executable(version, platform, arch),
+    force = force,
+    is_installed = r_is_installed(version, platform, arch),
+    verbose = verbose
+  )
 }
 
 #' Generate a runtime manifest for auto-download

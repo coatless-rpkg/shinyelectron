@@ -115,66 +115,19 @@ install_python <- function(version = "3.12.10", platform = NULL, arch = NULL,
   }
 
   if (verbose) {
-    cli::cli_h1("Installing portable Python {version}")
     cli::cli_alert_info("Platform: {platform}, Architecture: {arch}")
   }
 
-  install_path <- python_install_path(version, platform, arch)
-  if (python_is_installed(version, platform, arch) && !force) {
-    if (verbose) {
-      cli::cli_alert_success("Python {version} already installed at {.path {install_path}}")
-    }
-    return(invisible(install_path))
-  }
-
-  url <- python_download_url(version, platform, arch)
-  if (verbose) cli::cli_alert_info("Downloading from {.url {url}}")
-
-  temp_file <- tempfile(fileext = paste0(".", tools::file_ext(url)))
-  tryCatch({
-    utils::download.file(url, temp_file, mode = "wb", quiet = !verbose)
-  }, error = function(e) {
-    cli::cli_abort(c(
-      "Failed to download Python {version}",
-      "x" = "URL: {.url {url}}",
-      "x" = "Error: {e$message}"
-    ))
-  })
-
-  fs::dir_create(install_path, recurse = TRUE)
-
-  if (verbose) cli::cli_alert_info("Extracting Python {version}...")
-
-  tryCatch({
-    ext <- tools::file_ext(temp_file)
-    if (ext == "gz") {
-      # Force R's internal tar: a system GNU tar (e.g. from Git for Windows)
-      # misparses Windows paths like "C:\\..." as a remote host.
-      utils::untar(temp_file, exdir = install_path, tar = "internal")
-    } else if (ext == "zip") {
-      utils::unzip(temp_file, exdir = install_path)
-    }
-  }, error = function(e) {
-    unlink(install_path, recursive = TRUE)
-    cli::cli_abort(c(
-      "Failed to extract Python {version}",
-      "x" = "Error: {e$message}"
-    ))
-  })
-
-  unlink(temp_file)
-
-  exe <- python_executable(version, platform, arch)
-  if (is.null(exe)) {
-    cli::cli_warn(c(
-      "Python {version} was extracted but python executable was not found",
-      "i" = "Installation path: {.path {install_path}}"
-    ))
-  } else if (verbose) {
-    cli::cli_alert_success("Python {version} installed at {.path {install_path}}")
-  }
-
-  invisible(install_path)
+  download_and_extract_portable_tool(
+    label = "Python",
+    version = version,
+    install_path = python_install_path(version, platform, arch),
+    download_url = python_download_url(version, platform, arch),
+    executable_finder = function() python_executable(version, platform, arch),
+    force = force,
+    is_installed = python_is_installed(version, platform, arch),
+    verbose = verbose
+  )
 }
 
 #' Generate a Python runtime manifest for auto-download
