@@ -20,19 +20,24 @@ generate_package_json <- function(app_slug, app_version, backend, config,
     version = app_version,
     description = paste0(app_slug, " - Shiny Electron App"),
     main = "main.js",
+    # --publish never suppresses electron-builder's publish pipeline, which
+    # 26.x crashes in ("Cannot read properties of null (reading 'channel')")
+    # whenever the package.json has no publish or repository config. Local
+    # builds never want publishing anyway; CI pipelines override with
+    # --publish always.
     scripts = list(
       electron = "electron .",
-      build = "electron-builder",
-      `build-all` = "electron-builder -mwl",
-      `build-win` = "electron-builder --win",
-      `build-mac` = "electron-builder --mac",
-      `build-linux` = "electron-builder --linux",
-      `build-win-x64` = "electron-builder --win --x64",
-      `build-win-arm64` = "electron-builder --win --arm64",
-      `build-mac-x64` = "electron-builder --mac --x64",
-      `build-mac-arm64` = "electron-builder --mac --arm64",
-      `build-linux-x64` = "electron-builder --linux --x64",
-      `build-linux-arm64` = "electron-builder --linux --arm64"
+      build = "electron-builder --publish never",
+      `build-all` = "electron-builder -mwl --publish never",
+      `build-win` = "electron-builder --win --publish never",
+      `build-mac` = "electron-builder --mac --publish never",
+      `build-linux` = "electron-builder --linux --publish never",
+      `build-win-x64` = "electron-builder --win --x64 --publish never",
+      `build-win-arm64` = "electron-builder --win --arm64 --publish never",
+      `build-mac-x64` = "electron-builder --mac --x64 --publish never",
+      `build-mac-arm64` = "electron-builder --mac --arm64 --publish never",
+      `build-linux-x64` = "electron-builder --linux --x64 --publish never",
+      `build-linux-arm64` = "electron-builder --linux --arm64 --publish never"
     ),
     author = "",
     license = "AGPL (>=3)",

@@ -48,6 +48,32 @@ install_npm_dependencies <- function(output_dir, verbose = TRUE) {
 #' @param arch Character vector of target architectures
 #' @param verbose Logical whether to show progress
 #' @keywords internal
+#' Check whether electron-builder produced output for a platform.
+#'
+#' electron-builder 26.x has a known bug where the build completes and the
+#' installer is written to disk, but the process then exits with status 1
+#' during post-build publish metadata. When that happens, processx-invoked
+#' npm inherits the non-zero exit even though the .dmg/.exe/.AppImage is
+#' sitting right there. We treat "artifact exists" as success.
+#' @keywords internal
+dist_has_platform_artifact <- function(output_dir, p) {
+  dist_dir <- fs::path(output_dir, "dist")
+  if (!fs::dir_exists(dist_dir)) return(FALSE)
+
+  # Platform-specific installer extensions
+  patterns <- switch(p,
+    mac = c("\\.dmg$", "\\.zip$", "^mac(-arm64|-x64)?$"),
+    win = c("\\.exe$", "\\.msi$", "^win(-arm64|-x64|-unpacked)?$"),
+    linux = c("\\.AppImage$", "\\.deb$", "\\.rpm$", "\\.snap$", "^linux(-arm64|-x64|-unpacked)?$"),
+    character(0)
+  )
+  if (length(patterns) == 0) return(FALSE)
+
+  entries <- list.files(dist_dir, recursive = FALSE)
+  any(vapply(patterns, function(pat) any(grepl(pat, entries, ignore.case = TRUE)),
+             logical(1)))
+}
+
 build_for_platforms <- function(output_dir, platform, arch, sign = FALSE, verbose = TRUE) {
   if (verbose) {
     cli::cli_alert_info("Building for platforms: {paste(platform, collapse = ', ')}")
@@ -121,6 +147,11 @@ build_for_platforms <- function(output_dir, platform, arch, sign = FALSE, verbos
         if (result$status == 0) {
           if (verbose) cli::cli_alert_success("Built for {target}")
           next
+        } else if (dist_has_platform_artifact(output_dir, p)) {
+          # electron-builder 26.x exits 1 during post-build publish metadata
+          # even after the installer is written. Artifact exists => success.
+          if (verbose) cli::cli_alert_success("Built for {target}")
+          next
         } else {
           if (verbose) cli::cli_alert_warning("Specific script {build_script} failed: {result$stderr}")
         }
@@ -161,6 +192,8 @@ build_for_platforms <- function(output_dir, platform, arch, sign = FALSE, verbos
         }
 
         if (fallback_result$status == 0) {
+          cli::cli_alert_success("Built for {p} (fallback - may include multiple architectures)")
+        } else if (dist_has_platform_artifact(output_dir, p)) {
           cli::cli_alert_success("Built for {p} (fallback - may include multiple architectures)")
         } else {
           cli::cli_alert_warning("Fallback build also failed for {p}: {fallback_result$stderr}")
