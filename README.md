@@ -1,153 +1,129 @@
+
+
+<!-- README.md is generated from README.qmd. Please edit that file -->
+
 # shinyelectron
 
 <!-- badges: start -->
+
 [![R-CMD-check](https://github.com/coatless-rpkg/shinyelectron/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/coatless-rpkg/shinyelectron/actions/workflows/R-CMD-check.yaml)
+![Prototype](https://img.shields.io/badge/Status-Prototype-orange.png)
+![Experimental](https://img.shields.io/badge/Status-Experimental-blue.png)
 <!-- badges: end -->
 
-Export [Shiny](https://shiny.posit.co/) applications as standalone desktop applications using [Electron](https://www.electronjs.org/). Supports R and Python Shiny apps with multiple runtime strategies.
+Turn any Shiny app — R or Python — into a standalone desktop application
+that runs on macOS, Windows, and Linux. No web server, no browser tab,
+no deployment infrastructure. Just an `.app`, `.exe`, or AppImage your
+users double-click to open.
 
-## Installation
+![](man/figures/pipeline-overview.svg)
 
-```r
-# install.packages("remotes")
-remotes::install_github("coatless-rpkg/shinyelectron")
+> [!IMPORTANT]
+>
+> This package is currently in the prototype/experimental stage. It is
+> not yet on CRAN and may have rough edges. **Not recommended for
+> production applications at this time.**
+
+## Install
+
+``` r
+# install.packages("pak")
+pak::pak("coatless-rpkg/shinyelectron")
 ```
 
-## Quick Start
+## Quick start
 
-```r
+``` r
 library(shinyelectron)
 
-# Validate your app before building
-app_check("path/to/my/app")
+# Check your system
+sitrep_shinyelectron()
 
-# Export as a desktop app (shinylive — runs entirely in browser, no runtime needed)
+# Try a bundled demo
 export(
-  appdir = "path/to/my/app",
-  destdir = "output"
-)
-
-# Or use native R with system runtime
-export(
-  appdir = "path/to/my/app",
-  destdir = "output",
-  app_type = "r-shiny",
-  runtime_strategy = "system"
+  appdir  = example_app("r-single"),
+  destdir = "~/Desktop/my-first-app",
+  run_after = TRUE
 )
 ```
 
-## App Types
+That’s the whole workflow: one call converts your app, wraps it in
+Electron, builds a distributable, and launches it. Takes about a minute
+for a small app.
 
-| Type | Description | Runtime needed? |
-|------|-------------|-----------------|
-| `r-shinylive` | R Shiny via WebR in browser | No |
-| `py-shinylive` | Python Shiny via Pyodide in browser | No |
-| `r-shiny` | Native R Shiny | Yes (R) |
-| `py-shiny` | Native Python Shiny | Yes (Python) |
+## What you can export
 
-## Runtime Strategies (Native Apps)
+| App Type | Runs In | User Needs | Best For |
+|----|----|----|----|
+| `r-shinylive` | Browser (WebR) | Nothing | Simple R apps |
+| `py-shinylive` | Browser (Pyodide) | Nothing | Simple Python apps |
+| `r-shiny` | R process | R (or bundled) | Full R package support |
+| `py-shiny` | Python process | Python (or bundled) | Full Python package support |
 
-| Strategy | Description | Best for |
-|----------|-------------|----------|
-| `auto-download` | Downloads R/Python on first launch | Default, zero-config |
-| `system` | Uses R/Python on user's machine | Dev/testing |
-| `bundled` | Embeds portable R/Python in the app | Self-contained distribution |
-| `container` | Runs in Docker/Podman | Reproducible environments |
+Native types (`r-shiny` / `py-shiny`) support four **runtime
+strategies** for delivering R or Python to the end user: `auto-download`
+(default), `bundled`, `system`, or `container`. See the [Runtime
+Strategies
+guide](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/runtime-strategies.html)
+for the decision matrix.
 
-## Configuration
+## Prerequisites
 
-Use the interactive wizard or create a config file manually:
+- **R** (\>= 4.4.0)
+- **Node.js** (\>= 22.0.0) — install locally with `install_nodejs()`
+- **npm** (\>= 11.5.0) — included with Node.js
 
-```r
-# Interactive wizard
-wizard("path/to/my/app")
+Platform build tools:
 
-# Or create a template config file
-init_config("path/to/my/app")
+| Platform | Requirement                   |
+|----------|-------------------------------|
+| macOS    | Xcode Command Line Tools      |
+| Windows  | Visual Studio Build Tools     |
+| Linux    | `build-essential` (gcc, make) |
 
-# View effective configuration
-show_config("path/to/my/app")
-```
+## Learn more
 
-### `_shinyelectron.yml` example
+- [Getting
+  Started](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/getting-started.html)
+  — step-by-step tutorial
+- [Configuration
+  Guide](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/configuration.html)
+  — `_shinyelectron.yml` reference
+- [Runtime
+  Strategies](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/runtime-strategies.html)
+  — bundled vs system vs auto-download vs container
+- [Multi-App
+  Suites](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/multi-app-suites.html)
+  — bundle multiple apps in one shell
+- [Code
+  Signing](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/code-signing.html)
+  — macOS GateKeeper and Windows SmartScreen
+- [Troubleshooting](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/troubleshooting.html)
+  — common issues and fixes
 
-```yaml
-app:
-  name: "My Dashboard"
-  version: "1.0.0"
+## Acknowledgements
 
-build:
-  type: "r-shiny"
-  runtime_strategy: "auto-download"
-  platforms:
-    - mac
-    - win
+This project builds on several prior efforts to package Shiny apps as
+desktop applications:
 
-window:
-  width: 1200
-  height: 800
-```
-
-## Multi-App Bundling
-
-Bundle multiple Shiny apps into one desktop application with a launcher:
-
-```yaml
-# _shinyelectron.yml
-app:
-  name: "My App Suite"
-build:
-  type: "r-shiny"
-  runtime_strategy: "system"
-apps:
-  - id: dashboard
-    name: "Dashboard"
-    path: "./apps/dashboard"
-  - id: explorer
-    name: "Data Explorer"
-    path: "./apps/explorer"
-```
-
-## Key Functions
-
-| Function | Purpose |
-|----------|---------|
-| `export()` | Convert and build Shiny app to Electron |
-| `available_examples()` | Show bundled example apps |
-| `example_app()` | Get path to a bundled example app |
-| `app_check()` | Pre-flight validation without building |
-| `wizard()` | Interactive configuration generator |
-| `show_config()` | Display merged effective configuration |
-| `init_config()` | Create template `_shinyelectron.yml` |
-| `sitrep_shinyelectron()` | Full system diagnostics |
-| `install_nodejs()` | Install Node.js locally (no admin needed) |
-| `enable_auto_updates()` | Configure auto-update via GitHub Releases |
-| `run_electron_app()` | Launch a built Electron app for testing |
-| `cache_clear()` | Clear cached Node.js/R/Python/npm assets |
-
-## Demos
-
-```r
-# List bundled examples
-available_examples()
-
-# Get an example app and export with any app_type + strategy
-path <- example_app("r")
-export(path, "my-output", app_type = "r-shiny", runtime_strategy = "system")
-
-path <- example_app("python")
-export(path, "py-output", app_type = "py-shiny", runtime_strategy = "system")
-```
-
-## System Requirements
-
-- R >= 4.4.0
-- Node.js >= 18.0.0 (auto-installable via `install_nodejs()`)
-- Platform build tools:
-  - macOS: Xcode Command Line Tools (`xcode-select --install`)
-  - Windows: Visual Studio Build Tools
-  - Linux: build-essential
+- [electricShine](https://chasemc.github.io/electricShine/) — automated
+  Windows builds via `electrify()`.
+- [Photon](https://github.com/COVAIL/photon) — RStudio add-in that
+  bundles Shiny apps with portable R.
+- [RInno](https://github.com/ficonsulting/RInno) — standalone R app
+  builder for Windows.
+- [DesktopDeployR](https://github.com/wleepang/DesktopDeployR) —
+  self-contained R deployment framework.
+- [Electron ShinyApp
+  Deployment](https://www.youtube.com/watch?v=ARrbbviGvjc) — @ksasso’s
+  2018 UseR! talk.
+- [Developer
+  tutorials](https://github.com/lawalter/r-shiny-electron-app) from
+  @lawalter and @dirkschumacher.
+- [Zarathu Corporation
+  templates](https://github.com/zarathucorp/shiny-electron-template-m1)
+  for macOS ARM and Windows.
 
 ## License
 
-AGPL (>= 3)
+AGPL (\>= 3)
