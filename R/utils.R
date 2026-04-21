@@ -144,3 +144,28 @@ copy_dir_contents <- function(src, dst) {
   }
   invisible(dst)
 }
+
+#' Find the Python command
+#'
+#' Searches for python3 first (Unix) or python first (Windows) on the
+#' system PATH and verifies it actually runs (Windows Store aliases
+#' exist but fail).
+#'
+#' @return Character string or NULL. The Python command name, or NULL if not found.
+#' @keywords internal
+find_python_command <- function() {
+  candidates <- if (.Platform$OS.type == "windows") {
+    c("python", "python3")
+  } else {
+    c("python3", "python")
+  }
+
+  for (cmd in candidates) {
+    path <- Sys.which(cmd)
+    if (nzchar(path)) {
+      check <- run_command_safe(cmd, "--version", timeout = 5)
+      if (check$status == 0) return(cmd)
+    }
+  }
+  NULL
+}

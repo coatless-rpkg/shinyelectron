@@ -1,29 +1,3 @@
-#' Find the Python command
-#'
-#' Searches for python3 first, then python on the system PATH.
-#'
-#' @return Character string or NULL. The Python command name, or NULL if not found.
-#' @keywords internal
-find_python_command <- function() {
-  # On Windows, prefer "python" (python3 is often a Windows Store alias that
-  # doesn't work). On Unix, prefer "python3".
-  candidates <- if (.Platform$OS.type == "windows") {
-    c("python", "python3")
-  } else {
-    c("python3", "python")
-  }
-
-  for (cmd in candidates) {
-    path <- Sys.which(cmd)
-    if (nzchar(path)) {
-      # Verify it actually runs (Windows Store aliases exist but fail)
-      check <- run_command_safe(cmd, "--version", timeout = 5)
-      if (check$status == 0) return(cmd)
-    }
-  }
-  NULL
-}
-
 #' Validate Python is available on the system
 #'
 #' @return Invisible TRUE if Python is found, otherwise aborts.

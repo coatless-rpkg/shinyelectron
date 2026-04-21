@@ -504,7 +504,10 @@ function createWindow() {
   } // end if (!appsManifest)
 
   // Handle IPC actions from lifecycle.html and launcher.html (retry, quit, select_app, etc.)
+  // Wrapped in try/catch: a backend emit or getBackendForApp throwing
+  // should not crash the Electron main process silently.
   ipcMain.on('lifecycle-action', (_event, action) => {
+    try {
     var actionType = typeof action === 'string' ? action : action.type;
 
     if (actionType === 'retry') {
@@ -581,6 +584,15 @@ function createWindow() {
         currentBackend.stop();
       }
       mainWindow.loadFile('launcher.html');
+    }
+    } catch (err) {
+      log('error', 'IPC action failed:', err && err.message ? err.message : err);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('lifecycle-status', {
+          phase: 'error',
+          message: 'Internal error handling action: ' + (err && err.message ? err.message : 'unknown')
+        });
+      }
     }
   });
 
