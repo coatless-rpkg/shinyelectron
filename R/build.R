@@ -165,33 +165,30 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
         dep_manifest <- jsonlite::fromJSON(dep_manifest_path, simplifyVector = FALSE)
         if (length(dep_manifest$packages) > 0 && dep_manifest$language == "r") {
 
-          # Find the portable Rscript *inside the copied runtime_dest*, not the
-          # cache. Running the bundled binary avoids cross-contamination with
-          # the user's cache and guarantees path consistency with what the
-          # Electron app will load at runtime.
-          bundled_rscript <- find_bundled_rscript(runtime_dest)
+          # Install into a SIBLING library directory (runtime_dest/library/),
+          # NOT into portable-r-*/library/. On macOS, installing into the
+          # bundled R's own library triggers hardened-runtime library
+          # validation at dyn.load() time, causing segfaults on unsigned
+          # CRAN binaries. The sibling-library layout avoids that; the
+          # Electron runtime (native-r.js) prepends this path to .libPaths().
+          lib_path <- fs::path(runtime_dest, "library")
+          fs::dir_create(lib_path, recurse = TRUE)
 
-          if (is.null(bundled_rscript)) {
+          # Use the CACHED Rscript, not the bundled copy. The cached binary
+          # has its original code signature intact; running the copied one
+          # on macOS with --vanilla can interact oddly with hardened-runtime
+          # library validation.
+          bundled_rscript <- r_executable(
+            version = r_version %||% r_latest_version(),
+            platform = platform[1],
+            arch = arch[1]
+          )
+
+          if (is.null(bundled_rscript) || !fs::file_exists(bundled_rscript)) {
             cli::cli_abort(c(
-              "Could not locate Rscript inside the bundled runtime",
-              "i" = "Looked under: {.path {runtime_dest}}"
+              "Could not locate the cached portable Rscript",
+              "i" = "Try: {.code shinyelectron::install_r(force = TRUE)}"
             ))
-          }
-
-          # Install into the portable-R's OWN library — the same directory R
-          # naturally puts on .libPaths() at startup. Derive from Rscript path:
-          # .../portable-r-X.Y.Z/bin/Rscript → .../portable-r-X.Y.Z/library
-          r_root <- fs::path_dir(fs::path_dir(bundled_rscript))
-          lib_path <- fs::path(r_root, "library")
-          if (!fs::dir_exists(lib_path)) {
-            # Sanity check: if the R root doesn't look right, abort early
-            if (!fs::dir_exists(fs::path(r_root, "bin"))) {
-              cli::cli_abort(c(
-                "Unexpected portable-R layout: {.path {r_root}}",
-                "i" = "Expected bin/ and library/ subdirectories"
-              ))
-            }
-            fs::dir_create(lib_path, recurse = TRUE)
           }
 
           if (verbose) cli::cli_alert_info("Installing packages with bundled R...")
@@ -243,19 +240,12 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
               repo_str
             )
 
-            # Scrub R_LIBS_* from the child env so the bundled Rscript cannot
-            # inherit the caller's user library or site library. Keep the
-            # rest of the parent env (PATH, HOME, ...) so CRAN downloads
-            # work — passing only R_LIBS_* would replace the entire env.
-            child_env <- Sys.getenv()
-            child_env <- child_env[!names(child_env) %in%
-                                   c("R_LIBS", "R_LIBS_USER", "R_LIBS_SITE")]
-            child_env <- c(child_env,
-                           R_LIBS = "", R_LIBS_USER = "", R_LIBS_SITE = "")
-
+            # Pre-session code didn't scrub env or pass --vanilla and worked
+            # fine — the bundled library being a sibling (not the R's own
+            # library) means R_LIBS_USER contamination doesn't override our
+            # explicit lib_path argument to install.packages.
             result <- processx::run(
-              bundled_rscript, c("--vanilla", "-e", r_code),
-              env = child_env,
+              bundled_rscript, c("-e", r_code),
               error_on_status = FALSE,
               echo = verbose,
               timeout = 600
@@ -275,23 +265,6 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
               ))
             }
 
-            # On macOS, strip com.apple.quarantine attributes that the OS
-            # applies to newly-downloaded files. Without this, R segfaults
-            # on dyn.load() of package DLLs with "invalid permissions".
-            if (detect_current_platform() == "mac") {
-              tryCatch(
-                processx::run("xattr", c("-dr", "com.apple.quarantine",
-                                         as.character(runtime_dest)),
-                              error_on_status = FALSE, timeout = 30),
-                error = function(e) {
-                  cli::cli_warn(c(
-                    "Failed to strip macOS quarantine attributes from bundled runtime",
-                    "i" = "R may segfault on dyn.load(); run this manually:",
-                    "x" = "xattr -dr com.apple.quarantine {runtime_dest}"
-                  ))
-                }
-              )
-            }
           }
         }
       }
