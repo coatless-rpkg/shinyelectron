@@ -123,7 +123,11 @@ nodejs_verify_checksum <- function(file_path, expected_checksum) {
   actual_checksum <- compute_sha256(file_path)
 
   if (is.null(actual_checksum)) {
-    cli::cli_warn("Could not verify checksum")
+    cli::cli_warn(c(
+      "Could not compute SHA-256 for {.file {basename(file_path)}}",
+      "i" = "Integrity check skipped; install continuing",
+      "i" = "If the install behaves oddly, remove {.path {dirname(file_path)}} and retry"
+    ))
     return(TRUE)  # Don't fail if verification unavailable
   }
 

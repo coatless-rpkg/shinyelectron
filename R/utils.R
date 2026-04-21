@@ -8,7 +8,11 @@ detect_current_platform <- function() {
          "Windows" = "win",
          "Darwin" = "mac",
          "Linux" = "linux",
-         cli::cli_abort("Unsupported platform: {sysname}")
+         cli::cli_abort(c(
+           "Unsupported platform: {.val {sysname}}",
+           "i" = "shinyelectron supports Windows, macOS, and Linux",
+           "i" = "Report this at {.url https://github.com/coatless-rpkg/shinyelectron/issues}"
+         ))
   )
 }
 

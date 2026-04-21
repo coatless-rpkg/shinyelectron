@@ -266,7 +266,11 @@ cache_remove <- function(runtime, version, platform = NULL, arch = NULL) {
     target <- fs::path(dir, "nodejs", version)
   } else {
     if (is.null(platform) || is.null(arch)) {
-      cli::cli_abort("Both {.arg platform} and {.arg arch} are required for {.val {runtime}}")
+      cli::cli_abort(c(
+        "Both {.arg platform} and {.arg arch} are required to remove {.val {runtime}}",
+        "i" = "Example: {.code cache_remove(\"{runtime}\", \"{version}\", \"mac\", \"arm64\")}",
+        "i" = "Run {.code cache_info()} to list available versions"
+      ))
     }
     target <- fs::path(dir, runtime, platform, arch, version)
   }

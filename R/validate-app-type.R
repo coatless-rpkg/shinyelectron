@@ -88,16 +88,27 @@ validate_multi_app_config <- function(config, basedir) {
   apps <- config$apps
 
   # Check for required fields
+  example_hint <- "Example: {.code apps: [{ id: 'dashboard', name: 'Dashboard', path: './src/dashboard' }]}"
   for (i in seq_along(apps)) {
     app <- apps[[i]]
     if (is.null(app$id) || !nzchar(app$id)) {
-      cli::cli_abort("App entry {i} is missing required {.field id}")
+      cli::cli_abort(c(
+        "Multi-app config entry {i} is missing required {.field id}",
+        "i" = "Each app must have: {.field id}, {.field name}, {.field path}",
+        "i" = example_hint
+      ))
     }
     if (is.null(app$name) || !nzchar(app$name)) {
-      cli::cli_abort("App entry {i} ({app$id}) is missing required {.field name}")
+      cli::cli_abort(c(
+        "Multi-app config entry {i} ({.val {app$id}}) is missing required {.field name}",
+        "i" = example_hint
+      ))
     }
     if (is.null(app$path) || !nzchar(app$path)) {
-      cli::cli_abort("App entry {i} ({app$id}) is missing required {.field path}")
+      cli::cli_abort(c(
+        "Multi-app config entry {i} ({.val {app$id}}) is missing required {.field path}",
+        "i" = example_hint
+      ))
     }
   }
 

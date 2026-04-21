@@ -11,7 +11,11 @@ resolve_backend_module <- function(app_type, runtime_strategy) {
       if (grepl("^r-", app_type)) "native-r.js" else "native-py.js"
     },
     "container" = "container.js",
-    cli::cli_abort("Unknown runtime strategy: {.val {runtime_strategy}}")
+    cli::cli_abort(c(
+      "Unknown runtime strategy: {.val {runtime_strategy}}",
+      "i" = "Valid strategies: {.val {c('system', 'bundled', 'auto-download', 'container', 'shinylive')}}",
+      "i" = "Set in {.arg runtime_strategy} or {.field build.runtime_strategy} in {.file _shinyelectron.yml}"
+    ))
   )
 }
 

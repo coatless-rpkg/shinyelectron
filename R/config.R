@@ -189,11 +189,19 @@ validate_config <- function(config) {
   default_height <- SHINYELECTRON_DEFAULTS$window_height
 
   if (!is.null(config$window$width) && (!is.numeric(config$window$width) || config$window$width < 100)) {
-    cli::cli_warn("Invalid window width in config, using default: {default_width}")
+    cli::cli_warn(c(
+      "Invalid {.field window.width} in config: {.val {config$window$width}}",
+      "i" = "Must be a number >= 100; using default: {.val {default_width}}",
+      "i" = "Edit {.field window.width} in {.file _shinyelectron.yml}"
+    ))
     config$window$width <- default_width
   }
   if (!is.null(config$window$height) && (!is.numeric(config$window$height) || config$window$height < 100)) {
-    cli::cli_warn("Invalid window height in config, using default: {default_height}")
+    cli::cli_warn(c(
+      "Invalid {.field window.height} in config: {.val {config$window$height}}",
+      "i" = "Must be a number >= 100; using default: {.val {default_height}}",
+      "i" = "Edit {.field window.height} in {.file _shinyelectron.yml}"
+    ))
     config$window$height <- default_height
   }
 
@@ -201,7 +209,11 @@ validate_config <- function(config) {
   default_port <- SHINYELECTRON_DEFAULTS$server_port
   if (!is.null(config$server$port)) {
     if (!is.numeric(config$server$port) || config$server$port < 1 || config$server$port > 65535) {
-      cli::cli_warn("Invalid port in config, using default: {default_port}")
+      cli::cli_warn(c(
+        "Invalid {.field server.port} in config: {.val {config$server$port}}",
+        "i" = "Must be an integer between 1 and 65535; using default: {.val {default_port}}",
+        "i" = "Edit {.field server.port} in {.file _shinyelectron.yml}"
+      ))
       config$server$port <- default_port
     }
   }
@@ -209,7 +221,10 @@ validate_config <- function(config) {
   # Validate splash settings
   if (!is.null(config$splash)) {
     if (!is.null(config$splash$duration) && (!is.numeric(config$splash$duration) || config$splash$duration < 0)) {
-      cli::cli_warn("Invalid splash duration, using default: 3000")
+      cli::cli_warn(c(
+        "Invalid {.field splash.duration} in config: {.val {config$splash$duration}}",
+        "i" = "Must be a non-negative number (milliseconds); using default: {.val {SHINYELECTRON_DEFAULTS$splash$duration}}"
+      ))
       config$splash$duration <- SHINYELECTRON_DEFAULTS$splash$duration
     }
   }
@@ -614,7 +629,12 @@ read_brand_yml <- function(appdir) {
   tryCatch(
     yaml::read_yaml(brand_file),
     error = function(e) {
-      cli::cli_warn(c("Failed to parse {.file _brand.yml}", "x" = "Error: {e$message}", "i" = "Using default branding"))
+      cli::cli_warn(c(
+        "Failed to parse {.file {brand_file}}",
+        "x" = "{e$message}",
+        "i" = "Check YAML syntax and indentation",
+        "i" = "Using default branding"
+      ))
       NULL
     }
   )

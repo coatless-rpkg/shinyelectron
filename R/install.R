@@ -61,7 +61,10 @@ download_and_extract_portable_tool <- function(label, version, install_path,
     } else if (ext == "zip") {
       utils::unzip(temp_file, exdir = install_path)
     } else {
-      cli::cli_abort("Unsupported archive extension: {.val {ext}}")
+      cli::cli_abort(c(
+        "Unsupported archive extension: {.val {ext}}",
+        "i" = "Supported formats: {.val {c('gz', 'zip')}}"
+      ))
     }
   }, error = function(e) {
     unlink(install_path, recursive = TRUE)

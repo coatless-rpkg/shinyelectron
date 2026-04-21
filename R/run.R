@@ -54,12 +54,19 @@ run_electron_app <- function(app_dir, port = 3000, open_devtools = TRUE, verbose
   # Check if package.json exists and has necessary scripts
   package_json_path <- fs::path(app_dir, "package.json")
   if (!fs::file_exists(package_json_path)) {
-    cli::cli_abort("No package.json found in: {.path {app_dir}}")
+    cli::cli_abort(c(
+      "No {.file package.json} found in {.path {app_dir}}",
+      "i" = "Run {.code export()} first to build the Electron project"
+    ))
   }
 
   package_json <- jsonlite::fromJSON(package_json_path, simplifyVector = FALSE)
   if (is.null(package_json$scripts$electron)) {
-    cli::cli_abort("No 'electron' script found in package.json")
+    cli::cli_abort(c(
+      "No {.val electron} script in {.file {package_json_path}}",
+      "i" = "Add one under {.field scripts}: {.code \"electron\": \"electron .\"}",
+      "i" = "Or re-run {.code export()} to regenerate {.file package.json}"
+    ))
   }
 
   # Set environment variables
