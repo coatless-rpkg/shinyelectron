@@ -274,6 +274,24 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
                 "x" = "stderr: {trimws(result$stderr %||% '')}"
               ))
             }
+
+            # On macOS, strip com.apple.quarantine attributes that the OS
+            # applies to newly-downloaded files. Without this, R segfaults
+            # on dyn.load() of package DLLs with "invalid permissions".
+            if (detect_current_platform() == "mac") {
+              tryCatch(
+                processx::run("xattr", c("-dr", "com.apple.quarantine",
+                                         as.character(runtime_dest)),
+                              error_on_status = FALSE, timeout = 30),
+                error = function(e) {
+                  cli::cli_warn(c(
+                    "Failed to strip macOS quarantine attributes from bundled runtime",
+                    "i" = "R may segfault on dyn.load(); run this manually:",
+                    "x" = "xattr -dr com.apple.quarantine {runtime_dest}"
+                  ))
+                }
+              )
+            }
           }
         }
       }
