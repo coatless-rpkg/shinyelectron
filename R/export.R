@@ -206,82 +206,20 @@ export <- function(appdir, destdir, app_name = NULL, app_type = "r-shinylive",
   result <- list()
 
   tryCatch({
-    # Step 1: Convert application based on type
-    converted_app_dir <- NULL
-
+    # Step 1: Convert or stage application files
     if (app_type %in% SHINYLIVE_TYPES) {
-      if (verbose) cli::cli_alert_info("Converting to shinylive format...")
-
-      shinylive_dir <- fs::path(destdir, "shinylive-app")
-
-      if (app_type == "r-shinylive") {
-        converted_app_dir <- convert_shiny_to_shinylive(
-          appdir = appdir,
-          output_dir = shinylive_dir,
-          overwrite = TRUE,
-          verbose = verbose
-        )
-      } else {
-        converted_app_dir <- convert_py_to_shinylive(
-          appdir = appdir,
-          output_dir = shinylive_dir,
-          overwrite = TRUE,
-          verbose = verbose
-        )
-      }
-
+      converted_app_dir <- convert_app_to_shinylive(
+        appdir, destdir, app_type, verbose = verbose
+      )
       result$converted_app <- converted_app_dir
-
     } else {
-      # For regular Shiny apps, just copy the source
-      if (verbose) cli::cli_alert_info("Preparing application files...")
-
-      app_copy_dir <- fs::path(destdir, "shiny-app")
-      copy_dir_contents(appdir, app_copy_dir)
-      converted_app_dir <- app_copy_dir
-      result$converted_app <- converted_app_dir
-
-      # Resolve dependencies for native app types
-      dep_info <- resolve_app_dependencies(appdir, app_type, config)
-      if (!is.null(dep_info) && length(dep_info$packages) > 0) {
-        if (verbose) {
-          cli::cli_alert_info("Detected {length(dep_info$packages)} {dep_info$language} package dependencies")
-          cli::cli_alert_info("Packages: {paste(dep_info$packages, collapse = ', ')}")
-        }
-
-        # Write dependency manifest for runtime installation
-        manifest <- generate_dependency_manifest(
-          packages = dep_info$packages,
-          language = dep_info$language,
-          repos = dep_info$repos,
-          index_urls = dep_info$index_urls
-        )
-        writeLines(manifest, fs::path(converted_app_dir, "dependencies.json"))
-        result$dependencies <- dep_info
-      }
-
-      # Write runtime manifest for auto-download strategy
-      if (runtime_strategy == "auto-download") {
-        if (grepl("^r-", app_type)) {
-          r_version <- config$r$version %||% r_latest_version()
-          runtime_manifest <- generate_runtime_manifest(
-            version = r_version,
-            platform = platform[1] %||% detect_current_platform(),
-            arch = arch[1] %||% detect_current_arch()
-          )
-          writeLines(runtime_manifest, fs::path(converted_app_dir, "runtime-manifest.json"))
-          if (verbose) cli::cli_alert_info("Runtime manifest written for R {r_version}")
-        } else if (grepl("^py-", app_type)) {
-          py_version <- config$python$version %||% "3.12.10"
-          runtime_manifest <- generate_python_runtime_manifest(
-            version = py_version,
-            platform = platform[1] %||% detect_current_platform(),
-            arch = arch[1] %||% detect_current_arch()
-          )
-          writeLines(runtime_manifest, fs::path(converted_app_dir, "runtime-manifest.json"))
-          if (verbose) cli::cli_alert_info("Runtime manifest written for Python {py_version}")
-        }
-      }
+      prep <- prepare_native_app_files(
+        appdir, destdir, app_type, runtime_strategy,
+        platform, arch, config, verbose = verbose
+      )
+      converted_app_dir <- prep$converted_app
+      result$converted_app <- prep$converted_app
+      if (!is.null(prep$dependencies)) result$dependencies <- prep$dependencies
     }
 
     # Step 2: Build Electron application if requested

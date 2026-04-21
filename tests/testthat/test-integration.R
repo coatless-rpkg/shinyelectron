@@ -53,7 +53,8 @@ test_that("e2e: r-shiny auto-download writes runtime manifest", {
   d <- tempfile(); dir.create(d); o <- tempfile()
   on.exit(unlink(c(d, o), TRUE))
   writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})", file.path(d, "app.R"))
-  mockery::stub(export, "r_latest_version", function() "4.4.1")
+  # Pin R version via config so the test doesn't depend on r_latest_version()
+  yaml::write_yaml(list(r = list(version = "4.4.1")), file.path(d, "_shinyelectron.yml"))
   r <- export(d, o, app_type = "r-shiny", runtime_strategy = "auto-download",
               sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
   manifest_path <- fs::path(o, "shiny-app", "runtime-manifest.json")
