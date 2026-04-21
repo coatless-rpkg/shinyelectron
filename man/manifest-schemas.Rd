@@ -9,8 +9,8 @@ the Electron runtime reads on the end user's machine. These are the
 de-facto API contract between R and JavaScript.
 }
 \details{
-Each manifest carries a \code{schema_version} field (see
-\link{MANIFEST_SCHEMA_VERSION} in R, \code{MANIFEST_SCHEMA_VERSION} in
+Each manifest carries a \code{schema_version} field (the
+\code{MANIFEST_SCHEMA_VERSION} constant in R, mirrored in
 \code{inst/electron/backends/utils.js}). The JS side warns on mismatch
 rather than crashing, so older apps can keep running after a
 schema bump.

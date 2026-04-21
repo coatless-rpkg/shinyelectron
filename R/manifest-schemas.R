@@ -4,8 +4,8 @@
 #' the Electron runtime reads on the end user's machine. These are the
 #' de-facto API contract between R and JavaScript.
 #'
-#' Each manifest carries a `schema_version` field (see
-#' [MANIFEST_SCHEMA_VERSION] in R, `MANIFEST_SCHEMA_VERSION` in
+#' Each manifest carries a `schema_version` field (the
+#' `MANIFEST_SCHEMA_VERSION` constant in R, mirrored in
 #' `inst/electron/backends/utils.js`). The JS side warns on mismatch
 #' rather than crashing, so older apps can keep running after a
 #' schema bump.

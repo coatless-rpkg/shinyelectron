@@ -76,18 +76,18 @@ sitrep_electron_system <- function(verbose = TRUE) {
     results$node$version <- trimws(gsub("^v", "", node_result$stdout))
     results$node$source <- if (results$nodejs_local$installed) "local" else "system"
 
-    # Check if version is acceptable (>= 14.0.0)
+    # Check if version is acceptable (>= 22.0.0, required by Electron 41)
     node_version_num <- numeric_version(results$node$version)
-    if (node_version_num >= "14.0.0") {
+    if (node_version_num >= "22.0.0") {
       source_label <- if (results$node$source == "local") "(local)" else "(system)"
       if (verbose) {
         cli::cli_alert_success("Active Node.js: v{results$node$version} {source_label}")
       }
     } else {
       results$issues <- c(results$issues, "Node.js version too old")
-      results$recommendations <- c(results$recommendations, "Update Node.js to version 14.0.0 or higher")
+      results$recommendations <- c(results$recommendations, "Update Node.js to version 22.0.0 or higher (required by Electron 41)")
       if (verbose) {
-        cli::cli_alert_warning("Node.js: v{results$node$version} (version 14+ required)")
+        cli::cli_alert_warning("Node.js: v{results$node$version} (version 22+ required)")
       }
     }
   } else {

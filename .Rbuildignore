@@ -26,3 +26,4 @@
 ^\.superpowers$
 ^e2e-tests$
 ^vignettes/\.quarto$
+^README\.qmd$

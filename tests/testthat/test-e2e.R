@@ -1,9 +1,12 @@
 # True end-to-end tests — build full Electron apps and verify output
 # These are SLOW (1-2 minutes each) and require Node.js + npm.
-# Skipped on CI and CRAN. Run locally with: testthat::test_file("tests/testthat/test-e2e.R")
+# Skipped on CI, CRAN, and inside R CMD check. Run locally with:
+#   testthat::test_file("tests/testthat/test-e2e.R")
 
 skip_on_cran()
 skip_on_ci()
+skip_if(nzchar(Sys.getenv("_R_CHECK_PACKAGE_NAME_", "")),
+        "R CMD check sandbox restricts pkgcache and the Rscript shim")
 skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
 skip_if_not(nzchar(Sys.which("npm")), "npm not available")
 
