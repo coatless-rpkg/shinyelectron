@@ -13,6 +13,7 @@
 generate_dependency_manifest <- function(packages, language,
                                          repos = NULL, index_urls = NULL) {
   manifest <- list(
+    schema_version = MANIFEST_SCHEMA_VERSION,
     language = language,
     packages = as.list(packages),
     binary_only = TRUE

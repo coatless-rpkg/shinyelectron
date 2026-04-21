@@ -171,6 +171,30 @@ function reportRuntimeCandidates(emitter, label, candidates) {
   }
 }
 
+// Current manifest schema version. Bump in lockstep with
+// R/constants.R::MANIFEST_SCHEMA_VERSION. Older apps built against an
+// older R version may ship older manifests — we warn rather than crash.
+const MANIFEST_SCHEMA_VERSION = '1';
+
+/**
+ * Validate a parsed manifest object has the expected schema version.
+ * Emits a console warning on mismatch but never throws — graceful
+ * degradation is preferable to a crash on user machines.
+ * @param {object} manifest - Parsed JSON manifest from R.
+ * @param {string} label - e.g. "dependencies", "runtime", "apps".
+ */
+function checkManifestSchema(manifest, label) {
+  if (!manifest || typeof manifest !== 'object') return;
+  const v = manifest.schema_version;
+  if (!v) {
+    console.warn(`[shinyelectron] ${label} manifest has no schema_version; built with an older shinyelectron (expected v${MANIFEST_SCHEMA_VERSION})`);
+    return;
+  }
+  if (v !== MANIFEST_SCHEMA_VERSION) {
+    console.warn(`[shinyelectron] ${label} manifest schema version mismatch: got v${v}, expected v${MANIFEST_SCHEMA_VERSION}. Some features may not work correctly.`);
+  }
+}
+
 module.exports = {
   waitForServer,
   isPortAvailable,
@@ -178,5 +202,7 @@ module.exports = {
   isOnline,
   killProcessTree,
   sortCandidatesByVersion,
-  reportRuntimeCandidates
+  reportRuntimeCandidates,
+  MANIFEST_SCHEMA_VERSION,
+  checkManifestSchema
 };

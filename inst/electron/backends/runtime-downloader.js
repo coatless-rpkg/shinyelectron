@@ -63,6 +63,8 @@ function downloadFile(url, dest, onProgress) {
  * @returns {string|null} Path to the runtime executable if found, null otherwise.
  */
 function findCachedRuntime(manifest) {
+  const { checkManifestSchema } = require('./utils');
+  checkManifestSchema(manifest, 'runtime');
   const installPath = path.normalize(manifest.install_path.replace('~', os.homedir()));
 
   if (manifest.language === 'r') {

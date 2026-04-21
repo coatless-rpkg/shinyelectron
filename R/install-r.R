@@ -193,6 +193,7 @@ generate_runtime_manifest <- function(version, platform = NULL, arch = NULL) {
   download_url <- r_download_url(version, platform, arch)
 
   manifest <- list(
+    schema_version = MANIFEST_SCHEMA_VERSION,
     language = "r",
     version = version,
     download_url = download_url,

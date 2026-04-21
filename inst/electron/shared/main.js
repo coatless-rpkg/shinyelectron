@@ -41,6 +41,8 @@ let appsManifest = null;
 const manifestPath = path.join(__dirname, 'apps-manifest.json');
 if (fs.existsSync(manifestPath)) {
   appsManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  const { checkManifestSchema } = require('./backends/utils');
+  checkManifestSchema(appsManifest, 'apps');
 }
 
 function getBackendForApp(appType, runtimeStrategy) {

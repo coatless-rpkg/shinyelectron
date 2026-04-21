@@ -3,6 +3,7 @@ const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { checkManifestSchema } = require('./utils');
 
 /**
  * Read the dependencies manifest from the app directory.
@@ -13,7 +14,9 @@ function readManifest(appPath) {
   const manifestPath = path.join(appPath, 'dependencies.json');
   if (!fs.existsSync(manifestPath)) return null;
   try {
-    return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    checkManifestSchema(manifest, 'dependencies');
+    return manifest;
   } catch (err) {
     console.warn('Failed to read dependencies.json:', err.message);
     return null;

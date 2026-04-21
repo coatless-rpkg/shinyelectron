@@ -142,6 +142,7 @@ generate_python_runtime_manifest <- function(version, platform = NULL, arch = NU
   arch <- arch %||% detect_current_arch()
 
   manifest <- list(
+    schema_version = MANIFEST_SCHEMA_VERSION,
     language = "python",
     version = version,
     download_url = python_download_url(version, platform, arch),

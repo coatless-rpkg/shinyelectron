@@ -207,6 +207,7 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
 
   # Write apps-manifest.json
   manifest_data <- list(
+    schema_version = MANIFEST_SCHEMA_VERSION,
     apps = apps_manifest,
     default_type = default_type,
     runtime_strategy = runtime_strategy

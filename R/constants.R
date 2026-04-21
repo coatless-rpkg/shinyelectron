@@ -5,6 +5,12 @@ R_TYPES         <- c("r-shinylive", "r-shiny")
 PY_TYPES        <- c("py-shinylive", "py-shiny")
 ALL_APP_TYPES   <- c(SHINYLIVE_TYPES, NATIVE_TYPES)
 
+# Schema version for R → JS manifest files (dependencies.json,
+# runtime-manifest.json, apps-manifest.json). Bump when the shape of
+# any manifest changes in a backwards-incompatible way. The JS side
+# warns on mismatch; see inst/electron/backends/utils.js.
+MANIFEST_SCHEMA_VERSION <- "1"
+
 #' Default configuration values for shinyelectron
 #'
 #' A list containing all default values used when no configuration file
