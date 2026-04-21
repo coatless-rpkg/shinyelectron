@@ -4,7 +4,10 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { waitForServer, findAvailablePort, killProcessTree } = require('./utils');
+const {
+  waitForServer, findAvailablePort, killProcessTree,
+  sortCandidatesByVersion, reportRuntimeCandidates
+} = require('./utils');
 
 class NativePyBackend extends EventEmitter {
   constructor() {
@@ -74,30 +77,8 @@ class NativePyBackend extends EventEmitter {
     }
 
     if (candidates.length === 0) return null;
-
-    // Sort by version descending and return the full array
-    candidates.sort((a, b) => {
-      const pa = a.version.split('.').map(Number);
-      const pb = b.version.split('.').map(Number);
-      for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-        const diff = (pb[i] || 0) - (pa[i] || 0);
-        if (diff !== 0) return diff;
-      }
-      return 0;
-    });
-
-    if (candidates.length > 1) {
-      console.log(`Found ${candidates.length} Python installations:`);
-      candidates.forEach(c => console.log(`  Python ${c.version}: ${c.path}`));
-      console.log(`Using latest: Python ${candidates[0].version}`);
-      this.emit('status', {
-        phase: 'runtime_found',
-        message: `Found ${candidates.length} Python installations, using Python ${candidates[0].version}`,
-        detail: { versions: candidates.map(c => ({ version: c.version, path: c.path })) }
-      });
-    } else {
-      console.log(`Found Python installation: ${candidates[0].path}`);
-    }
+    sortCandidatesByVersion(candidates);
+    reportRuntimeCandidates(this, 'Python', candidates);
     return candidates;
   }
 

@@ -127,4 +127,56 @@ function killProcessTree(proc) {
   }
 }
 
-module.exports = { waitForServer, isPortAvailable, findAvailablePort, isOnline, killProcessTree };
+/**
+ * Sort runtime candidates by version descending (latest first).
+ * Versions are compared numerically component-by-component; non-numeric
+ * parts and unknown versions (e.g. "0.0.0") sort last.
+ * @param {Array<{version: string, path: string}>} candidates
+ * @returns {Array<{version: string, path: string}>} sorted in place
+ */
+function sortCandidatesByVersion(candidates) {
+  candidates.sort((a, b) => {
+    const pa = a.version.split('.').map(Number);
+    const pb = b.version.split('.').map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+      const diff = (pb[i] || 0) - (pa[i] || 0);
+      if (diff !== 0) return diff;
+    }
+    return 0;
+  });
+  return candidates;
+}
+
+/**
+ * Log scanned runtime candidates and emit a status event on `emitter`.
+ * If multiple candidates are found, the caller may offer a version picker
+ * (the detail.versions payload supports that flow).
+ * @param {EventEmitter} emitter - Backend instance emitting status events.
+ * @param {string} label - Runtime label ("R" or "Python").
+ * @param {Array<{version: string, path: string}>} candidates - Sorted candidates.
+ */
+function reportRuntimeCandidates(emitter, label, candidates) {
+  if (!candidates || candidates.length === 0) return;
+  if (candidates.length > 1) {
+    console.log(`Found ${candidates.length} ${label} installations:`);
+    candidates.forEach(c => console.log(`  ${label} ${c.version}: ${c.path}`));
+    console.log(`Using latest: ${label} ${candidates[0].version}`);
+    emitter.emit('status', {
+      phase: 'runtime_found',
+      message: `Found ${candidates.length} ${label} installations, using ${label} ${candidates[0].version}`,
+      detail: { versions: candidates.map(c => ({ version: c.version, path: c.path })) }
+    });
+  } else {
+    console.log(`Found ${label} installation: ${candidates[0].path}`);
+  }
+}
+
+module.exports = {
+  waitForServer,
+  isPortAvailable,
+  findAvailablePort,
+  isOnline,
+  killProcessTree,
+  sortCandidatesByVersion,
+  reportRuntimeCandidates
+};
