@@ -1,22 +1,23 @@
-#' Run Electron Application in Development Mode
+#' Run Electron Application for Testing
 #'
-#' Runs the Electron application in development mode for testing and debugging.
-#' This allows you to test your application before building distributable packages.
+#' Launches a previously exported Electron application for testing and debugging
+#' without building distributable packages. Pass the `electron-app` directory
+#' from a prior `export()` call.
 #'
-#' @param app_dir Character string. Path to the Electron application directory.
+#' @param app_dir Character string. Path to the Electron application directory
+#'   (the `electron-app` subdirectory from `export()`).
 #' @param port Integer. Port number for the development server. Default is 3000.
-#' @param open_devtools Logical. Whether to open developer tools automatically. Default is TRUE.
+#' @param open_devtools Logical. Whether to open Chromium DevTools automatically. Default is TRUE.
 #' @param verbose Logical. Whether to display detailed progress information. Default is TRUE.
 #'
 #' @return Invisibly returns the process object for the running application.
 #'
 #' @section Details:
-#' This function starts the Electron application in development mode, which:
+#' This function starts the Electron application for testing, which:
 #' \itemize{
-#'   \item Starts a local development server
 #'   \item Opens the application in an Electron window
-#'   \item Enables hot reloading for development
-#'   \item Provides access to developer tools for debugging
+#'   \item Optionally opens Chromium DevTools for debugging
+#'   \item Does NOT build distributable packages (use `export(build = TRUE)` for that)
 #' }
 #'
 #' @examples
@@ -53,12 +54,19 @@ run_electron_app <- function(app_dir, port = 3000, open_devtools = TRUE, verbose
   # Check if package.json exists and has necessary scripts
   package_json_path <- fs::path(app_dir, "package.json")
   if (!fs::file_exists(package_json_path)) {
-    cli::cli_abort("No package.json found in: {.path {app_dir}}")
+    cli::cli_abort(c(
+      "No {.file package.json} found in {.path {app_dir}}",
+      "i" = "Run {.code export()} first to build the Electron project"
+    ))
   }
 
   package_json <- jsonlite::fromJSON(package_json_path, simplifyVector = FALSE)
   if (is.null(package_json$scripts$electron)) {
-    cli::cli_abort("No 'electron' script found in package.json")
+    cli::cli_abort(c(
+      "No {.val electron} script in {.file {package_json_path}}",
+      "i" = "Add one under {.field scripts}: {.code \"electron\": \"electron .\"}",
+      "i" = "Or re-run {.code export()} to regenerate {.file package.json}"
+    ))
   }
 
   # Set environment variables
@@ -71,12 +79,6 @@ run_electron_app <- function(app_dir, port = 3000, open_devtools = TRUE, verbose
   }
 
   tryCatch({
-    # Change to app directory
-    old_wd <- getwd()
-    setwd(app_dir)
-    on.exit(setwd(old_wd), add = TRUE)
-
-    # Run npm electron command
     result <- processx::run(
       command = get_npm_command(),
       args = c("run", "electron"),

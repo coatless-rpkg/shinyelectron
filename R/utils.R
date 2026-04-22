@@ -1,9 +1,3 @@
-#' Utility functions for shinyelectron package
-#'
-#' @name utils
-#' @keywords internal
-NULL
-
 #' Detect current platform
 #'
 #' @return Character string representing current platform ("win", "mac", or "linux")
@@ -14,7 +8,11 @@ detect_current_platform <- function() {
          "Windows" = "win",
          "Darwin" = "mac",
          "Linux" = "linux",
-         cli::cli_abort("Unsupported platform: {sysname}")
+         cli::cli_abort(c(
+           "Unsupported platform: {.val {sysname}}",
+           "i" = "shinyelectron supports Windows, macOS, and Linux",
+           "i" = "Report this at {.url https://github.com/coatless-rpkg/shinyelectron/issues}"
+         ))
   )
 }
 
@@ -30,294 +28,182 @@ detect_current_arch <- function() {
     "x64"
   }
 }
-
-#' Get npm command
+#' Convert a display name to a path-safe slug
 #'
-#' @return Character string for npm command (handles different platforms)
+#' Converts an application display name to a lowercase, hyphen-separated
+#' string safe for use in file paths, container names, and npm package names.
+#'
+#' @param name Character string. The display name to slugify.
+#' @return Character string. The slugified name.
 #' @keywords internal
-get_npm_command <- function() {
-  if (Sys.info()[["sysname"]] == "Windows") {
-    "npm.cmd"
+slugify <- function(name) {
+  if (!nzchar(name)) {
+    cli::cli_abort("App name cannot be empty")
+  }
+  slug <- tolower(name)
+  slug <- gsub("[^a-z0-9]+", "-", slug)
+  slug <- gsub("^-|-$", "", slug)
+  # Collapse multiple consecutive dashes
+  slug <- gsub("-{2,}", "-", slug)
+  if (!nzchar(slug)) {
+    cli::cli_abort("Cannot create an empty slug from input: {.val {name}}")
+  }
+  slug
+}
+
+#' Validate a slug string
+#'
+#' Checks that a slug contains only lowercase alphanumeric characters and
+#' hyphens, and is not empty.
+#'
+#' @param slug Character string. The slug to validate.
+#' @return Invisible TRUE if valid, otherwise aborts with an error.
+#' @keywords internal
+validate_slug <- function(slug) {
+  if (is.null(slug) || !nzchar(slug)) {
+    cli::cli_abort("App slug cannot be empty")
+  }
+  if (!grepl("^[a-z0-9]([a-z0-9-]*[a-z0-9])?$", slug)) {
+    cli::cli_abort(c(
+      "Invalid slug: {.val {slug}}",
+      "i" = "Slug must contain only lowercase letters, numbers, and hyphens",
+      "i" = "Slug must start and end with a letter or number"
+    ))
+  }
+  invisible(TRUE)
+}
+#' Run a command safely and return the result
+#'
+#' Wraps processx::run with consistent error handling. Returns a list
+#' with status, stdout, and stderr. Never throws — failures are
+#' indicated by a non-zero status.
+#'
+#' @param command Character command to run.
+#' @param args Character vector of arguments.
+#' @param timeout Numeric timeout in seconds. Default 30.
+#' @return List with status, stdout, stderr.
+#' @keywords internal
+run_command_safe <- function(command, args = character(), timeout = 30) {
+  tryCatch(
+    processx::run(command, args, error_on_status = FALSE, timeout = timeout),
+    error = function(e) list(status = 1L, stdout = "", stderr = e$message)
+  )
+}
+#' Locate Rscript inside a bundled portable-R runtime directory
+#'
+#' The portable-r distribution extracts to a subdirectory named
+#' `portable-r-<version>-<os>-<arch>/`. Rscript lives at
+#' `<subdir>/bin/Rscript[.exe]`. Searches for that layout first, then falls
+#' back to a flat layout in case a future portable build drops the subdir.
+#'
+#' @param runtime_dir Character path to `runtime/R` inside the Electron app.
+#' @return Character path to Rscript, or NULL if not found.
+#' @keywords internal
+find_bundled_rscript <- function(runtime_dir) {
+  rscript_name <- if (detect_current_platform() == "win") "Rscript.exe" else "Rscript"
+
+  # Prefer subdirectory layout (portable-r-*/bin/Rscript)
+  subdirs <- list.dirs(runtime_dir, recursive = FALSE, full.names = TRUE)
+  for (sub in subdirs) {
+    candidate <- fs::path(sub, "bin", rscript_name)
+    if (fs::file_exists(candidate)) return(candidate)
+  }
+
+  # Fallback: flat layout
+  flat <- fs::path(runtime_dir, "bin", rscript_name)
+  if (fs::file_exists(flat)) return(flat)
+
+  NULL
+}
+
+#' Copy the top-level contents of one directory into another
+#'
+#' `fs::dir_copy(src, dst)` has different semantics across platforms and fs
+#' versions: on some it creates `dst` and copies the contents of `src` into it,
+#' on others it creates `dst/basename(src)/...`. This helper forces the
+#' "copy contents into target" semantics by creating a fresh, empty `dst` and
+#' then copying each top-level entry from `src` into it with base R.
+#'
+#' @param src Character path to the source directory.
+#' @param dst Character path to the destination directory. Created if absent;
+#'   wiped if present.
+#' @return Invisible `dst`.
+#' @keywords internal
+copy_dir_contents <- function(src, dst) {
+  if (fs::dir_exists(dst)) unlink(dst, recursive = TRUE)
+  fs::dir_create(dst, recurse = TRUE)
+
+  entries <- list.files(src, all.files = TRUE, no.. = TRUE, full.names = TRUE)
+  if (length(entries) == 0) return(invisible(dst))
+
+  ok <- file.copy(entries, dst, recursive = TRUE, overwrite = TRUE, copy.date = TRUE)
+  if (!all(ok)) {
+    failed <- entries[!ok]
+    cli::cli_abort(c(
+      "Failed to copy directory contents",
+      "i" = "From: {.path {src}}",
+      "i" = "To:   {.path {dst}}",
+      "x" = "Could not copy: {paste(basename(failed), collapse = ', ')}"
+    ))
+  }
+  invisible(dst)
+}
+
+#' Find the Python command
+#'
+#' Searches for python3 first (Unix) or python first (Windows) on the
+#' system PATH and verifies it actually runs (Windows Store aliases
+#' exist but fail).
+#'
+#' @return Character string or NULL. The Python command name, or NULL if not found.
+#' @keywords internal
+find_python_command <- function() {
+  candidates <- if (.Platform$OS.type == "windows") {
+    c("python", "python3")
   } else {
-    "npm"
+    c("python3", "python")
   }
-}
 
-#' Set development environment variables
-#'
-#' @param port Integer port number
-#' @param open_devtools Logical whether to open dev tools
-#' @return Named list of old environment variables
-#' @keywords internal
-set_dev_environment <- function(port, open_devtools) {
-  old_env <- list(
-    ELECTRON_DEV_PORT = Sys.getenv("ELECTRON_DEV_PORT", NA),
-    ELECTRON_DEV_TOOLS = Sys.getenv("ELECTRON_DEV_TOOLS", NA)
-  )
-
-  Sys.setenv(
-    ELECTRON_DEV_PORT = as.character(port),
-    ELECTRON_DEV_TOOLS = if (open_devtools) "true" else "false"
-  )
-
-  old_env
-}
-
-#' Restore environment variables
-#'
-#' @param old_env Named list of environment variables to restore
-#' @keywords internal
-restore_environment <- function(old_env) {
-  for (var_name in names(old_env)) {
-    old_value <- old_env[[var_name]]
-    if (is.na(old_value)) {
-      Sys.unsetenv(var_name)
-    } else {
-      do.call(Sys.setenv, stats::setNames(list(old_value), var_name))
+  for (cmd in candidates) {
+    path <- Sys.which(cmd)
+    if (nzchar(path)) {
+      check <- run_command_safe(cmd, "--version", timeout = 5)
+      if (check$status == 0) return(cmd)
     }
   }
+  NULL
 }
 
-#' Setup Electron project structure
+#' Validate a command is available and executable
 #'
-#' @param output_dir Character path to output directory
-#' @param app_name Character application name
-#' @param app_type Character application type
-#' @param verbose Logical whether to show progress
-#' @keywords internal
-setup_electron_project <- function(output_dir, app_name, app_type, verbose = TRUE) {
-  if (verbose) {
-    cli::cli_alert_info("Setting up Electron project structure...")
-  }
-
-  # Create necessary directories
-  dirs_to_create <- c("src", "assets", "build")
-  for (dir in dirs_to_create) {
-    fs::dir_create(fs::path(output_dir, dir), recurse = TRUE)
-  }
-
-  if (verbose) {
-    cli::cli_alert_success("Created project structure")
-  }
-}
-
-#' Copy application files to Electron project
+#' Shared pattern: resolve a command, abort if not found, run it with a
+#' version flag, abort if execution fails. Returns the resolved command.
 #'
-#' @param app_dir Character source app directory
-#' @param output_dir Character destination directory
-#' @param app_type Character application type
-#' @param verbose Logical whether to show progress
+#' @param command_resolver Function returning the command path or NULL.
+#' @param not_found Character vector passed to cli::cli_abort when the
+#'   command is not found. Use "i" = "..." entries for install hints.
+#' @param label Character string used in the generic "found but failed"
+#'   message. Defaults to "Command".
+#' @param version_arg Character. Argument used to check the command
+#'   runs. Defaults to "--version".
+#' @return Invisibly returns the resolved command path.
 #' @keywords internal
-copy_app_files <- function(app_dir, output_dir, app_type, verbose = TRUE) {
-  if (verbose) {
-    cli::cli_alert_info("Copying application files...")
+validate_command_available <- function(command_resolver, not_found,
+                                       label = "Command",
+                                       version_arg = "--version") {
+  cmd <- command_resolver()
+  if (is.null(cmd) || !nzchar(cmd)) {
+    cli::cli_abort(not_found)
   }
 
-  dest_app_dir <- fs::path(output_dir, "src", "app")
-
-  if (fs::dir_exists(dest_app_dir)) {
-    unlink(dest_app_dir, recursive = TRUE)
-  }
-
-  fs::dir_copy(app_dir, dest_app_dir)
-
-  if (verbose) {
-    cli::cli_alert_success("Copied application files")
-  }
-}
-
-#' Process and copy Electron templates
-#'
-#' @param output_dir Character destination directory
-#' @param app_name Character application name
-#' @param app_type Character application type
-#' @param icon Character path to icon file or NULL
-#' @param verbose Logical whether to show progress
-#' @keywords internal
-process_templates <- function(output_dir, app_name, app_type, icon = NULL, verbose = TRUE) {
-  if (verbose) {
-    cli::cli_alert_info("Processing Electron templates...")
-  }
-
-  # Get template directory
-  template_dir <- system.file("electron", app_type, package = "shinyelectron")
-
-  if (!fs::dir_exists(template_dir)) {
-    cli::cli_abort("Template directory not found for app type: {app_type}")
-  }
-
-  # Template variables
-  template_vars <- list(
-    app_name = app_name,
-    app_type = app_type,
-    has_icon = !is.null(icon)
-  )
-
-  # Process each template file
-  template_files <- list.files(template_dir, recursive = TRUE, full.names = TRUE)
-
-  for (template_file in template_files) {
-    # Read template content
-    template_content <- readLines(template_file, warn = FALSE)
-    template_content <- paste(template_content, collapse = "\n")
-
-    # Process with whisker
-    processed_content <- whisker::whisker.render(template_content, template_vars)
-
-    # Determine output path
-    rel_path <- fs::path_rel(template_file, template_dir)
-    output_path <- fs::path(output_dir, rel_path)
-
-    # Create output directory if needed
-    output_parent <- dirname(output_path)
-    if (!fs::dir_exists(output_parent)) {
-      fs::dir_create(output_parent, recurse = TRUE)
-    }
-
-    # Write processed content
-    writeLines(processed_content, output_path)
-  }
-
-  # Copy icon if provided
-  if (!is.null(icon)) {
-    icon_ext <- tools::file_ext(icon)
-    icon_dest <- fs::path(output_dir, "assets", paste0("icon.", icon_ext))
-    fs::file_copy(icon, icon_dest, overwrite = TRUE)
-  }
-
-  if (verbose) {
-    cli::cli_alert_success("Processed Electron templates")
-  }
-}
-
-#' Install npm dependencies
-#'
-#' @param output_dir Character Electron project directory
-#' @param verbose Logical whether to show progress
-#' @keywords internal
-install_npm_dependencies <- function(output_dir, verbose = TRUE) {
-  if (verbose) {
-    cli::cli_alert_info("Installing npm dependencies...")
-  }
-
-  # Change to output directory
-  old_wd <- getwd()
-  setwd(output_dir)
-  on.exit(setwd(old_wd))
-
-  # Run npm install
-  result <- processx::run(
-    command = get_npm_command(),
-    args = c("install"),
-    wd = ".",
-    echo = verbose,
-    spinner = verbose,
-    error_on_status = FALSE
-  )
-
+  result <- run_command_safe(cmd, version_arg, timeout = 10)
   if (result$status != 0) {
     cli::cli_abort(c(
-      "Failed to install npm dependencies",
-      "x" = "Exit code: {result$status}",
-      "i" = "stderr: {result$stderr}"
+      "{label} was found but failed to run",
+      "x" = "Path: {.path {cmd}}",
+      "x" = "Error: {trimws(result$stderr %||% '')}"
     ))
   }
 
-  if (verbose) {
-    cli::cli_alert_success("Installed npm dependencies")
-  }
-}
-
-
-#' Build for target platforms
-#'
-#' @param output_dir Character Electron project directory
-#' @param platform Character vector of target platforms
-#' @param arch Character vector of target architectures
-#' @param verbose Logical whether to show progress
-#' @keywords internal
-build_for_platforms <- function(output_dir, platform, arch, verbose = TRUE) {
-  if (verbose) {
-    cli::cli_alert_info("Building for platforms: {paste(platform, collapse = ', ')}")
-  }
-
-  # Change to output directory
-  old_wd <- getwd()
-  setwd(output_dir)
-  on.exit(setwd(old_wd))
-
-  # Check package.json exists and has necessary scripts
-  package_json_path <- fs::path("package.json")
-  if (!fs::file_exists(package_json_path)) {
-    cli::cli_abort("No package.json found in: {.path {output_dir}}")
-  }
-
-  package_json <- jsonlite::fromJSON(package_json_path, simplifyVector = FALSE)
-  available_scripts <- names(package_json$scripts %||% list())
-
-  if (verbose) {
-    cli::cli_alert_info("Available npm scripts: {paste(available_scripts, collapse = ', ')}")
-  }
-
-  # Build for each platform/arch combination
-  for (p in platform) {
-    for (a in arch) {
-      target <- paste0(p, "-", a)
-
-      if (verbose) {
-        cli::cli_alert_info("Building for {target}...")
-      }
-
-      # Try specific platform-arch script first
-      build_script <- paste0("build-", p, "-", a)
-
-      if (build_script %in% available_scripts) {
-        result <- processx::run(
-          command = get_npm_command(),
-          args = c("run", build_script),
-          wd = ".",
-          echo = verbose,
-          spinner = verbose,
-          cleanup_tree = TRUE,
-          windows_hide_window = TRUE,
-          error_on_status = FALSE
-        )
-
-        if (result$status == 0) {
-          if (verbose) cli::cli_alert_success("Built for {target}")
-          next
-        } else {
-          if (verbose) cli::cli_alert_warning("Specific script {build_script} failed: {result$stderr}")
-        }
-      } else {
-        if (verbose) cli::cli_alert_info("Script {build_script} not found, trying platform-only build")
-      }
-
-      # Fallback to platform-only build
-      platform_script <- paste0("build-", p)
-
-      if (platform_script %in% available_scripts) {
-        if (verbose) {
-          cli::cli_alert_info("Trying fallback build for {p}...")
-        }
-
-        fallback_result <- processx::run(
-          command = get_npm_command(),
-          args = c("run", platform_script),
-          wd = ".",
-          echo = verbose,
-          spinner = verbose,
-          error_on_status = FALSE
-        )
-
-        if (fallback_result$status == 0) {
-          cli::cli_alert_success("Built for {p} (fallback - may include multiple architectures)")
-        } else {
-          cli::cli_alert_warning("Fallback build also failed for {p}: {fallback_result$stderr}")
-        }
-      } else {
-        cli::cli_alert_warning("No build script found for platform {p}")
-      }
-    }
-  }
+  invisible(cmd)
 }

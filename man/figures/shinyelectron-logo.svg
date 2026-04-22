@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 300 350">
+  <!-- Generator: Adobe Illustrator 29.6.1, SVG Export Plug-In . SVG Version: 2.1.1 Build 9)  -->
+  <defs>
+    <style>
+      .st0 {
+        fill: #2c3e50;
+        stroke: #1e2a36;
+        stroke-width: 6px;
+      }
+
+      .st1 {
+        fill: #fff;
+        font-family: Arial-BoldMT, Arial;
+        font-size: 20px;
+        font-weight: 700;
+        isolation: isolate;
+      }
+
+      .st2 {
+        stroke-miterlimit: 4;
+        stroke-width: 4px;
+      }
+
+      .st2, .st3 {
+        stroke: #74b1be;
+      }
+
+      .st2, .st3, .st4 {
+        fill: none;
+      }
+
+      .st3 {
+        stroke-width: 4px;
+      }
+
+      .st5 {
+        fill: #9feaf9;
+      }
+
+      .st6 {
+        fill: #2185c5;
+      }
+
+      .st4 {
+        stroke: #fff;
+        stroke-linecap: round;
+        stroke-width: 10px;
+      }
+    </style>
+  </defs>
+  <polygon class="st0" points="150 20 270 85 270 265 150 330 30 265 30 85 150 20"/>
+  <ellipse class="st2" cx="150" cy="175" rx="30" ry="90" transform="translate(-76.55 217.4) rotate(-60)"/>
+  <ellipse class="st2" cx="150" cy="175" rx="90" ry="30" transform="translate(-67.4 98.45) rotate(-30)"/>
+  <ellipse class="st3" cx="150" cy="175" rx="30" ry="90"/>
+  <circle class="st5" cx="107.6" cy="-51.55" r="12">
+    <animateMotion accumulate="none" additive="replace" calcMode="paced" dur="4s" fill="remove" path="M 240,175 A 90,30 0 1,1 60,175 A 90,30 0 1,1 240,175" repeatCount="indefinite" restart="always"/>
+  </circle>
+  <circle class="st5" cx="367.4" cy="251.55" r="12">
+    <animateMotion accumulate="none" additive="replace" calcMode="paced" dur="5s" fill="remove" path="M 240,175 A 90,30 0 1,1 60,175 A 90,30 0 1,1 240,175" repeatCount="indefinite" restart="always"/>
+  </circle>
+  <circle class="st5" cx="-25" cy="325" r="12">
+    <animateMotion accumulate="none" additive="replace" calcMode="paced" dur="3s" fill="remove" path="M 240,175 A 90,30 0 1,1 60,175 A 90,30 0 1,1 240,175" repeatCount="indefinite" restart="always"/>
+  </circle>
+  <circle class="st6" cx="150" cy="175" r="50"/>
+  <path class="st4" d="M170,155c0-10-10-15-20-15s-20,5-20,15,10,15,20,20,20,10,20,20-10,15-20,15-20-5-20-15"/>
+  <text class="st1" transform="translate(84.98 285)"><tspan x="0" y="0">shinyelectron</tspan></text>
+</svg>

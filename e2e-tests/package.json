@@ -1,0 +1,27 @@
+{
+  "name": "e2e-tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:fast": "npx playwright test single-app multi-app-launcher error-recovery",
+    "test:single": "npx playwright test single-app",
+    "test:multi": "npx playwright test multi-app-launcher",
+    "test:error": "npx playwright test error-recovery",
+    "test:r-shinylive": "npx playwright test r-shinylive",
+    "test:py-shinylive": "npx playwright test py-shinylive",
+    "test:py-system": "npx playwright test py-shiny-system",
+    "test:r-bundled": "npx playwright test r-shiny-bundled",
+    "test:r-autodownload": "npx playwright test r-shiny-auto-download",
+    "test:r-container": "npx playwright test r-shiny-container"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "electron": "^41.1.1"
+  }
+}

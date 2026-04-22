@@ -2,44 +2,55 @@
 % Please edit documentation in R/cache.R
 \name{cache_dir}
 \alias{cache_dir}
-\title{Get or create cache directory path}
+\title{Get or create the cache directory path}
 \usage{
 cache_dir(create = TRUE)
 }
 \arguments{
-\item{create}{Logical. Whether to create the directory if it doesn't exist.
-Default is TRUE.}
+\item{create}{Logical. Whether to create the directory if it doesn't
+exist. Default is TRUE.}
 }
 \value{
-Character string. The absolute path to the cache directory.
+Character string. Absolute path to the cache directory,
+typically \verb{~/.cache/shinyelectron/assets} on Linux,
+\verb{~/Library/Caches/shinyelectron/assets} on macOS, or
+\verb{\\\%LOCALAPPDATA\\\%/shinyelectron/shinyelectron/Cache/assets} on Windows.
 }
 \description{
-Determines the path to the cache directory for shinyelectron assets and
-optionally creates the directory if it doesn't exist.
+Returns the path where shinyelectron stores downloaded runtimes
+(R, Python, Node.js) and other cached assets. By default, the
+directory is created if it doesn't already exist. Pass
+\code{create = FALSE} to query the path without side effects.
 }
-\section{Details}{
+\section{Cache Layout}{
 
-The cache directory is located at \code{rappdirs::user_cache_dir("shinyelectron")/assets}.
-This function centralizes path management for all cached assets used by the package.
-}
+Cached runtimes are organized by type, platform, architecture, and
+version:
 
-\section{Cache Structure}{
-
-The cache directory structure (typically at ~/.shinyelectron/cache/assets/):
-\preformatted{
-assets/
+\if{html}{\out{<div class="sourceCode bash">}}\preformatted{assets/
 |-- r/
-|   |-- win/
-|   |   |-- x64/
-|   |   |-- arm64/
-|   |-- mac/
-|   |   |-- x64/
-|   |   |-- arm64/
-|   |-- linux/
-|       |-- x64/
-|       |-- arm64/
-|-- npm/
-}
+|   |-- win/x64/4.5.3/
+|   |-- mac/arm64/4.5.3/
+|-- python/
+|   |-- win/x64/3.12.10/
+|   |-- mac/arm64/3.12.10/
+|-- nodejs/
+|   |-- v22.11.0/darwin-arm64/
+|   |-- v22.11.0/win-x64/
+}\if{html}{\out{</div>}}
+
+Use \code{\link[=cache_info]{cache_info()}} to see what's actually installed with disk usage.
 }
 
-\keyword{internal}
+\examples{
+# Query without creating
+cache_dir(create = FALSE)
+
+# Get or create
+cache_dir()
+
+}
+\seealso{
+\code{\link[=cache_info]{cache_info()}} to see what's cached, \code{\link[=cache_clear]{cache_clear()}} to
+remove cached assets, \code{\link[=cache_remove]{cache_remove()}} to remove a specific version.
+}

@@ -9,9 +9,12 @@ build_electron_app(
   output_dir,
   app_name = NULL,
   app_type = "r-shinylive",
+  runtime_strategy = "shinylive",
+  sign = FALSE,
   platform = NULL,
   arch = NULL,
   icon = NULL,
+  config = NULL,
   overwrite = FALSE,
   verbose = TRUE
 )
@@ -25,11 +28,20 @@ build_electron_app(
 
 \item{app_type}{Character string. Type of application: "r-shinylive", "r-shiny", "py-shinylive", or "py-shiny".}
 
+\item{runtime_strategy}{Character string. Runtime strategy: "shinylive", "bundled",
+"system", "auto-download", or "container". Default is "shinylive".}
+
+\item{sign}{Logical. Whether to enable code signing for the built application.
+Default is FALSE.}
+
 \item{platform}{Character vector. Target platforms: "win", "mac", "linux". If NULL, builds for current platform.}
 
 \item{arch}{Character vector. Target architectures: "x64", "arm64". If NULL, uses current architecture.}
 
 \item{icon}{Character string. Path to application icon file. Platform-specific format required.}
+
+\item{config}{List. Configuration from _shinyelectron.yml file (optional). Used for
+template variables like window dimensions, port, and app version.}
 
 \item{overwrite}{Logical. Whether to overwrite existing output directory. Default is FALSE.}
 

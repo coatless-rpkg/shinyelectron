@@ -4,10 +4,12 @@
 \alias{cache_clear}
 \title{Clear the asset cache}
 \usage{
-cache_clear(what = c("all", "r", "npm"))
+cache_clear(what = c("all", "r", "npm", "nodejs", "python"))
 }
 \arguments{
-\item{what}{Character string. What to clear: "all" (default), "r", or "npm".}
+\item{what}{Character string specifying what to clear. One of
+\code{"all"}, \code{"nodejs"}, \code{"r"}, \code{"python"}, or a
+specific cache subdirectory name.}
 }
 \value{
 Invisibly returns NULL.
@@ -21,7 +23,9 @@ Use this function to free disk space or force re-downloading of assets:
 \itemize{
 \item \code{"r"}: Removes only cached R installations
 \item \code{"npm"}: Removes only cached npm packages
-\item \code{"all"}: Removes both R installations and npm packages
+\item \code{"nodejs"}: Removes only cached Node.js installations
+\item \code{"python"}: Removes only cached Python installations
+\item \code{"all"}: Removes all cached assets
 }
 If the cache directory doesn't exist, a message is shown and nothing is done.
 }
@@ -36,6 +40,12 @@ cache_clear("r")
 
 # Clear only npm packages
 cache_clear("npm")
+
+# Clear only Node.js installations
+cache_clear("nodejs")
+
+# Clear only Python installations
+cache_clear("python")
 }
 
 }

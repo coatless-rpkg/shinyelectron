@@ -1,0 +1,93 @@
+# GitHub Actions workflow for building and pushing shinyelectron Docker images
+# Place this file in .github/workflows/docker-images.yml
+
+name: Build Docker Images
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      r_version:
+        description: 'R version for the image'
+        default: 'latest'
+      python_version:
+        description: 'Python version for the image'
+        default: '3.12'
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-r-shiny:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push R Shiny image
+        uses: docker/build-push-action@v7
+        with:
+          context: inst/dockerfiles/r-shiny
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/shinyelectron-r-shiny:latest
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/shinyelectron-r-shiny:${{ github.ref_name }}
+
+  build-py-shiny:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Python Shiny image
+        uses: docker/build-push-action@v7
+        with:
+          context: inst/dockerfiles/py-shiny
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/shinyelectron-py-shiny:latest
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/shinyelectron-py-shiny:${{ github.ref_name }}
+
+  build-r-py-shiny:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push R+Python Shiny image
+        uses: docker/build-push-action@v7
+        with:
+          context: inst/dockerfiles/r-py-shiny
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/shinyelectron-r-py-shiny:latest
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/shinyelectron-r-py-shiny:${{ github.ref_name }}

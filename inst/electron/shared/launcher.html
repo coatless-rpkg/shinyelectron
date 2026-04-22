@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+  <title>{{app_name}}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: {{brand_background}};
+      color: #1e293b;
+      min-height: 100vh;
+      padding: 40px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .header p {
+      font-size: 14px;
+      color: #64748b;
+    }
+    .apps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .app-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border: 2px solid transparent;
+    }
+    .app-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border-color: {{brand_primary}};
+    }
+    .app-icon {
+      width: 48px;
+      height: 48px;
+      background: {{brand_primary}};
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 16px;
+    }
+    .app-icon img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+    }
+    .app-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .app-desc {
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.4;
+    }
+    .app-type {
+      display: inline-block;
+      font-size: 10px;
+      color: #94a3b8;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: 8px;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>{{app_name}}</h1>
+    <p>Select an application to launch</p>
+  </div>
+
+  <div class="apps-grid" id="apps-grid"></div>
+
+  <script>
+    var apps = {{{apps_json}}};
+    var launching = false;
+
+    var grid = document.getElementById('apps-grid');
+    apps.forEach(function(app) {
+      var card = document.createElement('div');
+      card.className = 'app-card';
+      card.onclick = function() {
+        if (launching) return;
+        launching = true;
+        if (window.lifecycle) window.lifecycle.selectApp(app.id);
+      };
+
+      var iconDiv = document.createElement('div');
+      iconDiv.className = 'app-icon';
+      if (app.icon && typeof app.icon === 'string' && app.icon.length > 0) {
+        var img = document.createElement('img');
+        img.src = app.icon;
+        iconDiv.appendChild(img);
+      } else {
+        iconDiv.textContent = app.name.charAt(0).toUpperCase();
+      }
+
+      var nameDiv = document.createElement('div');
+      nameDiv.className = 'app-name';
+      nameDiv.textContent = app.name;
+
+      var typeDiv = document.createElement('div');
+      typeDiv.className = 'app-type';
+      typeDiv.textContent = app.type;
+
+      card.appendChild(iconDiv);
+      card.appendChild(nameDiv);
+
+      if (app.description) {
+        var descDiv = document.createElement('div');
+        descDiv.className = 'app-desc';
+        descDiv.textContent = app.description;
+        card.appendChild(descDiv);
+      }
+
+      card.appendChild(typeDiv);
+
+      grid.appendChild(card);
+    });
+  </script>
+</body>
+</html>

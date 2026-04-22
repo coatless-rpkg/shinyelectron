@@ -1,0 +1,255 @@
+---
+title: "Container Strategy"
+vignette: >
+  %\VignetteIndexEntry{Container Strategy}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"
+---
+
+```{r}
+#| include: false
+library(shinyelectron)
+```
+
+The container strategy runs your Shiny app inside a Docker or Podman container
+with Electron as the desktop shell. The app and all its dependencies live in a
+reproducible container image; the end user only needs a container engine.
+
+## When to use containers
+
+The container strategy is a good fit when:
+
+- Your app has **complex system dependencies** (C libraries, database drivers,
+  spatial tools like GDAL/PROJ --- geospatial libraries that are notoriously
+  difficult to install) that are hard to bundle portably.
+- **Reproducibility** is critical -- the container image pins every dependency
+  down to the OS layer.
+- Your team already uses **Docker workflows** for deployment and you want the
+  desktop app to match your server environment.
+- You are distributing to a **known set of users** (e.g., within an
+  organization) where you can require Docker or Podman.
+
+For apps without system-level dependencies, the `auto-download` or `bundled`
+strategies are simpler and do not require end users to install Docker.
+
+## Prerequisites
+
+The end user's machine must have one of:
+
+- **Docker Desktop** -- <https://docs.docker.com/get-docker/>
+- **Podman** -- <https://podman.io/getting-started/installation>
+
+The engine must be **running** when the Electron app launches. shinyelectron
+detects available engines automatically, checking Docker first then Podman.
+
+On the build machine, Docker/Podman is optional. If present, shinyelectron
+validates the daemon is reachable; if not, it warns and proceeds -- the image
+is built or pulled on the end user's machine at first launch.
+
+## How it works
+
+Think of a container as a sealed box: your app, its runtime, and all system
+dependencies live inside, completely isolated from the user's machine. Electron
+is just the window that shows what's inside the box.
+
+The startup sequence when a user opens the packaged Electron app:
+
+1. **Electron launches** and shows the lifecycle splash screen.
+2. The `container.js` backend **resolves the Docker socket** -- checking
+   `docker context inspect`, then well-known paths (`/var/run/docker.sock`,
+   `~/.colima/docker.sock`, named pipes on Windows).
+3. It **detects the engine** (Docker or Podman) from config or availability.
+4. If the image is not present locally, it is **built from an embedded
+   Dockerfile** or **pulled from a registry**.
+5. The container starts with `docker run -d`, mapping the host port and
+   bind-mounting the app directory to `/app`. Bind-mounting maps a directory
+   from the host into the container, like creating a shared folder between
+   two machines.
+6. The backend **polls** until the Shiny server responds (up to 120 seconds).
+7. Electron loads `http://localhost:<port>`.
+8. On quit, the container is stopped and removed.
+
+## Configuration
+
+Set `runtime_strategy: container` in your `_shinyelectron.yml`:
+
+```yaml
+app:
+  name: "My Containerized App"
+  version: "1.0.0"
+
+build:
+  type: "r-shiny"
+  runtime_strategy: "container"
+
+container:
+  engine: "docker"         # "docker" or "podman"
+  image: null              # null = use embedded Dockerfile
+  tag: "latest"
+  pull_on_start: true
+  volumes: {}              # extra host:container volume mounts
+  env: {}                  # extra environment variables
+
+server:
+  port: 3838
+```
+
+Setting `image: null` (the default) tells shinyelectron to embed a Dockerfile
+in the Electron package and build the image locally on first launch. Setting
+`image` to a registry reference (e.g., `ghcr.io/myorg/myapp`) pulls from that
+registry instead.
+
+## Using with R Shiny
+
+shinyelectron ships a built-in Dockerfile for R apps based on
+[`rocker/r2u:24.04`](https://github.com/rocker-org/r2u), which provides
+pre-compiled binary R packages via apt. It supports both amd64 and arm64
+architectures.
+
+```r
+export(
+  appdir = "path/to/my-r-app",
+  destdir = "path/to/output",
+  app_name = "My R App",
+  app_type = "r-shiny",
+  runtime_strategy = "container"
+)
+```
+
+The embedded Dockerfile installs `r-cran-shiny` and `r-cran-jsonlite`. App
+dependencies from `dependencies.json` are installed at container startup by the
+entrypoint script, which then launches:
+
+```bash
+Rscript --vanilla -e "shiny::runApp('/app', port = 3838, host = '0.0.0.0')"
+```
+
+## Using with Python Shiny
+
+For Python apps, the embedded Dockerfile uses `python:3.12-slim` and
+pre-installs `shiny` via pip.
+
+```r
+export(
+  appdir = "path/to/my-py-app",
+  destdir = "path/to/output",
+  app_name = "My Python App",
+  app_type = "py-shiny",
+  runtime_strategy = "container"
+)
+```
+
+The entrypoint installs additional packages from `dependencies.json`, then
+starts the app with `python3 -m shiny run --port 3838 --host 0.0.0.0 --app-dir /app`.
+
+## Custom Dockerfiles
+
+For apps with specialized system dependencies, place a `Dockerfile` in your
+app directory. shinyelectron will embed it and use it to build the image at
+first launch.
+
+Your Dockerfile must:
+
+1. **Expose the port** specified by the `PORT` environment variable (default
+   3838).
+2. **Set the working directory** to `/app` (the app files are bind-mounted
+   there at runtime).
+3. **Accept `PORT` and `HOST` environment variables** for the server bind
+   address.
+
+Example for an R app that needs spatial libraries:
+
+```dockerfile
+FROM rocker/r2u:24.04
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    r-cran-shiny r-cran-sf r-cran-terra libgdal-dev libproj-dev \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+EXPOSE 3838
+CMD ["Rscript", "--vanilla", "-e", \
+     "shiny::runApp('/app', port=as.integer(Sys.getenv('PORT',3838)), host=Sys.getenv('HOST','0.0.0.0'), launch.browser=FALSE)"]
+```
+
+Example for a Python app with machine learning dependencies:
+
+```dockerfile
+FROM python:3.12-slim
+RUN pip install --no-cache-dir shiny pandas scikit-learn
+WORKDIR /app
+EXPOSE 3838
+CMD ["python3", "-m", "shiny", "run", "--port", "3838", \
+     "--host", "0.0.0.0", "--app-dir", "/app", "--no-dev-mode"]
+```
+
+## Passing extra configuration
+
+You can pass additional volumes and environment variables through the config
+file. These are forwarded as `-v` and `-e` flags to `docker run`.
+
+```yaml
+container:
+  engine: "docker"
+  volumes:
+    "/path/to/data": "/data"
+    "/path/to/models": "/models"
+  env:
+    SHINY_LOG_LEVEL: "debug"
+    DATABASE_URL: "postgresql://localhost:5432/mydb"
+```
+
+## Verifying container support
+
+Use `sitrep_electron_system()` to check that a container engine is available,
+or call the internal helpers directly:
+
+```r
+sitrep_electron_system()
+
+# Returns "docker" or "podman", or errors if nothing found
+shinyelectron:::validate_container_available()
+```
+
+## Limitations
+
+For container-specific security considerations (volume mounts, root access,
+container escapes), see [Security Considerations](security.html#container-strategy-security).
+
+**End user requirement.** Unlike `bundled` or `auto-download`, the container
+strategy requires the end user to have Docker or Podman installed and running.
+This makes it unsuitable for broad public distribution where you cannot control
+the user's environment.
+
+**First-launch startup time.** The first time the app runs, the container image
+must be built (from the embedded Dockerfile) or pulled (from a registry). This
+can take several minutes depending on image size and network speed. Subsequent
+launches use the cached image and start in seconds.
+
+**Nested virtualization.** Running Docker inside a virtual machine (e.g.,
+Parallels Desktop or VMware on macOS) may fail due to nested virtualization
+limitations. Users in this situation should use Podman, which does not require
+a hypervisor on Linux, or run on the host OS directly.
+
+**Container daemon must be running.** If Docker Desktop is not started, the app
+will display an error directing the user to start it. There is no way for the
+Electron app to start the daemon automatically.
+
+## Platform considerations
+
+**Docker Desktop licensing.** Docker Desktop requires a paid subscription for
+commercial use in larger organizations. Podman is a free, open-source,
+daemonless alternative that shinyelectron supports as a drop-in replacement ---
+set `engine: "podman"` in your config, or let shinyelectron auto-detect it.
+
+**Architecture matching.** shinyelectron passes `--platform linux/arm64` or
+`--platform linux/amd64` to Docker based on the host's CPU architecture. If
+building with `buildx`, it uses `--load` to ensure the image is available
+locally. On Apple Silicon Macs, this avoids the performance penalty of running
+amd64 images under Rosetta emulation.
+
+**Colima users (macOS).** If you use [Colima](https://github.com/abiosoft/colima)
+instead of Docker Desktop, shinyelectron checks `~/.colima/docker.sock`
+automatically. No extra configuration is needed.

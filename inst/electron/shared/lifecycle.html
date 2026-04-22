@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+  <title>{{app_name}}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: {{brand_background}};
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      -webkit-app-region: drag;
+      user-select: none;
+    }
+    .container { text-align: center; max-width: 480px; padding: 40px; -webkit-app-region: no-drag; }
+
+    .logo-placeholder {
+      width: 72px; height: 72px; background: {{brand_primary}};
+      border-radius: 16px; margin: 0 auto 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; font-weight: 700; color: white;
+    }
+    .splash-image { max-width: 128px; max-height: 128px; margin: 0 auto 20px; }
+    .app-name { font-size: 22px; font-weight: 600; margin-bottom: 24px; }
+    .splash-text { font-size: 14px; color: {{splash_text_color}}; margin-bottom: 16px; }
+    .pulse-bar {
+      width: 40px; height: 3px; background: {{brand_primary}};
+      border-radius: 2px; margin: 0 auto;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    .dots::after { content: ''; animation: dots 1.5s steps(4, end) infinite; }
+    @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+
+    .status-message { font-size: 14px; color: #64748b; margin-bottom: 8px; }
+    .phase-detail { font-size: 15px; font-weight: 500; margin-bottom: 16px; }
+    .progress-bar-track {
+      width: 240px; height: 6px; background: #e2e8f0;
+      border-radius: 3px; margin: 0 auto 8px; overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%; background: {{brand_primary}};
+      border-radius: 3px; transition: width 0.3s ease; width: 0%;
+    }
+    .progress-bar-indeterminate .progress-bar-fill {
+      width: 30%; animation: indeterminate 1.5s ease-in-out infinite;
+    }
+    .progress-sub { font-size: 12px; color: #94a3b8; }
+
+    .error-icon {
+      width: 48px; height: 48px; background: #ef4444;
+      border-radius: 50%; margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; color: white;
+    }
+    .error-title { font-size: 16px; font-weight: 600; color: #991b1b; margin-bottom: 8px; }
+    .error-message { font-size: 13px; color: #7f1d1d; margin-bottom: 16px; }
+    .error-logs {
+      text-align: left; background: #fee2e2; padding: 12px;
+      border-radius: 6px; font-family: monospace; font-size: 11px;
+      color: #7f1d1d; max-height: 200px; overflow-y: auto;
+      margin-bottom: 16px; white-space: pre-wrap; word-break: break-all;
+    }
+    .error-logs-toggle {
+      font-size: 12px; color: #64748b; cursor: pointer;
+      margin-bottom: 12px; text-decoration: underline;
+    }
+    .buttons { display: flex; gap: 8px; justify-content: center; }
+    .btn {
+      padding: 8px 20px; border-radius: 6px; font-size: 13px;
+      font-weight: 500; cursor: pointer; border: none;
+      -webkit-app-region: no-drag;
+    }
+    .btn-primary { background: {{brand_primary}}; color: white; }
+    .btn-secondary { background: #e2e8f0; color: #475569; }
+    .btn:hover { opacity: 0.9; }
+
+    .spinner {
+      width: 24px; height: 24px;
+      border: 3px solid #e2e8f0; border-top-color: {{brand_primary}};
+      border-radius: 50%; margin: 0 auto 12px;
+      animation: spin 0.8s linear infinite;
+    }
+    .shutdown-message { font-size: 14px; color: #64748b; }
+    .shutdown-sub { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+    .state { display: none; }
+    .state.active { display: block; }
+
+    @keyframes pulse { 0%, 100% { opacity: 0.3; transform: scaleX(1); } 50% { opacity: 1; transform: scaleX(1.5); } }
+    @keyframes indeterminate { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="state-splash" class="state active">
+      {{#has_custom_splash}}
+      {{{custom_splash_html}}}
+      {{/has_custom_splash}}
+      {{^has_custom_splash}}
+      {{#has_splash_image}}
+      <img class="splash-image" src="{{splash_image}}" alt="">
+      {{/has_splash_image}}
+      {{^has_splash_image}}
+      <div class="logo-placeholder">{{app_name_initial}}</div>
+      {{/has_splash_image}}
+      <div class="app-name">{{app_name}}</div>
+      <div class="splash-text">{{splash_text}}</div>
+      <div class="pulse-bar"></div>
+      {{/has_custom_splash}}
+    </div>
+
+    <div id="state-progress" class="state">
+      <div class="status-message" id="progress-status">{{preloader_message}}</div>
+      <div class="phase-detail" id="progress-detail"></div>
+      <div class="progress-bar-track progress-bar-indeterminate" id="progress-bar">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
+      <div class="progress-sub" id="progress-sub"></div>
+    </div>
+
+    <!-- Dependency Confirmation State -->
+    <div id="state-deps-confirm" class="state">
+      <div class="app-name" style="font-size:18px; margin-bottom:16px;">Packages Required</div>
+      <div class="status-message" id="deps-message">The following packages need to be installed:</div>
+      <div id="deps-list" style="text-align:left; background:#f1f5f9; padding:12px; border-radius:6px; margin:12px 0; font-size:13px; max-height:150px; overflow-y:auto;"></div>
+      <div style="text-align:left; margin:12px 0;">
+        <div class="status-message" style="margin-bottom:6px;">Install to:</div>
+        <label style="display:block; padding:4px 0; font-size:13px; cursor:pointer;">
+          <input type="radio" name="lib-path" value="system" checked> System library (R default)
+        </label>
+        <label style="display:block; padding:4px 0; font-size:13px; cursor:pointer;">
+          <input type="radio" name="lib-path" value="app-local"> App-local library
+        </label>
+        <label style="display:block; padding:4px 0; font-size:13px; cursor:pointer;">
+          <input type="radio" name="lib-path" value="custom"> Custom path...
+        </label>
+        <input type="text" id="custom-lib-path" placeholder="/path/to/library" style="display:none; width:100%; padding:4px 8px; margin-top:4px; font-size:12px; border:1px solid #cbd5e1; border-radius:4px;">
+      </div>
+      <div id="deps-sysdeps-warning" style="display:none; text-align:left; background:#fef3c7; padding:8px 12px; border-radius:6px; margin:8px 0; font-size:12px; color:#92400e;"></div>
+      <div class="buttons">
+        <button class="btn btn-primary" id="btn-install">Install</button>
+        <button class="btn btn-secondary" id="btn-skip-install">Skip</button>
+      </div>
+    </div>
+
+    <!-- Dependency Installing State -->
+    <div id="state-deps-installing" class="state">
+      <div class="status-message">Installing packages...</div>
+      <div class="phase-detail" id="deps-install-detail"></div>
+      <div class="progress-bar-track" id="deps-progress-bar">
+        <div class="progress-bar-fill" id="deps-progress-fill"></div>
+      </div>
+      <div class="progress-sub" id="deps-install-sub"></div>
+    </div>
+
+    <!-- Runtime Version Picker State -->
+    <div id="state-runtime-picker" class="state">
+      <div class="app-name" style="font-size:18px; margin-bottom:16px;">Select Runtime Version</div>
+      <div class="status-message" id="runtime-picker-message">Multiple versions found:</div>
+      <div id="runtime-versions-list" style="text-align:left; margin:12px 0;"></div>
+      <div class="buttons">
+        <button class="btn btn-primary" id="btn-select-runtime">Use Selected</button>
+      </div>
+    </div>
+
+    <div id="state-error" class="state">
+      {{#has_custom_error}}
+      {{{custom_error_html}}}
+      {{/has_custom_error}}
+      {{^has_custom_error}}
+      <div class="error-icon">&#x2715;</div>
+      <div class="error-title" id="error-title">Failed to start</div>
+      <div class="error-message" id="error-message"></div>
+      <div class="error-logs-toggle" id="error-logs-toggle">Show details</div>
+      <div class="error-logs" id="error-logs" style="display:none;"></div>
+      <div class="buttons">
+        <button class="btn btn-primary" id="btn-retry">Retry</button>
+        <button class="btn btn-secondary" id="btn-quit">Quit</button>
+      </div>
+      {{/has_custom_error}}
+    </div>
+
+    <div id="state-shutdown" class="state">
+      <div class="spinner"></div>
+      <div class="shutdown-message" id="shutdown-message">Closing application...</div>
+      <div class="shutdown-sub" id="shutdown-sub"></div>
+    </div>
+  </div>
+
+  <script>
+    function showState(name) {
+      document.querySelectorAll('.state').forEach(function(s) { s.classList.remove('active'); });
+      var target = document.getElementById('state-' + name);
+      if (target) target.classList.add('active');
+    }
+
+    document.getElementById('error-logs-toggle').addEventListener('click', function() {
+      var logs = document.getElementById('error-logs');
+      var toggle = document.getElementById('error-logs-toggle');
+      if (logs.style.display === 'none') {
+        logs.style.display = 'block';
+        toggle.textContent = 'Hide details';
+      } else {
+        logs.style.display = 'none';
+        toggle.textContent = 'Show details';
+      }
+    });
+
+    document.getElementById('btn-retry').addEventListener('click', function() {
+      if (window.lifecycle) window.lifecycle.retry();
+    });
+    document.getElementById('btn-quit').addEventListener('click', function() {
+      if (window.lifecycle) window.lifecycle.quit();
+    });
+
+    document.querySelectorAll('input[name="lib-path"]').forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        document.getElementById('custom-lib-path').style.display =
+          this.value === 'custom' ? 'block' : 'none';
+      });
+    });
+
+    document.getElementById('btn-select-runtime').addEventListener('click', function() {
+      if (window.lifecycle) {
+        var selected = document.querySelector('input[name="runtime-version"]:checked');
+        if (selected) {
+          window.lifecycle.selectRuntime({ runtimePath: selected.value });
+        }
+      }
+    });
+
+    document.getElementById('btn-install').addEventListener('click', function() {
+      if (window.lifecycle) {
+        var selected = document.querySelector('input[name="lib-path"]:checked').value;
+        var customPath = document.getElementById('custom-lib-path').value;
+        window.lifecycle.install({
+          libPath: selected === 'custom' ? customPath : selected
+        });
+      }
+    });
+
+    document.getElementById('btn-skip-install').addEventListener('click', function() {
+      if (window.lifecycle) window.lifecycle.skipInstall();
+    });
+
+    if (window.lifecycle) {
+      window.lifecycle.onStatus(function(data) {
+        switch (data.phase) {
+          case 'app_starting':
+            showState('splash');
+            break;
+
+          case 'finding_runtime':
+          case 'runtime_found':
+          case 'downloading_runtime':
+          case 'starting_server':
+          case 'port_conflict':
+            showState('progress');
+            document.getElementById('progress-detail').textContent = data.message || '';
+            if (data.percent !== undefined && data.percent >= 0) {
+              var bar = document.getElementById('progress-bar');
+              bar.classList.remove('progress-bar-indeterminate');
+              document.getElementById('progress-fill').style.width = data.percent + '%';
+              document.getElementById('progress-sub').textContent =
+                data.percent < 100 ? data.percent + '%' : '';
+            }
+            break;
+
+          case 'runtime_versions_found':
+            showState('runtime-picker');
+            if (data.detail && data.detail.versions) {
+              var list = document.getElementById('runtime-versions-list');
+              list.textContent = '';
+              data.detail.versions.forEach(function(v, i) {
+                var label = document.createElement('label');
+                label.style.cssText = 'display:block; padding:6px 0; font-size:13px; cursor:pointer;';
+                var radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'runtime-version';
+                radio.value = v.path;
+                if (i === 0) radio.checked = true;
+                label.appendChild(radio);
+                label.appendChild(document.createTextNode(' '));
+                if (v.version !== '0.0.0') {
+                  label.appendChild(document.createTextNode('Version ' + v.version + ' \u2014 '));
+                }
+                var pathSpan = document.createElement('span');
+                pathSpan.style.cssText = 'font-size:11px; color:#64748b;';
+                pathSpan.textContent = v.path;
+                label.appendChild(pathSpan);
+                list.appendChild(label);
+              });
+            }
+            break;
+
+          case 'checking_packages':
+            showState('progress');
+            document.getElementById('progress-detail').textContent = data.message || 'Checking packages...';
+            break;
+
+          case 'awaiting_install_confirmation':
+            showState('deps-confirm');
+            if (data.detail && data.detail.missing) {
+              var depsList = document.getElementById('deps-list');
+              depsList.textContent = '';
+              data.detail.missing.forEach(function(p) {
+                var div = document.createElement('div');
+                div.style.padding = '2px 0';
+                div.textContent = '\u2022 ' + p;
+                depsList.appendChild(div);
+              });
+              document.getElementById('deps-message').textContent =
+                data.detail.missing.length + ' package(s) need to be installed:';
+            }
+            if (data.detail && data.detail.system_deps && data.detail.system_deps.length > 0) {
+              var warning = document.getElementById('deps-sysdeps-warning');
+              warning.style.display = 'block';
+              warning.textContent = '';
+              var strong = document.createElement('strong');
+              strong.textContent = 'System libraries may be needed:';
+              warning.appendChild(strong);
+              warning.appendChild(document.createElement('br'));
+              warning.appendChild(document.createTextNode(data.detail.system_deps.join(', ')));
+              warning.appendChild(document.createElement('br'));
+              warning.appendChild(document.createElement('br'));
+              warning.appendChild(document.createTextNode('Install with: '));
+              var code = document.createElement('code');
+              code.textContent = 'sudo apt install ' + data.detail.system_deps.join(' ');
+              warning.appendChild(code);
+            }
+            break;
+
+          case 'installing_packages':
+            showState('deps-installing');
+            document.getElementById('deps-install-detail').textContent = data.message || '';
+            if (data.detail && data.detail.index !== undefined) {
+              var pct = Math.round(((data.detail.index + 1) / data.detail.total) * 100);
+              document.getElementById('deps-progress-fill').style.width = pct + '%';
+              document.getElementById('deps-install-sub').textContent =
+                (data.detail.index + 1) + '/' + data.detail.total;
+            }
+            break;
+
+          case 'install_error':
+            showState('error');
+            document.getElementById('error-title').textContent = 'Package installation failed';
+            document.getElementById('error-message').textContent = data.message || '';
+            break;
+
+          case 'error':
+          case 'server_crashed':
+            showState('error');
+            document.getElementById('error-title').textContent =
+              data.phase === 'server_crashed' ? 'Application crashed' : 'Failed to start';
+            document.getElementById('error-message').textContent = data.message || '';
+            if (data.detail && data.detail.stderr) {
+              document.getElementById('error-logs').textContent = data.detail.stderr;
+            }
+            break;
+
+          case 'shutting_down':
+          case 'stopping_server':
+          case 'cleanup':
+            showState('shutdown');
+            document.getElementById('shutdown-message').textContent = data.message || 'Closing...';
+            if (data.phase !== 'shutting_down') {
+              document.getElementById('shutdown-sub').textContent = data.message || '';
+            }
+            break;
+        }
+      });
+    }
+  </script>
+</body>
+</html>
