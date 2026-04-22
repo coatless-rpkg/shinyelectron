@@ -1,0 +1,733 @@
+# Troubleshooting Guide
+
+When something goes wrong with shinyelectron, the diagnostic functions
+(called “sitrep” for “situation report”) help identify and resolve
+issues. This guide explains how to use these functions effectively.
+
+## Quick Start: Run Full Diagnostics
+
+When you encounter problems, start with a complete diagnostic check:
+
+``` r
+sitrep_shinyelectron()
+```
+
+    ── Complete shinyelectron Diagnostic Report ──────────────────────────────────
+    ────────────────────────────────────────────────────────────────────────────────
+
+    ── System Requirements Report ────────────────────────────────────────────────
+    ✔ Platform: darwin
+    ✔ Architecture: arm64
+    ✔ Local Node.js (shinyelectron): v22.11.0 ✓
+    ✔ Active Node.js: v22.11.0 (local) ✓
+    ✔ npm: v10.9.0 ✓
+    ✔ R: v4.4.2 ✓
+
+    ── Python
+    ✔ Python 3.12.4
+    ✔ Python shinylive: 0.7.0 (ready)
+    ✔ Python shiny: 1.2.1 (ready)
+
+    ── Container Engine
+    ✔ Container engine: docker
+
+    ── Cached Runtimes
+    ℹ No cached runtimes found
+
+    ✔ All system requirements satisfied ✓
+    ────────────────────────────────────────────────────────────────────────────────
+
+    ── Dependencies Report ───────────────────────────────────────────────────────
+    ── Required Packages
+    ✔ cli: v3.6.5 ✓
+    ✔ fs: v1.6.6 ✓
+    ✔ jsonlite: v2.0.0 ✓
+    ✔ processx: v3.8.6 ✓
+    ✔ whisker: v0.4.1 ✓
+    ✔ utils: v4.4.2 ✓
+    ✔ tools: v4.4.2 ✓
+    ✔ All required dependencies satisfied ✓
+    ────────────────────────────────────────────────────────────────────────────────
+
+    ── Build Tools Report ────────────────────────────────────────────────────────
+    ℹ Checking build tools for platform: darwin
+    ✔ Xcode Command Line Tools: Found ✓
+    ✔ Build tools ready ✓
+    ────────────────────────────────────────────────────────────────────────────────
+
+    ── Overall Summary ───────────────────────────────────────────────────────────
+    ✔ All systems ready! You should be able to build Electron apps successfully ✓
+
+This command runs all diagnostic checks and provides prioritized
+recommendations if issues are found. The system report now includes
+Python availability, Python package checks (shinylive and shiny),
+container engine detection, and cached runtime inventories.
+
+## Individual Diagnostic Functions
+
+Each diagnostic function focuses on a specific area:
+
+| Function                                                                                                                           | What It Checks                                                                                            |
+|------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| [`sitrep_electron_system()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_electron_system.md)             | Node.js, npm, platform, R version, Python (+ shinylive/shiny packages), container engine, cached runtimes |
+| [`sitrep_electron_dependencies()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_electron_dependencies.md) | Required and optional R packages                                                                          |
+| [`sitrep_electron_build_tools()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_electron_build_tools.md)   | Platform-specific build tools                                                                             |
+| [`sitrep_electron_project()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_electron_project.md)           | Electron project structure                                                                                |
+
+### System Requirements
+
+Check Node.js, npm, and platform configuration:
+
+``` r
+sitrep_electron_system()
+```
+
+This function checks:
+
+- **Platform and architecture** (darwin/win/linux, x64/arm64)
+- **Local Node.js** installed by shinyelectron
+- **Active Node.js** version (local or system)
+- **npm** availability and version
+- **R version** compatibility
+- **Python** availability, plus whether `shinylive` and `shiny` Python
+  packages are usable
+- **Container engine** (Docker or Podman)
+- **Cached runtimes** (previously downloaded R and Python runtimes)
+
+> **Local vs System Node.js**
+>
+> shinyelectron can use either a locally installed Node.js (via
+> [`install_nodejs()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.md))
+> or your system’s Node.js. The local installation is preferred when
+> available.
+
+### R Package Dependencies
+
+Check required and optional R packages:
+
+``` r
+sitrep_electron_dependencies()
+```
+
+**Required packages:**
+
+- `cli` - Formatted console output
+- `fs` - File system operations
+- `jsonlite` - JSON parsing
+- `processx` - Process execution
+- `whisker` - Template rendering
+- `utils` - Utility functions
+- `tools` - R tools
+
+**Optional packages:**
+
+- `shinylive` - Required for r-shinylive app type
+- `DT` - Enhanced data tables (for your apps)
+- `ggplot2` - Graphics (for your apps)
+
+### Build Tools
+
+Check platform-specific build tools:
+
+``` r
+sitrep_electron_build_tools()
+```
+
+**Requirements by platform:**
+
+| Platform | Required Tools                    |
+|----------|-----------------------------------|
+| macOS    | Xcode Command Line Tools          |
+| Windows  | Visual Studio Build Tools, Python |
+| Linux    | gcc, make (build-essential)       |
+
+### Electron Project
+
+Check an existing Electron project structure:
+
+``` r
+# Check current directory
+sitrep_electron_project()
+
+# Check specific directory
+sitrep_electron_project("path/to/electron-app")
+```
+
+This function validates:
+
+- **package.json** existence and validity
+- **main.js** presence
+- **App files** in expected locations
+- **Build scripts** completeness
+- **node_modules** installation status
+
+## Common Issues and Solutions
+
+### Node.js Not Found
+
+**Symptom:**
+
+    ✖ Node.js: Not found
+
+**Solutions:**
+
+1.  **Install locally with shinyelectron** (recommended):
+
+    ``` r
+    install_nodejs()
+    ```
+
+2.  **Install from nodejs.org:** Download and install from
+    <https://nodejs.org/>
+
+3.  **Enable auto-install in config:**
+
+    ``` yaml
+    nodejs:
+      auto_install: true
+    ```
+
+### Node.js Version Too Old
+
+**Symptom:**
+
+    ⚠ Node.js: v18.20.0 (version 22+ required)
+
+shinyelectron requires Node.js \>= 22.0.0. Older LTS lines (18.x, 20.x)
+are not supported because the Electron version used by the package
+depends on features introduced in Node.js 22.
+
+**Solution:**
+
+Install a newer version locally:
+
+``` r
+# Install latest LTS (currently 22.x)
+install_nodejs()
+
+# Or install specific version
+install_nodejs(version = "22.11.0")
+```
+
+### npm Not Found
+
+**Symptom:**
+
+    ✖ npm: Not found
+
+**Solution:**
+
+npm is bundled with Node.js. If Node.js is installed but npm is missing,
+reinstall Node.js:
+
+``` r
+install_nodejs(force = TRUE)
+```
+
+### Missing R Packages
+
+**Symptom:**
+
+    ✖ shinylive: Not installed
+
+**Solution:**
+
+``` r
+install.packages("shinylive")
+```
+
+For multiple missing packages:
+
+``` r
+install.packages(c("shinylive", "cli", "fs"))
+```
+
+### Xcode Command Line Tools Not Found (macOS)
+
+**Symptom:**
+
+    ⚠ Xcode Command Line Tools: Not found
+
+**Solution:**
+
+Run in Terminal:
+
+``` bash
+xcode-select --install
+```
+
+### Visual Studio Build Tools Not Found (Windows)
+
+**Symptom:**
+
+    ⚠ Visual Studio Build Tools: Not found
+
+**Solution:**
+
+1.  Download Visual Studio Build Tools from
+    <https://visualstudio.microsoft.com/downloads/>
+2.  Install the “Desktop development with C++” workload
+3.  Restart your R session
+
+### Build Tools Not Found (Linux)
+
+**Symptom:**
+
+    ⚠ Build tools: Incomplete
+
+**Solution:**
+
+Install build-essential (Ubuntu/Debian):
+
+``` bash
+sudo apt-get update
+sudo apt-get install build-essential
+```
+
+Install development tools (Fedora/RHEL):
+
+``` bash
+sudo dnf groupinstall "Development Tools"
+```
+
+### package.json Not Found
+
+**Symptom:**
+
+    ✖ package.json: Not found
+
+**Cause:** You’re checking a directory that isn’t an Electron project.
+
+**Solution:**
+
+Run the diagnostic on the correct directory:
+
+``` r
+# Check the electron-app subdirectory
+sitrep_electron_project("my-export/electron-app")
+```
+
+### node_modules Not Found
+
+**Symptom:**
+
+    ℹ node_modules: Not found (run 'npm install')
+
+**Solution:**
+
+Navigate to the Electron project and install dependencies:
+
+``` r
+# From R
+setwd("my-export/electron-app")
+system("npm install")
+```
+
+Or from the terminal:
+
+``` bash
+cd my-export/electron-app
+npm install
+```
+
+## Python Issues
+
+### Python Not Found
+
+**Symptom:**
+
+    ℹ Python: not found (needed for py-shinylive and py-shiny)
+
+**Solutions:**
+
+1.  **Install Python** from <https://www.python.org/downloads/>. Version
+    3.9 or newer is recommended.
+
+2.  **Windows:** During installation, check **“Add python.exe to
+    PATH”**. If you already installed Python without that option, add
+    the install directory manually. The default location is typically
+    `C:\Users\<you>\AppData\Local\Programs\Python\Python3XX\`.
+
+3.  **macOS:** The system `python3` from Xcode Command Line Tools
+    usually works. If not, install via Homebrew: `brew install python`.
+
+4.  **Verify** Python is reachable:
+
+    ``` r
+    Sys.which("python3")
+    # On Windows, Sys.which("python") is also checked
+    ```
+
+### Python shinylive CLI Not Working
+
+**Symptom:**
+
+    ✖ The shinylive Python package CLI is required for py-shinylive conversion
+      … cannot be directly executed
+      … No module named shinylive.__main__
+
+The `shinylive` Python package installs a console script, but the
+package itself ships no `__main__.py`, so `python -m shinylive` alone
+fails. This usually means the `shinylive` console script is not on your
+PATH.
+
+**Solutions:**
+
+1.  **Reinstall** to make sure the console script is created:
+
+    ``` bash
+    pip install --upgrade --force-reinstall shinylive
+    ```
+
+2.  **Windows PATH issue:** `pip install` places scripts in
+    `%APPDATA%\Python\Python3XX\Scripts`. Add that directory to your
+    PATH:
+
+    ``` powershell
+    # Find where pip installed the script
+    python -c "import sysconfig; print(sysconfig.get_path('scripts'))"
+
+    # Add that directory to your user PATH
+    $scriptsDir = python -c "import sysconfig; print(sysconfig.get_path('scripts'))"
+    [Environment]::SetEnvironmentVariable('Path', "$env:Path;$scriptsDir", 'User')
+    ```
+
+    Then restart your R session.
+
+3.  **Verify** the CLI works:
+
+    ``` bash
+    shinylive --version
+    ```
+
+### Python shiny Package Not Installed
+
+**Symptom:**
+
+    ℹ Python shiny: not usable
+
+**Solution:**
+
+``` bash
+pip install shiny
+```
+
+This is only required for `py-shiny` (native Python Shiny) apps. The
+`py-shinylive` app type uses the `shinylive` package instead.
+
+## Container Issues (Docker / Podman)
+
+### Docker or Podman Not Found
+
+**Symptom:**
+
+    ℹ Docker/Podman: not found (needed for container strategy)
+
+**Solution:**
+
+Install a container engine:
+
+- **Docker Desktop:** <https://docs.docker.com/get-docker/>
+- **Podman:** <https://podman.io/getting-started/installation>
+
+After installation, verify the engine is running:
+
+``` bash
+docker info
+# or
+podman info
+```
+
+> **Docker on Parallels / nested virtualization**
+>
+> Docker Desktop requires hardware virtualization. If you are running
+> macOS inside a Parallels VM (e.g. on Apple Silicon), Docker Desktop
+> will fail because Parallels does not expose nested virtualization to
+> the guest.
+>
+> **Workaround:** Use the `system`, `bundled`, or `auto-download`
+> runtime strategy instead, or run the Docker build on the host machine.
+
+### Container Image Pull Failures
+
+**Symptom:**
+
+    Error: … manifest unknown … or image not found
+
+**Solutions:**
+
+1.  **Check the image name** in your `_shinyelectron.yml`:
+
+    ``` yaml
+    container:
+      image: "shinyelectron/r-shiny"
+      tag: "latest"
+    ```
+
+2.  **Network/auth issues:** Make sure you can pull manually:
+
+    ``` bash
+    docker pull shinyelectron/r-shiny:latest
+    ```
+
+3.  **Private registries:** Log in first with `docker login`.
+
+### Container Port Conflicts
+
+**Symptom:**
+
+    Error: … bind: address already in use
+
+Another process (or a previous container) is already using the same
+port.
+
+**Solutions:**
+
+1.  **Change the port** in `_shinyelectron.yml`:
+
+    ``` yaml
+    server:
+      port: 3839
+    ```
+
+2.  **Stop the conflicting container:**
+
+    ``` bash
+    docker ps                     # find the running container
+    docker stop <container-id>    # stop it
+    ```
+
+## Windows-Specific Issues
+
+### R Not on PATH
+
+**Symptom:** The packaged app cannot find `Rscript` on the end user’s
+machine when using the `system` runtime strategy.
+
+**Cause:** The default R installer on Windows places R under
+`C:\Program Files` (or `C:\Program Files (x86)` for 32-bit), but does
+not add it to the system PATH.
+
+**Solutions:**
+
+1.  **During R installation:** Check the option to add R to the PATH.
+
+2.  **After installation:** Add the R `bin` directory manually. For
+    example:
+
+        C:\Program Files\R\R-4.4.2\bin
+
+3.  **In production:** Use the `bundled` or `auto-download` runtime
+    strategy so that end users do not need R pre-installed.
+
+### GNU tar vs bsdtar Conflict
+
+**Symptom:** Extracting a runtime archive fails with:
+
+    Cannot connect to C: resolve failed
+
+**Cause:** Git for Windows ships GNU tar on the PATH. GNU tar interprets
+paths like `C:\...` as a remote host specification (`host:path`). The
+runtime downloader needs Windows 10’s built-in bsdtar
+(`%SystemRoot%\System32\tar.exe`), which handles drive letters
+correctly.
+
+shinyelectron works around this automatically: the JavaScript runtime
+downloader resolves the full path to `System32\tar.exe`, and the R-side
+extraction uses R’s internal tar. If you still hit this error, check
+whether something has overridden the tar command:
+
+``` bash
+where tar
+```
+
+The first result should be `C:\Windows\System32\tar.exe`, not
+`C:\Program Files\Git\usr\bin\tar.exe`.
+
+### EBUSY File Locks When Rebuilding
+
+**Symptom:**
+
+    Error: EBUSY: resource busy or locked, unlink '...\electron.exe'
+
+**Cause:** On Windows, a running Electron process locks its own
+executable and DLLs. If you try to rebuild the app while the previous
+build is still running, `npm` / `electron-builder` cannot overwrite the
+locked files.
+
+**Solution:**
+
+1.  Close the running Electron app.
+2.  If the process lingers, end it from Task Manager (`electron.exe`).
+3.  Re-run the build.
+
+### Windows Defender Scanning Delays
+
+**Symptom:** Builds are extremely slow, especially the `npm install`
+step and the final packaging step.
+
+**Cause:** Windows Defender real-time scanning inspects every file that
+`npm` creates inside `node_modules` (thousands of small files).
+
+**Solutions:**
+
+1.  **Add an exclusion** for the project directory:
+
+    Settings \> Privacy & Security \> Virus & threat protection \>
+    Manage settings \> Exclusions \> Add an exclusion \> Folder
+
+2.  **Add an exclusion** for the shinyelectron cache directory
+    (`~/.shinyelectron`).
+
+## Code Signing
+
+### Unsigned App Warnings on macOS (GateKeeper)
+
+**Symptom:** Users see “app is damaged and can’t be opened” or “app
+can’t be opened because Apple cannot check it for malicious software”
+when launching the packaged app.
+
+**Cause:** macOS GateKeeper blocks unsigned or unnotarized applications.
+
+**Solutions:**
+
+1.  **For distribution:** Sign and notarize the app. Configure signing
+    in `_shinyelectron.yml`:
+
+    ``` yaml
+    signing:
+      sign: true
+      mac:
+        identity: "Developer ID Application: Your Name (TEAMID)"
+        team_id: "TEAMID"
+        notarize: true
+    ```
+
+    Set the environment variables `APPLE_TEAM_ID`, `APPLE_ID`, and
+    `APPLE_APP_SPECIFIC_PASSWORD` before building.
+
+2.  **For local testing only:** Right-click the app and choose “Open”,
+    then confirm. This bypasses GateKeeper for that specific app. Or
+    remove the quarantine attribute:
+
+    ``` bash
+    xattr -cr /Applications/MyApp.app
+    ```
+
+### SmartScreen Warning on Windows
+
+**Symptom:** Windows SmartScreen shows “Windows protected your PC” when
+the user tries to run the installer or app.
+
+**Cause:** The executable is unsigned or does not have enough
+SmartScreen reputation.
+
+**Solutions:**
+
+1.  **For distribution:** Sign the app with a code signing certificate.
+    Configure in `_shinyelectron.yml`:
+
+    ``` yaml
+    signing:
+      sign: true
+      win:
+        certificate_file: "path/to/cert.pfx"
+    ```
+
+    Set the `CSC_LINK` and `CSC_KEY_PASSWORD` environment variables
+    before building.
+
+2.  **For local testing:** Click “More info” then “Run anyway”.
+
+3.  **EV certificates** receive immediate SmartScreen reputation.
+    Standard certificates build reputation over time as more users run
+    the signed installer.
+
+## Accessing Diagnostic Results Programmatically
+
+All sitrep functions return their results invisibly for programmatic
+use:
+
+``` r
+# Get results without printing
+results <- sitrep_shinyelectron(verbose = FALSE)
+
+# Check for issues
+if (length(results$system$issues) > 0) {
+  cat("System issues found:\n")
+  print(results$system$issues)
+}
+
+# Check Node.js status
+if (results$system$node$installed) {
+  cat("Node.js version:", results$system$node$version, "\n")
+}
+```
+
+## Cache Management
+
+If you encounter persistent issues, clearing the cache may help:
+
+``` r
+# Clear all cached assets
+cache_clear("all")
+
+# Clear only Node.js installations
+cache_clear("nodejs")
+
+# Clear npm cache
+cache_clear("npm")
+```
+
+After clearing the cache, reinstall Node.js:
+
+``` r
+install_nodejs()
+```
+
+## Debugging a Packaged App
+
+The packaged Electron app is silent by default — only warnings and
+errors print to the console. To see what is happening during runtime
+detection, dependency installation, and server startup, launch the app
+with the `SHINYELECTRON_DEBUG` environment variable set to `1`:
+
+``` bash
+# macOS / Linux
+SHINYELECTRON_DEBUG=1 /path/to/YourApp.app/Contents/MacOS/YourApp
+
+# Windows (PowerShell)
+$env:SHINYELECTRON_DEBUG = "1"; & "C:\Path\To\YourApp.exe"
+```
+
+Messages are prefixed with `[shinyelectron]` and include which runtime
+was found, the spawn command for R or Python, port retries, and server
+ready events — useful context when filing a bug report.
+
+## Getting Help
+
+If diagnostics show all systems ready but you still encounter issues:
+
+1.  **Check the console output** for specific error messages (enable
+    `SHINYELECTRON_DEBUG=1` for verbose backend logs)
+2.  **Verify your Shiny app** runs locally with `shiny::runApp()`
+3.  **Check file permissions** in your project directory
+4.  **Report issues** at
+    <https://github.com/coatless-rpkg/shinyelectron/issues>
+
+When reporting issues, include the output of:
+
+``` r
+sitrep_shinyelectron()
+```
+
+## Next Steps
+
+- **[Getting
+  Started](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/getting-started.md)**:
+  First-time user walkthrough
+- **[Configuration](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/configuration.md)**:
+  Customize your builds
+- **[Node.js
+  Management](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/nodejs-management.md)**:
+  Manage Node.js installations

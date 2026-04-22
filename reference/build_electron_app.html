@@ -9,7 +9,7 @@ Creates platform-specific installers and executables."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">shinyelectron</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -17,7 +17,31 @@ Creates platform-specific installers and executables."></head><body>
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/getting-started.html">Get Started</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><h6 class="dropdown-header" data-toc-skip>Basics</h6></li>
+    <li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started</a></li>
+    <li><a class="dropdown-item" href="../articles/configuration.html">Configuration Guide</a></li>
+    <li><a class="dropdown-item" href="../articles/runtime-strategies.html">Runtime Strategies</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Building &amp; Distribution</h6></li>
+    <li><a class="dropdown-item" href="../articles/code-signing.html">Code Signing</a></li>
+    <li><a class="dropdown-item" href="../articles/auto-updates.html">Automatic Updates</a></li>
+    <li><a class="dropdown-item" href="../articles/github-actions.html">Building with GitHub Actions</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Advanced Topics</h6></li>
+    <li><a class="dropdown-item" href="../articles/multi-app-suites.html">Multi-App Suites</a></li>
+    <li><a class="dropdown-item" href="../articles/container-strategy.html">Container Strategy</a></li>
+    <li><a class="dropdown-item" href="../articles/security.html">Security Considerations</a></li>
+    <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced Features</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
+    <li><a class="dropdown-item" href="../articles/nodejs-management.html">Node.js Management</a></li>
+    <li><a class="dropdown-item" href="../articles/troubleshooting.html">Troubleshooting</a></li>
+  </ul></li>
+<li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/coatless-rpkg/shinyelectron/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -46,9 +70,12 @@ Creates platform-specific installers and executables.</p>
 <span>  <span class="va">output_dir</span>,</span>
 <span>  app_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  app_type <span class="op">=</span> <span class="st">"r-shinylive"</span>,</span>
+<span>  runtime_strategy <span class="op">=</span> <span class="st">"shinylive"</span>,</span>
+<span>  sign <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  platform <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  arch <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  icon <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  config <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  overwrite <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -74,6 +101,16 @@ Creates platform-specific installers and executables.</p>
 <dd><p>Character string. Type of application: "r-shinylive", "r-shiny", "py-shinylive", or "py-shiny".</p></dd>
 
 
+<dt id="arg-runtime-strategy">runtime_strategy<a class="anchor" aria-label="anchor" href="#arg-runtime-strategy"></a></dt>
+<dd><p>Character string. Runtime strategy: "shinylive", "bundled",
+"system", "auto-download", or "container". Default is "shinylive".</p></dd>
+
+
+<dt id="arg-sign">sign<a class="anchor" aria-label="anchor" href="#arg-sign"></a></dt>
+<dd><p>Logical. Whether to enable code signing for the built application.
+Default is FALSE.</p></dd>
+
+
 <dt id="arg-platform">platform<a class="anchor" aria-label="anchor" href="#arg-platform"></a></dt>
 <dd><p>Character vector. Target platforms: "win", "mac", "linux". If NULL, builds for current platform.</p></dd>
 
@@ -84,6 +121,11 @@ Creates platform-specific installers and executables.</p>
 
 <dt id="arg-icon">icon<a class="anchor" aria-label="anchor" href="#arg-icon"></a></dt>
 <dd><p>Character string. Path to application icon file. Platform-specific format required.</p></dd>
+
+
+<dt id="arg-config">config<a class="anchor" aria-label="anchor" href="#arg-config"></a></dt>
+<dd><p>List. Configuration from _shinyelectron.yml file (optional). Used for
+template variables like window dimensions, port, and app version.</p></dd>
 
 
 <dt id="arg-overwrite">overwrite<a class="anchor" aria-label="anchor" href="#arg-overwrite"></a></dt>
@@ -140,7 +182,7 @@ Creates platform-specific installers and executables.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer></div>
