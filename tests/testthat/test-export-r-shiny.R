@@ -33,6 +33,9 @@ test_that("export copies app source for r-shiny without conversion", {
 })
 
 test_that("export infers auto-download strategy for r-shiny when NULL", {
+  # auto-download runs through r_download_url() which aborts on Linux
+  # (portable-r has no Linux builds yet).
+  skip_on_os("linux")
   tmpdir <- tempfile()
   dir.create(tmpdir)
   writeLines("library(shiny)\nshinyApp(ui = fluidPage(), server = function(input, output) {})",

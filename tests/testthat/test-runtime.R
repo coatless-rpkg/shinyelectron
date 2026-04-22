@@ -90,6 +90,9 @@ test_that("generate_runtime_manifest creates valid JSON", {
 })
 
 test_that("generate_runtime_manifest uses current platform when NULL", {
+  # Uses current platform; on Linux this hits r_download_url() which
+  # aborts because portable-r has no Linux builds.
+  skip_on_os("linux")
   manifest <- generate_runtime_manifest("4.4.0")
   parsed <- jsonlite::fromJSON(manifest, simplifyVector = FALSE)
 

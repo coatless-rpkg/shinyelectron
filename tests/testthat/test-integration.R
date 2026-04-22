@@ -50,6 +50,8 @@ test_that("e2e: r-shiny system export copies app and writes dependencies", {
 })
 
 test_that("e2e: r-shiny auto-download writes runtime manifest", {
+  # auto-download is unavailable on Linux (no portable-r builds).
+  skip_on_os("linux")
   d <- tempfile(); dir.create(d); o <- tempfile()
   on.exit(unlink(c(d, o), TRUE))
   writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})", file.path(d, "app.R"))
