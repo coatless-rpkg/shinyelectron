@@ -10,16 +10,16 @@ skip_if(nzchar(Sys.getenv("_R_CHECK_PACKAGE_NAME_", "")),
 skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
 skip_if_not(nzchar(Sys.which("npm")), "npm not available")
 
-# --- r-shinylive full build ---
+# --- shinylive strategy, R ---
 
-test_that("e2e: r-shinylive full build produces working Electron app", {
+test_that("e2e: r-shiny + shinylive full build produces working Electron app", {
   d <- tempfile(); dir.create(d); o <- tempfile()
   on.exit(unlink(c(d, o), TRUE))
   writeLines("library(shiny)\nshinyApp(ui=fluidPage(h1('E2E')), server=function(i,o){})",
              file.path(d, "app.R"))
 
-  r <- export(d, o, app_type = "r-shinylive", sign = FALSE,
-              build = TRUE, overwrite = TRUE, verbose = FALSE)
+  r <- export(d, o, app_type = "r-shiny", runtime_strategy = "shinylive",
+              sign = FALSE, build = TRUE, overwrite = TRUE, verbose = FALSE)
 
   electron_dir <- r$electron_app
 
@@ -140,21 +140,21 @@ test_that("e2e: py-shiny system full build produces working Electron app", {
   expect_true("shiny" %in% deps$packages)
 })
 
-# --- py-shinylive full build ---
+# --- shinylive strategy, Python ---
 
-test_that("e2e: py-shinylive full build produces working Electron app", {
+test_that("e2e: py-shiny + shinylive full build produces working Electron app", {
   skip_if_not(py_shinylive_available(), "Python shinylive CLI not available")
   d <- tempfile(); dir.create(d); o <- tempfile()
   on.exit(unlink(c(d, o), TRUE))
   writeLines("from shiny import App, ui\napp=App(ui.page_fluid(ui.h1('E2E')),None)",
              file.path(d, "app.py"))
 
-  r <- export(d, o, app_type = "py-shinylive", sign = FALSE,
-              build = TRUE, overwrite = TRUE, verbose = FALSE)
+  r <- export(d, o, app_type = "py-shiny", runtime_strategy = "shinylive",
+              sign = FALSE, build = TRUE, overwrite = TRUE, verbose = FALSE)
 
   electron_dir <- r$electron_app
 
-  # Verify shinylive backend (same as r-shinylive)
+  # Verify shinylive backend (same path as the R variant)
   expect_true(file.exists(file.path(electron_dir, "backends", "shinylive.js")))
   pkg <- jsonlite::fromJSON(file.path(electron_dir, "package.json"))
   expect_true("express" %in% names(pkg$dependencies))

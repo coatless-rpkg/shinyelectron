@@ -8,7 +8,7 @@ build_electron_app(
   app_dir,
   output_dir,
   app_name = NULL,
-  app_type = "r-shinylive",
+  app_type = "r-shiny",
   runtime_strategy = "shinylive",
   sign = FALSE,
   platform = NULL,
@@ -26,10 +26,14 @@ build_electron_app(
 
 \item{app_name}{Character string. Name of the application. If NULL, uses the base name of app_dir.}
 
-\item{app_type}{Character string. Type of application: "r-shinylive", "r-shiny", "py-shinylive", or "py-shiny".}
+\item{app_type}{Character string. Language of the Shiny app: \code{"r-shiny"} or
+\code{"py-shiny"}. The legacy values \code{"r-shinylive"} / \code{"py-shinylive"} are
+accepted with a deprecation warning and translate to the canonical
+language plus \code{runtime_strategy = "shinylive"}.}
 
-\item{runtime_strategy}{Character string. Runtime strategy: "shinylive", "bundled",
-"system", "auto-download", or "container". Default is "shinylive".}
+\item{runtime_strategy}{Character string. Runtime strategy: \code{"shinylive"},
+\code{"bundled"}, \code{"system"}, \code{"auto-download"}, or \code{"container"}. Default
+\code{"shinylive"}.}
 
 \item{sign}{Logical. Whether to enable code signing for the built application.
 Default is FALSE.}
@@ -72,7 +76,7 @@ build_electron_app(
   app_dir = "path/to/shinylive/app",
   output_dir = "path/to/electron/build",
   app_name = "My Shiny App",
-  app_type = "r-shinylive"
+  app_type = "r-shiny"
 )
 
 # Build for multiple platforms
@@ -80,7 +84,7 @@ build_electron_app(
   app_dir = "path/to/app",
   output_dir = "path/to/build",
   app_name = "My App",
-  app_type = "r-shinylive",
+  app_type = "r-shiny",
   platform = c("win", "mac", "linux")
 )
 }

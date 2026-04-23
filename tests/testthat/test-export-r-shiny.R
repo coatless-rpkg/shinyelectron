@@ -32,10 +32,7 @@ test_that("export copies app source for r-shiny without conversion", {
   expect_false(fs::dir_exists(fs::path(outdir, "shinylive-app")))
 })
 
-test_that("export infers auto-download strategy for r-shiny when NULL", {
-  # auto-download runs through r_download_url() which aborts on Linux
-  # (portable-r has no Linux builds yet).
-  skip_on_os("linux")
+test_that("export defaults runtime_strategy to shinylive when NULL", {
   tmpdir <- tempfile()
   dir.create(tmpdir)
   writeLines("library(shiny)\nshinyApp(ui = fluidPage(), server = function(input, output) {})",
@@ -53,7 +50,7 @@ test_that("export infers auto-download strategy for r-shiny when NULL", {
   export(appdir = tmpdir, destdir = outdir, app_type = "r-shiny",
          runtime_strategy = NULL, build = TRUE, verbose = FALSE)
 
-  expect_equal(captured_strategy, "auto-download")
+  expect_equal(captured_strategy, "shinylive")
 })
 
 test_that("export passes system strategy to build_electron_app", {

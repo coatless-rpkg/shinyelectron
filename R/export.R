@@ -6,10 +6,15 @@
 #' @param appdir Character string. Path to the directory containing the Shiny application.
 #' @param destdir Character string. Path to the destination directory where the Electron app will be created.
 #' @param app_name Character string. Name of the application. If NULL, uses the base name of appdir.
-#' @param app_type Character string. Type of application: "r-shinylive" (default), "r-shiny", "py-shinylive", or "py-shiny".
-#' @param runtime_strategy Character string or NULL. Runtime strategy for native app types:
-#'   "bundled", "system", "auto-download", or "container". If NULL, defaults to
-#'   "auto-download" for native types. Ignored for shinylive types.
+#' @param app_type Character string or NULL. Language of the Shiny app:
+#'   `"r-shiny"` or `"py-shiny"`. If NULL (default), the type is autodetected
+#'   from files in `appdir`. The legacy values `"r-shinylive"` and
+#'   `"py-shinylive"` are accepted with a deprecation warning and translate
+#'   to the canonical language plus `runtime_strategy = "shinylive"`.
+#' @param runtime_strategy Character string or NULL. How R or Python reaches
+#'   the end user: `"shinylive"`, `"bundled"`, `"system"`, `"auto-download"`,
+#'   or `"container"`. Default `"shinylive"` when neither argument nor config
+#'   sets one.
 #' @param sign Logical. Whether to enable code signing for the built application.
 #'   When TRUE, electron-builder will attempt to sign the app using credentials
 #'   from environment variables or the config file. Default is FALSE.
@@ -34,45 +39,39 @@
 #'   \item Optionally runs the application for testing
 #' }
 #'
-#' @section Supported Application Types:
+#' @section Supported Combinations:
+#' Two languages, five delivery strategies.
 #' \itemize{
-#'   \item \code{r-shinylive}: R Shiny app converted to run entirely in browser (recommended)
-#'   \item \code{r-shiny}: R Shiny app with embedded R runtime
-#'   \item \code{py-shinylive}: Python Shiny app converted to run entirely in browser
-#'   \item \code{py-shiny}: Python Shiny app with embedded Python runtime
+#'   \item \code{r-shiny} or \code{py-shiny} plus \code{runtime_strategy = "shinylive"}: app compiles to WebAssembly and runs inside the Electron window with no runtime on disk.
+#'   \item \code{r-shiny} or \code{py-shiny} plus \code{"auto-download"}, \code{"bundled"}, \code{"system"}, or \code{"container"}: app runs against a real R or Python process supplied by the chosen strategy.
 #' }
 #'
 #' @examples
 #' \dontrun{
-#' # Basic export to shinylive Electron app
+#' # Simplest call: app_type autodetects, runtime_strategy defaults to shinylive
 #' export(
 #'   appdir = "path/to/shiny/app",
 #'   destdir = "path/to/electron/output"
 #' )
 #'
-#' # Export with custom settings
+#' # Run against a real R process instead of shinylive
 #' export(
 #'   appdir = "path/to/shiny/app",
 #'   destdir = "path/to/output",
-#'   app_name = "My Amazing App",
-#'   app_type = "r-shinylive",
-#'   platform = c("win", "mac"),
-#'   icon = "path/to/icon.ico",
-#'   overwrite = TRUE,
-#'   run_after = TRUE
+#'   runtime_strategy = "bundled"
 #' )
 #'
-#' # Export regular Shiny app (with R runtime)
+#' # Pin language explicitly when autodetection is ambiguous
 #' export(
 #'   appdir = "path/to/shiny/app",
 #'   destdir = "path/to/output",
-#'   app_type = "r-shiny"
+#'   app_type = "r-shiny",
+#'   runtime_strategy = "system"
 #' )
-#'
 #' }
 #'
 #' @export
-export <- function(appdir, destdir, app_name = NULL, app_type = "r-shinylive",
+export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
                    runtime_strategy = NULL, sign = FALSE,
                    platform = NULL, arch = NULL, icon = NULL,
                    overwrite = FALSE, build = TRUE, run_after = FALSE,
@@ -84,7 +83,11 @@ export <- function(appdir, destdir, app_name = NULL, app_type = "r-shinylive",
 
   # Validate inputs
   validate_directory_exists(appdir, "Application directory")
-  validate_app_type(app_type)
+
+  # Normalize legacy app_type values (r-shinylive / py-shinylive)
+  normalized <- normalize_app_type_arg(app_type, runtime_strategy)
+  app_type <- normalized$app_type
+  runtime_strategy <- normalized$runtime_strategy
 
   if (is.null(app_name)) {
     app_name <- basename(appdir)
@@ -92,7 +95,6 @@ export <- function(appdir, destdir, app_name = NULL, app_type = "r-shinylive",
   validate_app_name(app_name)
 
   # Read config file (or get defaults) -- must happen before structure
-
   # validation so multi-app mode can be detected early
   config <- read_config(appdir)
 
@@ -106,10 +108,24 @@ export <- function(appdir, destdir, app_name = NULL, app_type = "r-shinylive",
                             verbose = verbose))
   }
 
-  # Validate app structure based on type (single-app only)
-  if (app_type %in% R_TYPES) {
+  # Resolve app_type: function arg > config (normalized) > autodetect
+  if (is.null(app_type)) {
+    cfg_type <- config$build$type
+    if (!is.null(cfg_type) && nzchar(cfg_type)) {
+      cfg_normalized <- normalize_app_type_arg(cfg_type, runtime_strategy)
+      app_type <- cfg_normalized$app_type
+      runtime_strategy <- runtime_strategy %||% cfg_normalized$runtime_strategy
+    }
+  }
+  if (is.null(app_type)) {
+    app_type <- detect_app_type(appdir)
+  }
+  validate_app_type(app_type)
+
+  # Validate app structure based on language
+  if (app_type == "r-shiny") {
     validate_shiny_app_structure(appdir)
-  } else if (app_type %in% PY_TYPES) {
+  } else if (app_type == "py-shiny") {
     validate_python_app_structure(appdir)
   }
 
@@ -118,13 +134,9 @@ export <- function(appdir, destdir, app_name = NULL, app_type = "r-shinylive",
     validate_icon(icon, platform)
   }
 
-  # Resolve runtime strategy: function param > config file > inferred default
-  runtime_strategy <- runtime_strategy %||% config$build$runtime_strategy
-  runtime_strategy <- infer_runtime_strategy(runtime_strategy, app_type)
-  if (runtime_strategy != "shinylive") {
-    validate_runtime_strategy(runtime_strategy)
-  }
-  validate_runtime_strategy_for_app_type(runtime_strategy, app_type)
+  # Resolve runtime strategy: function param > config file > shinylive default
+  runtime_strategy <- runtime_strategy %||% config$build$runtime_strategy %||% "shinylive"
+  validate_runtime_strategy(runtime_strategy)
 
   # Resolve signing: function param overrides config
   sign <- sign || isTRUE(config$signing$sign)
@@ -137,11 +149,11 @@ export <- function(appdir, destdir, app_name = NULL, app_type = "r-shinylive",
     }
   }
 
-  # Validate runtime requirements
+  # Validate runtime requirements (skip for shinylive since nothing runs natively)
   if (runtime_strategy == "system") {
-    if (app_type %in% c("r-shiny")) {
+    if (app_type == "r-shiny") {
       validate_r_available()
-    } else if (app_type %in% c("py-shiny")) {
+    } else if (app_type == "py-shiny") {
       validate_python_available()
     }
   }
@@ -166,9 +178,7 @@ export <- function(appdir, destdir, app_name = NULL, app_type = "r-shinylive",
     cli::cli_h1("Exporting Shiny application to Electron")
     cli::cli_alert_info("Application: {.val {app_name}}")
     cli::cli_alert_info("Type: {.val {app_type}}")
-    if (app_type %in% NATIVE_TYPES) {
-      cli::cli_alert_info("Runtime: {.val {runtime_strategy}}")
-    }
+    cli::cli_alert_info("Runtime: {.val {runtime_strategy}}")
     cli::cli_alert_info("Source: {.path {appdir}}")
     cli::cli_alert_info("Destination: {.path {destdir}}")
     if (sign) {
@@ -207,7 +217,7 @@ export <- function(appdir, destdir, app_name = NULL, app_type = "r-shinylive",
 
   tryCatch({
     # Step 1: Convert or stage application files
-    if (app_type %in% SHINYLIVE_TYPES) {
+    if (runtime_strategy == "shinylive") {
       converted_app_dir <- convert_app_to_shinylive(
         appdir, destdir, app_type, verbose = verbose
       )

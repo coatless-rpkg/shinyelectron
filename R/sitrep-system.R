@@ -152,7 +152,7 @@ sitrep_electron_system <- function(verbose = TRUE) {
       if (verbose) cli::cli_alert_success("{py_version}")
       results$python_version <- py_version
 
-      # Check Python packages needed for py-shinylive and py-shiny
+      # Check Python packages needed for py-shiny with shinylive or native strategies
       check_py_pkg <- function(label, validator_fn, install_cmd) {
         chk <- tryCatch(
           list(ok = TRUE, version = validator_fn()),
@@ -180,7 +180,7 @@ sitrep_electron_system <- function(verbose = TRUE) {
       results$issues <- c(results$issues, "Python found but not working")
     }
   } else {
-    if (verbose) cli::cli_alert_info("Python: not found (needed for py-shinylive and py-shiny)")
+    if (verbose) cli::cli_alert_info("Python: not found (needed for py-shiny apps)")
     results$python_available <- FALSE
   }
 

@@ -11,7 +11,7 @@ convert_app_to_shinylive(appdir, destdir, app_type, verbose = TRUE)
 
 \item{destdir}{Character. Export destination.}
 
-\item{app_type}{Character. One of SHINYLIVE_TYPES.}
+\item{app_type}{Character. \code{"r-shiny"} or \code{"py-shiny"}.}
 
 \item{verbose}{Logical.}
 }
@@ -19,6 +19,6 @@ convert_app_to_shinylive(appdir, destdir, app_type, verbose = TRUE)
 Character. Path to the converted shinylive app.
 }
 \description{
-Dispatches to the R or Python shinylive converter based on app type.
+Dispatches to the R or Python shinylive converter based on language.
 }
 \keyword{internal}

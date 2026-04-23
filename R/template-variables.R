@@ -10,7 +10,7 @@
 #'
 #' @param app_name Character. Display name of the app.
 #' @param app_slug Character. Path-safe slug derived from app_name.
-#' @param app_type Character. One of ALL_APP_TYPES.
+#' @param app_type Character. `"r-shiny"` or `"py-shiny"`.
 #' @param runtime_strategy Character. Resolved runtime strategy.
 #' @param icon Character path to icon file, or NULL.
 #' @param backend_module Character. Resolved backend filename

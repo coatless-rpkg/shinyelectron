@@ -4,7 +4,7 @@ test_that("enable_auto_updates writes config correctly", {
 
   # Create a minimal config
   writeLines(
-    "app:\n  name: test\nbuild:\n  type: r-shinylive\n",
+    "app:\n  name: test\nbuild:\n  type: r-shiny\n  runtime_strategy: shinylive\n",
     file.path(tmp, "_shinyelectron.yml")
   )
 
@@ -33,7 +33,7 @@ test_that("enable_auto_updates requires owner/repo for github provider", {
   tmp <- withr::local_tempdir()
   dir.create(tmp, showWarnings = FALSE, recursive = TRUE)
   writeLines(
-    "app:\n  name: test\nbuild:\n  type: r-shinylive\n",
+    "app:\n  name: test\nbuild:\n  type: r-shiny\n  runtime_strategy: shinylive\n",
     file.path(tmp, "_shinyelectron.yml")
   )
 

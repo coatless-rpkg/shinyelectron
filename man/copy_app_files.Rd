@@ -4,7 +4,13 @@
 \alias{copy_app_files}
 \title{Copy application files to Electron project}
 \usage{
-copy_app_files(app_dir, output_dir, app_type, verbose = TRUE)
+copy_app_files(
+  app_dir,
+  output_dir,
+  app_type,
+  runtime_strategy = NULL,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{app_dir}{Character source app directory}
@@ -12,6 +18,10 @@ copy_app_files(app_dir, output_dir, app_type, verbose = TRUE)
 \item{output_dir}{Character destination directory}
 
 \item{app_type}{Character application type}
+
+\item{runtime_strategy}{Character resolved runtime strategy. When
+\code{"shinylive"} the source is already a WebAssembly bundle, so the
+Shiny entrypoint sanity check is skipped.}
 
 \item{verbose}{Logical whether to show progress}
 }

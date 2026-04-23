@@ -52,13 +52,15 @@ generate_dependency_manifest <- function(packages, language,
 #' package dependencies for an app. Called from export() for native app types.
 #'
 #' @param appdir Character string. Path to the app directory.
-#' @param app_type Character string. The app type.
+#' @param app_type Character string. The app type (`"r-shiny"` or `"py-shiny"`).
+#' @param runtime_strategy Character string. The resolved runtime strategy.
+#'   Returns NULL when `"shinylive"`, since shinylive manages its own deps.
 #' @param config List. The effective configuration.
 #' @return List with `packages`, `language`, and `repos`/`index_urls`,
-#'   or NULL for shinylive types (which don't need dependency management).
+#'   or NULL for the shinylive strategy.
 #' @keywords internal
-resolve_app_dependencies <- function(appdir, app_type, config) {
-  if (app_type %in% SHINYLIVE_TYPES) {
+resolve_app_dependencies <- function(appdir, app_type, runtime_strategy, config) {
+  if (runtime_strategy == "shinylive") {
     return(NULL)
   }
 

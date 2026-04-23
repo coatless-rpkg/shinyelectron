@@ -1,27 +1,50 @@
 # shinyelectron 0.2.0
 
-## New app types
+## App types and autodetection
 
-* Added Python Shiny support: `py-shinylive` (browser-based via Pyodide) and
-  `py-shiny` (native with Python runtime). All four app types are now fully
-  implemented.
+* Python Shiny is now supported alongside R Shiny. `app_type` takes
+  `"r-shiny"` or `"py-shiny"`, with `NULL` (default) meaning
+  autodetect from the files in `appdir`. `detect_app_type()` resolves
+  `app.R`, `ui.R` + `server.R`, or `app.py`; ambiguous layouts abort
+  with a pointer to the multi-app-suites workflow.
+* `export(appdir, destdir)` with no other arguments now works for the
+  common case.
 
 ## Runtime strategies
 
-* Added four runtime strategies for native apps (`r-shiny`, `py-shiny`):
-  **system**, **bundled**, **auto-download** (default), and **container**.
-* Bundled strategy embeds a portable R or Python runtime inside the Electron
+* Five strategies, all legal with both languages: **shinylive** (the
+  default, compiles to WebAssembly and runs in-browser), **bundled**,
+  **system**, **auto-download**, and **container**.
+* Bundled embeds a portable R or Python runtime inside the Electron
   app for zero-dependency distribution.
-* Auto-download strategy downloads the runtime on first launch and caches it
+* Auto-download fetches the runtime on first launch and caches it
   locally.
-* Container strategy runs apps inside Docker or Podman for full environment
+* Container runs apps inside Docker or Podman for full environment
   isolation.
+* The older `app_type = "r-shinylive"` and `"py-shinylive"` values
+  are still accepted with a deprecation warning of class
+  `shinyelectron_deprecated_app_type`; they translate to the canonical
+  language plus `runtime_strategy = "shinylive"`. Pairing a legacy
+  type with a non-shinylive strategy is an error. The shim will be
+  removed in a future release.
 
 ## Multi-app suites
 
-* Bundle multiple Shiny apps into a single Electron shell with a launcher UI.
-* Configure via `_shinyelectron.yml` with an `apps` array.
-* Python suites read dependencies from a single suite-root `requirements.txt`.
+* Bundle multiple Shiny apps into a single Electron shell with a
+  launcher UI.
+* Configure via `_shinyelectron.yml` with an `apps` array; each app
+  entry may carry its own `runtime_strategy`, so a suite can mix
+  (for example) one shinylive app with a bundled R app.
+* Python suites read dependencies from a single suite-root
+  `requirements.txt`.
+
+## Config file
+
+* `build.type` may be omitted; autodetection runs at build time.
+* `build.runtime_strategy: "shinylive"` is accepted alongside the
+  other four strategies.
+* `init_config()` writes a template that leaves `build.type`
+  commented out and lists all five strategies.
 
 ## Lifecycle UI
 
@@ -73,8 +96,6 @@
 
 * Extracted `run_command_safe()` helper for repeated `processx::run()` patterns.
 * Extracted `killProcessTree()` to shared JS utils for process cleanup.
-* Added app type group constants (`SHINYLIVE_TYPES`, `NATIVE_TYPES`,
-  `R_TYPES`, `PY_TYPES`) to reduce stringly-typed code.
 * Cached `available.packages()` during bundled R builds to avoid redundant
   CRAN network calls.
 * Fixed event listener leak in multi-app mode (`removeAllListeners()` instead

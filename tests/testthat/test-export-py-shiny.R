@@ -30,7 +30,8 @@ test_that("export copies app source for py-shiny without conversion", {
   expect_false(fs::dir_exists(fs::path(outdir, "shinylive-app")))
 })
 
-test_that("export infers auto-download strategy for py-shiny when NULL", {
+test_that("export defaults runtime_strategy to shinylive for py-shiny when NULL", {
+  skip_if_not(py_shinylive_available(), "Python shinylive CLI not available")
   tmpdir <- tempfile()
   dir.create(tmpdir)
   writeLines("from shiny import App", file.path(tmpdir, "app.py"))
@@ -44,14 +45,10 @@ test_that("export infers auto-download strategy for py-shiny when NULL", {
     tempdir()
   })
 
-  # Warns about missing requirements.txt — expected since we only test strategy inference
-  expect_warning(
-    export(appdir = tmpdir, destdir = outdir, app_type = "py-shiny",
-           runtime_strategy = NULL, build = TRUE, verbose = FALSE),
-    "requirements.txt"
-  )
+  export(appdir = tmpdir, destdir = outdir, app_type = "py-shiny",
+         runtime_strategy = NULL, build = TRUE, verbose = FALSE)
 
-  expect_equal(captured_strategy, "auto-download")
+  expect_equal(captured_strategy, "shinylive")
 })
 
 test_that("export passes system strategy for py-shiny", {

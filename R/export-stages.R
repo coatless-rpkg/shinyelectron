@@ -1,9 +1,9 @@
 #' Convert a Shiny app to the shinylive format
 #'
-#' Dispatches to the R or Python shinylive converter based on app type.
+#' Dispatches to the R or Python shinylive converter based on language.
 #' @param appdir Character. Source Shiny app directory.
 #' @param destdir Character. Export destination.
-#' @param app_type Character. One of SHINYLIVE_TYPES.
+#' @param app_type Character. `"r-shiny"` or `"py-shiny"`.
 #' @param verbose Logical.
 #' @return Character. Path to the converted shinylive app.
 #' @keywords internal
@@ -11,7 +11,7 @@ convert_app_to_shinylive <- function(appdir, destdir, app_type, verbose = TRUE) 
   if (verbose) cli::cli_alert_info("Converting to shinylive format...")
   shinylive_dir <- fs::path(destdir, "shinylive-app")
 
-  if (app_type == "r-shinylive") {
+  if (app_type == "r-shiny") {
     convert_shiny_to_shinylive(appdir = appdir, output_dir = shinylive_dir,
                                overwrite = TRUE, verbose = verbose)
   } else {
@@ -40,7 +40,7 @@ prepare_native_app_files <- function(appdir, destdir, app_type, runtime_strategy
   app_copy_dir <- fs::path(destdir, "shiny-app")
   copy_dir_contents(appdir, app_copy_dir)
 
-  dep_info <- resolve_app_dependencies(appdir, app_type, config)
+  dep_info <- resolve_app_dependencies(appdir, app_type, runtime_strategy, config)
   if (!is.null(dep_info) && length(dep_info$packages) > 0) {
     if (verbose) {
       cli::cli_alert_info("Detected {length(dep_info$packages)} {dep_info$language} package dependencies")

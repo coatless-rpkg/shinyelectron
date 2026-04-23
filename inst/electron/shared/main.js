@@ -46,7 +46,7 @@ if (fs.existsSync(manifestPath)) {
 }
 
 function getBackendForApp(appType, runtimeStrategy) {
-  if (appType.endsWith('-shinylive')) return require('./backends/shinylive');
+  if (runtimeStrategy === 'shinylive') return require('./backends/shinylive');
   if (runtimeStrategy === 'container') return require('./backends/container');
   if (appType.startsWith('r-')) return require('./backends/native-r');
   return require('./backends/native-py');
@@ -542,8 +542,10 @@ function createWindow() {
       var selectedApp = appsManifest && appsManifest.apps.find(function(a) { return a.id === action.appId; });
       if (!selectedApp) return;
 
-      // Load the correct backend for this app type
-      currentBackend = getBackendForApp(selectedApp.type, appsManifest.runtime_strategy);
+      // Load the correct backend for this app, preferring per-app
+      // runtime_strategy when present (mixed-strategy suites).
+      var appStrategy = selectedApp.runtime_strategy || appsManifest.runtime_strategy;
+      currentBackend = getBackendForApp(selectedApp.type, appStrategy);
 
       // Subscribe to status events (forward to lifecycle.html only — navigation handled in .then())
       currentBackend.on('status', function(data) {

@@ -392,6 +392,7 @@ test_that("resolve_app_dependencies detects and merges for r-shiny", {
   result <- resolve_app_dependencies(
     appdir = tmpdir,
     app_type = "r-shiny",
+    runtime_strategy = "auto-download",
     config = config
   )
 
@@ -419,6 +420,7 @@ test_that("resolve_app_dependencies reads requirements.txt for py-shiny", {
   result <- resolve_app_dependencies(
     appdir = tmpdir,
     app_type = "py-shiny",
+    runtime_strategy = "auto-download",
     config = config
   )
 
@@ -427,10 +429,11 @@ test_that("resolve_app_dependencies reads requirements.txt for py-shiny", {
   expect_equal(result$language, "python")
 })
 
-test_that("resolve_app_dependencies returns NULL for shinylive types", {
+test_that("resolve_app_dependencies returns NULL for the shinylive strategy", {
   result <- resolve_app_dependencies(
     appdir = tempdir(),
-    app_type = "r-shinylive",
+    app_type = "r-shiny",
+    runtime_strategy = "shinylive",
     config = list()
   )
   expect_null(result)
