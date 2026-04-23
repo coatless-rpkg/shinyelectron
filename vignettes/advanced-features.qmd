@@ -15,24 +15,27 @@ knitr:
 library(shinyelectron)
 ```
 
-shinyelectron provides several features beyond the basic export pipeline:
-splash screens, system tray integration, native menus, and preloader
-configuration. This guide covers each one.
+Four features sit on top of the basic export pipeline: splash screens, the
+system tray, native menus, and the in-window preloader. Each solves a
+different stretch of the user's first few seconds with your app. This
+guide walks through them in order.
 
-## Splash Screens
+## Splash screens
 
-The splash screen occupies the window while the backend starts, replacing a
-blank screen with useful feedback.
+A splash screen fills the window while the backend starts. It replaces a
+blank rectangle with something informative.
 
-### Why Use a Splash Screen?
+Reach for a splash screen when:
 
-- **WebAssembly loading**: Shinylive apps can take 5-10 seconds to initialize
-- **Branding**: Display a logo or app name during the wait
-- **User feedback**: Shows the app is starting, not frozen
+- **Shinylive is loading.** WebAssembly initialization takes five to ten
+  seconds and you need to show the user the app is alive.
+- **You want branding.** Logo, product name, a version string.
+- **Startup is not instant.** A splash proves the app is starting, not
+  frozen.
 
 ### Configuration
 
-Add to `_shinyelectron.yml`:
+Add a `splash` block to `_shinyelectron.yml`.
 
 ```yaml
 splash:
@@ -46,7 +49,7 @@ splash:
   text_color: "#333333"
 ```
 
-### Configuration Options
+Every key, with defaults:
 
 | Option | Description | Default |
 |--------|-------------|---------|
@@ -56,14 +59,14 @@ splash:
 | `image` | Path to splash image | `null` |
 | `width` | Splash window width in pixels | `400` |
 | `height` | Splash window height in pixels | `300` |
-| `text` | Loading text displayed below image | `Loading...` |
+| `text` | Loading text below image | `Loading...` |
 | `text_color` | Text and spinner color | `#333333` |
 
-### Custom Splash Image
+### Custom splash image
 
-1. Create a splash image (recommended: PNG, 300x200px minimum)
-2. Place it in your app directory
-3. Reference it in the configuration:
+1. Prepare a PNG. 300x200 pixels minimum. Larger is fine.
+2. Drop it in your app directory.
+3. Point the config at it.
 
 ```yaml
 splash:
@@ -75,19 +78,21 @@ splash:
 ```
 
 ::: {.callout-tip}
-For best results, use a transparent PNG on a solid background color.
+A transparent PNG on a solid background color renders most predictably
+across displays.
 :::
 
-## System Tray Integration
+## System tray
 
-System tray (menubar on macOS) allows your app to run in the background and
-provides quick access via an icon.
+The system tray (menubar on macOS) lets your app live between windows. An
+icon sits in the tray; the app runs whether or not a window is open.
 
-### Use Cases
+Typical uses:
 
-- **Background services**: Apps that should keep running when closed
-- **Quick access**: Open app from tray with double-click
-- **Status indicators**: Show app state in tray menu
+- **Background services** that should keep running when the window is
+  closed.
+- **Quick reopen** with a tray-icon click.
+- **Status indicators** surfaced through the tray menu.
 
 ### Configuration
 
@@ -100,8 +105,6 @@ tray:
   icon: "tray-icon.png"     # Custom tray icon (optional)
 ```
 
-### Configuration Options
-
 | Option | Description | Default |
 |--------|-------------|---------|
 | `enabled` | Enable system tray | `false` |
@@ -110,22 +113,26 @@ tray:
 | `tooltip` | Text shown on hover | App name |
 | `icon` | Custom tray icon path | App icon |
 
-### Behavior Matrix
+### Button behavior
 
-| Setting | Minimize Button | Close Button |
+The two toggles combine like this:
+
+| Setting | Minimize button | Close button |
 |---------|-----------------|--------------|
 | `minimize_to_tray: true, close_to_tray: false` | Hides to tray | Quits app |
 | `minimize_to_tray: true, close_to_tray: true` | Hides to tray | Hides to tray |
 | `minimize_to_tray: false, close_to_tray: true` | Minimizes normally | Hides to tray |
 
-### Tray Menu
+### Default tray menu
 
-The default tray menu includes:
+The built-in menu has two entries:
 
-- **Show**: Brings the window to front
-- **Quit**: Exits the application
+- **Show** brings the window forward.
+- **Quit** exits the app.
 
-### Tray Icon Guidelines
+### Tray icon specs
+
+Each platform expects a different format.
 
 | Platform | Format | Size |
 |----------|--------|------|
@@ -134,13 +141,14 @@ The default tray menu includes:
 | Linux | PNG | 16x16 to 512x512 |
 
 ::: {.callout-note}
-On macOS, use template images (black icons with transparency) for proper
-appearance in light and dark modes.
+On macOS, supply a template image: solid black with transparency. The
+system inverts it automatically for light and dark mode.
 :::
 
-## Native Application Menus
+## Native application menus
 
-Native menus provide keyboard shortcuts and platform-consistent navigation.
+Native menus give users keyboard shortcuts and the menu shapes their
+operating system expects.
 
 ### Configuration
 
@@ -152,46 +160,49 @@ menu:
   help_url: "https://docs.example.com"
 ```
 
-### Menu Templates
+### Templates
 
-**Default** - Full application menu:
+**Default** ships a full application menu.
 
-- File (Quit/Close)
+- File (Quit, Close)
 - Edit (Undo, Redo, Cut, Copy, Paste, Select All)
 - View (Reload, Zoom, Fullscreen)
 - Window (Minimize, Zoom)
 - Help (Documentation, About)
 
-**Minimal** - Essential items only:
+**Minimal** keeps only what most apps actually need.
 
 - File (Quit)
 - Edit (Copy, Paste)
 - Help (About)
 
-### Platform Differences
+### Platform differences
 
-| Platform | App Menu | Keyboard Shortcuts |
-|----------|----------|-------------------|
-| macOS | App name menu with About, Services, Hide | Cmd+Q, Cmd+H |
-| Windows | No app menu, Quit in File | Alt+F4 |
+macOS, Windows, and Linux disagree about where "Quit" lives. shinyelectron
+follows each platform's convention.
+
+| Platform | App menu | Keyboard shortcuts |
+|----------|----------|--------------------|
+| macOS | App-name menu with About, Services, Hide | Cmd+Q, Cmd+H |
+| Windows | No app menu, Quit lives under File | Alt+F4 |
 | Linux | Same as Windows | Same as Windows |
 
-### DevTools Access
+### DevTools access
 
-For development builds, enable DevTools in the View menu:
+Enable DevTools in the View menu when building for development.
 
 ```yaml
 menu:
   show_dev_tools: true
 ```
 
-Users can then access DevTools via View → Toggle Developer Tools or the
-keyboard shortcut (Cmd+Option+I on macOS, Ctrl+Shift+I on Windows/Linux).
+Users reach DevTools via View > Toggle Developer Tools, or with Cmd+Option+I
+on macOS and Ctrl+Shift+I on Windows and Linux.
 
 ## Preloader
 
-The preloader shows a loading indicator while the Shinylive WebAssembly
-runtime initializes.
+The preloader is a loading indicator shown inside the app window while the
+Shinylive WebAssembly runtime boots.
 
 ### Configuration
 
@@ -203,7 +214,7 @@ preloader:
   background: "#f8f9fa"
 ```
 
-### Preloader Styles
+### Styles
 
 | Style | Description |
 |-------|-------------|
@@ -211,24 +222,26 @@ preloader:
 | `bar` | Horizontal progress bar |
 | `dots` | Animated bouncing dots |
 
-### Preloader vs Splash Screen
+### Preloader vs splash screen
 
-| Feature | Splash Screen | Preloader |
+They look similar but solve different problems.
+
+| Feature | Splash screen | Preloader |
 |---------|---------------|-----------|
-| When shown | Before app window | Inside app window |
-| Duration | Fixed minimum time | Until app ready |
+| When shown | Before the app window | Inside the app window |
+| Duration | Fixed minimum time | Until app is ready |
 | Purpose | Branding, startup feedback | Loading feedback |
 | Customization | Full custom HTML | Style only |
 
 ::: {.callout-tip}
-For the best user experience, use both:
-1. Splash screen for initial branding (2-3 seconds)
-2. Preloader for WebAssembly loading
+Use both. A splash screen handles the first two or three seconds of
+branding, then the preloader takes over until WebAssembly finishes
+loading.
 :::
 
-## Complete Example
+## A complete config
 
-Here's a full `_shinyelectron.yml` with all advanced features enabled:
+All four features, wired up together.
 
 ```yaml
 app:
@@ -269,9 +282,9 @@ preloader:
   message: "Initializing..."
 ```
 
-## Programmatic Configuration
+## Editing the config from R
 
-You can also configure these features programmatically:
+The config is YAML, so you can edit it from R when you need to.
 
 ```{r}
 #| eval: false
@@ -291,7 +304,7 @@ config$tray$close_to_tray <- TRUE
 yaml::write_yaml(config, file.path("path/to/app", "_shinyelectron.yml"))
 ```
 
-## Next Steps
+## Next steps
 
 - **[Auto Updates](auto-updates.html)**: Keep your app up to date
 - **[Configuration](configuration.html)**: Full configuration reference

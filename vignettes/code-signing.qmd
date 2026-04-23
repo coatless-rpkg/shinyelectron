@@ -15,44 +15,34 @@ knitr:
 library(shinyelectron)
 ```
 
-Without code signing, macOS Gatekeeper blocks your app ("unidentified
-developer") and Windows SmartScreen warns on every download ("unrecognized
-app"). This guide covers what you need, what it costs, and how to set it up.
-For broader Electron security topics, see
-[Security Considerations](security.html).
+Signing tells the OS who built this. Notarization tells the OS that Apple has seen it. Without either, macOS Gatekeeper blocks your app as an "unidentified developer" and Windows SmartScreen warns on every download. This guide covers what you need, what it costs, and how to wire it up. For the wider security picture, see [Security Considerations](security.html).
 
-## Why Code Signing Matters
+## Why sign at all
 
-Unsigned apps still work once users bypass the warning, but signing matters for:
+Users can click past warnings. The reasons to sign anyway:
 
-- **User trust**: Security warnings scare non-technical users away.
-- **Enterprise deployment**: Many organizations block unsigned software via policy.
-- **Auto-updates**: macOS and Windows require signed builds for electron-updater
-  to verify update integrity.
+- **Trust.** Non-technical users read "unidentified developer" as "malware" and leave.
+- **Enterprise.** Many IT policies block anything unsigned.
+- **Auto-updates.** `electron-updater` verifies signatures on macOS and Windows. Unsigned means no updates.
 
 | | macOS | Windows | Linux |
 |---|---|---|---|
 | **Required?** | Strongly recommended | Strongly recommended | Optional |
-| **Cost** | $99/year (Apple Developer) | $200--$700/year (CA cert) | Free (GPG) |
+| **Cost** | $99/year (Apple Developer) | $200 to $700/year (CA cert) | Free (GPG) |
 | **Certificate** | Developer ID Application | OV or EV code signing | GPG key |
 | **Notarization** | Yes (macOS 10.15+) | N/A | N/A |
 
-## macOS: Code Signing and Notarization
+## macOS: sign and notarize
 
-### What You Need
+### What you need
 
-1. **Apple Developer Program membership** ($99/year) at
-   [developer.apple.com](https://developer.apple.com/programs/)
-2. **Developer ID Application certificate** --- this is different from a Mac
-   App Store certificate. Create one in the Apple Developer portal under
-   Certificates, Identifiers & Profiles.
-3. **App-specific password** for notarization (generated at
-   [appleid.apple.com](https://appleid.apple.com/account/manage))
+1. **Apple Developer Program membership** ($99/year): [developer.apple.com](https://developer.apple.com/programs/).
+2. **Developer ID Application certificate**. Not the same as a Mac App Store certificate. Create it under Certificates, Identifiers & Profiles.
+3. **App-specific password** for notarization, generated at [appleid.apple.com](https://appleid.apple.com/account/manage).
 
-### Setup
+### Signing steps
 
-Export your Developer ID Application certificate as a `.p12` file from
-Keychain Access, then set these environment variables:
+Export the Developer ID Application certificate from Keychain Access as a `.p12` file, then set these variables:
 
 ```bash
 # Certificate (path to .p12 file, or base64-encoded content)
@@ -65,7 +55,7 @@ export APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"
 export APPLE_TEAM_ID="XXXXXXXXXX"
 ```
 
-Then export your app with signing enabled:
+Then export with signing on:
 
 ```{r}
 #| eval: false
@@ -76,12 +66,9 @@ export(
 )
 ```
 
-electron-builder handles the entire signing and notarization flow automatically
-when these environment variables are present. You do not need to run `codesign`
-or `xcrun notarytool` yourself.
+electron-builder drives the signing and notarization flow end to end. You do not need to call `codesign` or `xcrun notarytool` yourself.
 
-You can also configure signing behavior in `_shinyelectron.yml` (credentials
-should still come from environment variables):
+You can also set signing options in `_shinyelectron.yml`. Keep credentials out of the config file: use environment variables.
 
 ```yaml
 signing:
@@ -92,19 +79,15 @@ signing:
     notarize: true
 ```
 
-To open an unsigned `.app` on macOS during development, clear the quarantine
-attribute (`xattr -cr /path/to/YourApp.app`) or right-click and choose **Open**.
+To open an unsigned `.app` during local development, strip the quarantine flag with `xattr -cr /path/to/YourApp.app` or right-click and choose **Open**.
 
-## Windows: Code Signing
+## Windows: sign with a code signing certificate
 
-### What You Need
+### What you need
 
-An OV or EV code signing certificate from a CA (DigiCert, Sectigo, GlobalSign,
-SSL.com). EV certificates (~$300--$700/year) provide immediate SmartScreen
-trust. OV certificates (~$200--$500/year) build reputation gradually --- users
-may still see warnings for the first few weeks.
+An OV or EV code signing certificate from a CA (DigiCert, Sectigo, GlobalSign, SSL.com). An EV certificate (~$300 to $700/year) gives you SmartScreen trust immediately. An OV certificate (~$200 to $500/year) builds reputation over weeks: users will still see warnings at first.
 
-### Setup
+### Signing steps
 
 ```bash
 # Path to your .pfx certificate file (or base64-encoded content)
@@ -112,7 +95,7 @@ export CSC_LINK="/path/to/certificate.pfx"
 export CSC_KEY_PASSWORD="your-certificate-password"
 ```
 
-Then build with signing:
+Then build:
 
 ```{r}
 #| eval: false
@@ -124,14 +107,11 @@ export(
 )
 ```
 
-Unsigned Windows builds trigger SmartScreen on every download with no workaround.
+Unsigned Windows installers trigger SmartScreen on every download. There is no workaround short of signing.
 
-## Linux: Optional GPG Signing
+## Linux: optional GPG signing
 
-Linux distributions do not enforce code signing for desktop apps. However,
-AppImage files can be GPG-signed so users can verify authenticity.
-
-### Setup
+Linux distributions do not require code signing. AppImage files can still be GPG-signed so users who care can verify authenticity.
 
 ```bash
 export GPG_KEY="your-gpg-key-id"
@@ -144,28 +124,19 @@ signing:
     gpg_sign: true
 ```
 
-This is optional and only matters if your users explicitly verify signatures.
+Most users never check. Sign if your audience does.
 
-## The `sign` Parameter
+## The `sign` parameter
 
-`export(..., sign = TRUE)` tells electron-builder to sign using available
-credentials. It passes signing configuration to `package.json`, sets the macOS
-identity, enables notarization (if configured), and includes the Windows
-certificate path. It does **not** create certificates or error on missing
-credentials --- it warns, then electron-builder proceeds (and may fail at the
-signing step).
+`export(..., sign = TRUE)` tells electron-builder to use whatever credentials it finds. It writes signing configuration into `package.json`, sets the macOS identity, enables notarization (if configured), and points Windows at the certificate. It does **not** create certificates. If credentials are missing, it warns and hands off to electron-builder, which may then fail at the signing step.
 
-The function parameter overrides the config file: `export(..., sign = TRUE)`
-enables signing even if `_shinyelectron.yml` says `sign: false`. You can also
-enable signing solely via config (`signing: sign: true`).
+The function argument wins over the config file. `export(..., sign = TRUE)` signs even if `_shinyelectron.yml` has `sign: false`. You can also enable signing purely through the config (`signing: sign: true`).
 
-Use `app_check("my-app", sign = TRUE)` to verify your signing setup before
-building.
+Run `app_check("my-app", sign = TRUE)` to verify your setup before you kick off a full build.
 
-## Using with GitHub Actions
+## GitHub Actions
 
-Store credentials as GitHub Actions secrets (**Settings > Secrets and variables
-> Actions**), then reference them in your workflow.
+Store credentials as GitHub Actions secrets (**Settings > Secrets and variables > Actions**) and reference them from your workflow.
 
 | Secret Name | Value |
 |------------|-------|
@@ -177,7 +148,7 @@ Store credentials as GitHub Actions secrets (**Settings > Secrets and variables
 | `WIN_CERTIFICATE` | Base64-encoded `.pfx` file |
 | `WIN_CERTIFICATE_PASSWORD` | Password for the `.pfx` file |
 
-Reference secrets in your workflow:
+Then in the workflow:
 
 ```yaml
 - name: Build Electron app
@@ -202,31 +173,28 @@ Reference secrets in your workflow:
 ```
 
 ::: {.callout-important}
-macOS and Windows use different certificates, so `CSC_LINK` and
-`CSC_KEY_PASSWORD` must point to the correct certificate for each platform.
-In a matrix build, set these per-platform using conditional env blocks or
-separate build steps.
+macOS and Windows use different certificates. `CSC_LINK` and `CSC_KEY_PASSWORD` must point at the right one for the runner. In a matrix build, set them per-platform with conditional env blocks or split the build steps.
 :::
 
-For a complete workflow template, see [GitHub Actions](github-actions.html).
+For a full workflow template, see [GitHub Actions](github-actions.html).
 
-## Development vs. Production
+## Development versus production
 
 | | Development | Production |
 |---|---|---|
 | **`sign`** | `FALSE` (default) | `TRUE` |
 | **Credentials needed?** | No | Yes |
-| **Build speed** | Fast | Slower (notarization takes 1--5 minutes) |
+| **Build speed** | Fast | Slower: notarization takes 1 to 5 minutes |
 | **OS warnings?** | Yes (use `xattr -cr` on macOS) | No |
 
-A typical workflow:
+A working rhythm:
 
-1. Develop and test with `sign = FALSE`
-2. Set up signing credentials once
-3. Use `sign = TRUE` (or `signing: sign: true` in config) for release builds
-4. Automate signed builds with GitHub Actions
+1. Develop and iterate with `sign = FALSE`.
+2. Set up signing credentials once.
+3. Flip `sign = TRUE` (or `signing: sign: true`) for release builds.
+4. Push signing to CI so humans never hold the keys locally.
 
-## Quick Reference
+## Quick reference
 
 | Environment Variable | Platform | Purpose |
 |---------------------|----------|---------|
@@ -237,10 +205,8 @@ A typical workflow:
 | `APPLE_TEAM_ID` | macOS | 10-character Apple Developer Team ID |
 | `GPG_KEY` | Linux | GPG key ID for AppImage signing |
 
-## Next Steps
+## Next steps
 
-- **[GitHub Actions](github-actions.html)**: Automate signed builds in CI/CD
-- **[Auto Updates](auto-updates.html)**: Signed builds are required for
-  auto-updates on macOS and Windows
-- **[Configuration](configuration.html)**: Full `_shinyelectron.yml` reference
-  including signing options
+- **[GitHub Actions](github-actions.html)**: automate signed builds in CI.
+- **[Auto Updates](auto-updates.html)**: auto-updates require signed builds on macOS and Windows.
+- **[Configuration](configuration.html)**: the full `_shinyelectron.yml` reference, signing included.

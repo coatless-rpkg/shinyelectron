@@ -15,13 +15,13 @@ knitr:
 library(shinyelectron)
 ```
 
-The shinyelectron package supports a YAML configuration file that simplifies
-the export process by storing settings in your project directory. This guide
-explains the configuration file format and all available options.
+A `_shinyelectron.yml` file keeps your build settings next to your app.
+`export()` reads it automatically, so you stop passing the same arguments
+over and over.
 
-## Why Use a Configuration File?
+## Why a config file
 
-Instead of passing many parameters to `export()`:
+Compare a fully specified call:
 
 ```{r}
 #| eval: false
@@ -29,44 +29,45 @@ export(
   appdir = "my-app",
   destdir = "output",
   app_name = "My Application",
-  app_type = "r-shinylive",
+  app_type = "r-shiny",
+  runtime_strategy = "shinylive",
   platform = c("mac", "win"),
   arch = c("x64", "arm64"),
   icon = "icons/icon.icns"
 )
 ```
-You can store these settings in a `_shinyelectron.yml` file and simply run:
+
+With the same build driven by config:
 
 ```{r}
 #| eval: false
 export(appdir = "my-app", destdir = "output")
 ```
 
-The configuration file also:
+A config file also:
 
-- Keeps build settings version-controlled with your project
-- Allows sharing settings across team members
-- Documents your project's build configuration
+- Versions your build settings alongside the code
+- Shares them across a team
+- Serves as documentation for how the app is built
 
-## Creating a Configuration File
-
-Use `init_config()` to create a template configuration file:
+## Create a template
 
 ```{r}
 #| eval: false
 init_config("path/to/my-app")
 ```
+
 ```
 ✔ Created configuration file: path/to/my-app/_shinyelectron.yml
 ℹ Edit this file to customize your Electron app settings
 ```
 
-This creates a `_shinyelectron.yml` file with documented defaults.
+The generated file carries documented defaults you can edit in place.
 
-## Configuration File Location
+## File location
 
-The configuration file must be named `_shinyelectron.yml` and placed in the
-root of your Shiny application directory:
+The file must be named `_shinyelectron.yml` and live at the root of your
+app directory:
 
 ```
 my-shiny-app/
@@ -75,9 +76,9 @@ my-shiny-app/
 └── ...
 ```
 
-## Complete Configuration Reference
+## Complete reference
 
-Here is a complete configuration file with all available options:
+Every available option, annotated:
 
 ```yaml
 # shinyelectron configuration file
@@ -88,8 +89,8 @@ app:
   version: "1.0.0"           # Application version (used in package metadata)
 
 build:
-  type: "r-shinylive"        # Application type
-  runtime_strategy: "auto-download"  # For native types: bundled, system, auto-download, container
+  type: "r-shiny"            # Application language (autodetected if omitted)
+  runtime_strategy: "shinylive"  # shinylive, auto-download, bundled, system, container
   platforms:                 # Target platforms
     - mac
     - win
@@ -133,7 +134,8 @@ container:                   # Used when runtime_strategy is "container"
 #   - id: "dashboard"
 #     name: "Dashboard"
 #     path: "./apps/dashboard"
-#     type: "r-shiny"          # Optional per-app override (default: build.type)
+#     type: "r-shiny"                   # Optional per-app override (default: build.type)
+#     runtime_strategy: "shinylive"     # Optional per-app override (default: build.runtime_strategy)
 #     description: "Main dashboard"
 #     icon: "icons/dash.png"
 #   - id: "admin"
@@ -141,11 +143,11 @@ container:                   # Used when runtime_strategy is "container"
 #     path: "./apps/admin"
 ```
 
-## Configuration Sections
+## Sections
 
-### `app` Section
+### `app`
 
-Controls application metadata.
+Application metadata.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -160,14 +162,14 @@ app:
   version: "2.1.0"
 ```
 
-### `build` Section
+### `build`
 
-Controls the build process and targets.
+The build process and its targets.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `type` | string | `"r-shinylive"` | Application type (see below) |
-| `runtime_strategy` | string | `"auto-download"` | Runtime strategy for native types (see below) |
+| `type` | string | autodetect | Application language (see below). Autodetected from files in `appdir` if omitted. |
+| `runtime_strategy` | string | `"shinylive"` | Runtime strategy (see below) |
 | `platforms` | list | Current platform | Target operating systems |
 | `architectures` | list | Current arch | Target CPU architectures |
 
@@ -175,19 +177,20 @@ Controls the build process and targets.
 
 | Type | Description |
 |------|-------------|
-| `r-shinylive` | R Shiny app converted to run in browser via WebR |
-| `py-shinylive` | Python Shiny app converted to run in browser via Pyodide |
-| `r-shiny` | Native R Shiny app with runtime |
-| `py-shiny` | Native Python Shiny app with runtime |
+| `r-shiny` | R Shiny app (`app.R`) |
+| `py-shiny` | Python Shiny app (`app.py`) |
 
-**Valid `runtime_strategy` values** (native types only):
+**Valid `runtime_strategy` values:**
 
 | Strategy | Description |
 |----------|-------------|
-| `auto-download` | Downloads R/Python on first launch, caches for reuse (default) |
+| `shinylive` | Compiles the app to WebAssembly and runs it in-browser via WebR or Pyodide (default) |
+| `auto-download` | Downloads R/Python on first launch, caches for reuse |
 | `bundled` | Embeds a portable R/Python runtime in the app at build time |
 | `system` | Uses R/Python already installed on the end user's machine |
 | `container` | Runs the app inside a Docker/Podman container |
+
+All five strategies are valid with both `r-shiny` and `py-shiny`.
 
 **Valid `platforms` values:** `mac`, `win`, `linux`
 
@@ -210,14 +213,14 @@ build:
 ::: {.callout-note}
 ## Cross-Platform Building
 
-Building for a platform different from your development machine may have
-limitations. macOS apps can only be built on macOS. Windows and Linux apps can
-be cross-compiled with additional setup.
+Building for a platform other than your development machine has limits.
+macOS apps build only on macOS. Windows and Linux cross-compile with
+additional setup.
 :::
 
-### `window` Section
+### `window`
 
-Controls the Electron window dimensions.
+Electron window dimensions.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -232,9 +235,9 @@ window:
   height: 900
 ```
 
-### `server` Section
+### `server`
 
-Controls development server settings.
+Development server settings.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -247,10 +250,9 @@ server:
   port: 8080
 ```
 
-### `icons` Section
+### `icons`
 
-Specifies custom application icons for each platform. Icons must be in
-platform-specific formats.
+Per-platform application icons. Each platform requires its own format.
 
 | Key | Type | Format | Description |
 |-----|------|--------|-------------|
@@ -272,14 +274,14 @@ icons:
 ::: {.callout-tip}
 ## Creating Icons
 
-Tools like [iconutil](https://developer.apple.com/library/archive/documentation/GraphicsAnimation/Conceptual/HighResolutionOSX/Optimizing/Optimizing.html)
-(macOS), [ImageMagick](https://imagemagick.org/), or online converters can
-create platform-specific icon formats from a single high-resolution PNG.
+Start from one high-resolution PNG and convert with
+[iconutil](https://developer.apple.com/library/archive/documentation/GraphicsAnimation/Conceptual/HighResolutionOSX/Optimizing/Optimizing.html)
+(macOS), [ImageMagick](https://imagemagick.org/), or an online tool.
 :::
 
-### `nodejs` Section
+### `nodejs`
 
-Controls Node.js installation behavior.
+Node.js installation behavior.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -297,13 +299,13 @@ nodejs:
 ::: {.callout-warning}
 ## Auto-Install Opt-In
 
-Auto-install is disabled by default. Set `auto_install: true` explicitly to
-enable automatic Node.js installation during `export()`.
+Auto-install is off by default. Set `auto_install: true` explicitly to let
+`export()` install Node.js for you.
 :::
 
-### `r` Section
+### `r`
 
-Pins the R version used for `bundled` and `auto-download` runtime strategies.
+Pins R for `bundled` and `auto-download` runtime strategies.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -316,9 +318,9 @@ r:
   version: "4.4.1"
 ```
 
-### `python` Section
+### `python`
 
-Pins the Python version used for `bundled` and `auto-download` runtime strategies.
+Pins Python for `bundled` and `auto-download` runtime strategies.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -331,9 +333,9 @@ python:
   version: "3.12.10"
 ```
 
-### `container` Section
+### `container`
 
-Configures the container backend when `runtime_strategy` is `"container"`.
+The container backend used when `runtime_strategy` is `"container"`.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -358,11 +360,11 @@ container:
     - "SHINY_LOG_LEVEL=DEBUG"
 ```
 
-### `apps` Section
+### `apps`
 
-Defines a multi-app suite -- two or more Shiny apps packaged in a single
-Electron shell with a launcher screen. Requires at least two entries. Each app
-can override the default `build.type`.
+Defines a multi-app suite: two or more Shiny apps packaged in one Electron
+shell with a launcher screen. Needs at least two entries. Any entry can
+override `build.type` or `build.runtime_strategy`.
 
 | Key | Type | Required | Description |
 |-----|------|----------|-------------|
@@ -370,6 +372,7 @@ can override the default `build.type`.
 | `name` | string | yes | Display name in launcher |
 | `path` | string | yes | Relative path to app directory |
 | `type` | string | no | App type override (default: `build.type`) |
+| `runtime_strategy` | string | no | Runtime strategy override (default: `build.runtime_strategy`) |
 | `description` | string | no | Short description shown in launcher |
 | `icon` | string | no | Per-app icon path |
 
@@ -389,13 +392,16 @@ apps:
     description: "User management"
 ```
 
-## Configuration Precedence
+See [Multi-App Suites](multi-app-suites.html) for mixed-strategy examples.
 
-When you call `export()` with both a config file and function parameters,
-values are merged with this precedence (highest to lowest):
-1. **Function parameters** - Values passed directly to `export()`
-2. **Configuration file** - Values from `_shinyelectron.yml`
-3. **Default values** - Built-in defaults
+## Configuration precedence
+
+When a config file and function arguments disagree, `export()` merges them
+highest to lowest:
+
+1. **Function parameters**: values passed directly to `export()`
+2. **Configuration file**: values from `_shinyelectron.yml`
+3. **Default values**: built-in defaults
 
 **Example:**
 
@@ -410,7 +416,7 @@ build:
 
 ```{r}
 #| eval: false
-# This uses "Override Name" (function param wins)
+# Uses "Override Name" (function param wins)
 # and builds for mac only (from config)
 export(
   appdir = "my-app",
@@ -419,9 +425,9 @@ export(
 )
 ```
 
-## Minimal Configuration
+## Minimal configuration
 
-For most projects, a minimal configuration is sufficient:
+For most projects, this is enough:
 
 ```yaml
 app:
@@ -431,13 +437,13 @@ nodejs:
   auto_install: true
 ```
 
-All other values use sensible defaults.
+Defaults handle the rest.
 
-## Common Configurations
+## Common configurations
 
-### Development Setup
+### Development setup
 
-Quick iteration during development:
+Fast iteration while you work:
 
 ```yaml
 app:
@@ -452,9 +458,9 @@ nodejs:
   auto_install: true
 ```
 
-### Production Multi-Platform Build
+### Production multi-platform build
 
-Build for distribution across platforms:
+For distribution across platforms:
 
 ```yaml
 app:
@@ -462,7 +468,8 @@ app:
   version: "1.0.0"
 
 build:
-  type: "r-shinylive"
+  type: "r-shiny"
+  runtime_strategy: "shinylive"
   platforms:
     - mac
     - win
@@ -485,9 +492,9 @@ nodejs:
   auto_install: false
 ```
 
-### Native R App with Bundled Runtime
+### Native R app with bundled runtime
 
-Package an R Shiny app with the runtime embedded:
+Ship R inside the app:
 
 ```yaml
 app:
@@ -508,9 +515,9 @@ nodejs:
   auto_install: true
 ```
 
-### Multi-App Configuration
+### Multi-app suite
 
-Package multiple Shiny apps in a single Electron shell with a launcher:
+Several apps behind one launcher:
 
 ```yaml
 app:
@@ -536,9 +543,9 @@ nodejs:
   auto_install: true
 ```
 
-### Locked Node.js Version
+### Locked Node.js version
 
-Pin Node.js version for reproducible builds:
+Pin Node.js for reproducible builds:
 
 ```yaml
 nodejs:
@@ -546,19 +553,20 @@ nodejs:
   auto_install: true
 ```
 
-## Validation and Error Handling
+## Validation
 
-Configuration values are validated when read:
+shinyelectron validates values on read:
 
-- Invalid `type` values warn and fall back to `"r-shinylive"`
-- Invalid platforms/architectures are filtered out with a warning
-- Window dimensions below 100 pixels warn and use defaults
+- Invalid `type` values warn and fall back to autodetect
+- Invalid `runtime_strategy` values warn and fall back to `"shinylive"`
+- Invalid platforms and architectures are dropped with a warning
+- Window dimensions under 100 pixels warn and use defaults
 - Invalid port numbers warn and use 3838
 
-If the YAML file has syntax errors, shinyelectron warns and uses all defaults.
+If the YAML itself fails to parse, shinyelectron warns and uses all defaults.
 
-## Next Steps
+## Next steps
 
-- **[Getting Started](getting-started.html)**: First-time user walkthrough
-- **[Node.js Management](nodejs-management.html)**: Managing local Node.js
-- **[Troubleshooting](troubleshooting.html)**: Diagnosing issues
+- **[Getting Started](getting-started.html)**: first-time user walkthrough
+- **[Node.js Management](nodejs-management.html)**: managing local Node.js
+- **[Troubleshooting](troubleshooting.html)**: diagnosing issues
