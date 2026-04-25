@@ -13,6 +13,25 @@ knitr:
 ```{r}
 #| include: false
 library(shinyelectron)
+
+# Helper: render a directory tree from a bundled demo, stripped of any ANSI
+# colour codes and with the absolute path swapped for the suite name.
+print_demo_tree <- function(suite_dir) {
+  root <- system.file(paste0("demos/", suite_dir), package = "shinyelectron")
+  output <- capture.output(fs::dir_tree(root))
+  output <- cli::ansi_strip(output)
+  output[1] <- paste0(suite_dir, "/")
+  cat(c("```", output, "```"), sep = "\n")
+}
+
+# Helper: render a file from a bundled demo as a fenced code block.
+print_demo_file <- function(rel_path, lang = "") {
+  path <- system.file(paste0("demos/", rel_path), package = "shinyelectron")
+  cat(c(paste0("```", lang),
+        readLines(path),
+        "```"),
+      sep = "\n")
+}
 ```
 
 One repo, many apps, one launcher. A suite bundles several Shiny apps, R or Python, into a single Electron binary. Users open the launcher, pick an app, and switch whenever they like through the **Apps** menu.
@@ -25,107 +44,46 @@ A suite is a directory with a `_shinyelectron.yml` at the root and an `apps/` fo
 
 ### R suite
 
-The bundled demo at `inst/demos/demo-r-app-suite/`:
+The bundled demo at `inst/demos/demo-r-app-suite/`, read live:
 
-```
-demo-r-app-suite/
-├── _shinyelectron.yml
-└── apps/
-    ├── dashboard/
-    │   └── app.R
-    ├── data-explorer/
-    │   └── app.R
-    └── about/
-        └── app.R
+```{r}
+#| echo: false
+#| results: asis
+print_demo_tree("demo-r-app-suite")
 ```
 
 ### Python suite
 
 The Python demo at `inst/demos/demo-py-app-suite/` adds one file: a `requirements.txt` at the root that covers every app in the suite.
 
-```
-demo-py-app-suite/
-├── _shinyelectron.yml
-├── requirements.txt
-└── apps/
-    ├── dashboard/
-    │   └── app.py
-    ├── data-explorer/
-    │   └── app.py
-    └── about/
-        └── app.py
+```{r}
+#| echo: false
+#| results: asis
+print_demo_tree("demo-py-app-suite")
 ```
 
 ## Configuration
 
-A top-level `apps` array switches shinyelectron into suite mode. Each entry needs three fields (`id`, `name`, `path`) and accepts three more (`description`, `type`, `icon`).
+A top-level `apps` array switches shinyelectron into suite mode. Each entry needs three fields (`id`, `name`, `path`) and accepts four optional ones (`description`, `type`, `runtime_strategy`, `icon`).
 
 ### R suite config
 
-```yaml
-# _shinyelectron.yml
-app:
-  name: "R Shiny Demo Suite"
-  version: "1.0.0"
+Read live from `inst/demos/demo-r-app-suite/_shinyelectron.yml`:
 
-build:
-  type: "r-shiny"
-  runtime_strategy: "system"
-
-window:
-  width: 1100
-  height: 750
-
-apps:
-  - id: dashboard
-    name: "Dashboard"
-    description: "Real-time analytics with live-updating stats and charts"
-    path: "./apps/dashboard"
-
-  - id: data-explorer
-    name: "Data Explorer"
-    description: "Browse and analyze built-in R datasets"
-    path: "./apps/data-explorer"
-
-  - id: about
-    name: "About"
-    description: "System information and runtime details"
-    path: "./apps/about"
+```{r}
+#| echo: false
+#| results: asis
+print_demo_file("demo-r-app-suite/_shinyelectron.yml", lang = "yaml")
 ```
 
 ### Python suite config
 
-Only `build.type` changes.
+Only `build.type` changes. Read live from `inst/demos/demo-py-app-suite/_shinyelectron.yml`:
 
-```yaml
-# _shinyelectron.yml
-app:
-  name: "Python Shiny Demo Suite"
-  version: "1.0.0"
-
-build:
-  type: "py-shiny"
-  runtime_strategy: "system"
-
-window:
-  width: 1100
-  height: 750
-
-apps:
-  - id: dashboard
-    name: "Dashboard"
-    description: "Analytics overview with live-updating stats and charts"
-    path: "./apps/dashboard"
-
-  - id: data-explorer
-    name: "Data Explorer"
-    description: "Browse and analyze built-in datasets"
-    path: "./apps/data-explorer"
-
-  - id: about
-    name: "About"
-    description: "System information and runtime details"
-    path: "./apps/about"
+```{r}
+#| echo: false
+#| results: asis
+print_demo_file("demo-py-app-suite/_shinyelectron.yml", lang = "yaml")
 ```
 
 ### Fields in an `apps` entry
@@ -172,27 +130,49 @@ apps:
 
 Per-app `runtime_strategy:` overrides the suite default for just that app. The other apps keep inheriting the default. You can mix all five strategies this way, with the usual platform caveats (for example, bundled R still needs a portable R build for the target OS).
 
-## How dependencies are detected
+## How dependencies are handled
 
-R and Python suites treat dependencies differently, because the ecosystems do.
+R apps can be scanned for dependencies; Python apps cannot. R lets you skip declaration entirely and rely on the source. Python always asks you to write a list, just in one of two files. Both languages can also use `_shinyelectron.yml` for explicit declarations, and lists from any source merge into one install plan.
 
-### R: scan each app
+### R apps
 
-For R apps, shinyelectron runs `renv::dependencies()` against each app directory. It picks up `library()`, `require()`, and `package::function()` references in the source. Each app ends up with its own `dependencies.json`, so nothing extra rides along.
+**Automatic.** shinyelectron runs `renv::dependencies()` over each app directory. It picks up `library()`, `require()`, `pkg::func()`, and `loadNamespace()` references in the source. Base and recommended R packages (`stats`, `utils`, `MASS`, `lattice`, and friends) are excluded automatically.
 
-### Python: one file at the root
+**Explicit.** Add a `dependencies:` block to the suite-level `_shinyelectron.yml`:
 
-Python suites read a single `requirements.txt` (or `pyproject.toml`) from the suite root. All apps share one virtual environment.
-
-The demo ships with:
-
+```yaml
+dependencies:
+  r:
+    packages: [shiny, ggplot2, dplyr]
+    repos: ["https://cloud.r-project.org"]
 ```
-shiny
-numpy
-matplotlib
+
+Source-scan and declared packages merge. Set `dependencies.auto_detect: false` to skip the renv scan and install only the declared list.
+
+### Python apps
+
+shinyelectron does not parse `import` statements: the module-name to package-name mapping is unreliable (`import cv2` is `opencv-python`, `import sklearn` is `scikit-learn`). You declare what gets installed, in one of two places.
+
+**`requirements.txt` or `pyproject.toml`.** A standard Python manifest at the suite root. All apps in the suite share one virtual environment. The demo's `requirements.txt`:
+
+```{r}
+#| echo: false
+#| results: asis
+print_demo_file("demo-py-app-suite/requirements.txt")
 ```
 
 That file covers every app in the suite.
+
+**`_shinyelectron.yml`.** Add a `python` section to the same `dependencies:` block:
+
+```yaml
+dependencies:
+  python:
+    packages: [shiny, numpy, pandas]
+    index_urls: ["https://pypi.org/simple"]
+```
+
+Manifest-file and YAML packages merge. Set `dependencies.auto_detect: false` to skip reading the manifest and install only the YAML list.
 
 ## Exporting a suite
 
