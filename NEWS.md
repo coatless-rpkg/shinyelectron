@@ -54,6 +54,18 @@
   screen.
 * Port allocation uses OS-assigned ports via `findAvailablePort()` to prevent
   collisions when multiple apps run simultaneously.
+* Splash and preloader gain working knobs in `_shinyelectron.yml`:
+  `splash.enabled` toggles the splash state, `splash.duration` sets a
+  minimum display time before transitioning, `splash.background` and
+  `preloader.background` override the lifecycle window background, and
+  `preloader.style` picks the loading indicator (`spinner`, `bar`, or
+  `dots`).
+
+## Bug fixes
+
+* `auto_download` and `auto_install` were rendered as R-style `TRUE` /
+  `FALSE` in the generated `main.js`, which is invalid JavaScript. Booleans
+  now render through mustache sections so the auto-updater wiring is valid.
 
 ## Code signing
 
@@ -89,8 +101,13 @@
 
 * New vignettes: Runtime Strategies, Multi-App Suites, Code Signing, Container
   Strategy, Security Considerations.
+* Renamed the Advanced Features vignette to Customizations and rewrote it
+  around the splash, tray, and menu options with annotated diagrams.
 * Updated Getting Started, Configuration, and Troubleshooting vignettes for
   Python support, all runtime strategies, and Windows-specific guidance.
+* The GitHub Actions vignette now reads its env-vars block live from
+  `inst/templates/github-actions-build.yml`, so the documented values stay in
+  sync with the shipped template.
 
 ## Internal
 
