@@ -352,8 +352,8 @@ function setupAutoUpdater() {
   autoUpdater.logger = log;
   autoUpdater.logger.transports.file.level = 'info';
 
-  autoUpdater.autoDownload = {{auto_download}};
-  autoUpdater.autoInstallOnAppQuit = {{auto_install}};
+  autoUpdater.autoDownload = {{#auto_download}}true{{/auto_download}}{{^auto_download}}false{{/auto_download}};
+  autoUpdater.autoInstallOnAppQuit = {{#auto_install}}true{{/auto_install}}{{^auto_install}}false{{/auto_install}};
 
   autoUpdater.on('checking-for-update', () => {
     log.info('Checking for updates...');
