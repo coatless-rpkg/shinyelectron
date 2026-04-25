@@ -253,7 +253,7 @@ validate_config <- function(config) {
 
   # Validate menu template
   if (!is.null(config$menu) && !is.null(config$menu$template)) {
-    valid_templates <- c("default", "minimal", "custom")
+    valid_templates <- c("default", "minimal")
     if (!config$menu$template %in% valid_templates) {
       cli::cli_warn(c(
         "Invalid menu template: {.val {config$menu$template}}",
@@ -396,14 +396,12 @@ nodejs:
 #   env: []                  # Additional environment variables
 
 # Splash screen configuration
-# Shows a loading screen while the app initializes
+# Shown briefly while the runtime starts up
 # splash:
-#   enabled: false
-#   duration: 3000          # Minimum display time in ms
-#   background: "#ffffff"
-#   image: null             # Path to splash image
-#   width: 400
-#   height: 300
+#   enabled: true
+#   duration: 1500          # Minimum display time in ms before transitioning out
+#   background: null        # null = inherit from _brand.yml; or hex/CSS colour
+#   image: null             # Path to a PNG logo (rendered up to 128 px square)
 #   text: "Loading..."
 #   text_color: "#333333"
 
@@ -419,7 +417,7 @@ nodejs:
 # Application menu configuration
 # menu:
 #   enabled: true
-#   template: "default"     # "default", "minimal", or "custom"
+#   template: "default"     # "default" or "minimal"
 #   show_dev_tools: false
 #   help_url: null
 
@@ -437,12 +435,11 @@ nodejs:
 #     private: false
 
 # Preloader configuration
-# Shows loading indicator while WebAssembly loads
+# Shown after the splash, while the runtime emits status events
 # preloader:
-#   enabled: true
 #   style: "spinner"        # "spinner", "bar", or "dots"
 #   message: "Loading application..."
-#   background: "#f8f9fa"
+#   background: null        # null = inherit from _brand.yml; or hex/CSS colour
 
 ## Code Signing
 ## Set sign to true for distribution builds.
@@ -473,7 +470,6 @@ nodejs:
 ## Lifecycle UI
 ## Controls the startup, loading, error, and shutdown experience.
 # lifecycle:
-#   splash_min_duration: 1500
 #   show_phase_details: true
 #   error_show_logs: true
 #   shutdown_timeout: 10000

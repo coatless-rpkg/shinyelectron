@@ -82,7 +82,9 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     update_repo = config$updates$github$repo %||% "",
 
     # Splash screen
-    splash_background = config$splash$background %||% SHINYELECTRON_DEFAULTS$splash$background,
+    splash_enabled = config$splash$enabled %||% SHINYELECTRON_DEFAULTS$splash$enabled,
+    splash_duration = config$splash$duration %||% SHINYELECTRON_DEFAULTS$splash$duration,
+    splash_background = config$splash$background %||% (brand$color$background %||% "#f8fafc"),
     splash_text = config$splash$text %||% SHINYELECTRON_DEFAULTS$splash$text,
     splash_text_color = config$splash$text_color %||% SHINYELECTRON_DEFAULTS$splash$text_color,
     has_splash_image = !is.null(config$splash$image),
@@ -90,8 +92,11 @@ generate_template_variables <- function(app_name, app_slug, app_type,
 
     # Preloader
     preloader_style = config$preloader$style %||% SHINYELECTRON_DEFAULTS$preloader$style,
+    preloader_style_spinner = identical(config$preloader$style %||% "spinner", "spinner"),
+    preloader_style_bar = identical(config$preloader$style %||% "spinner", "bar"),
+    preloader_style_dots = identical(config$preloader$style %||% "spinner", "dots"),
     preloader_message = config$preloader$message %||% SHINYELECTRON_DEFAULTS$preloader$message,
-    preloader_background = config$preloader$background %||% SHINYELECTRON_DEFAULTS$preloader$background,
+    preloader_background = config$preloader$background %||% (brand$color$background %||% "#f8fafc"),
 
     # Custom lifecycle HTML
     has_custom_splash = !is.null(config$lifecycle$custom_splash_html),
