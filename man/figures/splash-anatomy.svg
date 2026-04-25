@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 280" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Anatomy of a shinyelectron splash screen. The right side shows a sample splash window: at the top, three traffic-light dots; centered, a yellow logo card with the letter M, the app name My Dashboard, the loading text Loading dashboard, and a small animated pulse bar. Annotations on the left identify each part: the logo image is splash.image, a PNG up to 128 pixels square; the app name is taken from app.name in _shinyelectron.yml; the loading text and its colour come from splash.text and splash.text_color; the background colour comes from splash.background if set, otherwise from _brand.yml. Each label connects to its element by a thin dashed line.">
+  <defs>
+    <filter id="sa-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
+    </filter>
+  </defs>
+
+  <!-- Sample splash window on the right -->
+  <g transform="translate(440,30)" filter="url(#sa-shadow)">
+    <rect width="280" height="220" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="280" height="3" rx="1.5" fill="#f59e0b"/>
+
+    <!-- Window chrome -->
+    <rect x="0" y="3" width="280" height="14" fill="#f8fafc"/>
+    <circle cx="10" cy="13" r="2" fill="#f87171"/>
+    <circle cx="17" cy="13" r="2" fill="#fbbf24"/>
+    <circle cx="24" cy="13" r="2" fill="#34d399"/>
+
+    <!-- Logo -->
+    <g transform="translate(110,40)">
+      <rect width="60" height="60" rx="8" fill="#fffbeb" stroke="#fde68a" stroke-width="0.75"/>
+      <circle cx="30" cy="30" r="16" fill="#f59e0b"/>
+      <text x="30" y="35" text-anchor="middle" font-size="13" font-weight="700" fill="#fff">M</text>
+    </g>
+
+    <!-- App name -->
+    <text x="140" y="128" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">My Dashboard</text>
+
+    <!-- Splash text -->
+    <text x="140" y="152" text-anchor="middle" font-size="11" fill="#475569">Loading dashboard...</text>
+
+    <!-- Pulse bar -->
+    <rect x="120" y="170" width="40" height="3" rx="1.5" fill="#f59e0b"/>
+
+    <!-- background hint -->
+    <text x="140" y="200" text-anchor="middle" font-size="9" fill="#cbd5e1">background from _brand.yml</text>
+  </g>
+
+  <!-- Annotations on left -->
+
+  <!-- Logo image -->
+  <g transform="translate(40,52)">
+    <text x="0" y="0" font-size="11" font-weight="600" fill="#475569">Logo image</text>
+    <text x="0" y="14" font-size="9" fill="#94a3b8">splash.image</text>
+    <text x="0" y="26" font-size="9" fill="#94a3b8">PNG, up to 128 px square</text>
+  </g>
+  <line x1="200" y1="56" x2="538" y2="70" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2"/>
+
+  <!-- App name -->
+  <g transform="translate(40,118)">
+    <text x="0" y="0" font-size="11" font-weight="600" fill="#475569">App name</text>
+    <text x="0" y="14" font-size="9" fill="#94a3b8">app.name in _shinyelectron.yml</text>
+  </g>
+  <line x1="220" y1="120" x2="478" y2="155" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2"/>
+
+  <!-- Loading text + colour -->
+  <g transform="translate(40,170)">
+    <text x="0" y="0" font-size="11" font-weight="600" fill="#475569">Loading text + colour</text>
+    <text x="0" y="14" font-size="9" fill="#94a3b8">splash.text</text>
+    <text x="0" y="26" font-size="9" fill="#94a3b8">splash.text_color</text>
+  </g>
+  <line x1="220" y1="174" x2="478" y2="178" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2"/>
+
+  <!-- Background -->
+  <g transform="translate(40,228)">
+    <text x="0" y="0" font-size="11" font-weight="600" fill="#475569">Background colour</text>
+    <text x="0" y="14" font-size="9" fill="#94a3b8">splash.background, or _brand.yml,</text>
+    <text x="0" y="26" font-size="9" fill="#94a3b8">whichever is set</text>
+  </g>
+  <line x1="220" y1="232" x2="478" y2="226" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2"/>
+</svg>

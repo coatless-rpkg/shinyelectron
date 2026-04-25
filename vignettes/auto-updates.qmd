@@ -357,4 +357,4 @@ See the [GitHub Actions vignette](github-actions.html) for the full template.
 
 - [Configuration](configuration.html): full reference for `_shinyelectron.yml`.
 - [GitHub Actions](github-actions.html): the CI template that ships releases.
-- [Advanced Features](advanced-features.html): splash screens, system tray.
+- [Customizations](customizations.html): splash screen, system tray, application menu.

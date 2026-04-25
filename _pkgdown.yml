@@ -37,8 +37,8 @@ navbar:
           href: articles/container-strategy.html
         - text: Security Considerations
           href: articles/security.html
-        - text: Advanced Features
-          href: articles/advanced-features.html
+        - text: Customizations
+          href: articles/customizations.html
         - text: "---"
         - text: "Reference"
         - text: Node.js Management
@@ -65,7 +65,7 @@ articles:
       - multi-app-suites
       - container-strategy
       - security
-      - advanced-features
+      - customizations
 
   - title: "Reference"
     contents:
