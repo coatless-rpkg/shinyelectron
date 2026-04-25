@@ -8,7 +8,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background: {{brand_background}};
+      background: {{splash_background}};
       color: #1e293b;
       display: flex;
       align-items: center;
@@ -16,6 +16,7 @@
       min-height: 100vh;
       -webkit-app-region: drag;
       user-select: none;
+      transition: background 0.4s ease;
     }
     .container { text-align: center; max-width: 480px; padding: 40px; -webkit-app-region: no-drag; }
 
@@ -98,7 +99,7 @@
 </head>
 <body>
   <div class="container">
-    <div id="state-splash" class="state active">
+    <div id="state-splash" class="state {{#splash_enabled}}active{{/splash_enabled}}">
       {{#has_custom_splash}}
       {{{custom_splash_html}}}
       {{/has_custom_splash}}
@@ -115,8 +116,11 @@
       {{/has_custom_splash}}
     </div>
 
-    <div id="state-progress" class="state">
-      <div class="status-message" id="progress-status">{{preloader_message}}</div>
+    <div id="state-progress" class="state {{^splash_enabled}}active{{/splash_enabled}}">
+      {{#preloader_style_spinner}}
+      <div class="spinner"></div>
+      {{/preloader_style_spinner}}
+      <div class="status-message{{#preloader_style_dots}} dots{{/preloader_style_dots}}" id="progress-status">{{preloader_message}}</div>
       <div class="phase-detail" id="progress-detail"></div>
       <div class="progress-bar-track progress-bar-indeterminate" id="progress-bar">
         <div class="progress-bar-fill" id="progress-fill"></div>
@@ -194,10 +198,45 @@
   </div>
 
   <script>
-    function showState(name) {
+    var splashEnabled = {{#splash_enabled}}true{{/splash_enabled}}{{^splash_enabled}}false{{/splash_enabled}};
+    var splashStartTime = Date.now();
+    var splashMinDuration = {{splash_duration}};
+    var splashStillActive = splashEnabled;
+    var pendingTransition = null;
+    var preloaderBackground = '{{preloader_background}}';
+
+    function applyState(name) {
       document.querySelectorAll('.state').forEach(function(s) { s.classList.remove('active'); });
       var target = document.getElementById('state-' + name);
       if (target) target.classList.add('active');
+    }
+
+    function showState(name) {
+      // Cancel any queued transition; the new one supersedes it.
+      if (pendingTransition) {
+        clearTimeout(pendingTransition);
+        pendingTransition = null;
+      }
+
+      // Errors and shutdown bypass the splash minimum.
+      var bypass = (name === 'splash' || name === 'error' || name === 'shutdown');
+
+      if (splashStillActive && !bypass) {
+        var elapsed = Date.now() - splashStartTime;
+        var remaining = splashMinDuration - elapsed;
+        if (remaining > 0) {
+          pendingTransition = setTimeout(function() { showState(name); }, remaining);
+          return;
+        }
+      }
+
+      // First non-splash transition: swap the body background to preloader.
+      if (splashStillActive && name !== 'splash') {
+        splashStillActive = false;
+        document.body.style.background = preloaderBackground;
+      }
+
+      applyState(name);
     }
 
     document.getElementById('error-logs-toggle').addEventListener('click', function() {

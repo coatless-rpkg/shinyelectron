@@ -69,6 +69,62 @@ test_that("resolve_app_type uses per-app override or default", {
   expect_equal(resolve_app_type(app_with_type, config), "py-shiny")
 })
 
+test_that("resolve_app_type maps legacy per-app r-shinylive with a deprecation warning", {
+  config <- list(build = list(type = "r-shiny"))
+  app <- list(id = "a", name = "A", path = ".", type = "r-shinylive")
+
+  expect_warning(
+    resolve_app_type(app, config),
+    class = "shinyelectron_deprecated_app_type"
+  )
+  expect_equal(
+    suppressWarnings(resolve_app_type(app, config)),
+    "r-shiny"
+  )
+})
+
+test_that("resolve_app_strategy falls back through app > suite > default", {
+  # Explicit per-app strategy wins
+  app_explicit <- list(id = "a", name = "A", path = ".",
+                      type = "r-shiny", runtime_strategy = "bundled")
+  config_default <- list(build = list(type = "r-shiny", runtime_strategy = "system"))
+  expect_equal(resolve_app_strategy(app_explicit, config_default), "bundled")
+
+  # Suite strategy when app does not set one
+  app_plain <- list(id = "b", name = "B", path = ".", type = "r-shiny")
+  expect_equal(resolve_app_strategy(app_plain, config_default), "system")
+
+  # shinylive default when nothing is set
+  config_empty <- list(build = list(type = "r-shiny"))
+  expect_equal(resolve_app_strategy(app_plain, config_empty), "shinylive")
+})
+
+test_that("resolve_app_strategy treats legacy per-app r-shinylive as shinylive", {
+  config <- list(build = list(type = "r-shiny", runtime_strategy = "system"))
+  app_legacy <- list(id = "a", name = "A", path = ".", type = "r-shinylive")
+
+  expect_equal(suppressWarnings(resolve_app_strategy(app_legacy, config)), "shinylive")
+})
+
+test_that("mixed-strategy multi-app suite picks per-app strategy in the manifest", {
+  # Hand-build the apps manifest loop the way export-multi.R does, to verify
+  # that different strategies produce different per-app manifest entries.
+  config <- list(
+    build = list(type = "r-shiny", runtime_strategy = "system"),
+    apps = list(
+      list(id = "dash",  name = "D", path = "./d"),
+      list(id = "quick", name = "Q", path = "./q", runtime_strategy = "shinylive")
+    )
+  )
+
+  strategies <- vapply(
+    config$apps,
+    function(a) resolve_app_strategy(a, config),
+    character(1)
+  )
+  expect_equal(strategies, c("system", "shinylive"))
+})
+
 # --- Integration Tests ---
 
 test_that("export detects multi-app and copies all apps", {

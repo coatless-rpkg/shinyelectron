@@ -58,7 +58,7 @@ validate_python_shinylive_installed <- function() {
       )
     }
     cli::cli_abort(c(
-      "The {.pkg shinylive} Python package CLI is required for py-shinylive conversion",
+      "The {.pkg shinylive} Python package CLI is required for the shinylive strategy with Python apps",
       stats::setNames(hints, rep("i", length(hints))),
       "x" = "Command: {.code {cmd_label} --version}",
       "x" = "Error: {stderr}"

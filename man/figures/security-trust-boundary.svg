@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 340" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Electron trust boundary: the renderer process runs sandboxed with no Node.js access, the preload script exposes a narrow IPC surface via contextBridge, and the main process holds full OS access including window management and spawning R, Python, or container backends.">
+  <defs>
+    <filter id="sec-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
+    </filter>
+  </defs>
+
+  <!-- Renderer (untrusted) -->
+  <g transform="translate(20,24)" filter="url(#sec-shadow)">
+    <rect width="220" height="292" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="220" height="3" rx="1.5" fill="#f59e0b"/>
+    <text x="110" y="30" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">Renderer</text>
+    <text x="110" y="48" text-anchor="middle" font-size="10" fill="#94a3b8" letter-spacing="0.6">UNTRUSTED ZONE</text>
+
+    <g transform="translate(16,62)">
+      <rect width="188" height="78" rx="6" fill="#fffbeb" stroke="#fde68a" stroke-width="1"/>
+      <text x="94" y="20" text-anchor="middle" font-size="11" font-weight="600" fill="#92400e">Chromium</text>
+      <text x="94" y="38" text-anchor="middle" font-size="10" fill="#b45309">Shiny UI + JavaScript</text>
+      <text x="94" y="56" text-anchor="middle" font-size="10" fill="#b45309">runs in sandbox</text>
+      <text x="94" y="72" text-anchor="middle" font-size="9" fill="#94a3b8">treat all scripts as hostile</text>
+    </g>
+
+    <g transform="translate(16,156)">
+      <rect width="188" height="118" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="94" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#475569">What is blocked</text>
+      <line x1="16" y1="30" x2="172" y2="30" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="16" y="48" font-size="10" fill="#64748b">nodeIntegration: false</text>
+      <text x="16" y="66" font-size="10" fill="#64748b">contextIsolation: true</text>
+      <text x="16" y="84" font-size="10" fill="#64748b">sandbox: true</text>
+      <text x="16" y="102" font-size="10" fill="#64748b">webSecurity: true</text>
+    </g>
+  </g>
+
+  <!-- Preload bridge -->
+  <g transform="translate(272,88)">
+    <rect width="216" height="164" rx="8" fill="#fff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#sec-shadow)"/>
+    <rect width="216" height="3" rx="1.5" fill="#8b5cf6"/>
+    <text x="108" y="28" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">Preload (contextBridge)</text>
+    <text x="108" y="46" text-anchor="middle" font-size="10" fill="#94a3b8">narrow IPC surface</text>
+
+    <g transform="translate(16,60)">
+      <rect width="184" height="88" rx="6" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="0.75"/>
+      <text x="92" y="18" text-anchor="middle" font-size="10" font-weight="600" fill="#6d28d9">only these cross</text>
+      <text x="92" y="38" text-anchor="middle" font-size="10" fill="#7c3aed">lifecycle.onStatus</text>
+      <text x="92" y="54" text-anchor="middle" font-size="10" fill="#7c3aed">lifecycle.retry</text>
+      <text x="92" y="70" text-anchor="middle" font-size="10" fill="#7c3aed">lifecycle.quit</text>
+    </g>
+  </g>
+
+  <!-- Main (trusted) -->
+  <g transform="translate(520,24)" filter="url(#sec-shadow)">
+    <rect width="220" height="292" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="220" height="3" rx="1.5" fill="#3b82f6"/>
+    <text x="110" y="30" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">Main</text>
+    <text x="110" y="48" text-anchor="middle" font-size="10" fill="#94a3b8" letter-spacing="0.6">TRUSTED ZONE</text>
+
+    <g transform="translate(16,62)">
+      <rect width="188" height="78" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+      <text x="94" y="20" text-anchor="middle" font-size="11" font-weight="600" fill="#1d4ed8">Node.js</text>
+      <text x="94" y="38" text-anchor="middle" font-size="10" fill="#2563eb">full OS access</text>
+      <text x="94" y="56" text-anchor="middle" font-size="10" fill="#2563eb">manages windows</text>
+      <text x="94" y="72" text-anchor="middle" font-size="9" fill="#94a3b8">only ships code you wrote</text>
+    </g>
+
+    <g transform="translate(16,156)">
+      <rect width="188" height="118" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="94" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#475569">What it spawns</text>
+      <line x1="16" y1="30" x2="172" y2="30" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="16" y="48" font-size="10" fill="#64748b">R: shiny::runApp()</text>
+      <text x="16" y="66" font-size="10" fill="#64748b">Python: shiny run</text>
+      <text x="16" y="84" font-size="10" fill="#64748b">Container: docker run</text>
+      <text x="16" y="102" font-size="10" fill="#64748b">Shinylive: Express</text>
+    </g>
+  </g>
+
+  <!-- Arrows across boundary (drawn last so nothing paints over the heads) -->
+  <g transform="translate(240,170)">
+    <line x1="0" y1="0" x2="24" y2="0" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <polygon points="24,-4 32,0 24,4" fill="#94a3b8"/>
+  </g>
+  <g transform="translate(488,170)">
+    <line x1="0" y1="0" x2="24" y2="0" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <polygon points="24,-4 32,0 24,4" fill="#94a3b8"/>
+  </g>
+
+  <!-- Caption -->
+  <text x="380" y="328" text-anchor="middle" font-size="10" fill="#94a3b8">The preload script is the only path between the two zones.</text>
+</svg>

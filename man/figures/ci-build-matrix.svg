@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 280" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="CI build matrix: one push fans out to six runners that each produce a platform-specific installer, which feed a release job on tag push">
+  <defs>
+    <filter id="ci-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
+    </filter>
+  </defs>
+
+  <!-- Trigger -->
+  <g transform="translate(20,108)" filter="url(#ci-shadow)">
+    <rect width="150" height="64" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="150" height="3" rx="1.5" fill="#3b82f6"/>
+    <text x="75" y="28" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">git push</text>
+    <text x="75" y="48" text-anchor="middle" font-size="11" fill="#64748b">branch or tag</text>
+  </g>
+
+  <!-- fan-out arrows -->
+  <g stroke="#cbd5e1" stroke-width="1.5" fill="none" stroke-dasharray="4,3">
+    <path d="M176,140 C220,140 240,36 280,36"/>
+    <path d="M176,140 C220,140 240,78 280,78"/>
+    <path d="M176,140 C220,140 240,120 280,120"/>
+    <path d="M176,140 C220,140 240,162 280,162"/>
+    <path d="M176,140 C220,140 240,204 280,204"/>
+    <path d="M176,140 C220,140 240,246 280,246"/>
+  </g>
+
+  <!-- Runner rows -->
+  <g font-size="11" fill="#1e293b">
+    <!-- row 1 -->
+    <g transform="translate(282,20)" filter="url(#ci-shadow)">
+      <rect width="220" height="32" rx="6" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+      <rect width="3" height="32" rx="1.5" fill="#3b82f6"/>
+      <text x="14" y="20" font-weight="600">macos-latest</text>
+      <text x="210" y="20" text-anchor="end" fill="#64748b">arm64 .dmg</text>
+    </g>
+    <g transform="translate(282,62)" filter="url(#ci-shadow)">
+      <rect width="220" height="32" rx="6" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+      <rect width="3" height="32" rx="1.5" fill="#3b82f6"/>
+      <text x="14" y="20" font-weight="600">macos-15-intel</text>
+      <text x="210" y="20" text-anchor="end" fill="#64748b">x64 .dmg</text>
+    </g>
+    <g transform="translate(282,104)" filter="url(#ci-shadow)">
+      <rect width="220" height="32" rx="6" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+      <rect width="3" height="32" rx="1.5" fill="#8b5cf6"/>
+      <text x="14" y="20" font-weight="600">windows-latest</text>
+      <text x="210" y="20" text-anchor="end" fill="#64748b">x64 .exe</text>
+    </g>
+    <g transform="translate(282,146)" filter="url(#ci-shadow)">
+      <rect width="220" height="32" rx="6" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+      <rect width="3" height="32" rx="1.5" fill="#8b5cf6"/>
+      <text x="14" y="20" font-weight="600">windows-11-arm</text>
+      <text x="210" y="20" text-anchor="end" fill="#64748b">arm64 .exe</text>
+    </g>
+    <g transform="translate(282,188)" filter="url(#ci-shadow)">
+      <rect width="220" height="32" rx="6" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+      <rect width="3" height="32" rx="1.5" fill="#10b981"/>
+      <text x="14" y="20" font-weight="600">ubuntu-latest</text>
+      <text x="210" y="20" text-anchor="end" fill="#64748b">x64 .AppImage</text>
+    </g>
+    <g transform="translate(282,230)" filter="url(#ci-shadow)">
+      <rect width="220" height="32" rx="6" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+      <rect width="3" height="32" rx="1.5" fill="#10b981"/>
+      <text x="14" y="20" font-weight="600">ubuntu-24.04-arm</text>
+      <text x="210" y="20" text-anchor="end" fill="#64748b">arm64 .AppImage</text>
+    </g>
+  </g>
+
+  <!-- fan-in arrows -->
+  <g stroke="#cbd5e1" stroke-width="1.5" fill="none" stroke-dasharray="4,3">
+    <path d="M502,36 C560,36 580,140 620,140"/>
+    <path d="M502,78 C560,78 580,140 620,140"/>
+    <path d="M502,120 C560,120 580,140 620,140"/>
+    <path d="M502,162 C560,162 580,140 620,140"/>
+    <path d="M502,204 C560,204 580,140 620,140"/>
+    <path d="M502,246 C560,246 580,140 620,140"/>
+    <polygon points="620,136 628,140 620,144" fill="#cbd5e1"/>
+  </g>
+
+  <!-- Release job -->
+  <g transform="translate(620,100)" filter="url(#ci-shadow)">
+    <rect width="140" height="80" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="140" height="3" rx="1.5" fill="#f59e0b"/>
+    <text x="70" y="28" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">Release</text>
+    <text x="70" y="48" text-anchor="middle" font-size="11" fill="#64748b">tag only</text>
+    <text x="70" y="66" text-anchor="middle" font-size="11" fill="#94a3b8">attach all artifacts</text>
+  </g>
+</svg>

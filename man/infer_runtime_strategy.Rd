@@ -2,19 +2,21 @@
 % Please edit documentation in R/validate-app-type.R
 \name{infer_runtime_strategy}
 \alias{infer_runtime_strategy}
-\title{Infer the default runtime strategy for an app type}
+\title{Infer the default runtime strategy}
 \usage{
-infer_runtime_strategy(strategy, app_type)
+infer_runtime_strategy(strategy, app_type = NULL)
 }
 \arguments{
-\item{strategy}{Character string or NULL. Explicit strategy, or NULL to infer.}
+\item{strategy}{Character string or NULL. Explicit strategy, or NULL.}
 
-\item{app_type}{Character string. The app type.}
+\item{app_type}{Ignored. Retained for signature compatibility.}
 }
 \value{
-Character string. The resolved runtime strategy.
+Character string. Either the explicit strategy or \code{"shinylive"}.
 }
 \description{
-Infer the default runtime strategy for an app type
+Returns the passed strategy, or falls back to the package default
+(\code{"shinylive"}) when unset. The \code{app_type} argument is accepted for
+backwards compatibility and ignored.
 }
 \keyword{internal}

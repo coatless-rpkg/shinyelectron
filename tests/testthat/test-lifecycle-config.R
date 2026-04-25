@@ -1,6 +1,5 @@
 test_that("SHINYELECTRON_DEFAULTS contains lifecycle defaults", {
   expect_true("lifecycle" %in% names(SHINYELECTRON_DEFAULTS))
-  expect_equal(SHINYELECTRON_DEFAULTS$lifecycle$splash_min_duration, 1500L)
   expect_true(SHINYELECTRON_DEFAULTS$lifecycle$show_phase_details)
   expect_true(SHINYELECTRON_DEFAULTS$lifecycle$error_show_logs)
   expect_equal(SHINYELECTRON_DEFAULTS$lifecycle$shutdown_timeout, 10000L)
@@ -12,7 +11,7 @@ test_that("SHINYELECTRON_DEFAULTS contains lifecycle defaults", {
 test_that("default_config includes lifecycle section", {
   cfg <- default_config()
   expect_true("lifecycle" %in% names(cfg))
-  expect_equal(cfg$lifecycle$splash_min_duration, 1500L)
+  expect_true(cfg$lifecycle$show_phase_details)
 })
 
 test_that("read_brand_yml returns NULL when no file exists", {

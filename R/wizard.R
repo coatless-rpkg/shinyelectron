@@ -33,32 +33,28 @@ wizard <- function(appdir = ".") {
   app_version <- readline("App version [1.0.0]: ")
   if (!nzchar(app_version)) app_version <- "1.0.0"
 
-  # App type
-  cat("\nApp types:\n")
-  cat("  1. r-shinylive  -- R Shiny in browser (recommended, no runtime needed)\n")
-  cat("  2. r-shiny      -- Native R Shiny (requires R on user's machine)\n")
-  cat("  3. py-shinylive -- Python Shiny in browser\n")
-  cat("  4. py-shiny     -- Native Python Shiny\n")
-  type_choice <- readline("Choose app type [1]: ")
+  # Language
+  cat("\nLanguage:\n")
+  cat("  1. r-shiny  -- R Shiny\n")
+  cat("  2. py-shiny -- Python Shiny\n")
+  type_choice <- readline("Choose language [1]: ")
   app_type <- switch(type_choice,
-    "2" = "r-shiny", "3" = "py-shinylive", "4" = "py-shiny",
-    "r-shinylive"
+    "2" = "py-shiny",
+    "r-shiny"
   )
 
-  # Runtime strategy (only for native types)
-  runtime_strategy <- NULL
-  if (app_type %in% NATIVE_TYPES) {
-    cat("\nRuntime strategies:\n")
-    cat("  1. auto-download -- Download runtime on first launch (recommended)\n")
-    cat("  2. system        -- Use R/Python already installed on user's machine\n")
-    cat("  3. bundled       -- Embed runtime in app (large but self-contained)\n")
-    cat("  4. container     -- Run in Docker/Podman container\n")
-    strategy_choice <- readline("Choose runtime strategy [1]: ")
-    runtime_strategy <- switch(strategy_choice,
-      "2" = "system", "3" = "bundled", "4" = "container",
-      "auto-download"
-    )
-  }
+  # Runtime strategy (always ask; default shinylive)
+  cat("\nRuntime strategies:\n")
+  cat("  1. shinylive     -- Browser-WebAssembly (no runtime on disk, recommended)\n")
+  cat("  2. auto-download -- Download R/Python on first launch\n")
+  cat("  3. system        -- Use R/Python already installed on user's machine\n")
+  cat("  4. bundled       -- Embed runtime in app (large but self-contained)\n")
+  cat("  5. container     -- Run in Docker/Podman container\n")
+  strategy_choice <- readline("Choose runtime strategy [1]: ")
+  runtime_strategy <- switch(strategy_choice,
+    "2" = "auto-download", "3" = "system", "4" = "bundled", "5" = "container",
+    "shinylive"
+  )
 
   # Platforms
   cat("\nTarget platforms (comma-separated):\n")
@@ -140,9 +136,9 @@ wizard <- function(appdir = ".") {
     }
   }
 
-  # Dependency management (native types only)
+  # Dependency management (only when a real runtime is in play)
   deps_config <- NULL
-  if (app_type %in% NATIVE_TYPES && do_advanced) {
+  if (runtime_strategy != "shinylive" && do_advanced) {
     cat("\n")
     cli::cli_h2("Dependencies")
     prompt_install <- readline("Prompt user before installing packages? [y/N]: ")

@@ -6,9 +6,13 @@
 #' @param app_dir Character string. Path to the converted Shiny/shinylive application.
 #' @param output_dir Character string. Path where the built Electron app will be saved.
 #' @param app_name Character string. Name of the application. If NULL, uses the base name of app_dir.
-#' @param app_type Character string. Type of application: "r-shinylive", "r-shiny", "py-shinylive", or "py-shiny".
-#' @param runtime_strategy Character string. Runtime strategy: "shinylive", "bundled",
-#'   "system", "auto-download", or "container". Default is "shinylive".
+#' @param app_type Character string. Language of the Shiny app: `"r-shiny"` or
+#'   `"py-shiny"`. The legacy values `"r-shinylive"` / `"py-shinylive"` are
+#'   accepted with a deprecation warning and translate to the canonical
+#'   language plus `runtime_strategy = "shinylive"`.
+#' @param runtime_strategy Character string. Runtime strategy: `"shinylive"`,
+#'   `"bundled"`, `"system"`, `"auto-download"`, or `"container"`. Default
+#'   `"shinylive"`.
 #' @param platform Character vector. Target platforms: "win", "mac", "linux". If NULL, builds for current platform.
 #' @param arch Character vector. Target architectures: "x64", "arm64". If NULL, uses current architecture.
 #' @param icon Character string. Path to application icon file. Platform-specific format required.
@@ -37,7 +41,7 @@
 #'   app_dir = "path/to/shinylive/app",
 #'   output_dir = "path/to/electron/build",
 #'   app_name = "My Shiny App",
-#'   app_type = "r-shinylive"
+#'   app_type = "r-shiny"
 #' )
 #'
 #' # Build for multiple platforms
@@ -45,20 +49,27 @@
 #'   app_dir = "path/to/app",
 #'   output_dir = "path/to/build",
 #'   app_name = "My App",
-#'   app_type = "r-shinylive",
+#'   app_type = "r-shiny",
 #'   platform = c("win", "mac", "linux")
 #' )
 #' }
 #'
 #' @export
-build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = "r-shinylive",
+build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = "r-shiny",
                                runtime_strategy = "shinylive", sign = FALSE,
                                platform = NULL, arch = NULL, icon = NULL,
                                config = NULL, overwrite = FALSE, verbose = TRUE) {
 
   # Validate inputs
   validate_directory_exists(app_dir, "Application directory")
+
+  # Normalize legacy app_type values
+  normalized <- normalize_app_type_arg(app_type, runtime_strategy)
+  app_type <- normalized$app_type %||% app_type
+  runtime_strategy <- normalized$runtime_strategy %||% runtime_strategy
+
   validate_app_type(app_type)
+  validate_runtime_strategy(runtime_strategy)
 
   if (is.null(app_name)) {
     app_name <- basename(app_dir)
@@ -119,7 +130,8 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
 
     # Step 2: Copy application files
     if (verbose) cli::cli_progress_update(id = pb, set = 2)
-    copy_app_files(app_dir, output_dir, app_type, verbose = verbose)
+    copy_app_files(app_dir, output_dir, app_type,
+                   runtime_strategy = runtime_strategy, verbose = verbose)
 
     # Step 2.5: Embed R runtime for bundled strategy
     if (runtime_strategy == "bundled" && grepl("^r-", app_type)) {

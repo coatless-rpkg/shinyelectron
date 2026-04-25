@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 240" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Container strategy: ships an Electron shell with the app source and container config; on first launch it detects Docker or Podman, pulls the image if pull_on_start is set, and starts a container; when running Electron connects to Shiny inside the container over a mapped port, and the container stops when the window closes">
+  <defs>
+    <filter id="ct-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
+    </filter>
+    <marker id="ct-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <!-- Column headers -->
+  <text x="130" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">SHIPS</text>
+  <text x="380" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">FIRST LAUNCH</text>
+  <text x="630" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">RUNNING</text>
+
+  <!-- Column 1: Ships -->
+  <g transform="translate(20,34)" filter="url(#ct-shadow)">
+    <rect width="220" height="188" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="220" height="3" rx="1.5" fill="#64748b"/>
+
+    <text x="110" y="24" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">Electron shell</text>
+    <text x="110" y="38" text-anchor="middle" font-size="9" fill="#94a3b8">small payload + image pulled later</text>
+
+    <!-- App source -->
+    <g transform="translate(16,54)">
+      <rect width="188" height="44" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="94" y="18" text-anchor="middle" font-size="10" font-weight="500" fill="#475569">App source</text>
+      <text x="94" y="32" text-anchor="middle" font-size="8" fill="#94a3b8">app.R or app.py</text>
+    </g>
+
+    <!-- Container config -->
+    <g transform="translate(16,106)">
+      <rect width="188" height="64" rx="4" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="94" y="18" text-anchor="middle" font-size="10" font-weight="600" fill="#334155">Container config</text>
+      <text x="94" y="34" text-anchor="middle" font-size="9" fill="#64748b">engine, image, tag</text>
+      <text x="94" y="50" text-anchor="middle" font-size="8" fill="#94a3b8">_shinyelectron.yml + container.js</text>
+    </g>
+  </g>
+
+  <!-- Arrow 1 -->
+  <g>
+    <path d="M 244 128 L 282 128" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,3" fill="none" marker-end="url(#ct-arrow)"/>
+  </g>
+
+  <!-- Column 2: First launch -->
+  <g transform="translate(286,34)" filter="url(#ct-shadow)">
+    <rect width="188" height="188" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="188" height="3" rx="1.5" fill="#64748b"/>
+
+    <!-- Steps -->
+    <g transform="translate(14,20)">
+      <rect width="160" height="26" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="10" y="17" font-size="9" font-weight="600" fill="#475569">1.</text>
+      <text x="24" y="17" font-size="9" fill="#64748b">detect Docker / Podman</text>
+    </g>
+
+    <g transform="translate(14,50)">
+      <rect width="160" height="26" rx="4" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="10" y="17" font-size="9" font-weight="600" fill="#334155">2.</text>
+      <text x="24" y="17" font-size="9" fill="#475569">pull image if needed</text>
+    </g>
+
+    <g transform="translate(14,80)">
+      <rect width="160" height="26" rx="4" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="10" y="17" font-size="9" font-weight="600" fill="#334155">3.</text>
+      <text x="24" y="17" font-size="9" fill="#475569">start container, map port</text>
+    </g>
+
+    <!-- pull_on_start note -->
+    <g transform="translate(14,116)">
+      <rect width="160" height="34" rx="4" fill="#fff" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="80" y="14" text-anchor="middle" font-size="8" font-weight="500" fill="#64748b">controlled by</text>
+      <text x="80" y="27" text-anchor="middle" font-size="8" fill="#94a3b8">pull_on_start: true/false</text>
+    </g>
+
+    <!-- Engine required -->
+    <g transform="translate(14,158)">
+      <rect width="160" height="22" rx="4" fill="#fffbeb" stroke="#fcd34d" stroke-width="1"/>
+      <text x="80" y="15" text-anchor="middle" font-size="8" font-weight="600" fill="#b45309">requires Docker or Podman</text>
+    </g>
+  </g>
+
+  <!-- Arrow 2 -->
+  <g>
+    <path d="M 478 128 L 516 128" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,3" fill="none" marker-end="url(#ct-arrow)"/>
+  </g>
+
+  <!-- Column 3: Running -->
+  <g transform="translate(520,34)" filter="url(#ct-shadow)">
+    <rect width="220" height="188" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="220" height="3" rx="1.5" fill="#64748b"/>
+
+    <text x="110" y="22" text-anchor="middle" font-size="10" font-weight="600" fill="#1e293b">Electron window</text>
+
+    <!-- Window chrome / browser tile -->
+    <g transform="translate(16,32)">
+      <rect width="188" height="44" rx="4" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+      <rect width="188" height="14" rx="4" fill="#f8fafc"/>
+      <circle cx="8" cy="7" r="2" fill="#f87171"/>
+      <circle cx="15" cy="7" r="2" fill="#fbbf24"/>
+      <circle cx="22" cy="7" r="2" fill="#34d399"/>
+      <text x="94" y="10" text-anchor="middle" font-size="7" fill="#94a3b8">localhost:hostPort</text>
+      <text x="94" y="32" text-anchor="middle" font-size="9" fill="#64748b">Shiny UI</text>
+    </g>
+
+    <!-- Arrow -->
+    <g transform="translate(110,80)">
+      <line x1="0" y1="0" x2="0" y2="10" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,2"/>
+      <polygon points="-3,10 0,15 3,10" fill="#94a3b8"/>
+    </g>
+
+    <!-- Container -->
+    <g transform="translate(16,98)">
+      <rect width="188" height="72" rx="4" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,2"/>
+      <text x="94" y="16" text-anchor="middle" font-size="9" font-weight="600" fill="#334155">Docker / Podman container</text>
+
+      <g transform="translate(10,22)">
+        <rect width="168" height="22" rx="3" fill="#fff" stroke="#cbd5e1" stroke-width="0.75"/>
+        <text x="84" y="15" text-anchor="middle" font-size="8" fill="#475569">R or Python + system deps</text>
+      </g>
+      <g transform="translate(10,48)">
+        <rect width="168" height="18" rx="3" fill="#fff" stroke="#cbd5e1" stroke-width="0.75"/>
+        <text x="84" y="12" text-anchor="middle" font-size="7" fill="#94a3b8">stopped on window close</text>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -28,36 +28,70 @@ validate_runtime_strategy <- function(strategy) {
   invisible(TRUE)
 }
 
-#' Validate runtime strategy is compatible with app type
+#' Infer the default runtime strategy
 #'
-#' @param strategy Character string. The runtime strategy.
-#' @param app_type Character string. The app type.
+#' Returns the passed strategy, or falls back to the package default
+#' (`"shinylive"`) when unset. The `app_type` argument is accepted for
+#' backwards compatibility and ignored.
+#'
+#' @param strategy Character string or NULL. Explicit strategy, or NULL.
+#' @param app_type Ignored. Retained for signature compatibility.
+#' @return Character string. Either the explicit strategy or `"shinylive"`.
 #' @keywords internal
-validate_runtime_strategy_for_app_type <- function(strategy, app_type) {
-  if (app_type %in% SHINYLIVE_TYPES && strategy != "shinylive") {
-    cli::cli_abort(c(
-      "Runtime strategy {.val {strategy}} is not applicable to app type {.val {app_type}}",
-      "i" = "Shinylive app types run entirely in the browser and do not need a runtime strategy"
-    ))
-  }
-  invisible(TRUE)
+infer_runtime_strategy <- function(strategy, app_type = NULL) {
+  strategy %||% "shinylive"
 }
 
-#' Infer the default runtime strategy for an app type
+#' Normalize app_type and runtime_strategy arguments
 #'
-#' @param strategy Character string or NULL. Explicit strategy, or NULL to infer.
-#' @param app_type Character string. The app type.
-#' @return Character string. The resolved runtime strategy.
+#' Translates legacy app_type values (`r-shinylive`, `py-shinylive`) to the
+#' canonical language pair (`r-shiny`, `py-shiny`) and backfills
+#' `runtime_strategy = "shinylive"` when the caller has not set it. Emits
+#' a deprecation warning of class `"shinyelectron_deprecated_app_type"`
+#' so callers can muffle it and tests can match it precisely. Errors when
+#' a legacy type is combined with an explicit non-shinylive strategy,
+#' since that combination never worked under the old API.
+#'
+#' @param app_type Character string or NULL. Raw app_type from the user.
+#' @param runtime_strategy Character string or NULL. Raw runtime_strategy.
+#' @return List with elements `app_type` (canonical or NULL),
+#'   `runtime_strategy` (may still be NULL), and `deprecated` (logical).
 #' @keywords internal
-infer_runtime_strategy <- function(strategy, app_type) {
-  if (!is.null(strategy)) {
-    return(strategy)
+normalize_app_type_arg <- function(app_type, runtime_strategy = NULL) {
+  legacy_map <- c(
+    "r-shinylive"  = "r-shiny",
+    "py-shinylive" = "py-shiny"
+  )
+
+  if (is.null(app_type) || !nzchar(app_type)) {
+    return(list(app_type = NULL, runtime_strategy = runtime_strategy, deprecated = FALSE))
   }
-  if (app_type %in% SHINYLIVE_TYPES) {
-    "shinylive"
-  } else {
-    "auto-download"
+
+  if (app_type %in% names(legacy_map)) {
+    new_type <- unname(legacy_map[app_type])
+
+    if (!is.null(runtime_strategy) && runtime_strategy != "shinylive") {
+      cli::cli_abort(c(
+        "Conflicting arguments",
+        "x" = "Legacy {.val {app_type}} implies {.arg runtime_strategy = \"shinylive\"}, but you passed {.val {runtime_strategy}}",
+        "i" = "Use {.code app_type = \"{new_type}\", runtime_strategy = \"{runtime_strategy}\"} instead"
+      ))
+    }
+
+    cli::cli_warn(c(
+      "The {.val {app_type}} app type is deprecated",
+      "i" = "Use {.code app_type = \"{new_type}\", runtime_strategy = \"shinylive\"} instead",
+      "i" = "Shinylive is now a runtime strategy, not an app type"
+    ), class = "shinyelectron_deprecated_app_type")
+
+    return(list(
+      app_type = new_type,
+      runtime_strategy = runtime_strategy %||% "shinylive",
+      deprecated = TRUE
+    ))
   }
+
+  list(app_type = app_type, runtime_strategy = runtime_strategy, deprecated = FALSE)
 }
 
 #' Check if config is multi-app mode
@@ -71,12 +105,46 @@ is_multi_app <- function(config) {
 
 #' Resolve the app type for a multi-app entry
 #'
+#' Reads per-app `type`, falls back to suite-level `build.type`, and
+#' routes legacy values through [normalize_app_type_arg()] so the
+#' caller always sees canonical `"r-shiny"` / `"py-shiny"`. A legacy
+#' per-app type is treated as a self-contained shinylive declaration
+#' and does not mix with the suite-level `runtime_strategy`, since
+#' the two could otherwise conflict (e.g. a legacy `"r-shinylive"`
+#' entry inside a suite whose default strategy is `"system"`).
+#'
 #' @param app List. Single app entry from config$apps.
 #' @param config List. Full configuration.
-#' @return Character string. The resolved app type.
+#' @return Character string. The resolved canonical app type.
 #' @keywords internal
 resolve_app_type <- function(app, config) {
-  app$type %||% config$build$type %||% "r-shinylive"
+  raw <- app$type %||% config$build$type %||% "r-shiny"
+  if (raw %in% c("r-shinylive", "py-shinylive")) {
+    normalized <- normalize_app_type_arg(raw)
+    return(normalized$app_type)
+  }
+  raw_strategy <- app$runtime_strategy %||% config$build$runtime_strategy
+  normalized <- normalize_app_type_arg(raw, raw_strategy)
+  normalized$app_type %||% "r-shiny"
+}
+
+#' Resolve the runtime strategy for a multi-app entry
+#'
+#' Order of precedence: explicit per-app `runtime_strategy`, then
+#' legacy per-app type (forces `"shinylive"`), then suite-level
+#' `build.runtime_strategy`, then the package default `"shinylive"`.
+#'
+#' @param app List. Single app entry from config$apps.
+#' @param config List. Full configuration.
+#' @return Character string. The resolved runtime strategy.
+#' @keywords internal
+resolve_app_strategy <- function(app, config) {
+  if (!is.null(app$runtime_strategy)) return(app$runtime_strategy)
+  raw_type <- app$type %||% config$build$type
+  if (!is.null(raw_type) && raw_type %in% c("r-shinylive", "py-shinylive")) {
+    return("shinylive")
+  }
+  config$build$runtime_strategy %||% "shinylive"
 }
 
 #' Validate multi-app configuration

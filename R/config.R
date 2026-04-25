@@ -19,7 +19,7 @@ default_config <- function() {
       log_level = SHINYELECTRON_DEFAULTS$logging$log_level
     ),
     build = list(
-      type = "r-shinylive",
+      type = NULL,
       runtime_strategy = NULL,
       platforms = NULL,
       architectures = NULL
@@ -150,14 +150,24 @@ validate_config <- function(config) {
   valid_platforms <- SHINYELECTRON_DEFAULTS$valid_platforms
   valid_arch <- SHINYELECTRON_DEFAULTS$valid_architectures
 
-  # Validate build type
+  # Normalize legacy build.type values first (emits deprecation warning).
+  if (!is.null(config$build$type) &&
+      config$build$type %in% c("r-shinylive", "py-shinylive")) {
+    legacy_normalized <- normalize_app_type_arg(
+      config$build$type, config$build$runtime_strategy
+    )
+    config$build$type <- legacy_normalized$app_type
+    config$build$runtime_strategy <- config$build$runtime_strategy %||% legacy_normalized$runtime_strategy
+  }
+
+  # Validate build type against the canonical set.
   if (!is.null(config$build$type) && !config$build$type %in% valid_types) {
     cli::cli_warn(c(
       "Invalid build type in config: {.val {config$build$type}}",
       "i" = "Valid types: {.val {valid_types}}",
-      "i" = "Using default: {.val r-shinylive}"
+      "i" = "Falling back to autodetection"
     ))
-    config$build$type <- "r-shinylive"
+    config$build$type <- NULL
   }
 
   # Validate platforms
@@ -243,7 +253,7 @@ validate_config <- function(config) {
 
   # Validate menu template
   if (!is.null(config$menu) && !is.null(config$menu$template)) {
-    valid_templates <- c("default", "minimal", "custom")
+    valid_templates <- c("default", "minimal")
     if (!config$menu$template %in% valid_templates) {
       cli::cli_warn(c(
         "Invalid menu template: {.val {config$menu$template}}",
@@ -326,9 +336,13 @@ app:
   # log_level: "info"        # "debug", "info", "warn", "error"
 
 build:
-  type: "r-shinylive"
-  # Uncomment to specify runtime strategy for native app types (r-shiny, py-shiny)
-  # runtime_strategy: "auto-download"  # "bundled", "system", "auto-download", "container"
+  # type is autodetected from files in the app directory (app.R, ui.R/server.R, or app.py).
+  # Uncomment to pin explicitly: "r-shiny" or "py-shiny".
+  # type: "r-shiny"
+  # runtime_strategy controls how R or Python reaches the end user.
+  # Default is "shinylive" (in-browser WebAssembly, no runtime on disk).
+  # Other options: "bundled", "system", "auto-download", "container".
+  # runtime_strategy: "shinylive"
   # Uncomment to specify target platforms (default: current platform)
   # platforms:
   #   - mac
@@ -382,14 +396,12 @@ nodejs:
 #   env: []                  # Additional environment variables
 
 # Splash screen configuration
-# Shows a loading screen while the app initializes
+# Shown briefly while the runtime starts up
 # splash:
-#   enabled: false
-#   duration: 3000          # Minimum display time in ms
-#   background: "#ffffff"
-#   image: null             # Path to splash image
-#   width: 400
-#   height: 300
+#   enabled: true
+#   duration: 1500          # Minimum display time in ms before transitioning out
+#   background: null        # null = inherit from _brand.yml; or hex/CSS colour
+#   image: null             # Path to a PNG logo (rendered up to 128 px square)
 #   text: "Loading..."
 #   text_color: "#333333"
 
@@ -405,7 +417,7 @@ nodejs:
 # Application menu configuration
 # menu:
 #   enabled: true
-#   template: "default"     # "default", "minimal", or "custom"
+#   template: "default"     # "default" or "minimal"
 #   show_dev_tools: false
 #   help_url: null
 
@@ -423,12 +435,11 @@ nodejs:
 #     private: false
 
 # Preloader configuration
-# Shows loading indicator while WebAssembly loads
+# Shown after the splash, while the runtime emits status events
 # preloader:
-#   enabled: true
 #   style: "spinner"        # "spinner", "bar", or "dots"
 #   message: "Loading application..."
-#   background: "#f8f9fa"
+#   background: null        # null = inherit from _brand.yml; or hex/CSS colour
 
 ## Code Signing
 ## Set sign to true for distribution builds.
@@ -459,7 +470,6 @@ nodejs:
 ## Lifecycle UI
 ## Controls the startup, loading, error, and shutdown experience.
 # lifecycle:
-#   splash_min_duration: 1500
 #   show_phase_details: true
 #   error_show_logs: true
 #   shutdown_timeout: 10000
@@ -507,16 +517,21 @@ validate_config_file <- function(config_path) {
 
   if (is.null(config)) return(invisible(FALSE))
 
-  # Check for common mistakes
+  # Check for common mistakes. Legacy app_type values are accepted with a
+  # deprecation warning; the normaliser emits its own message so we skip the
+  # "unknown app type" warning for them here.
   if (!is.null(config$build$type)) {
     valid_types <- SHINYELECTRON_DEFAULTS$valid_app_types
-    if (!config$build$type %in% valid_types) {
+    legacy_types <- c("r-shinylive", "py-shinylive")
+    if (config$build$type %in% legacy_types) {
+      normalize_app_type_arg(config$build$type, config$build$runtime_strategy)
+    } else if (!config$build$type %in% valid_types) {
       cli::cli_warn("Unknown app type {.val {config$build$type}} in config. Valid types: {.val {valid_types}}")
     }
   }
 
   if (!is.null(config$build$runtime_strategy)) {
-    valid_strategies <- c("bundled", "system", "auto-download", "container")
+    valid_strategies <- SHINYELECTRON_DEFAULTS$valid_runtime_strategies
     if (!config$build$runtime_strategy %in% valid_strategies) {
       cli::cli_warn("Unknown runtime strategy {.val {config$build$runtime_strategy}}. Valid: {.val {valid_strategies}}")
     }
@@ -580,8 +595,8 @@ show_config <- function(appdir = ".") {
   # Build section
   cli::cli_h2("Build")
   cli::cli_bullets(c(
-    "*" = "Type: {.val {config$build$type %||% 'r-shinylive'}}",
-    "*" = "Runtime strategy: {.val {config$build$runtime_strategy %||% 'auto-download'}}",
+    "*" = "Type: {.val {config$build$type %||% '(autodetect)'}}",
+    "*" = "Runtime strategy: {.val {config$build$runtime_strategy %||% 'shinylive'}}",
     "*" = "Platforms: {.val {config$build$platforms %||% detect_current_platform()}}",
     "*" = "Architectures: {.val {config$build$architectures %||% detect_current_arch()}}"
   ))

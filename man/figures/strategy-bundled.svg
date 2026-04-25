@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 240" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Bundled strategy: ships an Electron shell with a portable R or Python runtime embedded alongside the app source, opens instantly offline, and runs by spawning Rscript or python3 from the bundled runtime directory to serve Shiny over localhost">
+  <defs>
+    <filter id="bd-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
+    </filter>
+    <marker id="bd-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <!-- Column headers -->
+  <text x="130" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">SHIPS</text>
+  <text x="380" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">FIRST LAUNCH</text>
+  <text x="630" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">RUNNING</text>
+
+  <!-- Column 1: Ships -->
+  <g transform="translate(20,34)" filter="url(#bd-shadow)">
+    <rect width="220" height="188" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="220" height="3" rx="1.5" fill="#8b5cf6"/>
+
+    <text x="110" y="24" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">Electron shell</text>
+    <text x="110" y="38" text-anchor="middle" font-size="9" fill="#94a3b8">150 to 300 MB total</text>
+
+    <!-- Portable runtime -->
+    <g transform="translate(16,54)">
+      <rect width="188" height="58" rx="4" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1"/>
+      <text x="94" y="16" text-anchor="middle" font-size="10" font-weight="600" fill="#7c3aed">Portable runtime</text>
+      <text x="94" y="32" text-anchor="middle" font-size="9" fill="#8b5cf6">resources/r/ or resources/python/</text>
+      <text x="94" y="46" text-anchor="middle" font-size="8" fill="#64748b">+ packages in private library</text>
+    </g>
+
+    <!-- App source -->
+    <g transform="translate(16,122)">
+      <rect width="188" height="48" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="94" y="18" text-anchor="middle" font-size="10" font-weight="500" fill="#475569">App source</text>
+      <text x="94" y="34" text-anchor="middle" font-size="8" fill="#94a3b8">app.R or app.py</text>
+    </g>
+  </g>
+
+  <!-- Arrow 1 -->
+  <g>
+    <path d="M 244 128 L 282 128" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,3" fill="none" marker-end="url(#bd-arrow)"/>
+  </g>
+
+  <!-- Column 2: First launch -->
+  <g transform="translate(286,34)" filter="url(#bd-shadow)">
+    <rect width="188" height="188" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="188" height="3" rx="1.5" fill="#8b5cf6"/>
+
+    <!-- Check badge -->
+    <g transform="translate(68,24)">
+      <circle cx="26" cy="26" r="22" fill="#dcfce7" stroke="#86efac" stroke-width="1.5"/>
+      <path d="M 16 27 L 23 34 L 36 19" stroke="#16a34a" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <text x="94" y="104" text-anchor="middle" font-size="11" font-weight="600" fill="#166534">Opens instantly</text>
+    <text x="94" y="122" text-anchor="middle" font-size="9" fill="#64748b">No download</text>
+    <text x="94" y="136" text-anchor="middle" font-size="9" fill="#64748b">Runtime already on disk</text>
+    <text x="94" y="150" text-anchor="middle" font-size="9" fill="#64748b">Works fully offline</text>
+    <text x="94" y="170" text-anchor="middle" font-size="8" fill="#94a3b8">only startup spawn delay</text>
+  </g>
+
+  <!-- Arrow 2 -->
+  <g>
+    <path d="M 478 128 L 516 128" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,3" fill="none" marker-end="url(#bd-arrow)"/>
+  </g>
+
+  <!-- Column 3: Running -->
+  <g transform="translate(520,34)" filter="url(#bd-shadow)">
+    <rect width="220" height="188" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="220" height="3" rx="1.5" fill="#8b5cf6"/>
+
+    <text x="110" y="22" text-anchor="middle" font-size="10" font-weight="600" fill="#1e293b">Electron window</text>
+
+    <!-- Window chrome / browser tile -->
+    <g transform="translate(16,32)">
+      <rect width="188" height="56" rx="4" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+      <rect width="188" height="14" rx="4" fill="#f8fafc"/>
+      <circle cx="8" cy="7" r="2" fill="#f87171"/>
+      <circle cx="15" cy="7" r="2" fill="#fbbf24"/>
+      <circle cx="22" cy="7" r="2" fill="#34d399"/>
+      <text x="94" y="10" text-anchor="middle" font-size="7" fill="#94a3b8">localhost:port</text>
+      <text x="94" y="34" text-anchor="middle" font-size="9" fill="#64748b">Shiny UI renders</text>
+      <text x="94" y="48" text-anchor="middle" font-size="8" fill="#94a3b8">inside Chromium</text>
+    </g>
+
+    <!-- Arrow between browser and process -->
+    <g transform="translate(110,92)">
+      <line x1="0" y1="0" x2="0" y2="10" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,2"/>
+      <polygon points="-3,10 0,15 3,10" fill="#94a3b8"/>
+    </g>
+
+    <!-- Bundled runtime process -->
+    <g transform="translate(16,112)">
+      <rect width="188" height="58" rx="4" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1"/>
+      <text x="94" y="16" text-anchor="middle" font-size="10" font-weight="600" fill="#7c3aed">Bundled Rscript / python3</text>
+      <text x="94" y="32" text-anchor="middle" font-size="9" fill="#8b5cf6">spawned as child process</text>
+      <text x="94" y="46" text-anchor="middle" font-size="8" fill="#64748b">from resources/ directory</text>
+    </g>
+  </g>
+</svg>

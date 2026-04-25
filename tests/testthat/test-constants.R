@@ -2,7 +2,7 @@ test_that("SHINYELECTRON_DEFAULTS contains runtime strategy options", {
   expect_true("valid_runtime_strategies" %in% names(SHINYELECTRON_DEFAULTS))
   expect_equal(
     SHINYELECTRON_DEFAULTS$valid_runtime_strategies,
-    c("bundled", "system", "auto-download", "container")
+    c("shinylive", "bundled", "system", "auto-download", "container")
   )
 })
 

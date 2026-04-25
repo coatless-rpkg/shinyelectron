@@ -4,18 +4,21 @@
 \alias{resolve_app_dependencies}
 \title{Resolve application dependencies}
 \usage{
-resolve_app_dependencies(appdir, app_type, config)
+resolve_app_dependencies(appdir, app_type, runtime_strategy, config)
 }
 \arguments{
 \item{appdir}{Character string. Path to the app directory.}
 
-\item{app_type}{Character string. The app type.}
+\item{app_type}{Character string. The app type (\code{"r-shiny"} or \code{"py-shiny"}).}
+
+\item{runtime_strategy}{Character string. The resolved runtime strategy.
+Returns NULL when \code{"shinylive"}, since shinylive manages its own deps.}
 
 \item{config}{List. The effective configuration.}
 }
 \value{
 List with \code{packages}, \code{language}, and \code{repos}/\code{index_urls},
-or NULL for shinylive types (which don't need dependency management).
+or NULL for the shinylive strategy.
 }
 \description{
 Top-level function that detects, merges, and returns the final list of

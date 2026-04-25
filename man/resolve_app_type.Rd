@@ -12,9 +12,15 @@ resolve_app_type(app, config)
 \item{config}{List. Full configuration.}
 }
 \value{
-Character string. The resolved app type.
+Character string. The resolved canonical app type.
 }
 \description{
-Resolve the app type for a multi-app entry
+Reads per-app \code{type}, falls back to suite-level \code{build.type}, and
+routes legacy values through \code{\link[=normalize_app_type_arg]{normalize_app_type_arg()}} so the
+caller always sees canonical \code{"r-shiny"} / \code{"py-shiny"}. A legacy
+per-app type is treated as a self-contained shinylive declaration
+and does not mix with the suite-level \code{runtime_strategy}, since
+the two could otherwise conflict (e.g. a legacy \code{"r-shinylive"}
+entry inside a suite whose default strategy is \code{"system"}).
 }
 \keyword{internal}

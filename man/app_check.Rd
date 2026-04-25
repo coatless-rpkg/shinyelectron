@@ -17,7 +17,7 @@ app_check(
 \item{appdir}{Character string. Path to the app directory. Default ".".}
 
 \item{app_type}{Character string or NULL. App type override.
-If NULL, reads from config or defaults to "r-shinylive".}
+If NULL, reads from config or autodetects from files in \code{appdir}.}
 
 \item{runtime_strategy}{Character string or NULL. Runtime strategy override.}
 

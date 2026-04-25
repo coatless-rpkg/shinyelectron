@@ -8,9 +8,12 @@ export_multi_app <- function(appdir, destdir, config,
                               verbose = TRUE) {
 
   app_name <- config$app$name %||% basename(appdir)
-  app_type <- config$build$type %||% "r-shiny"
-  runtime_strategy <- runtime_strategy %||% config$build$runtime_strategy
-  runtime_strategy <- infer_runtime_strategy(runtime_strategy, app_type)
+
+  # Normalize suite-level build.type (may be legacy) and resolve strategy
+  raw_type <- config$build$type %||% "r-shiny"
+  suite_normalized <- normalize_app_type_arg(raw_type, runtime_strategy %||% config$build$runtime_strategy)
+  app_type <- suite_normalized$app_type %||% "r-shiny"
+  runtime_strategy <- runtime_strategy %||% suite_normalized$runtime_strategy %||% config$build$runtime_strategy %||% "shinylive"
 
   if (verbose) {
     cli::cli_h1("Exporting multi-app Shiny suite to Electron")
@@ -78,12 +81,13 @@ export_multi_app <- function(appdir, destdir, config,
       app_src <- fs::path(appdir, app_entry$path)
       app_dest <- fs::path(apps_dir, app_id)
       this_type <- resolve_app_type(app_entry, config)
+      this_strategy <- resolve_app_strategy(app_entry, config)
 
-      if (verbose) cli::cli_alert_info("Processing app: {.val {app_entry$name}} ({this_type})")
+      if (verbose) cli::cli_alert_info("Processing app: {.val {app_entry$name}} ({this_type}, {this_strategy})")
 
-      # Convert or copy based on type
-      if (this_type %in% SHINYLIVE_TYPES) {
-        if (this_type == "r-shinylive") {
+      # Convert or copy based on strategy
+      if (this_strategy == "shinylive") {
+        if (this_type == "r-shiny") {
           convert_shiny_to_shinylive(appdir = app_src, output_dir = app_dest,
                                      overwrite = TRUE, verbose = verbose)
         } else {
@@ -98,7 +102,7 @@ export_multi_app <- function(appdir, destdir, config,
         dep_info <- if (grepl("^py-", this_type) && !is.null(suite_py_deps)) {
           suite_py_deps
         } else {
-          resolve_app_dependencies(app_src, this_type, config)
+          resolve_app_dependencies(app_src, this_type, this_strategy, config)
         }
 
         if (!is.null(dep_info) && length(dep_info$packages) > 0) {
@@ -120,6 +124,7 @@ export_multi_app <- function(appdir, destdir, config,
         description = app_entry$description %||% "",
         path = paste0("src/apps/", app_id),
         type = this_type,
+        runtime_strategy = this_strategy,
         icon = app_icon
       )))
     }

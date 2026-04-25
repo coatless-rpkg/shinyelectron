@@ -13,6 +13,8 @@ build_for_platforms(output_dir, platform, arch, sign = FALSE, verbose = TRUE)
 
 \item{arch}{Character vector of target architectures}
 
+\item{sign}{Logical whether to code-sign the build}
+
 \item{verbose}{Logical whether to show progress}
 }
 \description{

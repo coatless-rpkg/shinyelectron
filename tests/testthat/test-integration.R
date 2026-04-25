@@ -21,14 +21,50 @@ test_that("e2e: app_check fails for invalid app", {
   expect_false(r$pass)
 })
 
-# --- r-shinylive ---
+# --- shinylive strategy (new API) ---
 
-test_that("e2e: r-shinylive export produces shinylive output", {
+test_that("e2e: r-shiny + shinylive strategy produces shinylive output", {
   skip_if_not(shinylive_available(), "shinylive not available")
   d <- tempfile(); dir.create(d); o <- tempfile()
   on.exit(unlink(c(d, o), TRUE))
   writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})", file.path(d, "app.R"))
-  r <- export(d, o, app_type = "r-shinylive", sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
+  r <- export(d, o, app_type = "r-shiny", runtime_strategy = "shinylive",
+              sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
+  expect_true(fs::dir_exists(r$converted_app))
+  expect_true(fs::file_exists(fs::path(r$converted_app, "index.html")))
+})
+
+test_that("e2e: autodetect from app.R defaults to r-shiny + shinylive", {
+  skip_if_not(shinylive_available(), "shinylive not available")
+  d <- tempfile(); dir.create(d); o <- tempfile()
+  on.exit(unlink(c(d, o), TRUE))
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})", file.path(d, "app.R"))
+  r <- export(d, o, sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
+  expect_true(fs::dir_exists(r$converted_app))
+  expect_true(fs::file_exists(fs::path(r$converted_app, "index.html")))
+})
+
+# --- shinylive strategy (legacy app_type) ---
+
+test_that("e2e: legacy r-shinylive export still works with deprecation warning", {
+  skip_if_not(shinylive_available(), "shinylive not available")
+  d <- tempfile(); dir.create(d); o <- tempfile()
+  on.exit(unlink(c(d, o), TRUE))
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})", file.path(d, "app.R"))
+
+  # The warning is expected; the build must still finish.
+  expect_warning(
+    export(d, o, app_type = "r-shinylive", sign = FALSE, build = FALSE,
+           overwrite = TRUE, verbose = FALSE),
+    class = "shinyelectron_deprecated_app_type"
+  )
+
+  # Re-run suppressed to capture the result.
+  o2 <- tempfile(); on.exit(unlink(o2, TRUE), add = TRUE)
+  r <- suppressWarnings(
+    export(d, o2, app_type = "r-shinylive", sign = FALSE, build = FALSE,
+           overwrite = TRUE, verbose = FALSE)
+  )
   expect_true(fs::dir_exists(r$converted_app))
   expect_true(fs::file_exists(fs::path(r$converted_app, "index.html")))
 })
@@ -117,14 +153,25 @@ test_that("e2e: py-shiny system export copies app and writes dependencies", {
   expect_true("shiny" %in% deps$packages)
 })
 
-# --- py-shinylive ---
+# --- Python shinylive ---
 
-test_that("e2e: py-shinylive export produces shinylive output", {
+test_that("e2e: py-shiny + shinylive strategy produces shinylive output", {
   skip_if_not(py_shinylive_available(), "Python shinylive CLI not available")
   d <- tempfile(); dir.create(d); o <- tempfile()
   on.exit(unlink(c(d, o), TRUE))
   writeLines("from shiny import App, ui\napp=App(ui.page_fluid(),None)", file.path(d, "app.py"))
-  r <- export(d, o, app_type = "py-shinylive", sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
+  r <- export(d, o, app_type = "py-shiny", runtime_strategy = "shinylive",
+              sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
+  expect_true(fs::dir_exists(r$converted_app))
+  expect_true(fs::file_exists(fs::path(r$converted_app, "index.html")))
+})
+
+test_that("e2e: autodetect from app.py defaults to py-shiny + shinylive", {
+  skip_if_not(py_shinylive_available(), "Python shinylive CLI not available")
+  d <- tempfile(); dir.create(d); o <- tempfile()
+  on.exit(unlink(c(d, o), TRUE))
+  writeLines("from shiny import App, ui\napp=App(ui.page_fluid(),None)", file.path(d, "app.py"))
+  r <- export(d, o, sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
   expect_true(fs::dir_exists(r$converted_app))
   expect_true(fs::file_exists(fs::path(r$converted_app, "index.html")))
 })
@@ -227,7 +274,7 @@ test_that("e2e: process_templates assembles shinylive with express", {
   dir.create(file.path(d, "assets"))
   dir.create(file.path(d, "build"))
   on.exit(unlink(d, TRUE))
-  process_templates(d, "Shinylive App", "r-shinylive", runtime_strategy = "shinylive",
+  process_templates(d, "Shinylive App", "r-shiny", runtime_strategy = "shinylive",
                     config = list(app = list(version = "1.0.0")), verbose = FALSE)
   main <- readLines(file.path(d, "main.js"))
   expect_true(any(grepl("shinylive", main)))

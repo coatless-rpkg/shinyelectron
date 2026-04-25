@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 460" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Decision tree for picking a shinyelectron runtime strategy based on packaging needs, internet access, and system dependencies">
+  <defs>
+    <filter id="rs-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
+    </filter>
+    <marker id="rs-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <!-- Root question -->
+  <g transform="translate(310,16)" filter="url(#rs-shadow)">
+    <rect width="200" height="62" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="200" height="3" rx="1.5" fill="#8b5cf6"/>
+    <text x="100" y="26" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">Do your packages run</text>
+    <text x="100" y="42" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">in WebR or Pyodide?</text>
+    <text x="100" y="56" text-anchor="middle" font-size="10" fill="#94a3b8">(compiled to WebAssembly)</text>
+  </g>
+
+  <!-- Arrow yes: shinylive -->
+  <g>
+    <path d="M 360 78 L 160 120" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#rs-arrow)"/>
+    <text x="230" y="95" font-size="10" fill="#16a34a" font-weight="600">yes</text>
+  </g>
+  <!-- Arrow no: to next question -->
+  <g>
+    <path d="M 460 78 L 660 120" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#rs-arrow)"/>
+    <text x="580" y="95" font-size="10" fill="#b45309" font-weight="600">no</text>
+  </g>
+
+  <!-- Shinylive leaf -->
+  <g transform="translate(40,124)" filter="url(#rs-shadow)">
+    <rect width="240" height="74" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="240" height="3" rx="1.5" fill="#3b82f6"/>
+    <text x="120" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="#2563eb">Shinylive</text>
+    <text x="120" y="46" text-anchor="middle" font-size="11" fill="#64748b">r-shinylive or py-shinylive</text>
+    <text x="120" y="62" text-anchor="middle" font-size="10" fill="#94a3b8">No runtime_strategy needed</text>
+  </g>
+
+  <!-- Second question: audience -->
+  <g transform="translate(540,124)" filter="url(#rs-shadow)">
+    <rect width="240" height="74" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="240" height="3" rx="1.5" fill="#8b5cf6"/>
+    <text x="120" y="28" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">Can you assume R/Python</text>
+    <text x="120" y="44" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">is already installed?</text>
+    <text x="120" y="62" text-anchor="middle" font-size="10" fill="#94a3b8">(internal users, devs)</text>
+  </g>
+
+  <!-- yes to system -->
+  <g>
+    <path d="M 600 198 L 440 250" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#rs-arrow)"/>
+    <text x="500" y="222" font-size="10" fill="#16a34a" font-weight="600">yes</text>
+  </g>
+  <!-- no to next question -->
+  <g>
+    <path d="M 700 198 L 700 250" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#rs-arrow)"/>
+    <text x="710" y="226" font-size="10" fill="#b45309" font-weight="600">no</text>
+  </g>
+
+  <!-- system leaf -->
+  <g transform="translate(320,252)" filter="url(#rs-shadow)">
+    <rect width="240" height="66" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="240" height="3" rx="1.5" fill="#10b981"/>
+    <text x="120" y="28" text-anchor="middle" font-size="13" font-weight="600" fill="#166534">system</text>
+    <text x="120" y="48" text-anchor="middle" font-size="10" fill="#64748b">Smallest app. Uses user's install.</text>
+  </g>
+
+  <!-- Third question: system deps -->
+  <g transform="translate(580,252)" filter="url(#rs-shadow)">
+    <rect width="220" height="66" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="220" height="3" rx="1.5" fill="#8b5cf6"/>
+    <text x="110" y="28" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">Complex system deps?</text>
+    <text x="110" y="48" text-anchor="middle" font-size="10" fill="#94a3b8">geospatial, drivers, libs</text>
+  </g>
+
+  <!-- yes to container -->
+  <g>
+    <path d="M 780 318 L 740 372" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#rs-arrow)"/>
+    <text x="780" y="348" font-size="10" fill="#16a34a" font-weight="600">yes</text>
+  </g>
+  <!-- no to next question -->
+  <g>
+    <path d="M 620 318 L 440 372" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#rs-arrow)"/>
+    <text x="520" y="342" font-size="10" fill="#b45309" font-weight="600">no</text>
+  </g>
+
+  <!-- container leaf -->
+  <g transform="translate(600,378)" filter="url(#rs-shadow)">
+    <rect width="200" height="66" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="200" height="3" rx="1.5" fill="#6366f1"/>
+    <text x="100" y="28" text-anchor="middle" font-size="13" font-weight="600" fill="#4338ca">container</text>
+    <text x="100" y="48" text-anchor="middle" font-size="10" fill="#64748b">Docker or Podman isolation</text>
+  </g>
+
+  <!-- Fourth question: internet at first launch -->
+  <g transform="translate(320,374)" filter="url(#rs-shadow)">
+    <rect width="240" height="70" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="240" height="3" rx="1.5" fill="#8b5cf6"/>
+    <text x="120" y="28" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">Internet on first launch?</text>
+    <text x="120" y="52" text-anchor="middle" font-size="10" fill="#94a3b8">yes = auto-download, no = bundled</text>
+  </g>
+
+  <!-- auto-download leaf -->
+  <g transform="translate(20,378)" filter="url(#rs-shadow)">
+    <rect width="220" height="66" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="220" height="3" rx="1.5" fill="#f59e0b"/>
+    <text x="110" y="28" text-anchor="middle" font-size="13" font-weight="600" fill="#b45309">auto-download</text>
+    <text x="110" y="48" text-anchor="middle" font-size="10" fill="#64748b">Small app, fetches runtime once</text>
+  </g>
+
+  <!-- bundled leaf -->
+  <g transform="translate(20,296)" filter="url(#rs-shadow)">
+    <rect width="220" height="66" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="220" height="3" rx="1.5" fill="#10b981"/>
+    <text x="110" y="28" text-anchor="middle" font-size="13" font-weight="600" fill="#166534">bundled</text>
+    <text x="110" y="48" text-anchor="middle" font-size="10" fill="#64748b">Ships runtime inside the app</text>
+  </g>
+
+  <!-- Route from the internet question -->
+  <g>
+    <path d="M 320 420 L 240 411" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#rs-arrow)"/>
+    <text x="278" y="408" font-size="10" fill="#16a34a" font-weight="600">yes</text>
+  </g>
+  <g>
+    <path d="M 320 388 L 240 340" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#rs-arrow)"/>
+    <text x="278" y="352" font-size="10" fill="#b45309" font-weight="600">no</text>
+  </g>
+</svg>

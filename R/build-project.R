@@ -25,9 +25,13 @@ setup_electron_project <- function(output_dir, app_name, app_type, verbose = TRU
 #' @param app_dir Character source app directory
 #' @param output_dir Character destination directory
 #' @param app_type Character application type
+#' @param runtime_strategy Character resolved runtime strategy. When
+#'   `"shinylive"` the source is already a WebAssembly bundle, so the
+#'   Shiny entrypoint sanity check is skipped.
 #' @param verbose Logical whether to show progress
 #' @keywords internal
-copy_app_files <- function(app_dir, output_dir, app_type, verbose = TRUE) {
+copy_app_files <- function(app_dir, output_dir, app_type,
+                           runtime_strategy = NULL, verbose = TRUE) {
   if (verbose) {
     cli::cli_alert_info("Copying application files...")
   }
@@ -35,12 +39,21 @@ copy_app_files <- function(app_dir, output_dir, app_type, verbose = TRUE) {
   dest_app_dir <- fs::path(output_dir, "src", "app")
   copy_dir_contents(app_dir, dest_app_dir)
 
+  # For shinylive the source directory holds index.html and WASM assets,
+  # not app.R / app.py, so skip the native-entrypoint sanity check.
+  if (!is.null(runtime_strategy) && runtime_strategy == "shinylive") {
+    if (verbose) {
+      cli::cli_alert_success("Copied application files")
+    }
+    return(invisible(NULL))
+  }
+
   # Sanity check: for native Shiny apps, confirm the entrypoint made it across.
   # Catches copy-layout bugs at build time rather than at runtime inside Electron.
   entry_files <- switch(app_type,
     "r-shiny" = c("app.R", "server.R", "ui.R"),
     "py-shiny" = "app.py",
-    NULL  # shinylive types validate their own output
+    NULL
   )
   if (!is.null(entry_files)) {
     found <- any(fs::file_exists(fs::path(dest_app_dir, entry_files)))

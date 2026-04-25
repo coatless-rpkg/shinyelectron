@@ -20,7 +20,7 @@ prepare_native_app_files(
 
 \item{destdir}{Character. Export destination.}
 
-\item{app_type}{Character. One of SHINYLIVE_TYPES.}
+\item{app_type}{Character. \code{"r-shiny"} or \code{"py-shiny"}.}
 
 \item{runtime_strategy}{Character. Resolved runtime strategy.}
 

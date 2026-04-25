@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 240" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Three ways an image enters a containerized shinyelectron app: built-in R, built-in Python, or pulled from a registry. Each card shows the relevant configuration, the base image, and when extra dependencies actually install.">
+  <defs>
+    <filter id="ci-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
+    </filter>
+  </defs>
+
+  <!-- Section title -->
+  <text x="440" y="26" text-anchor="middle" font-size="14" font-weight="700" fill="#64748b" letter-spacing="1">WHERE THE IMAGE COMES FROM</text>
+
+  <!-- Card 1: Built-in R -->
+  <g transform="translate(20, 50)" filter="url(#ci-shadow)">
+    <rect width="260" height="170" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="260" height="3" rx="1.5" fill="#3b82f6"/>
+    <text x="16" y="26" font-size="13" font-weight="700" fill="#3b82f6" letter-spacing="0.5">BUILT-IN R</text>
+    <text x="16" y="44" font-size="11" fill="#64748b">Generated when type: r-shiny</text>
+    <line x1="16" y1="54" x2="244" y2="54" stroke="#f1f5f9" stroke-width="1"/>
+
+    <!-- Code block -->
+    <rect x="16" y="64" width="228" height="48" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="22" y="82" font-size="11" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, monospace">type: r-shiny</text>
+    <text x="22" y="102" font-size="11" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, monospace">image: null</text>
+
+    <!-- Description -->
+    <text x="16" y="134" font-size="12" fill="#1e293b"><tspan font-weight="700">Base:</tspan> rocker/r2u:24.04</text>
+    <text x="16" y="154" font-size="12" fill="#1e293b"><tspan font-weight="700">Deps:</tspan> r-cran-* apt, baked in.</text>
+  </g>
+
+  <!-- Card 2: Built-in Python -->
+  <g transform="translate(310, 50)" filter="url(#ci-shadow)">
+    <rect width="260" height="170" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="260" height="3" rx="1.5" fill="#10b981"/>
+    <text x="16" y="26" font-size="13" font-weight="700" fill="#10b981" letter-spacing="0.5">BUILT-IN PYTHON</text>
+    <text x="16" y="44" font-size="11" fill="#64748b">Generated when type: py-shiny</text>
+    <line x1="16" y1="54" x2="244" y2="54" stroke="#f1f5f9" stroke-width="1"/>
+
+    <rect x="16" y="64" width="228" height="48" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="22" y="82" font-size="11" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, monospace">type: py-shiny</text>
+    <text x="22" y="102" font-size="11" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, monospace">image: null</text>
+
+    <text x="16" y="134" font-size="12" fill="#1e293b"><tspan font-weight="700">Base:</tspan> python:3.12-slim</text>
+    <text x="16" y="154" font-size="12" fill="#1e293b"><tspan font-weight="700">Deps:</tspan> pip at first launch.</text>
+  </g>
+
+  <!-- Card 3: Registry pull -->
+  <g transform="translate(600, 50)" filter="url(#ci-shadow)">
+    <rect width="260" height="170" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="260" height="3" rx="1.5" fill="#f59e0b"/>
+    <text x="16" y="26" font-size="13" font-weight="700" fill="#f59e0b" letter-spacing="0.5">REGISTRY PULL</text>
+    <text x="16" y="44" font-size="11" fill="#64748b">Any image you publish</text>
+    <line x1="16" y1="54" x2="244" y2="54" stroke="#f1f5f9" stroke-width="1"/>
+
+    <rect x="16" y="64" width="228" height="48" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="22" y="82" font-size="11" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, monospace">image: ghcr.io/org/app</text>
+    <text x="22" y="102" font-size="11" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, monospace">tag: v1.2.0</text>
+
+    <text x="16" y="134" font-size="12" fill="#1e293b"><tspan font-weight="700">Base:</tspan> whatever you built</text>
+    <text x="16" y="154" font-size="12" fill="#1e293b"><tspan font-weight="700">Deps:</tspan> already in the image.</text>
+  </g>
+</svg>

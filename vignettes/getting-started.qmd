@@ -15,14 +15,13 @@ knitr:
 library(shinyelectron)
 ```
 
-Turn any Shiny app --- R or Python --- into a standalone desktop application
-that runs on macOS, Windows, and Linux. No web server, no browser tab, no
-deployment infrastructure. Just an `.app`, `.exe`, or AppImage your users
-double-click to open.
+Ship a Shiny app as a desktop application. R or Python, macOS, Windows, or Linux. Your users double-click an `.app`, `.exe`, or AppImage. No server, no browser tab, no deployment.
 
 ![The shinyelectron export pipeline: a Shiny app (R or Python) is converted and packaged into a standalone desktop application.](../man/figures/pipeline-overview.svg){fig-alt="Flow diagram showing three steps: Shiny App containing app.R or app.py passes through shinyelectron (convert and package via electron-builder) to produce a Desktop App distributed as .app, .exe, or AppImage." width="100%"}
 
-## Install
+## Install the package
+
+shinyelectron is not on CRAN yet. Install it from GitHub with pak.
 
 ```{r}
 #| eval: false
@@ -30,7 +29,9 @@ install.packages("pak")
 pak::pak("coatless-rpkg/shinyelectron")
 ```
 
-## Check your system
+## Run a pre-flight check
+
+Diagnose before you build. It saves hours later.
 
 ```{r}
 #| eval: false
@@ -38,18 +39,16 @@ library(shinyelectron)
 sitrep_shinyelectron()
 ```
 
-This checks Node.js (>= 22.0.0), npm, R packages, Python availability,
-and platform build tools. If Node.js is missing, install it locally ---
-no admin rights needed:
+`sitrep_shinyelectron()` verifies Node.js (>= 22.0.0), npm, required R packages, Python, and platform build tools. If Node.js is missing, install it locally without admin rights.
 
 ```{r}
 #| eval: false
 install_nodejs()
 ```
 
-## Try a demo
+## Build a demo end to end
 
-The fastest way to see shinyelectron in action is with a bundled demo:
+Ship a bundled example before touching your own app. It confirms the toolchain works.
 
 ```{r}
 #| eval: false
@@ -64,106 +63,89 @@ export(
 )
 ```
 
-This converts the demo to shinylive format, wraps it in Electron, builds
-a distributable, and opens the app. The whole process takes about a minute.
+One call converts the demo to shinylive, wraps it in Electron, builds a distributable, and launches it. Roughly a minute on a small app.
 
-## Export your own app
+## Export your Shiny app
 
-### Shinylive (browser-based)
+### Shinylive: runs in the browser
 
-The default path converts your Shiny app to run entirely inside
-the browser via WebR (R) or Pyodide (Python). WebR compiles R to
-WebAssembly so it runs directly in the browser. Pyodide does the same
-for Python. The end user needs nothing installed --- everything is
-self-contained.
+The default runtime strategy compiles your app to WebAssembly. R uses WebR. Python uses Pyodide. Either way, the app runs in the browser, and the browser runs inside Electron. The user installs nothing.
 
-::: {.panel-tabset}
-
-#### R
+Use this strategy whenever your dependencies allow it. shinyelectron detects the app language from the files in `appdir`, so you usually only need to point at the directory.
 
 ```{r}
 #| eval: false
+# R (language autodetected from app.R, shinylive is the default strategy)
 export(
   appdir = "path/to/my-app",       # directory containing app.R
   destdir = "my-electron-app",
   app_name = "My App"
 )
-```
 
-#### Python
-
-```{r}
-#| eval: false
+# Python (language autodetected from app.py)
 export(
   appdir = "path/to/my-py-app",    # directory containing app.py
   destdir = "my-py-electron-app",
-  app_name = "My App",
-  app_type = "py-shinylive"
+  app_name = "My App"
 )
 ```
 
-:::
+### Native: runs a real R or Python process
 
-### Native (runtime-based)
-
-Some R and Python packages don't work in WebAssembly. For full
-compatibility, use the native path --- your app runs in a real R or
-Python process instead of in the browser.
+Some packages do not compile to WebAssembly. For those, spawn a real R or Python process behind the Electron window by picking a non-shinylive `runtime_strategy`.
 
 ```{r}
 #| eval: false
-# R Shiny with auto-download (default: downloads R on first launch)
+# R Shiny with auto-download (downloads R on first launch)
 export(
   appdir = "path/to/my-app",
   destdir = "my-native-app",
-  app_type = "r-shiny"
+  runtime_strategy = "auto-download"
 )
 
-# Python Shiny with bundled runtime (ships Python inside the app)
+# Python Shiny with a bundled runtime (ships Python inside the app)
 export(
   appdir = "path/to/my-py-app",
   destdir = "my-bundled-py-app",
-  app_type = "py-shiny",
   runtime_strategy = "bundled"
 )
 ```
 
 ![Three execution modes: Shinylive runs entirely in-browser, Native spawns a real R or Python process, and Container runs inside Docker or Podman.](../man/figures/app-types.svg){fig-alt="Architecture diagram comparing three modes. Shinylive: Electron window contains a Chromium browser running WebR or Pyodide with the app compiled to WebAssembly. Native: Electron window loads localhost, a child R or Python process runs the Shiny server, runtime sourced from bundled, auto-download, or system install. Container: Electron window loads localhost, a Docker or Podman container runs the app with full isolation and all system dependencies." width="100%"}
 
-## Choosing an app type
+## Choose an app type and runtime strategy
 
-The key distinction: shinylive apps run entirely in the browser (no server
-needed), while native apps talk to a real R or Python process behind the scenes.
+Two dials drive every shinyelectron build: the app language (`app_type`) and how the runtime reaches the user (`runtime_strategy`). shinyelectron autodetects `app_type` from the files in `appdir`, so you usually set only the strategy.
 
-| App Type | Entry File | Runs In | User Needs | Best For |
-|----------|-----------|---------|-----------|----------|
-| `r-shinylive` | `app.R` | Browser (WebR) | Nothing | Simple R apps |
-| `py-shinylive` | `app.py` | Browser (Pyodide) | Nothing | Simple Python apps |
-| `r-shiny` | `app.R` | R process | R (or bundled) | Full R package support |
-| `py-shiny` | `app.py` | Python process | Python (or bundled) | Full Python package support |
+| App Type | Entry File | Best For |
+|----------|-----------|----------|
+| `r-shiny` | `app.R` | R Shiny apps |
+| `py-shiny` | `app.py` | Python Shiny apps |
 
-For native app types, the `runtime_strategy` controls how the runtime
-reaches the end user:
+`runtime_strategy` decides how your code actually runs. All five strategies work with both `r-shiny` and `py-shiny`.
 
-| Strategy | How it Works | App Size | First Launch |
-|----------|-------------|----------|-------------|
-| `auto-download` | Downloads R/Python on first launch | Small | Needs internet |
-| `bundled` | Ships R/Python inside the app | Large (~200MB+) | Instant, offline |
-| `system` | Uses R/Python already on the machine | Smallest | Requires pre-install |
-| `container` | Runs inside Docker/Podman | Small | Needs Docker |
+| Strategy | Behavior | App Size | First Launch | Best For |
+|----------|----------|----------|--------------|----------|
+| `shinylive` | Compiles app to WebAssembly, runs in-browser | Medium | Instant, offline | Simple apps whose deps run in WebR or Pyodide (default) |
+| `auto-download` | Downloads R/Python on first launch | Small | Needs internet | Public distribution, smaller download |
+| `bundled` | Ships R/Python inside the app | Large (~200MB+) | Instant, offline | Public distribution, offline first run |
+| `system` | Uses R/Python already installed | Smallest | Requires pre-install | Internal tools for users who already have R or Python |
+| `container` | Runs inside Docker/Podman | Small | Needs Docker | Complex system dependencies, reproducibility |
 
-See [Runtime Strategies](runtime-strategies.html) for a deep dive on each.
+See [Runtime Strategies](runtime-strategies.html) for when to pick each.
 
-## What you get
+## What export produces
 
-After export, your destination directory looks like this:
+`export()` writes two siblings into `destdir`: the prepared app and the Electron project that wraps it. The app is then copied into `electron-app/src/app/`, which is the path Electron actually loads at runtime.
 
 ```
 my-electron-app/
-├── shinylive-app/          # Converted app (shinylive types only)
+├── shinylive-app/          # shinylive strategy: WebAssembly bundle
+│   (or shiny-app/)         # other strategies: app source plus a manifest
 └── electron-app/
-    ├── src/app/            # Your application files
-    ├── main.js             # Electron shell
+    ├── src/app/            # Copy of the sibling above (what Electron loads)
+    ├── main.js             # Electron entry point
+    ├── renderer.html
     ├── package.json
     ├── node_modules/
     └── dist/               # Ready-to-distribute binaries
@@ -171,11 +153,15 @@ my-electron-app/
         │   └── My App.app
         ├── win-x64/
         │   └── My App Setup.exe
-        └─��� linux-x64/
+        └── linux-x64/
             └── My App.AppImage
 ```
 
-## Build for multiple platforms
+Ship `dist/`. The rest is build scaffolding, though the sibling app directory is useful when you want to inspect exactly what Electron is serving.
+
+## Build for several platforms in one call
+
+Pass vectors to `platform` and `arch` to produce several targets in one call.
 
 ```{r}
 #| eval: false
@@ -188,26 +174,29 @@ export(
 )
 ```
 
-::: {.callout-note}
-macOS apps can only be built on macOS. Windows and Linux apps can be
-cross-compiled from macOS, but native builds are more reliable.
-:::
+Not every combination is portable. Two rules to keep in mind:
 
-## Add a custom icon
+- **macOS apps build only on macOS.** Apple's signing and `.app` packaging run through native tools. Windows and Linux will cross-compile from macOS, but each platform's own native build is more reliable.
+- **The `bundled` runtime strategy needs a matching host.** A bundled app embeds a platform-specific R or Python binary at build time, so exporting for Windows requires building on Windows, and the same for macOS and Linux. `auto-download`, `system`, and `container` sidestep this: the runtime is fetched, found, or isolated at launch instead of at build, so any host can target any platform.
+
+In practice, if you want a single workstation to emit installers for every OS, reach for auto-download or container. If you want bundled everywhere, hand the job to CI (see the [GitHub Actions](github-actions.html) article).
+
+## Give the app a custom icon
+
+Point `icon` at a single file. Each platform wants its own format: `.icns` for macOS, `.ico` for Windows, `.png` for Linux.
 
 ```{r}
 #| eval: false
 export(
   appdir = "my-app",
   destdir = "my-electron-app",
-  icon = "icon.icns"   # .icns (macOS), .ico (Windows), .png (Linux)
+  icon = "icon.icns"
 )
 ```
 
-## Use a configuration file
+## Capture build settings in a config file
 
-For repeated builds, create a `_shinyelectron.yml` in your app directory
-instead of passing parameters every time:
+Once your build options are settled, move them out of the function call and into `_shinyelectron.yml` alongside your app.
 
 ```{r}
 #| eval: false
@@ -225,24 +214,24 @@ build:
   platforms: [mac, win]
 ```
 
-Then export reads the config automatically:
+`export()` picks it up automatically.
 
 ```{r}
 #| eval: false
 export(appdir = "my-app", destdir = "output")
 ```
 
-See the [Configuration Guide](configuration.html) for all available options.
+See the [Configuration Guide](configuration.html) for every option.
 
-## Next steps
+## Where to go next
 
-- [Configuration Guide](configuration.html) --- all `_shinyelectron.yml` options
-- [Runtime Strategies](runtime-strategies.html) --- bundled vs system vs auto-download vs container
-- [Multi-App Suites](multi-app-suites.html) --- bundle multiple apps in one shell
-- [Code Signing](code-signing.html) --- sign your app for macOS GateKeeper and Windows SmartScreen
-- [Troubleshooting](troubleshooting.html) --- common issues and fixes
+- [Configuration Guide](configuration.html): every `_shinyelectron.yml` option
+- [Runtime Strategies](runtime-strategies.html): bundled, system, auto-download, container
+- [Multi-App Suites](multi-app-suites.html): bundle several apps in one shell
+- [Code Signing](code-signing.html): sign for macOS GateKeeper and Windows SmartScreen
+- [Troubleshooting](troubleshooting.html): common issues and fixes
 
-## Quick reference
+## Function cheat sheet
 
 | Function | Purpose |
 |----------|---------|

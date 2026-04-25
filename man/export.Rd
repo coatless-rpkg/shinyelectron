@@ -8,7 +8,7 @@ export(
   appdir,
   destdir,
   app_name = NULL,
-  app_type = "r-shinylive",
+  app_type = NULL,
   runtime_strategy = NULL,
   sign = FALSE,
   platform = NULL,
@@ -28,11 +28,16 @@ export(
 
 \item{app_name}{Character string. Name of the application. If NULL, uses the base name of appdir.}
 
-\item{app_type}{Character string. Type of application: "r-shinylive" (default), "r-shiny", "py-shinylive", or "py-shiny".}
+\item{app_type}{Character string or NULL. Language of the Shiny app:
+\code{"r-shiny"} or \code{"py-shiny"}. If NULL (default), the type is autodetected
+from files in \code{appdir}. The legacy values \code{"r-shinylive"} and
+\code{"py-shinylive"} are accepted with a deprecation warning and translate
+to the canonical language plus \code{runtime_strategy = "shinylive"}.}
 
-\item{runtime_strategy}{Character string or NULL. Runtime strategy for native app types:
-"bundled", "system", "auto-download", or "container". If NULL, defaults to
-"auto-download" for native types. Ignored for shinylive types.}
+\item{runtime_strategy}{Character string or NULL. How R or Python reaches
+the end user: \code{"shinylive"}, \code{"bundled"}, \code{"system"}, \code{"auto-download"},
+or \code{"container"}. Default \code{"shinylive"} when neither argument nor config
+sets one.}
 
 \item{sign}{Logical. Whether to enable code signing for the built application.
 When TRUE, electron-builder will attempt to sign the app using credentials
@@ -73,43 +78,37 @@ This is the main function of the package that orchestrates the entire process:
 }
 }
 
-\section{Supported Application Types}{
+\section{Supported Combinations}{
 
+Two languages, five delivery strategies.
 \itemize{
-\item \code{r-shinylive}: R Shiny app converted to run entirely in browser (recommended)
-\item \code{r-shiny}: R Shiny app with embedded R runtime
-\item \code{py-shinylive}: Python Shiny app converted to run entirely in browser
-\item \code{py-shiny}: Python Shiny app with embedded Python runtime
+\item \code{r-shiny} or \code{py-shiny} plus \code{runtime_strategy = "shinylive"}: app compiles to WebAssembly and runs inside the Electron window with no runtime on disk.
+\item \code{r-shiny} or \code{py-shiny} plus \code{"auto-download"}, \code{"bundled"}, \code{"system"}, or \code{"container"}: app runs against a real R or Python process supplied by the chosen strategy.
 }
 }
 
 \examples{
 \dontrun{
-# Basic export to shinylive Electron app
+# Simplest call: app_type autodetects, runtime_strategy defaults to shinylive
 export(
   appdir = "path/to/shiny/app",
   destdir = "path/to/electron/output"
 )
 
-# Export with custom settings
+# Run against a real R process instead of shinylive
 export(
   appdir = "path/to/shiny/app",
   destdir = "path/to/output",
-  app_name = "My Amazing App",
-  app_type = "r-shinylive",
-  platform = c("win", "mac"),
-  icon = "path/to/icon.ico",
-  overwrite = TRUE,
-  run_after = TRUE
+  runtime_strategy = "bundled"
 )
 
-# Export regular Shiny app (with R runtime)
+# Pin language explicitly when autodetection is ambiguous
 export(
   appdir = "path/to/shiny/app",
   destdir = "path/to/output",
-  app_type = "r-shiny"
+  app_type = "r-shiny",
+  runtime_strategy = "system"
 )
-
 }
 
 }

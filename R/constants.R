@@ -1,9 +1,9 @@
-# App type group constants — use these instead of inline c("r-shinylive", ...)
-SHINYLIVE_TYPES <- c("r-shinylive", "py-shinylive")
-NATIVE_TYPES    <- c("r-shiny", "py-shiny")
-R_TYPES         <- c("r-shinylive", "r-shiny")
-PY_TYPES        <- c("py-shinylive", "py-shiny")
-ALL_APP_TYPES   <- c(SHINYLIVE_TYPES, NATIVE_TYPES)
+# App type group constants. After the shinylive-as-strategy change the app
+# type encodes only the language, so R_TYPES and PY_TYPES collapse to single
+# values. They are kept as vectors for readability at call sites that use
+# %in%.
+R_TYPES         <- c("r-shiny")
+PY_TYPES        <- c("py-shiny")
 
 # Schema version for R → JS manifest files (dependencies.json,
 # runtime-manifest.json, apps-manifest.json). Bump when the shape of
@@ -48,9 +48,7 @@ SHINYELECTRON_DEFAULTS <- list(
   # Valid options for validation
 
 valid_app_types = c(
-    "r-shinylive",
     "r-shiny",
-    "py-shinylive",
     "py-shiny"
   ),
 
@@ -65,8 +63,9 @@ valid_app_types = c(
     "arm64"
   ),
 
-  # Runtime strategy options (for native app types)
+  # Runtime strategy options
   valid_runtime_strategies = c(
+    "shinylive",
     "bundled",
     "system",
     "auto-download",
@@ -81,12 +80,10 @@ valid_app_types = c(
 
   # Splash screen defaults
   splash = list(
-    enabled = FALSE,
-    duration = 3000L,
-    background = "#ffffff",
+    enabled = TRUE,
+    duration = 1500L,    # minimum display time in ms before transitioning out
+    background = NULL,   # null falls back to brand_background
     image = NULL,
-    width = 400L,
-    height = 300L,
     text = "Loading...",
     text_color = "#333333"
   ),
@@ -103,7 +100,7 @@ valid_app_types = c(
   # Application menu defaults
   menu = list(
     enabled = TRUE,
-    template = "default",  # "default", "minimal", or "custom"
+    template = "default",  # "default" or "minimal"
     show_dev_tools = FALSE,
     help_url = NULL
   ),
@@ -132,10 +129,9 @@ valid_app_types = c(
 
   # Preloader defaults
   preloader = list(
-    enabled = TRUE,
     style = "spinner",  # "spinner", "bar", "dots"
     message = "Loading application...",
-    background = "#f8f9fa"
+    background = NULL   # null falls back to brand_background
   ),
 
   # Container defaults
@@ -187,7 +183,6 @@ valid_app_types = c(
   ),
 
   lifecycle = list(
-    splash_min_duration = 1500L,
     show_phase_details = TRUE,
     error_show_logs = TRUE,
     shutdown_timeout = 10000L,

@@ -6,7 +6,7 @@
 #'
 #' @param appdir Character string. Path to the app directory. Default ".".
 #' @param app_type Character string or NULL. App type override.
-#'   If NULL, reads from config or defaults to "r-shinylive".
+#'   If NULL, reads from config or autodetects from files in `appdir`.
 #' @param runtime_strategy Character string or NULL. Runtime strategy override.
 #' @param platform Character vector or NULL. Target platforms override.
 #' @param sign Logical or NULL. Signing override.
@@ -69,23 +69,42 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
     list()
   })
 
-  # Resolve parameters from config
-  app_type <- app_type %||% config$build$type %||% "r-shinylive"
-  runtime_strategy <- infer_runtime_strategy(runtime_strategy %||% config$build$runtime_strategy, app_type)
+  # Resolve parameters. Order: function arg > config > autodetect (type)
+  # or default (strategy).
+  normalized <- normalize_app_type_arg(app_type, runtime_strategy)
+  app_type <- normalized$app_type
+  runtime_strategy <- normalized$runtime_strategy
+
+  if (is.null(app_type)) {
+    cfg_type <- config$build$type
+    if (!is.null(cfg_type) && nzchar(cfg_type)) {
+      cfg_normalized <- normalize_app_type_arg(cfg_type, runtime_strategy)
+      app_type <- cfg_normalized$app_type
+      runtime_strategy <- runtime_strategy %||% cfg_normalized$runtime_strategy
+    }
+  }
+  if (is.null(app_type)) {
+    app_type <- tryCatch(detect_app_type(appdir), error = function(e) NULL)
+    if (is.null(app_type)) {
+      errors <- c(errors, "Could not determine app type (no app.R/app.py/server.R+ui.R found)")
+      if (verbose) cli::cli_alert_danger("App type: could not autodetect")
+      return(invisible(list(pass = FALSE, errors = errors, warnings = warnings, info = info)))
+    }
+  }
+  runtime_strategy <- runtime_strategy %||% config$build$runtime_strategy %||% "shinylive"
+
   platform <- platform %||% config$build$platforms %||% detect_current_platform()
   sign <- sign %||% isTRUE(config$signing$sign)
 
   if (verbose) {
     cli::cli_alert_info("Type: {.val {app_type}}")
-    if (app_type %in% NATIVE_TYPES) {
-      cli::cli_alert_info("Runtime strategy: {.val {runtime_strategy}}")
-    }
+    cli::cli_alert_info("Runtime strategy: {.val {runtime_strategy}}")
     cli::cli_alert_info("Platform(s): {.val {platform}}")
   }
 
   # --- Check: App structure ---
   tryCatch({
-    if (app_type %in% R_TYPES) {
+    if (app_type == "r-shiny") {
       validate_shiny_app_structure(appdir)
       if (verbose) cli::cli_alert_success("App structure: {.file app.R} found")
     } else {
@@ -114,7 +133,7 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
 
   # --- Check: Runtime ---
   if (runtime_strategy == "system") {
-    if (app_type %in% R_TYPES) {
+    if (app_type == "r-shiny") {
       tryCatch({
         rscript_path <- validate_r_available()
         if (verbose) cli::cli_alert_success("R: available at {.path {rscript_path}}")
@@ -123,7 +142,7 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
         if (verbose) cli::cli_alert_danger("R: {e$message}")
       })
     }
-    if (app_type %in% PY_TYPES) {
+    if (app_type == "py-shiny") {
       tryCatch({
         validate_python_available()
         if (verbose) cli::cli_alert_success("Python: available")
@@ -153,44 +172,43 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
     })
   }
 
-  # --- Check: R shinylive package (for r-shinylive) ---
-  if (app_type == "r-shinylive") {
-    if (requireNamespace("shinylive", quietly = TRUE)) {
-      if (verbose) cli::cli_alert_success("shinylive R package: installed")
-    } else {
-      errors <- c(errors, "shinylive R package not installed")
-      if (verbose) cli::cli_alert_danger("shinylive R package: not installed")
+  # --- Check: shinylive tooling (only when strategy is shinylive) ---
+  if (runtime_strategy == "shinylive") {
+    if (app_type == "r-shiny") {
+      if (requireNamespace("shinylive", quietly = TRUE)) {
+        if (verbose) cli::cli_alert_success("shinylive R package: installed")
+      } else {
+        errors <- c(errors, "shinylive R package not installed")
+        if (verbose) cli::cli_alert_danger("shinylive R package: not installed")
+      }
+    } else if (app_type == "py-shiny") {
+      tryCatch({
+        validate_python_available()
+        validate_python_shinylive_installed()
+        if (verbose) cli::cli_alert_success("Python shinylive: installed")
+      }, error = function(e) {
+        errors <<- c(errors, e$message)
+        if (verbose) cli::cli_alert_danger("Python shinylive: {e$message}")
+      })
     }
-  }
-
-  # --- Check: Python shinylive (for py-shinylive) ---
-  if (app_type == "py-shinylive") {
-    tryCatch({
-      validate_python_available()
-      validate_python_shinylive_installed()
-      if (verbose) cli::cli_alert_success("Python shinylive: installed")
-    }, error = function(e) {
-      errors <<- c(errors, e$message)
-      if (verbose) cli::cli_alert_danger("Python shinylive: {e$message}")
-    })
   }
 
   # --- Check: Dependencies ---
   tryCatch({
-    dep_result <- resolve_app_dependencies(appdir, app_type, config)
+    dep_result <- resolve_app_dependencies(appdir, app_type, runtime_strategy, config)
     if (!is.null(dep_result) && length(dep_result$packages) > 0) {
       dep_msg <- paste(dep_result$packages, collapse = ", ")
       info <- c(info, paste0("Dependencies (", dep_result$language, "): ", dep_msg))
       if (verbose) cli::cli_alert_success("Dependencies: {dep_msg}")
-    } else if (app_type %in% SHINYLIVE_TYPES) {
-      # For shinylive types, resolve_app_dependencies returns NULL because
-      # shinylive handles its own deps. Still scan for informational purposes.
+    } else if (runtime_strategy == "shinylive") {
+      # shinylive handles its own deps, so resolve_app_dependencies returns NULL.
+      # Still scan for informational purposes.
       detected <- tryCatch({
-        if (grepl("^r-", app_type)) detect_r_dependencies(appdir)
+        if (app_type == "r-shiny") detect_r_dependencies(appdir)
         else detect_py_dependencies(appdir)
       }, error = function(e) character(0))
       if (length(detected) > 0) {
-        lang <- if (grepl("^r-", app_type)) "R" else "Python"
+        lang <- if (app_type == "r-shiny") "R" else "Python"
         dep_msg <- paste(detected, collapse = ", ")
         info <- c(info, paste0("Dependencies (", lang, "): ", dep_msg))
         if (verbose) cli::cli_alert_success("Dependencies: {dep_msg}")

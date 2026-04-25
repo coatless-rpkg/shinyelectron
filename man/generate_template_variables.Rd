@@ -22,7 +22,7 @@ generate_template_variables(
 
 \item{app_slug}{Character. Path-safe slug derived from app_name.}
 
-\item{app_type}{Character. One of ALL_APP_TYPES.}
+\item{app_type}{Character. \code{"r-shiny"} or \code{"py-shiny"}.}
 
 \item{runtime_strategy}{Character. Resolved runtime strategy.}
 
