@@ -2,73 +2,23 @@
 % Please edit documentation in R/build-steps.R
 \name{dist_has_platform_artifact}
 \alias{dist_has_platform_artifact}
-\title{Build for target platforms}
+\title{Check whether electron-builder produced output for a platform}
 \usage{
 dist_has_platform_artifact(output_dir, p)
 }
 \arguments{
 \item{output_dir}{Character Electron project directory}
 
-\item{platform}{Character vector of target platforms}
-
-\item{arch}{Character vector of target architectures}
-
-\item{verbose}{Logical whether to show progress}
+\item{p}{Character platform identifier (\code{"mac"}, \code{"win"}, or \code{"linux"})}
+}
+\value{
+Logical: \code{TRUE} if a platform-specific installer is present.
 }
 \description{
-Build for target platforms
+electron-builder 26.x has a known bug where the build completes and the
+installer is written to disk, but the process then exits with status 1
+during post-build publish metadata. When that happens, processx-invoked
+npm inherits the non-zero exit even though the .dmg/.exe/.AppImage is
+sitting right there. We treat "artifact exists" as success.
 }
-\keyword{"artifact}
-\keyword{.dmg/.exe/.AppImage}
-\keyword{1}
-\keyword{26.x}
-\keyword{Check}
-\keyword{We}
-\keyword{When}
-\keyword{a}
-\keyword{and}
-\keyword{as}
-\keyword{bug}
-\keyword{build}
-\keyword{but}
-\keyword{completes}
-\keyword{disk,}
-\keyword{during}
-\keyword{electron-builder}
-\keyword{even}
-\keyword{exists"}
-\keyword{exit}
-\keyword{exits}
-\keyword{for}
-\keyword{happens,}
-\keyword{has}
-\keyword{inherits}
-\keyword{installer}
 \keyword{internal}
-\keyword{is}
-\keyword{known}
-\keyword{metadata.}
-\keyword{non-zero}
-\keyword{npm}
-\keyword{output}
-\keyword{platform.}
-\keyword{post-build}
-\keyword{process}
-\keyword{processx-invoked}
-\keyword{produced}
-\keyword{publish}
-\keyword{right}
-\keyword{sitting}
-\keyword{status}
-\keyword{success.}
-\keyword{that}
-\keyword{the}
-\keyword{then}
-\keyword{there.}
-\keyword{though}
-\keyword{to}
-\keyword{treat}
-\keyword{where}
-\keyword{whether}
-\keyword{with}
-\keyword{written}

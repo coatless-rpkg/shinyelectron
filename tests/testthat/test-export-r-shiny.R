@@ -46,6 +46,10 @@ test_that("export defaults runtime_strategy to shinylive when NULL", {
     captured_strategy <<- args$runtime_strategy
     tempdir()
   })
+  # Stub the shinylive conversion too: it depends on pkgcache, which
+  # complains under R CMD check (R_USER_CACHE_DIR is unset there) and is
+  # not the behaviour under test here.
+  mockery::stub(export, "convert_app_to_shinylive", function(...) tempdir())
 
   export(appdir = tmpdir, destdir = outdir, app_type = "r-shiny",
          runtime_strategy = NULL, build = TRUE, verbose = FALSE)

@@ -41,20 +41,17 @@ install_npm_dependencies <- function(output_dir, verbose = TRUE) {
 }
 
 
-#' Build for target platforms
-#'
-#' @param output_dir Character Electron project directory
-#' @param platform Character vector of target platforms
-#' @param arch Character vector of target architectures
-#' @param verbose Logical whether to show progress
-#' @keywords internal
-#' Check whether electron-builder produced output for a platform.
+#' Check whether electron-builder produced output for a platform
 #'
 #' electron-builder 26.x has a known bug where the build completes and the
 #' installer is written to disk, but the process then exits with status 1
 #' during post-build publish metadata. When that happens, processx-invoked
 #' npm inherits the non-zero exit even though the .dmg/.exe/.AppImage is
 #' sitting right there. We treat "artifact exists" as success.
+#'
+#' @param output_dir Character Electron project directory
+#' @param p Character platform identifier (`"mac"`, `"win"`, or `"linux"`)
+#' @return Logical: `TRUE` if a platform-specific installer is present.
 #' @keywords internal
 dist_has_platform_artifact <- function(output_dir, p) {
   dist_dir <- fs::path(output_dir, "dist")
@@ -74,6 +71,14 @@ dist_has_platform_artifact <- function(output_dir, p) {
              logical(1)))
 }
 
+#' Build for target platforms
+#'
+#' @param output_dir Character Electron project directory
+#' @param platform Character vector of target platforms
+#' @param arch Character vector of target architectures
+#' @param sign Logical whether to code-sign the build
+#' @param verbose Logical whether to show progress
+#' @keywords internal
 build_for_platforms <- function(output_dir, platform, arch, sign = FALSE, verbose = TRUE) {
   if (verbose) {
     cli::cli_alert_info("Building for platforms: {paste(platform, collapse = ', ')}")
