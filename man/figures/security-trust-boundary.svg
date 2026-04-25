@@ -47,16 +47,6 @@
     </g>
   </g>
 
-  <!-- Arrows across boundary -->
-  <g transform="translate(240,170)">
-    <line x1="0" y1="0" x2="32" y2="0" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
-    <polygon points="32,-4 40,0 32,4" fill="#94a3b8"/>
-  </g>
-  <g transform="translate(488,170)">
-    <line x1="0" y1="0" x2="32" y2="0" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
-    <polygon points="32,-4 40,0 32,4" fill="#94a3b8"/>
-  </g>
-
   <!-- Main (trusted) -->
   <g transform="translate(520,24)" filter="url(#sec-shadow)">
     <rect width="220" height="292" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
@@ -81,6 +71,16 @@
       <text x="16" y="84" font-size="10" fill="#64748b">Container: docker run</text>
       <text x="16" y="102" font-size="10" fill="#64748b">Shinylive: Express</text>
     </g>
+  </g>
+
+  <!-- Arrows across boundary (drawn last so nothing paints over the heads) -->
+  <g transform="translate(240,170)">
+    <line x1="0" y1="0" x2="24" y2="0" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <polygon points="24,-4 32,0 24,4" fill="#94a3b8"/>
+  </g>
+  <g transform="translate(488,170)">
+    <line x1="0" y1="0" x2="24" y2="0" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <polygon points="24,-4 32,0 24,4" fill="#94a3b8"/>
   </g>
 
   <!-- Caption -->
