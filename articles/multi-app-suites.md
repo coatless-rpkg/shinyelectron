@@ -1,58 +1,65 @@
 # Multi-App Suites
 
-shinyelectron can bundle multiple Shiny apps – R or Python – into a
-single Electron application. Users see a launcher page where they pick
-which app to open, and can switch between apps at any time via the
-**Apps** menu.
+One repo, many apps, one launcher. A suite bundles several Shiny apps, R
+or Python, into a single Electron binary. Users open the launcher, pick
+an app, and switch whenever they like through the **Apps** menu.
 
-## Directory structure
+![A launcher panel on the left with three app cards. An arrow labelled
+'pick an app' leads to an active backend window on the right. A return
+arrow labelled 'Apps menu: Back' leads from the backend back to the
+launcher. On the far right, the apps manifest lists dashboard,
+data-explorer, and about.](../reference/figures/multi-app-routing.svg)
 
-A multi-app suite is a directory that contains a `_shinyelectron.yml`
-config file and an `apps/` folder with one sub-directory per app. Each
-sub-directory holds a standard Shiny app (`app.R` for R, `app.py` for
-Python).
+The launcher hands off to one backend at a time; picking a different app
+returns through the launcher.
+
+## Layout
+
+A suite is a directory with a `_shinyelectron.yml` at the root and an
+`apps/` folder. Each subfolder holds a normal Shiny app (`app.R` for R,
+`app.py` for Python).
 
 ### R suite
 
-The bundled demo at `inst/demos/demo-r-app-suite/` looks like this:
+The bundled demo at `inst/demos/demo-r-app-suite/`, read live:
 
     demo-r-app-suite/
     ├── _shinyelectron.yml
-    └── apps/
-        ├── dashboard/
+    └── apps
+        ├── about
         │   └── app.R
-        ├── data-explorer/
+        ├── dashboard
         │   └── app.R
-        └── about/
+        └── data-explorer
             └── app.R
 
 ### Python suite
 
-The bundled demo at `inst/demos/demo-py-app-suite/` follows the same
-layout with one addition – a `requirements.txt` at the suite root:
+The Python demo at `inst/demos/demo-py-app-suite/` adds one file: a
+`requirements.txt` at the root that covers every app in the suite.
 
     demo-py-app-suite/
     ├── _shinyelectron.yml
-    ├── requirements.txt
-    └── apps/
-        ├── dashboard/
-        │   └── app.py
-        ├── data-explorer/
-        │   └── app.py
-        └── about/
-            └── app.py
+    ├── apps
+    │   ├── about
+    │   │   └── app.py
+    │   ├── dashboard
+    │   │   └── app.py
+    │   └── data-explorer
+    │       └── app.py
+    └── requirements.txt
 
 ## Configuration
 
-Multi-app mode is activated by including an `apps` array in
-`_shinyelectron.yml`. Each entry needs three required fields (`id`,
-`name`, `path`) and accepts optional `description`, `type`, and `icon`
-fields.
+A top-level `apps` array switches shinyelectron into suite mode. Each
+entry needs three fields (`id`, `name`, `path`) and accepts four
+optional ones (`description`, `type`, `runtime_strategy`, `icon`).
 
 ### R suite config
 
+Read live from `inst/demos/demo-r-app-suite/_shinyelectron.yml`:
+
 ``` yaml
-# _shinyelectron.yml
 app:
   name: "R Shiny Demo Suite"
   version: "1.0.0"
@@ -84,10 +91,10 @@ apps:
 
 ### Python suite config
 
-The Python config is nearly identical – only `build.type` changes:
+Only `build.type` changes. Read live from
+`inst/demos/demo-py-app-suite/_shinyelectron.yml`:
 
 ``` yaml
-# _shinyelectron.yml
 app:
   name: "Python Shiny Demo Suite"
   version: "1.0.0"
@@ -117,58 +124,130 @@ apps:
     path: "./apps/about"
 ```
 
-### App entry fields
+### Fields in an `apps` entry
 
-| Field         | Required | Description                                                  |
-|---------------|----------|--------------------------------------------------------------|
-| `id`          | Yes      | Unique identifier (used in file paths and the apps manifest) |
-| `name`        | Yes      | Display name shown on the launcher card                      |
-| `path`        | Yes      | Relative path from the suite root to the app directory       |
-| `description` | No       | Short text shown below the name on the launcher card         |
-| `type`        | No       | Override the default `build.type` for this specific app      |
-| `icon`        | No       | Path to an icon image displayed on the launcher card         |
+| Field              | Required | Description                                                         |
+|--------------------|----------|---------------------------------------------------------------------|
+| `id`               | Yes      | Unique identifier (used in file paths and the apps manifest)        |
+| `name`             | Yes      | Display name shown on the launcher card                             |
+| `path`             | Yes      | Relative path from the suite root to the app directory              |
+| `description`      | No       | Short text shown below the name on the launcher card                |
+| `type`             | No       | Override the default `build.type` for this specific app             |
+| `runtime_strategy` | No       | Override the default `build.runtime_strategy` for this specific app |
+| `icon`             | No       | Path to an icon image displayed on the launcher card                |
 
-The default `build.type` from the config applies to every app that does
-not specify its own `type`. This means a single suite can mix app types
-if needed (e.g., some apps as `r-shinylive`, others as `r-shiny`),
-though in practice most suites use a single type throughout.
+Every app inherits `build.type` and `build.runtime_strategy` unless it
+overrides them. Suites can mix languages (some `r-shiny`, some
+`py-shiny`) and mix strategies (one app on `shinylive`, another on
+`system`). Most suites stay uniform, but the overrides are there when
+you need them.
 
-## Dependency detection
+## Mixed-strategy suites
 
-R and Python suites handle dependencies differently.
+A single suite can bundle apps with different runtime strategies. Set a
+suite-wide default in `build.runtime_strategy`, then override it per app
+where it makes sense. This is handy when one app runs fine in the
+browser (shinylive) while another needs a real process for packages that
+do not compile to WebAssembly.
 
-### R suites: per-app code scanning
+``` yaml
+# _shinyelectron.yml
+app:
+  name: "Mixed Suite"
+  version: "1.0.0"
 
-For R apps, shinyelectron scans each app directory individually using
-[`renv::dependencies()`](https://rstudio.github.io/renv/reference/dependencies.html).
-This detects [`library()`](https://rdrr.io/r/base/library.html),
-[`require()`](https://rdrr.io/r/base/library.html), and
-`package::function()` calls in the app’s source files. Each app gets its
-own `dependencies.json` manifest, so only the packages that app actually
-uses are recorded.
+build:
+  type: "r-shiny"
+  runtime_strategy: "shinylive"   # suite default
 
-### Python suites: suite-root requirements.txt
+apps:
+  - id: "viewer"
+    name: "Data Viewer"
+    description: "Lightweight tables and charts"
+    path: "./apps/viewer"
+    # inherits shinylive from build.runtime_strategy
 
-For Python apps, dependencies are read from a single `requirements.txt`
-(or `pyproject.toml`) at the **suite root** – not from individual app
-directories. All apps in the suite share one virtual environment with
-the same set of packages installed.
+  - id: "modeler"
+    name: "Model Fitter"
+    description: "Needs packages that are not in WebR"
+    path: "./apps/modeler"
+    runtime_strategy: "system"    # overrides the suite default
+```
 
-For example, the demo Python suite uses this `requirements.txt`:
+Per-app `runtime_strategy:` overrides the suite default for just that
+app. The other apps keep inheriting the default. You can mix all five
+strategies this way, with the usual platform caveats (for example,
+bundled R still needs a portable R build for the target OS).
+
+## How dependencies are handled
+
+R apps can be scanned for dependencies; Python apps cannot. R lets you
+skip declaration entirely and rely on the source. Python always asks you
+to write a list, just in one of two files. Both languages can also use
+`_shinyelectron.yml` for explicit declarations, and lists from any
+source merge into one install plan.
+
+### R apps
+
+**Automatic.** shinyelectron runs
+[`renv::dependencies()`](https://rstudio.github.io/renv/reference/dependencies.html)
+over each app directory. It picks up
+[`library()`](https://rdrr.io/r/base/library.html),
+[`require()`](https://rdrr.io/r/base/library.html), `pkg::func()`, and
+[`loadNamespace()`](https://rdrr.io/r/base/ns-load.html) references in
+the source. Base and recommended R packages (`stats`, `utils`, `MASS`,
+`lattice`, and friends) are excluded automatically.
+
+**Explicit.** Add a `dependencies:` block to the suite-level
+`_shinyelectron.yml`:
+
+``` yaml
+dependencies:
+  r:
+    packages: [shiny, ggplot2, dplyr]
+    repos: ["https://cloud.r-project.org"]
+```
+
+Source-scan and declared packages merge. Set
+`dependencies.auto_detect: false` to skip the renv scan and install only
+the declared list.
+
+### Python apps
+
+shinyelectron does not parse `import` statements: the module-name to
+package-name mapping is unreliable (`import cv2` is `opencv-python`,
+`import sklearn` is `scikit-learn`). You declare what gets installed, in
+one of two places.
+
+**`requirements.txt` or `pyproject.toml`.** A standard Python manifest
+at the suite root. All apps in the suite share one virtual environment.
+The demo’s `requirements.txt`:
 
     shiny
     numpy
     matplotlib
 
-This file covers the dependencies for all three apps in the suite.
+That file covers every app in the suite.
 
-## Exporting a multi-app suite
+**`_shinyelectron.yml`.** Add a `python` section to the same
+`dependencies:` block:
 
-The standard
+``` yaml
+dependencies:
+  python:
+    packages: [shiny, numpy, pandas]
+    index_urls: ["https://pypi.org/simple"]
+```
+
+Manifest-file and YAML packages merge. Set
+`dependencies.auto_detect: false` to skip reading the manifest and
+install only the YAML list.
+
+## Exporting a suite
+
 [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
-function handles multi-app suites automatically. When it reads the
-config and finds an `apps` array with two or more entries, it switches
-to multi-app mode internally.
+reads the config, sees an `apps` array with two or more entries, and
+switches to suite mode. No extra flags.
 
 ``` r
 library(shinyelectron)
@@ -181,60 +260,55 @@ export(appdir = r_suite, destdir = "output-r-suite")
 export(appdir = "path/to/my-py-suite", destdir = "output-py-suite")
 ```
 
-You do not need to pass `app_type` or `runtime_strategy` – the config
-file drives everything. The `build.type` and `build.runtime_strategy`
-fields in `_shinyelectron.yml` determine how the suite is built.
+You do not pass `app_type` or `runtime_strategy`. The YAML owns those
+choices, through `build.type` and `build.runtime_strategy`.
 
-All four [runtime
+All five [runtime
 strategies](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/runtime-strategies.md)
-(system, bundled, auto-download, container) work with multi-app suites,
-just as they do with single apps.
+(shinylive, system, bundled, auto-download, container) work with suites,
+exactly as they do with single apps. Per-app overrides let one suite mix
+them.
 
-## Launcher UI and app switching
+## Launcher and app switching
 
-When the Electron app starts, users see a **launcher page** instead of
-loading an app immediately. The launcher displays a card for each app in
-the suite, showing the name, description, type badge, and an icon
-(either a custom image or a generated initial).
+The Electron window opens to a launcher page. Each app gets a card with
+its name, description, type badge, and icon (your image, or a generated
+initial).
 
-Clicking a card starts the backend for that app and navigates to it.
-While using any app, the **Apps** menu in the menu bar provides a “Back
-to Launcher” option that stops the current backend and returns to the
-launcher page.
+Click a card: the backend for that app starts, and the window navigates
+to it. The **Apps** menu offers “Back to Launcher,” which stops the
+backend and returns to the card grid.
 
-### How the runtime works
+### One runtime, one active app
 
-All apps in a suite share a single runtime process (one R or Python
-instance). When the user switches from one app to another:
+A suite runs a single R or Python process. Switching apps follows four
+steps:
 
-1.  The current backend process is stopped.
-2.  The launcher page is shown.
-3.  The user selects the next app.
-4.  A new backend process starts for the selected app.
+1.  Stop the current backend.
+2.  Show the launcher.
+3.  User picks the next app.
+4.  Start a fresh backend for that app.
 
-This means only one app runs at a time, keeping resource usage low.
-There is no need to install multiple runtimes or manage parallel
-processes.
+Only one app runs at a time. No parallel runtimes, no duplicated
+processes, no extra installs.
 
-## Creating your own suite
+## Building your own suite
 
-To create a multi-app suite from scratch:
+From scratch:
 
-1.  Create a directory with an `apps/` sub-folder.
-2.  Add each Shiny app as its own sub-directory under `apps/`.
-3.  Write a `_shinyelectron.yml` with the `apps` array listing every
-    app.
-4.  For Python suites, place a `requirements.txt` at the suite root.
+1.  Create a directory with an `apps/` subfolder.
+2.  Put each Shiny app in its own subdirectory.
+3.  Write `_shinyelectron.yml` with an `apps` array listing every app.
+4.  For Python suites, add `requirements.txt` at the root.
 5.  Run
     [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
-    pointing at the suite directory.
+    on the suite directory.
 
 ``` r
 # Minimal example: create suite structure, then export
 export(appdir = "my-suite", destdir = "my-suite-output")
 ```
 
-The config file is the single source of truth. As long as the `apps`
-array has at least two entries and each entry points to a valid Shiny
-app directory, shinyelectron will build the multi-app Electron
-application with the launcher UI and app-switching support.
+The config file is the single source of truth. Two or more entries in
+`apps`, each pointing at a valid app, and shinyelectron builds the
+launcher, the menu, and the switching logic for you.

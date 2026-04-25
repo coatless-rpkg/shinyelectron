@@ -49,7 +49,7 @@
     <li><a class="dropdown-item" href="../articles/multi-app-suites.html">Multi-App Suites</a></li>
     <li><a class="dropdown-item" href="../articles/container-strategy.html">Container Strategy</a></li>
     <li><a class="dropdown-item" href="../articles/security.html">Security Considerations</a></li>
-    <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced Features</a></li>
+    <li><a class="dropdown-item" href="../articles/customizations.html">Customizations</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
     <li><a class="dropdown-item" href="../articles/nodejs-management.html">Node.js Management</a></li>
@@ -87,21 +87,30 @@
 
 
 
-    <p>Automatic updates allow your Electron application to check for, download, and install new versions seamlessly. This guide explains how to configure auto-updates using shinyelectron and electron-updater.</p>
-<section class="level2"><h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
+    <p>Auto-updates ship by publishing a signed artifact and a matching <code>latest.yml</code> to a place the app knows to check. shinyelectron wires your project up to <a href="https://www.electron.build/auto-update" class="external-link">electron-updater</a>, which does the checking, downloading, and swap-on-quit.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure><p><img src="../reference/figures/update-flow.svg" alt="Three panels. A version 1.0.0 app on the left requests latest.yml from a publish host in the middle, which lists a manifest and signed installers. An arrow on the right shows the app updated to version 1.1.0."></p>
+<figcaption>Update flow: the installed app reads a manifest, fetches a signed artifact, then swaps in on the next quit.</figcaption></figure>
+</div>
+<section class="level2"><h2 id="pick-a-publish-host">Pick a publish host<a class="anchor" aria-label="anchor" href="#pick-a-publish-host"></a>
 </h2>
-<p>shinyelectron uses <a href="https://www.electron.build/auto-update" class="external-link">electron-updater</a> to provide automatic updates. electron-updater is the library electron-builder uses to check for, download, and install updates. Updates can be distributed via:</p>
+<p>Three backends are supported. Pick the one that matches how you already ship software.</p>
 <table class="table caption-top">
+<colgroup>
+<col style="width: 29%">
+<col style="width: 29%">
+<col style="width: 41%">
+</colgroup>
 <thead><tr class="header">
 <th>Provider</th>
-<th>Best For</th>
+<th>Best for</th>
 <th>Requirements</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td>GitHub Releases</td>
 <td>Open source projects</td>
-<td>Public/private GitHub repo</td>
+<td>Public or private GitHub repo</td>
 </tr>
 <tr class="even">
 <td>S3</td>
@@ -114,34 +123,29 @@
 <td>Any HTTP server</td>
 </tr>
 </tbody>
-</table></section><section class="level2"><h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
+</table></section><section class="level2"><h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<section class="level3"><h3 id="enable-auto-updates">Enable Auto-Updates<a class="anchor" aria-label="anchor" href="#enable-auto-updates"></a>
-</h3>
-<p>Use <code><a href="../reference/enable_auto_updates.html">enable_auto_updates()</a></code> to configure your app:</p>
+<p>Point the app at a GitHub repo and re-export. Everything else follows from configuration.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Enable GitHub-based updates</span></span>
-<span><span class="fu"><a href="../reference/enable_auto_updates.html">enable_auto_updates</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/enable_auto_updates.html">enable_auto_updates</a></span><span class="op">(</span></span>
 <span>  <span class="st">"path/to/app"</span>,</span>
 <span>  provider <span class="op">=</span> <span class="st">"github"</span>,</span>
 <span>  owner <span class="op">=</span> <span class="st">"your-username"</span>,</span>
 <span>  repo <span class="op">=</span> <span class="st">"your-app-repo"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>This modifies your <code>_shinyelectron.yml</code> configuration file.</p>
-</section><section class="level3"><h3 id="check-status">Check Status<a class="anchor" aria-label="anchor" href="#check-status"></a>
-</h3>
-<p>Verify your configuration:</p>
+<p><code><a href="../reference/enable_auto_updates.html">enable_auto_updates()</a></code> writes the settings to <code>_shinyelectron.yml</code>. Verify them at any time with:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/check_auto_update_status.html">check_auto_update_status</a></span><span class="op">(</span><span class="st">"path/to/app"</span><span class="op">)</span></span></code></pre></div>
 </div>
-</section></section><section class="level2"><h2 id="github-releases-setup">GitHub Releases Setup<a class="anchor" aria-label="anchor" href="#github-releases-setup"></a>
+</section><section class="level2"><h2 id="github-releases">GitHub Releases<a class="anchor" aria-label="anchor" href="#github-releases"></a>
 </h2>
-<p>GitHub Releases is the recommended approach for open-source projects.</p>
-<section class="level3"><h3 id="step-1-configure-your-app">Step 1: Configure Your App<a class="anchor" aria-label="anchor" href="#step-1-configure-your-app"></a>
+<p>GitHub Releases is the default, and the right choice for most open-source projects.</p>
+<section class="level3"><h3 id="configure-the-app">Configure the app<a class="anchor" aria-label="anchor" href="#configure-the-app"></a>
 </h3>
+<p>Tell the app where to look, and choose whether it prompts the user before downloading.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/enable_auto_updates.html">enable_auto_updates</a></span><span class="op">(</span></span>
@@ -153,20 +157,20 @@
 <span>  auto_download <span class="op">=</span> <span class="cn">FALSE</span>   <span class="co"># Prompt user before downloading</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-</section><section class="level3"><h3 id="step-2-build-your-app">Step 2: Build Your App<a class="anchor" aria-label="anchor" href="#step-2-build-your-app"></a>
+</section><section class="level3"><h3 id="build-the-app">Build the app<a class="anchor" aria-label="anchor" href="#build-the-app"></a>
 </h3>
-<p>Build your application normally:</p>
+<p>Build as usual.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span><span class="st">"path/to/app"</span>, destdir <span class="op">=</span> <span class="st">"build"</span><span class="op">)</span></span></code></pre></div>
 </div>
-</section><section class="level3"><h3 id="step-3-create-a-github-release">Step 3: Create a GitHub Release<a class="anchor" aria-label="anchor" href="#step-3-create-a-github-release"></a>
+</section><section class="level3"><h3 id="publish-a-release">Publish a release<a class="anchor" aria-label="anchor" href="#publish-a-release"></a>
 </h3>
 <ol type="1">
-<li>Navigate to your repository on GitHub</li>
-<li>Click “Releases” → “Create a new release”</li>
-<li>Create a tag (e.g., <code>v1.0.0</code>)</li>
-<li>Upload your built application files:
+<li>Go to your repo on GitHub.</li>
+<li>Click Releases, then Create a new release.</li>
+<li>Create a tag such as <code>v1.0.0</code>.</li>
+<li>Upload the built installers:
 <ul>
 <li>
 <code>MyApp-1.0.0.dmg</code> (macOS)</li>
@@ -176,27 +180,25 @@
 <code>MyApp-1.0.0.AppImage</code> (Linux)</li>
 </ul>
 </li>
-<li>Publish the release</li>
+<li>Publish the release.</li>
 </ol>
 <div>
 <blockquote>
 <p><strong>Note</strong></p>
-<p>The file names must match the pattern <code>{productName}-{version}.{ext}</code> for electron-updater to detect them correctly.</p>
+<p>File names must match <code>{productName}-{version}.{ext}</code>. electron-updater uses that pattern to find artifacts.</p>
 </blockquote>
 </div>
-</section><section class="level3"><h3 id="step-4-test-updates">Step 4: Test Updates<a class="anchor" aria-label="anchor" href="#step-4-test-updates"></a>
+</section><section class="level3"><h3 id="what-the-user-sees">What the user sees<a class="anchor" aria-label="anchor" href="#what-the-user-sees"></a>
 </h3>
-<p>When you publish a new release with a higher version number, the app will:</p>
+<p>On the next launch, a version higher than the installed one triggers the update cycle:</p>
 <ol type="1">
-<li>Check for updates on startup (if <code>check_on_startup = TRUE</code>)</li>
-<li>Notify the user that an update is available</li>
-<li>Download the update (automatically if <code>auto_download = TRUE</code>)</li>
-<li>Prompt to restart and install</li>
-</ol></section></section><section class="level2"><h2 id="configuration-options">Configuration Options<a class="anchor" aria-label="anchor" href="#configuration-options"></a>
+<li>The app checks on startup when <code>check_on_startup = TRUE</code>.</li>
+<li>A notification tells the user an update is available.</li>
+<li>The installer downloads, silently if <code>auto_download = TRUE</code>, otherwise on consent.</li>
+<li>The app prompts to restart and install.</li>
+</ol></section></section><section class="level2"><h2 id="configuration">Configuration<a class="anchor" aria-label="anchor" href="#configuration"></a>
 </h2>
-<section class="level3"><h3 id="full-configuration-reference">Full Configuration Reference<a class="anchor" aria-label="anchor" href="#full-configuration-reference"></a>
-</h3>
-<p>In <code>_shinyelectron.yml</code>:</p>
+<p>The full <code>updates</code> block in <code>_shinyelectron.yml</code>:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">updates</span><span class="kw">:</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">provider</span><span class="kw">:</span><span class="at"> </span><span class="st">"github"</span></span>
@@ -208,10 +210,14 @@
 <span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">owner</span><span class="kw">:</span><span class="at"> </span><span class="st">"your-username"</span></span>
 <span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">repo</span><span class="kw">:</span><span class="at"> </span><span class="st">"your-repo"</span></span>
 <span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">private</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span><span class="co">          # Set true for private repos</span></span></code></pre></div>
-</section><section class="level3"><h3 id="update-behavior-matrix">Update Behavior Matrix<a class="anchor" aria-label="anchor" href="#update-behavior-matrix"></a>
+<section class="level3"><h3 id="three-knobs-one-pipeline">Three knobs, one pipeline<a class="anchor" aria-label="anchor" href="#three-knobs-one-pipeline"></a>
 </h3>
-<p>These three settings control the update pipeline: <code>check_on_startup</code> asks “is there an update?”, <code>auto_download</code> fetches it, and <code>auto_install</code> applies it.</p>
+<p>Three flags drive three stages. <code>check_on_startup</code> asks whether an update exists. <code>auto_download</code> fetches it. <code>auto_install</code> applies it on quit.</p>
 <table class="table caption-top">
+<colgroup>
+<col style="width: 47%">
+<col style="width: 52%">
+</colgroup>
 <thead><tr class="header">
 <th>Setting</th>
 <th>Behavior</th>
@@ -223,41 +229,41 @@
 </tr>
 <tr class="even">
 <td><code>auto_download: true</code></td>
-<td>Downloads updates silently in background</td>
+<td>Downloads updates silently in the background</td>
 </tr>
 <tr class="odd">
 <td><code>auto_install: true</code></td>
-<td>Installs update when user quits app</td>
+<td>Installs the update when the user quits the app</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Recommended for most apps:</strong></p>
+<p>Sensible default: check automatically, but let the user choose when to download and restart.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">updates</span><span class="kw">:</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">check_on_startup</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_download</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span><span class="co">    # Let user decide</span></span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span><span class="co">     # Let user decide when to restart</span></span></code></pre></div>
-<p><strong>For critical updates:</strong></p>
+<p>Security patches and regressions benefit from the aggressive posture:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">updates</span><span class="kw">:</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">check_on_startup</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_download</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span><span class="co">     # Download immediately</span></span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span><span class="co">      # Install on next quit</span></span></code></pre></div>
-</section></section><section class="level2"><h2 id="private-repositories">Private Repositories<a class="anchor" aria-label="anchor" href="#private-repositories"></a>
+</section></section><section class="level2"><h2 id="private-repositories">Private repositories<a class="anchor" aria-label="anchor" href="#private-repositories"></a>
 </h2>
-<p>For private GitHub repositories, users need a <code>GH_TOKEN</code> environment variable:</p>
+<p>Private repos require a token in the user’s environment.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">updates</span><span class="kw">:</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">github</span><span class="kw">:</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">owner</span><span class="kw">:</span><span class="at"> </span><span class="st">"my-org"</span></span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">repo</span><span class="kw">:</span><span class="at"> </span><span class="st">"private-app"</span></span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">private</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
-<p>Users must set the token before running the app:</p>
+<p>Export <code>GH_TOKEN</code> before launch.</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># macOS/Linux</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">GH_TOKEN</span><span class="op">=</span>ghp_xxxxxxxxxxxx</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Windows</span></span>
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> GH_TOKEN=ghp_xxxxxxxxxxxx</span></code></pre></div>
-</section><section class="level2"><h2 id="s3-provider">S3 Provider<a class="anchor" aria-label="anchor" href="#s3-provider"></a>
+</section><section class="level2"><h2 id="s3">S3<a class="anchor" aria-label="anchor" href="#s3"></a>
 </h2>
-<p>For enterprise deployments using AWS S3:</p>
+<p>Point at a bucket for enterprise distribution.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">updates</span><span class="kw">:</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">provider</span><span class="kw">:</span><span class="at"> </span><span class="st">"s3"</span></span>
@@ -265,8 +271,7 @@
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bucket</span><span class="kw">:</span><span class="at"> </span><span class="st">"my-app-updates"</span></span>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">region</span><span class="kw">:</span><span class="at"> </span><span class="st">"us-east-1"</span></span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"/releases"</span></span></code></pre></div>
-<section class="level3"><h3 id="s3-bucket-structure">S3 Bucket Structure<a class="anchor" aria-label="anchor" href="#s3-bucket-structure"></a>
-</h3>
+<p>The bucket should mirror the pattern GitHub Releases produces: per-platform manifests beside the installers.</p>
 <pre><code>my-app-updates/
 └── releases/
     ├── latest.yml           # Update manifest
@@ -275,30 +280,24 @@
     ├── MyApp-1.0.0.dmg
     ├── MyApp-Setup-1.0.0.exe
     └── MyApp-1.0.0.AppImage</code></pre>
-</section><section class="level3"><h3 id="aws-credentials">AWS Credentials<a class="anchor" aria-label="anchor" href="#aws-credentials"></a>
-</h3>
-<p>The app needs AWS credentials via environment variables:</p>
+<p>AWS credentials come from the environment.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">AWS_ACCESS_KEY_ID</span><span class="op">=</span>xxx</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">AWS_SECRET_ACCESS_KEY</span><span class="op">=</span>xxx</span></code></pre></div>
-</section></section><section class="level2"><h2 id="generic-http-server">Generic HTTP Server<a class="anchor" aria-label="anchor" href="#generic-http-server"></a>
+</section><section class="level2"><h2 id="generic-http">Generic HTTP<a class="anchor" aria-label="anchor" href="#generic-http"></a>
 </h2>
-<p>For custom infrastructure:</p>
+<p>Anything that can serve static files works.</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">updates</span><span class="kw">:</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">provider</span><span class="kw">:</span><span class="at"> </span><span class="st">"generic"</span></span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">generic</span><span class="kw">:</span></span>
 <span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://updates.example.com/releases"</span></span></code></pre></div>
-<section class="level3"><h3 id="server-requirements">Server Requirements<a class="anchor" aria-label="anchor" href="#server-requirements"></a>
-</h3>
-<p>Your server must host:</p>
+<p>Your server must deliver:</p>
 <ol type="1">
-<li>
-<strong>Update manifests</strong> (<code>latest.yml</code>, <code>latest-mac.yml</code>, <code>latest-linux.yml</code>)</li>
-<li><strong>Application binaries</strong></li>
-<li>
-<strong>CORS headers</strong> if serving from different domain</li>
+<li>Update manifests (<code>latest.yml</code>, <code>latest-mac.yml</code>, <code>latest-linux.yml</code>).</li>
+<li>The matching binaries.</li>
+<li>CORS headers if the assets are cross-origin.</li>
 </ol>
-<p>Example <code>latest.yml</code>:</p>
+<p>A minimal <code>latest.yml</code> looks like this:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="fl">1.1.0</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">files</span><span class="kw">:</span></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">url</span><span class="kw">:</span><span class="at"> MyApp-Setup-1.1.0.exe</span></span>
@@ -307,57 +306,75 @@
 <span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="fu">path</span><span class="kw">:</span><span class="at"> MyApp-Setup-1.1.0.exe</span></span>
 <span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="fu">sha512</span><span class="kw">:</span><span class="at"> abc123...</span></span>
 <span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="fu">releaseDate</span><span class="kw">:</span><span class="at"> </span><span class="st">'2024-01-15T12:00:00.000Z'</span></span></code></pre></div>
-</section></section><section class="level2"><h2 id="code-signing">Code Signing<a class="anchor" aria-label="anchor" href="#code-signing"></a>
+</section><section class="level2"><h2 id="code-signing">Code signing<a class="anchor" aria-label="anchor" href="#code-signing"></a>
 </h2>
 <div>
 <blockquote>
 <p><strong>Warning</strong></p>
-<p>Unsigned applications trigger security warnings on macOS and Windows. Code signing is strongly recommended for production apps.</p>
+<p>Unsigned apps trigger Gatekeeper and SmartScreen warnings. Sign production builds.</p>
 </blockquote>
 </div>
-<section class="level3"><h3 id="macos-code-signing">macOS Code Signing<a class="anchor" aria-label="anchor" href="#macos-code-signing"></a>
+<section class="level3"><h3 id="macos">macOS<a class="anchor" aria-label="anchor" href="#macos"></a>
 </h3>
-<p>Set environment variables in your build environment:</p>
+<p>Supply a certificate, its password, and an Apple ID for notarization.</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">CSC_LINK</span><span class="op">=</span>/path/to/certificate.p12</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">CSC_KEY_PASSWORD</span><span class="op">=</span>your-password</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">APPLE_ID</span><span class="op">=</span>your@email.com</span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">APPLE_APP_SPECIFIC_PASSWORD</span><span class="op">=</span>xxxx-xxxx-xxxx-xxxx</span></code></pre></div>
-</section><section class="level3"><h3 id="windows-code-signing">Windows Code Signing<a class="anchor" aria-label="anchor" href="#windows-code-signing"></a>
+</section><section class="level3"><h3 id="windows">Windows<a class="anchor" aria-label="anchor" href="#windows"></a>
 </h3>
+<p>A PFX certificate and password are enough.</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">CSC_LINK</span><span class="op">=</span>/path/to/certificate.pfx</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">CSC_KEY_PASSWORD</span><span class="op">=</span>your-password</span></code></pre></div>
-</section></section><section class="level2"><h2 id="disabling-updates">Disabling Updates<a class="anchor" aria-label="anchor" href="#disabling-updates"></a>
+</section></section><section class="level2"><h2 id="turning-updates-off">Turning updates off<a class="anchor" aria-label="anchor" href="#turning-updates-off"></a>
 </h2>
-<p>To disable auto-updates:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/disable_auto_updates.html">disable_auto_updates</a></span><span class="op">(</span><span class="st">"path/to/app"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>Or manually set in <code>_shinyelectron.yml</code>:</p>
+<p>Or edit the config directly.</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">updates</span><span class="kw">:</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span></code></pre></div>
 </section><section class="level2"><h2 id="troubleshooting">Troubleshooting<a class="anchor" aria-label="anchor" href="#troubleshooting"></a>
 </h2>
-<section class="level3"><h3 id="update-check-fails">Update Check Fails<a class="anchor" aria-label="anchor" href="#update-check-fails"></a>
+<section class="level3"><h3 id="the-check-fails">The check fails<a class="anchor" aria-label="anchor" href="#the-check-fails"></a>
 </h3>
-<p><strong>Symptom:</strong> “Error checking for updates”</p>
-<p><strong>Solutions:</strong> 1. Check internet connectivity 2. Verify GitHub repository exists and is accessible 3. For private repos, ensure <code>GH_TOKEN</code> is set 4. Check firewall settings</p>
-</section><section class="level3"><h3 id="update-downloads-but-doesnt-install">Update Downloads but Doesn’t Install<a class="anchor" aria-label="anchor" href="#update-downloads-but-doesnt-install"></a>
+<p>Symptom: “Error checking for updates.”</p>
+<ol type="1">
+<li>Confirm the machine is online.</li>
+<li>Confirm the GitHub repo exists and is reachable.</li>
+<li>For private repos, confirm <code>GH_TOKEN</code> is set.</li>
+<li>Check firewall rules.</li>
+</ol></section><section class="level3"><h3 id="downloads-never-installs">Downloads, never installs<a class="anchor" aria-label="anchor" href="#downloads-never-installs"></a>
 </h3>
-<p><strong>Symptom:</strong> Update downloads but app doesn’t update on restart</p>
-<p><strong>Solutions:</strong> 1. Ensure app has write permissions to its directory 2. On macOS, app must be in Applications folder 3. Check if antivirus is blocking the update</p>
-</section><section class="level3"><h3 id="version-not-detected">Version Not Detected<a class="anchor" aria-label="anchor" href="#version-not-detected"></a>
+<p>Symptom: the update arrives but the app does not swap in on restart.</p>
+<ol type="1">
+<li>The app needs write permission to its own install directory.</li>
+<li>On macOS, the app must live in Applications.</li>
+<li>Antivirus software can quarantine the new artifact.</li>
+</ol></section><section class="level3"><h3 id="always-no-updates-available">Always “No updates available”<a class="anchor" aria-label="anchor" href="#always-no-updates-available"></a>
 </h3>
-<p><strong>Symptom:</strong> App always shows “No updates available”</p>
-<p><strong>Solutions:</strong> 1. Verify version in <code>package.json</code> matches release tag 2. Ensure release artifacts follow naming convention 3. Check that release is published (not draft)</p>
-</section><section class="level3"><h3 id="debug-logging">Debug Logging<a class="anchor" aria-label="anchor" href="#debug-logging"></a>
+<p>Symptom: the app never sees a newer version.</p>
+<ol type="1">
+<li>
+<code>package.json</code> version must match the release tag.</li>
+<li>Artifact names must follow <code>{productName}-{version}.{ext}</code>.</li>
+<li>The release must be published, not saved as a draft.</li>
+</ol></section><section class="level3"><h3 id="debug-logging">Debug logging<a class="anchor" aria-label="anchor" href="#debug-logging"></a>
 </h3>
-<p>Enable detailed logging by setting environment variable:</p>
+<p>Turn on verbose logs.</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">ELECTRON_ENABLE_LOGGING</span><span class="op">=</span>1</span></code></pre></div>
-<p>Check logs in: - macOS: <code>~/Library/Logs/{app name}/</code> - Windows: <code>%USERPROFILE%\AppData\Roaming\{app name}\logs\</code> - Linux: <code>~/.config/{app name}/logs/</code></p>
-</section></section><section class="level2"><h2 id="github-actions-integration">GitHub Actions Integration<a class="anchor" aria-label="anchor" href="#github-actions-integration"></a>
+<p>Logs land per platform:</p>
+<ul>
+<li>macOS: <code>~/Library/Logs/{app name}/</code>
+</li>
+<li>Windows: <code>%USERPROFILE%\AppData\Roaming\{app name}\logs\</code>
+</li>
+<li>Linux: <code>~/.config/{app name}/logs/</code>
+</li>
+</ul></section></section><section class="level2"><h2 id="publishing-from-ci">Publishing from CI<a class="anchor" aria-label="anchor" href="#publishing-from-ci"></a>
 </h2>
-<p>Automate releases with GitHub Actions:</p>
+<p>The same tag that cuts a release can build every installer. A minimal workflow:</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> Release</span></span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="fu">on</span><span class="kw">:</span></span>
@@ -385,15 +402,16 @@
 <span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> softprops/action-gh-release@v3</span></span>
 <span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
 <span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">files</span><span class="kw">:</span><span class="at"> build/electron-app/dist/*</span></span></code></pre></div>
-</section><section class="level2"><h2 id="next-steps">Next Steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+<p>See the <a href="github-actions.html">GitHub Actions vignette</a> for the full template.</p>
+</section><section class="level2"><h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>
 <ul>
 <li>
-<strong><a href="configuration.html">Configuration</a></strong>: Full configuration reference</li>
+<a href="configuration.html">Configuration</a>: full reference for <code>_shinyelectron.yml</code>.</li>
 <li>
-<strong><a href="github-actions.html">GitHub Actions</a></strong>: Automated CI/CD builds</li>
+<a href="github-actions.html">GitHub Actions</a>: the CI template that ships releases.</li>
 <li>
-<strong><a href="advanced-features.html">Advanced Features</a></strong>: Splash screens, system tray</li>
+<a href="customizations.html">Customizations</a>: splash screen, system tray, application menu.</li>
 </ul></section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);

@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 440" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Hierarchical overview of _shinyelectron.yml, grouping the nine sections into five domains: metadata, build targets, runtime, user interface, and multi-app suite">
+  <defs>
+    <filter id="co-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
+    </filter>
+  </defs>
+
+  <!-- Root node: the config file -->
+  <g transform="translate(320, 20)" filter="url(#co-shadow)">
+    <rect width="240" height="56" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="240" height="4" rx="2" fill="#1e293b"/>
+    <circle cx="24" cy="32" r="5" fill="#64748b"/>
+    <text x="40" y="36" font-size="13" font-weight="700" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">_shinyelectron.yml</text>
+  </g>
+
+  <!-- Connectors from root to each category. A horizontal bus line, then vertical drops. -->
+  <g stroke="#cbd5e1" stroke-width="1.5" fill="none">
+    <path d="M 440 76 L 440 98"/>
+    <path d="M 96 98 L 784 98"/>
+    <path d="M 96 98 L 96 120"/>
+    <path d="M 268 98 L 268 120"/>
+    <path d="M 440 98 L 440 120"/>
+    <path d="M 612 98 L 612 120"/>
+    <path d="M 784 98 L 784 120"/>
+  </g>
+
+  <!-- Category nodes -->
+  <g transform="translate(20, 120)" filter="url(#co-shadow)">
+    <rect width="152" height="44" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="152" height="3" rx="1.5" fill="#3b82f6"/>
+    <text x="76" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">METADATA</text>
+  </g>
+
+  <g transform="translate(192, 120)" filter="url(#co-shadow)">
+    <rect width="152" height="44" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="152" height="3" rx="1.5" fill="#8b5cf6"/>
+    <text x="76" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">BUILD TARGETS</text>
+  </g>
+
+  <g transform="translate(364, 120)" filter="url(#co-shadow)">
+    <rect width="152" height="44" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="152" height="3" rx="1.5" fill="#0ea5e9"/>
+    <text x="76" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">RUNTIME</text>
+  </g>
+
+  <g transform="translate(536, 120)" filter="url(#co-shadow)">
+    <rect width="152" height="44" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="152" height="3" rx="1.5" fill="#10b981"/>
+    <text x="76" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">USER INTERFACE</text>
+  </g>
+
+  <g transform="translate(708, 120)" filter="url(#co-shadow)">
+    <rect width="152" height="44" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="152" height="3" rx="1.5" fill="#f59e0b"/>
+    <text x="76" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">MULTI-APP SUITE</text>
+  </g>
+
+  <!-- Dotted connectors from each category down to its key leaves -->
+  <g stroke="#e2e8f0" stroke-width="1" stroke-dasharray="2,3" fill="none">
+    <path d="M 96 164 L 96 188"/>
+    <path d="M 268 164 L 268 188"/>
+    <path d="M 440 164 L 440 188"/>
+    <path d="M 612 164 L 612 188"/>
+    <path d="M 784 164 L 784 188"/>
+  </g>
+
+  <!-- Leaf keys for each category -->
+  <!-- METADATA -->
+  <g transform="translate(20, 188)">
+    <g>
+      <circle cx="8" cy="10" r="3" fill="#3b82f6"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">app</text>
+    </g>
+    <text x="22" y="32" font-size="10" fill="#64748b">name, version</text>
+  </g>
+
+  <!-- BUILD TARGETS -->
+  <g transform="translate(192, 188)">
+    <g>
+      <circle cx="8" cy="10" r="3" fill="#8b5cf6"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">type</text>
+    </g>
+    <g transform="translate(0, 28)">
+      <circle cx="8" cy="10" r="3" fill="#8b5cf6"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">platforms</text>
+    </g>
+    <g transform="translate(0, 56)">
+      <circle cx="8" cy="10" r="3" fill="#8b5cf6"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">architectures</text>
+    </g>
+  </g>
+
+  <!-- RUNTIME -->
+  <g transform="translate(364, 188)">
+    <g>
+      <circle cx="8" cy="10" r="3" fill="#0ea5e9"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">runtime_strategy</text>
+    </g>
+    <g transform="translate(0, 28)">
+      <circle cx="8" cy="10" r="3" fill="#0ea5e9"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">r, python</text>
+    </g>
+    <g transform="translate(0, 56)">
+      <circle cx="8" cy="10" r="3" fill="#0ea5e9"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">container</text>
+    </g>
+    <g transform="translate(0, 84)">
+      <circle cx="8" cy="10" r="3" fill="#0ea5e9"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">nodejs</text>
+    </g>
+  </g>
+
+  <!-- USER INTERFACE -->
+  <g transform="translate(536, 188)">
+    <g>
+      <circle cx="8" cy="10" r="3" fill="#10b981"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">window</text>
+    </g>
+    <g transform="translate(0, 28)">
+      <circle cx="8" cy="10" r="3" fill="#10b981"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">server</text>
+    </g>
+    <g transform="translate(0, 56)">
+      <circle cx="8" cy="10" r="3" fill="#10b981"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">icon, icons</text>
+    </g>
+  </g>
+
+  <!-- MULTI-APP SUITE -->
+  <g transform="translate(708, 188)">
+    <g>
+      <circle cx="8" cy="10" r="3" fill="#f59e0b"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">apps</text>
+    </g>
+    <text x="22" y="32" font-size="10" fill="#64748b">(optional)</text>
+  </g>
+
+  <!-- Annotation strip at the bottom -->
+  <g transform="translate(20, 332)" filter="url(#co-shadow)">
+    <rect width="840" height="92" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <!-- Column dividers -->
+    <line x1="172" y1="16" x2="172" y2="76" stroke="#f1f5f9" stroke-width="1"/>
+    <line x1="344" y1="16" x2="344" y2="76" stroke="#f1f5f9" stroke-width="1"/>
+    <line x1="516" y1="16" x2="516" y2="76" stroke="#f1f5f9" stroke-width="1"/>
+    <line x1="688" y1="16" x2="688" y2="76" stroke="#f1f5f9" stroke-width="1"/>
+
+    <!-- METADATA -->
+    <text x="14" y="30" font-size="10" font-weight="700" fill="#3b82f6">METADATA</text>
+    <text x="14" y="50" font-size="10" fill="#475569">Display name and</text>
+    <text x="14" y="64" font-size="10" fill="#475569">version embedded in</text>
+    <text x="14" y="78" font-size="10" fill="#475569">the built app.</text>
+
+    <!-- BUILD TARGETS -->
+    <text x="186" y="30" font-size="10" font-weight="700" fill="#8b5cf6">BUILD TARGETS</text>
+    <text x="186" y="50" font-size="10" fill="#475569">Language and which</text>
+    <text x="186" y="64" font-size="10" fill="#475569">operating systems and</text>
+    <text x="186" y="78" font-size="10" fill="#475569">architectures to build.</text>
+
+    <!-- RUNTIME -->
+    <text x="358" y="30" font-size="10" font-weight="700" fill="#0ea5e9">RUNTIME</text>
+    <text x="358" y="50" font-size="10" fill="#475569">How the app reaches</text>
+    <text x="358" y="64" font-size="10" fill="#475569">the user, plus the</text>
+    <text x="358" y="78" font-size="10" fill="#475569">build-time toolchain.</text>
+
+    <!-- USER INTERFACE -->
+    <text x="530" y="30" font-size="10" font-weight="700" fill="#10b981">USER INTERFACE</text>
+    <text x="530" y="50" font-size="10" fill="#475569">Window size, Shiny</text>
+    <text x="530" y="64" font-size="10" fill="#475569">server port, and the</text>
+    <text x="530" y="78" font-size="10" fill="#475569">application icon.</text>
+
+    <!-- MULTI-APP SUITE -->
+    <text x="702" y="30" font-size="10" font-weight="700" fill="#f59e0b">MULTI-APP SUITE</text>
+    <text x="702" y="50" font-size="10" fill="#475569">Optional. Bundle two</text>
+    <text x="702" y="64" font-size="10" fill="#475569">or more apps behind</text>
+    <text x="702" y="78" font-size="10" fill="#475569">one Electron launcher.</text>
+  </g>
+</svg>

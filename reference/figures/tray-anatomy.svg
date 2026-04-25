@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 260" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Anatomy of the system tray icon for a shinyelectron app. The top right shows a stylised OS menu bar with battery, wifi, and bluetooth glyphs followed by the highlighted app tray icon and a clock. Below the bar, a dark tooltip labelled My Dashboard appears on hover. Underneath the tooltip, a small dropdown menu shows Show window and Quit, the two entries built into the right-click tray menu. Annotations on the left identify each piece: the tray icon defaults to the app icon and can be overridden with tray.icon; the tooltip text comes from tray.tooltip and defaults to the app name; and the right-click menu is built in with Show window and Quit, opened by left-click on macOS.">
+  <defs>
+    <filter id="tr-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.06"/>
+    </filter>
+  </defs>
+
+  <!-- OS top bar -->
+  <g transform="translate(440,20)">
+    <rect width="300" height="26" rx="3" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- existing tray icons (faded) -->
+    <text x="14" y="17" font-size="13" fill="#94a3b8">▮</text>
+    <text x="36" y="17" font-size="13" fill="#94a3b8">≋</text>
+    <text x="58" y="17" font-size="13" fill="#94a3b8">⊕</text>
+
+    <!-- Our app's tray icon (highlighted) -->
+    <g transform="translate(82,5)">
+      <rect width="22" height="18" rx="3" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.5"/>
+      <circle cx="11" cy="9" r="6" fill="#f59e0b"/>
+      <text x="11" y="12" text-anchor="middle" font-size="7" font-weight="700" fill="#fff">M</text>
+    </g>
+
+    <text x="286" y="17" text-anchor="end" font-size="10" fill="#475569">10:42 AM</text>
+  </g>
+
+  <!-- Tooltip (on hover) -->
+  <g transform="translate(440,74)" filter="url(#tr-shadow)">
+    <rect width="160" height="28" rx="4" fill="#1e293b"/>
+    <text x="80" y="18" text-anchor="middle" font-size="10" fill="#fff">My Dashboard</text>
+  </g>
+
+  <!-- Tray menu (right-click / left-click on Mac) -->
+  <g transform="translate(440,116)" filter="url(#tr-shadow)">
+    <rect width="160" height="60" rx="4" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="14" y="22" font-size="11" fill="#1e293b">Show window</text>
+    <line x1="8" y1="30" x2="152" y2="30" stroke="#f1f5f9" stroke-width="1"/>
+    <text x="14" y="48" font-size="11" fill="#1e293b">Quit</text>
+  </g>
+
+  <!-- ===== Annotations ===== -->
+
+  <!-- Tray icon -->
+  <g transform="translate(40,28)">
+    <text x="0" y="0" font-size="11" font-weight="600" fill="#475569">Tray icon</text>
+    <text x="0" y="14" font-size="9" fill="#94a3b8">your app's icon by default;</text>
+    <text x="0" y="26" font-size="9" fill="#94a3b8">override with tray.icon</text>
+  </g>
+  <line x1="200" y1="32" x2="520" y2="32" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2"/>
+
+  <!-- Tooltip -->
+  <g transform="translate(40,86)">
+    <text x="0" y="0" font-size="11" font-weight="600" fill="#475569">Tooltip on hover</text>
+    <text x="0" y="14" font-size="9" fill="#94a3b8">tray.tooltip,</text>
+    <text x="0" y="26" font-size="9" fill="#94a3b8">defaults to the app name</text>
+  </g>
+  <line x1="200" y1="90" x2="438" y2="90" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2"/>
+
+  <!-- Menu -->
+  <g transform="translate(40,142)">
+    <text x="0" y="0" font-size="11" font-weight="600" fill="#475569">Right-click menu</text>
+    <text x="0" y="14" font-size="9" fill="#94a3b8">built in: Show window, Quit</text>
+    <text x="0" y="26" font-size="9" fill="#94a3b8">opens with left-click on macOS</text>
+  </g>
+  <line x1="200" y1="146" x2="438" y2="146" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2"/>
+
+  <!-- Caption -->
+  <text x="380" y="220" text-anchor="middle" font-size="10" fill="#475569">The tray icon keeps the app reachable when no window is open.</text>
+  <text x="380" y="236" text-anchor="middle" font-size="9" fill="#94a3b8">minimize_to_tray and close_to_tray decide when the window hides there.</text>
+</svg>

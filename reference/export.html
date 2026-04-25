@@ -34,7 +34,7 @@ running of a Shiny application as an Electron desktop application."></head><body
     <li><a class="dropdown-item" href="../articles/multi-app-suites.html">Multi-App Suites</a></li>
     <li><a class="dropdown-item" href="../articles/container-strategy.html">Container Strategy</a></li>
     <li><a class="dropdown-item" href="../articles/security.html">Security Considerations</a></li>
-    <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced Features</a></li>
+    <li><a class="dropdown-item" href="../articles/customizations.html">Customizations</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
     <li><a class="dropdown-item" href="../articles/nodejs-management.html">Node.js Management</a></li>
@@ -69,7 +69,7 @@ running of a Shiny application as an Electron desktop application.</p>
 <span>  <span class="va">appdir</span>,</span>
 <span>  <span class="va">destdir</span>,</span>
 <span>  app_name <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  app_type <span class="op">=</span> <span class="st">"r-shinylive"</span>,</span>
+<span>  app_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  runtime_strategy <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sign <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  platform <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -100,13 +100,18 @@ running of a Shiny application as an Electron desktop application.</p>
 
 
 <dt id="arg-app-type">app_type<a class="anchor" aria-label="anchor" href="#arg-app-type"></a></dt>
-<dd><p>Character string. Type of application: "r-shinylive" (default), "r-shiny", "py-shinylive", or "py-shiny".</p></dd>
+<dd><p>Character string or NULL. Language of the Shiny app:
+<code>"r-shiny"</code> or <code>"py-shiny"</code>. If NULL (default), the type is autodetected
+from files in <code>appdir</code>. The legacy values <code>"r-shinylive"</code> and
+<code>"py-shinylive"</code> are accepted with a deprecation warning and translate
+to the canonical language plus <code>runtime_strategy = "shinylive"</code>.</p></dd>
 
 
 <dt id="arg-runtime-strategy">runtime_strategy<a class="anchor" aria-label="anchor" href="#arg-runtime-strategy"></a></dt>
-<dd><p>Character string or NULL. Runtime strategy for native app types:
-"bundled", "system", "auto-download", or "container". If NULL, defaults to
-"auto-download" for native types. Ignored for shinylive types.</p></dd>
+<dd><p>Character string or NULL. How R or Python reaches
+the end user: <code>"shinylive"</code>, <code>"bundled"</code>, <code>"system"</code>, <code>"auto-download"</code>,
+or <code>"container"</code>. Default <code>"shinylive"</code> when neither argument nor config
+sets one.</p></dd>
 
 
 <dt id="arg-sign">sign<a class="anchor" aria-label="anchor" href="#arg-sign"></a></dt>
@@ -162,43 +167,36 @@ from environment variables or the config file. Default is FALSE.</p></dd>
 <li><p>Optionally runs the application for testing</p></li>
 </ul></div>
     <div class="section level2">
-    <h2 id="supported-application-types">Supported Application Types<a class="anchor" aria-label="anchor" href="#supported-application-types"></a></h2>
+    <h2 id="supported-combinations">Supported Combinations<a class="anchor" aria-label="anchor" href="#supported-combinations"></a></h2>
 
 
-<ul><li><p><code>r-shinylive</code>: R Shiny app converted to run entirely in browser (recommended)</p></li>
-<li><p><code>r-shiny</code>: R Shiny app with embedded R runtime</p></li>
-<li><p><code>py-shinylive</code>: Python Shiny app converted to run entirely in browser</p></li>
-<li><p><code>py-shiny</code>: Python Shiny app with embedded Python runtime</p></li>
+<p>Two languages, five delivery strategies.</p><ul><li><p><code>r-shiny</code> or <code>py-shiny</code> plus <code>runtime_strategy = "shinylive"</code>: app compiles to WebAssembly and runs inside the Electron window with no runtime on disk.</p></li>
+<li><p><code>r-shiny</code> or <code>py-shiny</code> plus <code>"auto-download"</code>, <code>"bundled"</code>, <code>"system"</code>, or <code>"container"</code>: app runs against a real R or Python process supplied by the chosen strategy.</p></li>
 </ul></div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Basic export to shinylive Electron app</span></span></span>
+<span class="r-in"><span><span class="co"># Simplest call: app_type autodetects, runtime_strategy defaults to shinylive</span></span></span>
 <span class="r-in"><span><span class="fu">export</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  appdir <span class="op">=</span> <span class="st">"path/to/shiny/app"</span>,</span></span>
 <span class="r-in"><span>  destdir <span class="op">=</span> <span class="st">"path/to/electron/output"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Export with custom settings</span></span></span>
+<span class="r-in"><span><span class="co"># Run against a real R process instead of shinylive</span></span></span>
 <span class="r-in"><span><span class="fu">export</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  appdir <span class="op">=</span> <span class="st">"path/to/shiny/app"</span>,</span></span>
 <span class="r-in"><span>  destdir <span class="op">=</span> <span class="st">"path/to/output"</span>,</span></span>
-<span class="r-in"><span>  app_name <span class="op">=</span> <span class="st">"My Amazing App"</span>,</span></span>
-<span class="r-in"><span>  app_type <span class="op">=</span> <span class="st">"r-shinylive"</span>,</span></span>
-<span class="r-in"><span>  platform <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"win"</span>, <span class="st">"mac"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  icon <span class="op">=</span> <span class="st">"path/to/icon.ico"</span>,</span></span>
-<span class="r-in"><span>  overwrite <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
-<span class="r-in"><span>  run_after <span class="op">=</span> <span class="cn">TRUE</span></span></span>
+<span class="r-in"><span>  runtime_strategy <span class="op">=</span> <span class="st">"bundled"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Export regular Shiny app (with R runtime)</span></span></span>
+<span class="r-in"><span><span class="co"># Pin language explicitly when autodetection is ambiguous</span></span></span>
 <span class="r-in"><span><span class="fu">export</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  appdir <span class="op">=</span> <span class="st">"path/to/shiny/app"</span>,</span></span>
 <span class="r-in"><span>  destdir <span class="op">=</span> <span class="st">"path/to/output"</span>,</span></span>
-<span class="r-in"><span>  app_type <span class="op">=</span> <span class="st">"r-shiny"</span></span></span>
+<span class="r-in"><span>  app_type <span class="op">=</span> <span class="st">"r-shiny"</span>,</span></span>
+<span class="r-in"><span>  runtime_strategy <span class="op">=</span> <span class="st">"system"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

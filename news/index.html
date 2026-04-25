@@ -32,7 +32,7 @@
     <li><a class="dropdown-item" href="../articles/multi-app-suites.html">Multi-App Suites</a></li>
     <li><a class="dropdown-item" href="../articles/container-strategy.html">Container Strategy</a></li>
     <li><a class="dropdown-item" href="../articles/security.html">Security Considerations</a></li>
-    <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced Features</a></li>
+    <li><a class="dropdown-item" href="../articles/customizations.html">Customizations</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
     <li><a class="dropdown-item" href="../articles/nodejs-management.html">Node.js Management</a></li>
@@ -58,27 +58,45 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="shinyelectron-020">shinyelectron 0.2.0<a class="anchor" aria-label="anchor" href="#shinyelectron-020"></a></h2>
 <div class="section level3">
-<h3 id="new-app-types-0-2-0">New app types<a class="anchor" aria-label="anchor" href="#new-app-types-0-2-0"></a></h3>
-<ul><li>Added Python Shiny support: <code>py-shinylive</code> (browser-based via Pyodide) and <code>py-shiny</code> (native with Python runtime). All four app types are now fully implemented.</li>
+<h3 id="app-types-and-autodetection-0-2-0">App types and autodetection<a class="anchor" aria-label="anchor" href="#app-types-and-autodetection-0-2-0"></a></h3>
+<ul><li>Python Shiny is now supported alongside R Shiny. <code>app_type</code> takes <code>"r-shiny"</code> or <code>"py-shiny"</code>, with <code>NULL</code> (default) meaning autodetect from the files in <code>appdir</code>. <code><a href="../reference/detect_app_type.html">detect_app_type()</a></code> resolves <code>app.R</code>, <code>ui.R</code> + <code>server.R</code>, or <code>app.py</code>; ambiguous layouts abort with a pointer to the multi-app-suites workflow.</li>
+<li>
+<code>export(appdir, destdir)</code> with no other arguments now works for the common case.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="runtime-strategies-0-2-0">Runtime strategies<a class="anchor" aria-label="anchor" href="#runtime-strategies-0-2-0"></a></h3>
-<ul><li>Added four runtime strategies for native apps (<code>r-shiny</code>, <code>py-shiny</code>): <strong>system</strong>, <strong>bundled</strong>, <strong>auto-download</strong> (default), and <strong>container</strong>.</li>
-<li>Bundled strategy embeds a portable R or Python runtime inside the Electron app for zero-dependency distribution.</li>
-<li>Auto-download strategy downloads the runtime on first launch and caches it locally.</li>
-<li>Container strategy runs apps inside Docker or Podman for full environment isolation.</li>
+<ul><li>Five strategies, all legal with both languages: <strong>shinylive</strong> (the default, compiles to WebAssembly and runs in-browser), <strong>bundled</strong>, <strong>system</strong>, <strong>auto-download</strong>, and <strong>container</strong>.</li>
+<li>Bundled embeds a portable R or Python runtime inside the Electron app for zero-dependency distribution.</li>
+<li>Auto-download fetches the runtime on first launch and caches it locally.</li>
+<li>Container runs apps inside Docker or Podman for full environment isolation.</li>
+<li>The older <code>app_type = "r-shinylive"</code> and <code>"py-shinylive"</code> values are still accepted with a deprecation warning of class <code>shinyelectron_deprecated_app_type</code>; they translate to the canonical language plus <code>runtime_strategy = "shinylive"</code>. Pairing a legacy type with a non-shinylive strategy is an error. The shim will be removed in a future release.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="multi-app-suites-0-2-0">Multi-app suites<a class="anchor" aria-label="anchor" href="#multi-app-suites-0-2-0"></a></h3>
 <ul><li>Bundle multiple Shiny apps into a single Electron shell with a launcher UI.</li>
-<li>Configure via <code>_shinyelectron.yml</code> with an <code>apps</code> array.</li>
+<li>Configure via <code>_shinyelectron.yml</code> with an <code>apps</code> array; each app entry may carry its own <code>runtime_strategy</code>, so a suite can mix (for example) one shinylive app with a bundled R app.</li>
 <li>Python suites read dependencies from a single suite-root <code>requirements.txt</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="config-file-0-2-0">Config file<a class="anchor" aria-label="anchor" href="#config-file-0-2-0"></a></h3>
+<ul><li>
+<code>build.type</code> may be omitted; autodetection runs at build time.</li>
+<li>
+<code>build.runtime_strategy: "shinylive"</code> is accepted alongside the other four strategies.</li>
+<li>
+<code><a href="../reference/init_config.html">init_config()</a></code> writes a template that leaves <code>build.type</code> commented out and lists all five strategies.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="lifecycle-ui-0-2-0">Lifecycle UI<a class="anchor" aria-label="anchor" href="#lifecycle-ui-0-2-0"></a></h3>
 <ul><li>New lifecycle splash screen with progressive status updates during startup.</li>
 <li>Backend stderr is parsed and surfaced in the splash (package loading, font downloads, server status) so users see what’s happening instead of a frozen screen.</li>
 <li>Port allocation uses OS-assigned ports via <code>findAvailablePort()</code> to prevent collisions when multiple apps run simultaneously.</li>
+<li>Splash and preloader gain working knobs in <code>_shinyelectron.yml</code>: <code>splash.enabled</code> toggles the splash state, <code>splash.duration</code> sets a minimum display time before transitioning, <code>splash.background</code> and <code>preloader.background</code> override the lifecycle window background, and <code>preloader.style</code> picks the loading indicator (<code>spinner</code>, <code>bar</code>, or <code>dots</code>).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-2-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-2-0"></a></h3>
+<ul><li>
+<code>auto_download</code> and <code>auto_install</code> were rendered as R-style <code>TRUE</code> / <code>FALSE</code> in the generated <code>main.js</code>, which is invalid JavaScript. Booleans now render through mustache sections so the auto-updater wiring is valid.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="code-signing-0-2-0">Code signing<a class="anchor" aria-label="anchor" href="#code-signing-0-2-0"></a></h3>
@@ -107,13 +125,14 @@
 <div class="section level3">
 <h3 id="documentation-0-2-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-2-0"></a></h3>
 <ul><li>New vignettes: Runtime Strategies, Multi-App Suites, Code Signing, Container Strategy, Security Considerations.</li>
+<li>Renamed the Advanced Features vignette to Customizations and rewrote it around the splash, tray, and menu options with annotated diagrams.</li>
 <li>Updated Getting Started, Configuration, and Troubleshooting vignettes for Python support, all runtime strategies, and Windows-specific guidance.</li>
+<li>The GitHub Actions vignette now reads its env-vars block live from <code>inst/templates/github-actions-build.yml</code>, so the documented values stay in sync with the shipped template.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="internal-0-2-0">Internal<a class="anchor" aria-label="anchor" href="#internal-0-2-0"></a></h3>
 <ul><li>Extracted <code><a href="../reference/run_command_safe.html">run_command_safe()</a></code> helper for repeated <code><a href="http://processx.r-lib.org/reference/run.html" class="external-link">processx::run()</a></code> patterns.</li>
 <li>Extracted <code>killProcessTree()</code> to shared JS utils for process cleanup.</li>
-<li>Added app type group constants (<code>SHINYLIVE_TYPES</code>, <code>NATIVE_TYPES</code>, <code>R_TYPES</code>, <code>PY_TYPES</code>) to reduce stringly-typed code.</li>
 <li>Cached <code><a href="https://rdrr.io/r/utils/available.packages.html" class="external-link">available.packages()</a></code> during bundled R builds to avoid redundant CRAN network calls.</li>
 <li>Fixed event listener leak in multi-app mode (<code>removeAllListeners()</code> instead of <code>removeAllListeners('status')</code>).</li>
 </ul></div>

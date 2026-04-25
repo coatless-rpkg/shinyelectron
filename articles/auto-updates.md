@@ -1,33 +1,36 @@
 # Automatic Updates
 
-Automatic updates allow your Electron application to check for,
-download, and install new versions seamlessly. This guide explains how
-to configure auto-updates using shinyelectron and electron-updater.
+Auto-updates ship by publishing a signed artifact and a matching
+`latest.yml` to a place the app knows to check. shinyelectron wires your
+project up to
+[electron-updater](https://www.electron.build/auto-update), which does
+the checking, downloading, and swap-on-quit.
 
-## Overview
+![Three panels. A version 1.0.0 app on the left requests latest.yml from
+a publish host in the middle, which lists a manifest and signed
+installers. An arrow on the right shows the app updated to version
+1.1.0.](../reference/figures/update-flow.svg)
 
-shinyelectron uses
-[electron-updater](https://www.electron.build/auto-update) to provide
-automatic updates. electron-updater is the library electron-builder uses
-to check for, download, and install updates. Updates can be distributed
-via:
+Update flow: the installed app reads a manifest, fetches a signed
+artifact, then swaps in on the next quit.
 
-| Provider        | Best For               | Requirements               |
-|-----------------|------------------------|----------------------------|
-| GitHub Releases | Open source projects   | Public/private GitHub repo |
-| S3              | Enterprise deployments | AWS S3 bucket              |
-| Generic HTTP    | Custom infrastructure  | Any HTTP server            |
+## Pick a publish host
 
-## Quick Start
+Three backends are supported. Pick the one that matches how you already
+ship software.
 
-### Enable Auto-Updates
+| Provider        | Best for               | Requirements                  |
+|-----------------|------------------------|-------------------------------|
+| GitHub Releases | Open source projects   | Public or private GitHub repo |
+| S3              | Enterprise deployments | AWS S3 bucket                 |
+| Generic HTTP    | Custom infrastructure  | Any HTTP server               |
 
-Use
-[`enable_auto_updates()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/enable_auto_updates.md)
-to configure your app:
+## Quick start
+
+Point the app at a GitHub repo and re-export. Everything else follows
+from configuration.
 
 ``` r
-# Enable GitHub-based updates
 enable_auto_updates(
   "path/to/app",
   provider = "github",
@@ -36,21 +39,23 @@ enable_auto_updates(
 )
 ```
 
-This modifies your `_shinyelectron.yml` configuration file.
-
-### Check Status
-
-Verify your configuration:
+[`enable_auto_updates()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/enable_auto_updates.md)
+writes the settings to `_shinyelectron.yml`. Verify them at any time
+with:
 
 ``` r
 check_auto_update_status("path/to/app")
 ```
 
-## GitHub Releases Setup
+## GitHub Releases
 
-GitHub Releases is the recommended approach for open-source projects.
+GitHub Releases is the default, and the right choice for most
+open-source projects.
 
-### Step 1: Configure Your App
+### Configure the app
+
+Tell the app where to look, and choose whether it prompts the user
+before downloading.
 
 ``` r
 enable_auto_updates(
@@ -63,45 +68,44 @@ enable_auto_updates(
 )
 ```
 
-### Step 2: Build Your App
+### Build the app
 
-Build your application normally:
+Build as usual.
 
 ``` r
 export("path/to/app", destdir = "build")
 ```
 
-### Step 3: Create a GitHub Release
+### Publish a release
 
-1.  Navigate to your repository on GitHub
-2.  Click “Releases” → “Create a new release”
-3.  Create a tag (e.g., `v1.0.0`)
-4.  Upload your built application files:
+1.  Go to your repo on GitHub.
+2.  Click Releases, then Create a new release.
+3.  Create a tag such as `v1.0.0`.
+4.  Upload the built installers:
     - `MyApp-1.0.0.dmg` (macOS)
     - `MyApp-Setup-1.0.0.exe` (Windows)
     - `MyApp-1.0.0.AppImage` (Linux)
-5.  Publish the release
+5.  Publish the release.
 
 > **Note**
 >
-> The file names must match the pattern `{productName}-{version}.{ext}`
-> for electron-updater to detect them correctly.
+> File names must match `{productName}-{version}.{ext}`.
+> electron-updater uses that pattern to find artifacts.
 
-### Step 4: Test Updates
+### What the user sees
 
-When you publish a new release with a higher version number, the app
-will:
+On the next launch, a version higher than the installed one triggers the
+update cycle:
 
-1.  Check for updates on startup (if `check_on_startup = TRUE`)
-2.  Notify the user that an update is available
-3.  Download the update (automatically if `auto_download = TRUE`)
-4.  Prompt to restart and install
+1.  The app checks on startup when `check_on_startup = TRUE`.
+2.  A notification tells the user an update is available.
+3.  The installer downloads, silently if `auto_download = TRUE`,
+    otherwise on consent.
+4.  The app prompts to restart and install.
 
-## Configuration Options
+## Configuration
 
-### Full Configuration Reference
-
-In `_shinyelectron.yml`:
+The full `updates` block in `_shinyelectron.yml`:
 
 ``` yaml
 updates:
@@ -117,19 +121,20 @@ updates:
     private: false          # Set true for private repos
 ```
 
-### Update Behavior Matrix
+### Three knobs, one pipeline
 
-These three settings control the update pipeline: `check_on_startup`
-asks “is there an update?”, `auto_download` fetches it, and
-`auto_install` applies it.
+Three flags drive three stages. `check_on_startup` asks whether an
+update exists. `auto_download` fetches it. `auto_install` applies it on
+quit.
 
-| Setting                  | Behavior                                 |
-|--------------------------|------------------------------------------|
-| `check_on_startup: true` | Checks for updates when app launches     |
-| `auto_download: true`    | Downloads updates silently in background |
-| `auto_install: true`     | Installs update when user quits app      |
+| Setting                  | Behavior                                        |
+|--------------------------|-------------------------------------------------|
+| `check_on_startup: true` | Checks for updates when app launches            |
+| `auto_download: true`    | Downloads updates silently in the background    |
+| `auto_install: true`     | Installs the update when the user quits the app |
 
-**Recommended for most apps:**
+Sensible default: check automatically, but let the user choose when to
+download and restart.
 
 ``` yaml
 updates:
@@ -138,7 +143,7 @@ updates:
   auto_install: false     # Let user decide when to restart
 ```
 
-**For critical updates:**
+Security patches and regressions benefit from the aggressive posture:
 
 ``` yaml
 updates:
@@ -147,10 +152,9 @@ updates:
   auto_install: true      # Install on next quit
 ```
 
-## Private Repositories
+## Private repositories
 
-For private GitHub repositories, users need a `GH_TOKEN` environment
-variable:
+Private repos require a token in the user’s environment.
 
 ``` yaml
 updates:
@@ -160,7 +164,7 @@ updates:
     private: true
 ```
 
-Users must set the token before running the app:
+Export `GH_TOKEN` before launch.
 
 ``` bash
 # macOS/Linux
@@ -170,9 +174,9 @@ export GH_TOKEN=ghp_xxxxxxxxxxxx
 set GH_TOKEN=ghp_xxxxxxxxxxxx
 ```
 
-## S3 Provider
+## S3
 
-For enterprise deployments using AWS S3:
+Point at a bucket for enterprise distribution.
 
 ``` yaml
 updates:
@@ -184,7 +188,8 @@ updates:
     path: "/releases"
 ```
 
-### S3 Bucket Structure
+The bucket should mirror the pattern GitHub Releases produces:
+per-platform manifests beside the installers.
 
     my-app-updates/
     └── releases/
@@ -195,18 +200,16 @@ updates:
         ├── MyApp-Setup-1.0.0.exe
         └── MyApp-1.0.0.AppImage
 
-### AWS Credentials
-
-The app needs AWS credentials via environment variables:
+AWS credentials come from the environment.
 
 ``` bash
 export AWS_ACCESS_KEY_ID=xxx
 export AWS_SECRET_ACCESS_KEY=xxx
 ```
 
-## Generic HTTP Server
+## Generic HTTP
 
-For custom infrastructure:
+Anything that can serve static files works.
 
 ``` yaml
 updates:
@@ -216,16 +219,14 @@ updates:
     url: "https://updates.example.com/releases"
 ```
 
-### Server Requirements
+Your server must deliver:
 
-Your server must host:
+1.  Update manifests (`latest.yml`, `latest-mac.yml`,
+    `latest-linux.yml`).
+2.  The matching binaries.
+3.  CORS headers if the assets are cross-origin.
 
-1.  **Update manifests** (`latest.yml`, `latest-mac.yml`,
-    `latest-linux.yml`)
-2.  **Application binaries**
-3.  **CORS headers** if serving from different domain
-
-Example `latest.yml`:
+A minimal `latest.yml` looks like this:
 
 ``` yaml
 version: 1.1.0
@@ -238,16 +239,16 @@ sha512: abc123...
 releaseDate: '2024-01-15T12:00:00.000Z'
 ```
 
-## Code Signing
+## Code signing
 
 > **Warning**
 >
-> Unsigned applications trigger security warnings on macOS and Windows.
-> Code signing is strongly recommended for production apps.
+> Unsigned apps trigger Gatekeeper and SmartScreen warnings. Sign
+> production builds.
 
-### macOS Code Signing
+### macOS
 
-Set environment variables in your build environment:
+Supply a certificate, its password, and an Apple ID for notarization.
 
 ``` bash
 export CSC_LINK=/path/to/certificate.p12
@@ -256,22 +257,22 @@ export APPLE_ID=your@email.com
 export APPLE_APP_SPECIFIC_PASSWORD=xxxx-xxxx-xxxx-xxxx
 ```
 
-### Windows Code Signing
+### Windows
+
+A PFX certificate and password are enough.
 
 ``` bash
 export CSC_LINK=/path/to/certificate.pfx
 export CSC_KEY_PASSWORD=your-password
 ```
 
-## Disabling Updates
-
-To disable auto-updates:
+## Turning updates off
 
 ``` r
 disable_auto_updates("path/to/app")
 ```
 
-Or manually set in `_shinyelectron.yml`:
+Or edit the config directly.
 
 ``` yaml
 updates:
@@ -280,45 +281,49 @@ updates:
 
 ## Troubleshooting
 
-### Update Check Fails
+### The check fails
 
-**Symptom:** “Error checking for updates”
+Symptom: “Error checking for updates.”
 
-**Solutions:** 1. Check internet connectivity 2. Verify GitHub
-repository exists and is accessible 3. For private repos, ensure
-`GH_TOKEN` is set 4. Check firewall settings
+1.  Confirm the machine is online.
+2.  Confirm the GitHub repo exists and is reachable.
+3.  For private repos, confirm `GH_TOKEN` is set.
+4.  Check firewall rules.
 
-### Update Downloads but Doesn’t Install
+### Downloads, never installs
 
-**Symptom:** Update downloads but app doesn’t update on restart
+Symptom: the update arrives but the app does not swap in on restart.
 
-**Solutions:** 1. Ensure app has write permissions to its directory 2.
-On macOS, app must be in Applications folder 3. Check if antivirus is
-blocking the update
+1.  The app needs write permission to its own install directory.
+2.  On macOS, the app must live in Applications.
+3.  Antivirus software can quarantine the new artifact.
 
-### Version Not Detected
+### Always “No updates available”
 
-**Symptom:** App always shows “No updates available”
+Symptom: the app never sees a newer version.
 
-**Solutions:** 1. Verify version in `package.json` matches release tag
-2. Ensure release artifacts follow naming convention 3. Check that
-release is published (not draft)
+1.  `package.json` version must match the release tag.
+2.  Artifact names must follow `{productName}-{version}.{ext}`.
+3.  The release must be published, not saved as a draft.
 
-### Debug Logging
+### Debug logging
 
-Enable detailed logging by setting environment variable:
+Turn on verbose logs.
 
 ``` bash
 export ELECTRON_ENABLE_LOGGING=1
 ```
 
-Check logs in: - macOS: `~/Library/Logs/{app name}/` - Windows:
-`%USERPROFILE%\AppData\Roaming\{app name}\logs\` - Linux:
-`~/.config/{app name}/logs/`
+Logs land per platform:
 
-## GitHub Actions Integration
+- macOS: `~/Library/Logs/{app name}/`
+- Windows: `%USERPROFILE%\AppData\Roaming\{app name}\logs\`
+- Linux: `~/.config/{app name}/logs/`
 
-Automate releases with GitHub Actions:
+## Publishing from CI
+
+The same tag that cuts a release can build every installer. A minimal
+workflow:
 
 ``` yaml
 name: Release
@@ -350,13 +355,16 @@ jobs:
           files: build/electron-app/dist/*
 ```
 
-## Next Steps
+See the [GitHub Actions
+vignette](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/github-actions.md)
+for the full template.
 
-- **[Configuration](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/configuration.md)**:
-  Full configuration reference
-- **[GitHub
-  Actions](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/github-actions.md)**:
-  Automated CI/CD builds
-- **[Advanced
-  Features](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/advanced-features.md)**:
-  Splash screens, system tray
+## Next steps
+
+- [Configuration](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/configuration.md):
+  full reference for `_shinyelectron.yml`.
+- [GitHub
+  Actions](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/github-actions.md):
+  the CI template that ships releases.
+- [Customizations](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/customizations.md):
+  splash screen, system tray, application menu.

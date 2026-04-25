@@ -7,7 +7,7 @@ types.
 ## Usage
 
 ``` r
-resolve_app_dependencies(appdir, app_type, config)
+resolve_app_dependencies(appdir, app_type, runtime_strategy, config)
 ```
 
 ## Arguments
@@ -18,7 +18,12 @@ resolve_app_dependencies(appdir, app_type, config)
 
 - app_type:
 
-  Character string. The app type.
+  Character string. The app type (`"r-shiny"` or `"py-shiny"`).
+
+- runtime_strategy:
+
+  Character string. The resolved runtime strategy. Returns NULL when
+  `"shinylive"`, since shinylive manages its own deps.
 
 - config:
 
@@ -27,4 +32,4 @@ resolve_app_dependencies(appdir, app_type, config)
 ## Value
 
 List with `packages`, `language`, and `repos`/`index_urls`, or NULL for
-shinylive types (which don't need dependency management).
+the shinylive strategy.

@@ -10,7 +10,7 @@ build_electron_app(
   app_dir,
   output_dir,
   app_name = NULL,
-  app_type = "r-shinylive",
+  app_type = "r-shiny",
   runtime_strategy = "shinylive",
   sign = FALSE,
   platform = NULL,
@@ -39,13 +39,16 @@ build_electron_app(
 
 - app_type:
 
-  Character string. Type of application: "r-shinylive", "r-shiny",
-  "py-shinylive", or "py-shiny".
+  Character string. Language of the Shiny app: `"r-shiny"` or
+  `"py-shiny"`. The legacy values `"r-shinylive"` / `"py-shinylive"` are
+  accepted with a deprecation warning and translate to the canonical
+  language plus `runtime_strategy = "shinylive"`.
 
 - runtime_strategy:
 
-  Character string. Runtime strategy: "shinylive", "bundled", "system",
-  "auto-download", or "container". Default is "shinylive".
+  Character string. Runtime strategy: `"shinylive"`, `"bundled"`,
+  `"system"`, `"auto-download"`, or `"container"`. Default
+  `"shinylive"`.
 
 - sign:
 
@@ -107,7 +110,7 @@ build_electron_app(
   app_dir = "path/to/shinylive/app",
   output_dir = "path/to/electron/build",
   app_name = "My Shiny App",
-  app_type = "r-shinylive"
+  app_type = "r-shiny"
 )
 
 # Build for multiple platforms
@@ -115,7 +118,7 @@ build_electron_app(
   app_dir = "path/to/app",
   output_dir = "path/to/build",
   app_name = "My App",
-  app_type = "r-shinylive",
+  app_type = "r-shiny",
   platform = c("win", "mac", "linux")
 )
 } # }

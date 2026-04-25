@@ -1,6 +1,6 @@
 # Convert a Shiny app to the shinylive format
 
-Dispatches to the R or Python shinylive converter based on app type.
+Dispatches to the R or Python shinylive converter based on language.
 
 ## Usage
 
@@ -20,7 +20,7 @@ convert_app_to_shinylive(appdir, destdir, app_type, verbose = TRUE)
 
 - app_type:
 
-  Character. One of SHINYLIVE_TYPES.
+  Character. `"r-shiny"` or `"py-shiny"`.
 
 - verbose:
 

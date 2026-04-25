@@ -26,8 +26,7 @@
   Strategy](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/container-strategy.md):
 - [Security
   Considerations](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/security.md):
-- [Advanced
-  Features](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/advanced-features.md):
+- [Customizations](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/customizations.md):
 
 ### Reference
 

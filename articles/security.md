@@ -1,158 +1,201 @@
 # Security Considerations
 
-An Electron app is a Chromium browser with full Node.js capabilities –
-it can read files, spawn processes, and access the network without
-restriction. Security is a shared responsibility between shinyelectron
-and you. For production distribution, you should also [sign your
-builds](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/code-signing.md).
+When you turn a Shiny app into a desktop app, it gains a lot of power.
+On the web, the browser and a server fence in what your app can do. On
+someone’s laptop, your app can do anything they can: read their files,
+talk to the network, run programs. That power is what makes a desktop
+app useful, and it is also why a desktop app needs more security thought
+than a web one.
 
-## Electron Security Model
+Three places things can go wrong, and the rest of this guide walks
+through each in order:
+
+1.  **The Electron window that shows your app.** Without care, it can be
+    tricked into running anything. shinyelectron sets safe defaults;
+    your job is to leave them alone.
+2.  **Your Shiny code.** Whatever your app can read or run, a determined
+    user can probably get it to read or run something else. A few habits
+    cover most of it.
+3.  **How the app reaches your users.** Unsigned downloads, plain-HTTP
+    update channels, and passwords baked into the bundle are the classic
+    ways a release goes wrong.
+
+Two related topics live in their own guides: [code
+signing](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/code-signing.md)
+and
+[auto-updates](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/auto-updates.md),
+which rely on signed builds to work.
+
+## Two processes, one trust boundary
 
 An Electron app has two process types:
 
-- **Main process**: Runs Node.js with full OS access. It creates
-  windows, manages the app lifecycle, and spawns backend servers (R,
-  Python, or containers).
-- **Renderer process**: Displays web content (your Shiny app). By
-  default it should be sandboxed and isolated from Node.js APIs.
+- **Main process.** Node.js with full OS access. Creates windows, drives
+  the lifecycle, spawns R, Python, or a container.
+- **Renderer process.** Chromium displaying your Shiny UI. Treat it as
+  hostile territory.
 
-The key security principle is: **never give the renderer process direct
-access to Node.js**. If a renderer has `nodeIntegration` enabled, any
-JavaScript running in your Shiny app – including injected scripts from
-XSS vulnerabilities – can execute arbitrary OS commands.
+The rule is unconditional: **the renderer never touches Node.js
+directly**. With `nodeIntegration: true`, any script in the renderer,
+including one injected through an XSS bug or a transitive HTML widget,
+runs arbitrary OS commands. The defense is to give the renderer the
+narrowest possible gate to the main process, and to keep that gate
+auditable.
 
-For the full list of Electron security recommendations, see the
-[Electron Security
+![Diagram of the Electron trust boundary. On the left, the renderer
+process hosts Chromium with the Shiny UI, treated as an untrusted zone
+with nodeIntegration false, contextIsolation true, sandbox true, and
+webSecurity true. In the middle, a preload script using contextBridge
+exposes only a narrow IPC surface: lifecycle.onStatus, lifecycle.retry,
+and lifecycle.quit. On the right, the trusted main process runs Node.js
+with full OS access and spawns R via shiny runApp, Python via shiny run,
+container backends via docker run, or the Express server for
+Shinylive.](../reference/figures/security-trust-boundary.svg)
+
+Electron’s trust boundary: the renderer runs untrusted web content, the
+preload script exposes a small IPC surface, the main process holds full
+OS access.
+
+The full picture lives in the [Electron Security
 Checklist](https://www.electronjs.org/docs/latest/tutorial/security).
+The rest of this section explains how shinyelectron implements each
+item.
 
-## What shinyelectron Does by Default
+## What shinyelectron locks down
 
-shinyelectron generates Electron configuration with secure defaults out
-of the box:
+The generated `BrowserWindow` ships with the safe choice for every
+webPreferences flag that has one. The block below is read live from the
+template at `inst/electron/shared/main.js`:
 
 ``` js
-// From the generated main.js BrowserWindow config
 webPreferences: {
   nodeIntegration: false,
   contextIsolation: true,
   sandbox: true,
+  preload: path.join(__dirname, 'preload.js'),
   enableRemoteModule: false,
   webSecurity: true,
-  preload: path.join(__dirname, 'preload.js'),
+  // Isolate each app's session to prevent Service Worker cache
+  // cross-contamination between multiple shinyelectron apps
   partition: 'persist:<app_slug>'
 }
 ```
 
-**What each setting does:**
+Each setting, in one line:
 
-| Setting              | Value   | Purpose                                                                                       |
-|----------------------|---------|-----------------------------------------------------------------------------------------------|
-| `nodeIntegration`    | `false` | Renderer cannot use [`require()`](https://rdrr.io/r/base/library.html) or access Node.js APIs |
-| `contextIsolation`   | `true`  | Preload scripts run in a separate context from page scripts                                   |
-| `sandbox`            | `true`  | Renderer runs in a Chromium sandbox with restricted OS access                                 |
-| `enableRemoteModule` | `false` | Disables the deprecated `remote` module                                                       |
-| `webSecurity`        | `true`  | Enforces same-origin policy                                                                   |
-| `partition`          | per-app | Isolates session storage between different shinyelectron apps                                 |
+| Setting              | Value   | What it stops                                                                           |
+|----------------------|---------|-----------------------------------------------------------------------------------------|
+| `nodeIntegration`    | `false` | Renderer cannot call [`require()`](https://rdrr.io/r/base/library.html) or any Node API |
+| `contextIsolation`   | `true`  | Page scripts cannot reach into the preload’s scope                                      |
+| `sandbox`            | `true`  | Renderer runs inside the Chromium OS sandbox                                            |
+| `enableRemoteModule` | `false` | Disables the deprecated `remote` module entirely                                        |
+| `webSecurity`        | `true`  | Same-origin policy stays on                                                             |
+| `partition`          | per-app | Each shinyelectron app gets its own session storage                                     |
 
-**Preload script uses contextBridge.** The preload script acts as a
-secure intermediary — the renderer can call predefined functions but
-cannot access Node.js directly. It exposes only a narrow IPC interface
-(`lifecycle.onStatus`, `lifecycle.retry`, `lifecycle.quit`, etc.) via
-`contextBridge.exposeInMainWorld()`. The renderer never gets direct
-access to `ipcRenderer` or any Node.js module.
+**The preload script is the only bridge.** It exposes a short list of
+named IPC methods (`lifecycle.onStatus`, `lifecycle.retry`,
+`lifecycle.quit`, and a few peers) through
+`contextBridge.exposeInMainWorld()`. The renderer can call those and
+nothing else: it never sees `ipcRenderer`, never imports a Node module.
 
-**Dev tools are off by default.** The Electron DevTools menu item is
-only included when `show_dev_tools` is enabled in the configuration. In
-production builds, leave this disabled.
+**DevTools default to off.** The DevTools menu item only appears when
+`menu.show_dev_tools` is `true` in `_shinyelectron.yml` (the default is
+`false`). Leave it that way for production. DevTools lets the user, or
+anything injected into the page, execute JavaScript and inspect any
+value the app holds.
 
-## Content Security Policy (CSP)
+## Cross-origin headers (Shinylive only)
 
-### Shinylive Apps
-
-Shinylive apps run WebR or Pyodide in the browser, which requires
-`SharedArrayBuffer`. This in turn requires specific cross-origin
-headers. The shinylive backend sets these automatically:
+Shinylive runs WebR or Pyodide in the browser, which needs
+`SharedArrayBuffer`, which needs cross-origin isolation. The local
+Express server attaches the right headers automatically:
 
     Cross-Origin-Opener-Policy: same-origin
     Cross-Origin-Embedder-Policy: require-corp
     Cross-Origin-Resource-Policy: cross-origin
 
-These headers are necessary for WebAssembly threading and are set only
-on responses from the local Express server.
+Native R and Python apps load over plain `localhost` and need no extra
+CSP work: the content originates from a process you started, not a third
+party.
 
-### Native Apps
+**Rule of thumb.** Avoid external scripts (CDNs, third-party widgets)
+unless the app genuinely needs them. Each external resource is a trust
+dependency you cannot audit. Bundle local copies when you can.
 
-Native apps (R or Python) load from `localhost`, where the Shiny server
-runs directly. Since the content originates from a local process you
-control, there is no additional CSP configuration needed by default.
+## Where your app still has to think
 
-**Recommendation:** Avoid loading external scripts (CDNs, third-party
-widgets) in your Shiny UI unless you genuinely need them. Every external
-resource is an additional trust dependency and a potential vector if
-that CDN is compromised. Use local copies of JavaScript libraries when
-possible.
+shinyelectron secures the shell. Inside the shell, your Shiny code runs
+with the same OS permissions as the user who launched it. That is the
+whole point of a desktop app, and it is also the part you have to defend
+yourself.
 
-## App-Level Security Considerations
+### Inputs are user-controlled
 
-shinyelectron secures the Electron shell. Your Shiny app code runs with
-the same permissions as the OS user who launched the app.
+Every reactive input arrives from the renderer. A determined user can
+hand-craft any value, regardless of what the UI suggests. Two rules
+cover most of it.
 
-### Arbitrary Command Execution
+**Validate at the boundary.** Check types, ranges, and shape before you
+act on a value, not after. Shiny’s `req()` and `validate(need(...))`
+exist for this; use them.
 
-Your Shiny app can execute system commands if it uses:
+**Never build shell commands by string concatenation.** Pass the program
+and its arguments as separate values so the shell never sees a chance to
+parse them. The pattern looks slightly different in each language but
+the rule is the same.
 
-- **R**: [`system()`](https://rdrr.io/r/base/system.html),
-  [`system2()`](https://rdrr.io/r/base/system2.html),
-  [`processx::run()`](http://processx.r-lib.org/reference/run.md),
-  [`callr::r()`](https://callr.r-lib.org/reference/r.html)
-- **Python**: `subprocess.run()`, `os.system()`, `os.popen()`
+**R.** [`system()`](https://rdrr.io/r/base/system.html) and
+[`system2()`](https://rdrr.io/r/base/system2.html) (when given a single
+command string) hand the assembled text to `/bin/sh -c`, where
+metacharacters like `;`, `|`, and `$` are interpreted. Use
+[`processx::run()`](http://processx.r-lib.org/reference/run.md) instead,
+or [`system2()`](https://rdrr.io/r/base/system2.html) with the arguments
+as a character vector, so the program and each argument reach the OS as
+separate strings:
 
-This is not a bug – it is how native apps work. But it means:
+``` r
+# Don't: paste() builds one string that the shell then parses
+system(paste("convert", input$file, "out.png"))
 
-- **Validate all user inputs** that flow into system calls, file paths,
-  or database queries. Shiny’s reactive inputs come from the renderer,
-  and a determined user could send crafted values.
-- **Avoid constructing shell commands from user input.** Use
-  parameterized APIs (e.g.,
-  [`processx::run()`](http://processx.r-lib.org/reference/run.md) with a
-  character vector, not `system(paste(...))`).
-- **Principle of least privilege.** If your app does not need to write
-  files or run subprocesses, do not include code that does.
+# Do: program and args cross to the OS as separate values
+processx::run("convert", c(input$file, "out.png"))
+```
 
-### File System Access
+**Python.** `subprocess.run()` defaults to `shell=False`, which is the
+safe form. The list form passes the program and its arguments straight
+to the OS process API. Setting `shell=True` (or calling `os.system()`)
+routes through `/bin/sh` and re-introduces the parsing problem:
 
-The Electron app runs with the launching user’s full file system
-permissions. A Shiny app that uses
+``` python
+# Don't: shell=True hands the f-string to /bin/sh -c
+subprocess.run(f"convert {input.file} out.png", shell=True)
+
+# Do: list form skips the shell entirely
+subprocess.run(["convert", input.file, "out.png"], check=True)
+```
+
+In both cases, the difference is whether `; rm -rf ~` (or any other
+crafted value the renderer hands you) is treated as data or as a
+command.
+
+### File access is user-wide
+
 [`file.choose()`](https://rdrr.io/r/base/file.choose.html),
-[`readLines()`](https://rdrr.io/r/base/readLines.html), or Python’s
-[`open()`](https://rdrr.io/r/base/connections.html) can access anything
-the user can. This is expected behavior for a desktop app, but keep it
-in mind if you are porting a server-hosted Shiny app that previously ran
-in a restricted environment.
+[`readLines()`](https://rdrr.io/r/base/readLines.html), Python’s
+[`open()`](https://rdrr.io/r/base/connections.html): they inherit the
+launching user’s permissions and can reach anything that user can reach.
+SSH keys, browser history, the Documents folder. Expected for a desktop
+app, worth remembering when porting from a sandboxed Shiny Server where
+these calls quietly fail.
 
-## Distribution Security
+**Least privilege still applies.** If the app does not need to write
+files or spawn processes, do not include code that can. Removed code
+cannot be exploited.
 
-### Code Signing
+### Secrets do not belong in the bundle
 
-Unsigned apps trigger OS security warnings (macOS Gatekeeper, Windows
-SmartScreen). macOS tags downloaded files with a quarantine attribute;
-Gatekeeper checks this flag before allowing the app to run. For
-production distribution, sign your app. See the [Auto-Updates
-vignette](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/auto-updates.html#code-signing)
-and [GitHub Actions
-vignette](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/github-actions.html#code-signing)
-for platform-specific setup instructions.
-
-### Auto-Updates
-
-If you enable auto-updates, always serve update manifests and binaries
-over HTTPS. The `electron-updater` library verifies signatures by
-default, but serving over plain HTTP exposes users to man-in-the-middle
-attacks.
-
-### Secrets and Credentials
-
-Do not bundle secrets in your app:
+Anything you copy into the build is recoverable from the installed app.
+`.asar` is not encryption.
 
     # These should NEVER be in your app directory
     .env
@@ -160,74 +203,112 @@ Do not bundle secrets in your app:
     credentials.json
     service-account-key.json
 
-**Add them to `.gitignore`** so they are never committed, and ensure
-your build process does not copy them into the Electron app bundle. If
-your app needs API keys at runtime, consider:
+Add them to `.gitignore` and check that your build pipeline does not
+sweep them in. When the app needs an API key at runtime, the options
+are:
 
-- Environment variables set by the user on their machine
-- A secure credential store (e.g., the OS keychain via
-  [keyring](https://cran.r-project.org/package=keyring))
-- Prompting the user on first launch and storing encrypted credentials
-  in the app’s user data directory
+- **An environment variable** the user sets on their machine.
+- **The OS keychain** via
+  [keyring](https://cran.r-project.org/package=keyring): free,
+  encrypted, OS-managed.
+- **A first-launch prompt** that stores an encrypted credential in the
+  app’s user-data directory.
 
-## Container Strategy Security
+## Strategy-specific notes
 
-The container strategy (`runtime_strategy: "container"`) runs your Shiny
-app inside a Docker or Podman container. This provides meaningful
-isolation:
+The [runtime
+strategy](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/runtime-strategies.md)
+you pick decides which sandbox actually contains your code.
 
-- The app cannot access the host filesystem unless you explicitly mount
-  volumes via `container.volumes` in `_shinyelectron.yml`.
-- Network access is limited to the published port.
-- The container runs as a non-root user (in the default shinyelectron
-  images).
+### Shinylive
 
-However, containers are not a full security boundary:
+The strongest isolation of any strategy. WebR or Pyodide run inside the
+browser’s WebAssembly sandbox, which has no syscalls of its own and no
+filesystem outside an in-memory shim. Shell injection and arbitrary file
+access are physically not on the menu. The trust boundary is the same as
+any other web page, plus the Electron defaults above.
 
-- Docker requires root-equivalent access on Linux (the Docker daemon
-  runs as root). Podman runs rootless by default.
-- Mounted volumes give the container read/write access to host
-  directories. Only mount what the app needs.
-- Container escape vulnerabilities, while rare, do exist. Keep
-  Docker/Podman updated.
+### System, bundled, auto-download
 
-## What NOT to Do
+A real R or Python child process. Whatever is reachable from
+[`system()`](https://rdrr.io/r/base/system.html) or `subprocess` is
+reachable from the app. The defense is the input-validation discipline
+from the previous section. None of these strategies adds additional
+sandboxing.
 
-These are the most common Electron security mistakes. shinyelectron’s
-defaults prevent all of them, but you can undo them by modifying the
-generated Electron files.
+### Container
+
+Docker or Podman puts the app inside an OS-level container, which is a
+stronger boundary than process isolation but weaker than a virtual
+machine:
+
+- **The app directory is mounted at `/app` inside the container** by the
+  container backend, read–write. Anything under `container.volumes` is
+  mounted explicitly on top of that.
+- **Inbound network reaches the container only on the published port.**
+  The container can still make outbound connections by default. Add a
+  custom Docker network if you need to block them.
+- **Default images run as root inside the container.** shinyelectron’s
+  bundled Dockerfiles do not set a `USER` directive, and neither do
+  their parent images. For trusted internal apps that is usually fine;
+  otherwise override `USER` in a custom Dockerfile.
+- **Docker’s daemon runs as root on Linux.** A container escape is a
+  host root escape. Podman defaults to rootless mode and is the safer
+  choice when available.
+
+Containers buy isolation, not invulnerability. Mount only what you must,
+keep the engine patched, and treat the container’s filesystem as a
+useful constraint rather than a guarantee.
+
+## Distribution
+
+Two release-time concerns. Each has its own vignette; the rules of thumb
+live here.
+
+**Sign your production builds.** Unsigned macOS apps trip Gatekeeper,
+unsigned Windows installers trip SmartScreen, and unsigned anything
+cannot use `electron-updater`. See [Code Signing and
+Distribution](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/code-signing.md).
+
+**Serve update manifests over HTTPS.** `electron-updater` verifies the
+signature on each downloaded artifact, but the manifest that points it
+at the artifact must reach the user untampered. Plain HTTP lets an
+attacker swap that manifest. See [Auto
+Updates](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/auto-updates.md).
+
+## What not to do
+
+shinyelectron’s defaults block every common Electron footgun. You can
+re-enable any of them by editing the generated files. Do not.
 
 > **Do not modify these settings in the generated Electron code**
 >
-> - **Do not set `nodeIntegration: true`** in `webPreferences`. This
->   gives every script in the renderer full Node.js access, including
->   any injected via XSS.
->
-> - **Do not set `webSecurity: false`**. This disables same-origin
->   policy, allowing any page to make requests to any origin.
->
-> - **Do not set `contextIsolation: false`**. This lets page scripts
->   access the preload script’s scope, breaking the security boundary.
->
-> - **Do not load remote URLs in the main window.** shinyelectron loads
->   only `localhost` (for native backends) or local files (for lifecycle
->   pages). Loading an external URL means running untrusted code with
->   your app’s Electron privileges.
->
-> - **Do not ship debug builds.** Disable `show_dev_tools` in
->   production. DevTools let users (or malware) inspect and modify the
->   running app, execute arbitrary JavaScript, and access the Node.js
->   console in the main process.
+> - **`nodeIntegration: true`**: any script in the renderer, including
+>   anything an XSS bug injects, gets full Node.js access.
+> - **`contextIsolation: false`**: page scripts can then reach into the
+>   preload scope, and the boundary is gone.
+> - **`sandbox: false`**: the renderer leaves the Chromium OS sandbox.
+> - **`webSecurity: false`**: same-origin policy goes off, and arbitrary
+>   pages can call arbitrary origins.
+> - **Loading remote URLs in the main window.** shinyelectron loads
+>   `localhost` (native backends) or local files (lifecycle pages). An
+>   external URL runs untrusted code with your app’s Electron
+>   privileges.
+> - **Shipping with `menu.show_dev_tools: true`.** DevTools lets anyone,
+>   or anything, inspect values, run JavaScript, and dig toward the main
+>   process.
 
 ## Summary
 
-| Layer               | Who is responsible  | What to do                                            |
-|---------------------|---------------------|-------------------------------------------------------|
-| Electron shell      | shinyelectron       | Secure defaults are set automatically                 |
-| Shiny app code      | You                 | Validate inputs, avoid unsafe system calls            |
-| Credentials         | You                 | Never bundle secrets; use env vars or keychain        |
-| Code signing        | You                 | Sign builds for production distribution               |
-| Container isolation | shinyelectron + You | Default images are sandboxed; be careful with volumes |
+| Layer                | Owned by      | What to do                                                  |
+|----------------------|---------------|-------------------------------------------------------------|
+| Electron shell       | shinyelectron | Defaults are safe; do not edit them                         |
+| Cross-origin headers | shinyelectron | Set automatically for Shinylive                             |
+| Shiny app code       | You           | Validate inputs, parameterize commands, avoid shell strings |
+| Filesystem use       | You           | Least privilege; the code you remove cannot be exploited    |
+| Credentials          | You           | Never bundle; use env vars or the OS keychain               |
+| Container image      | You           | Override `USER`, mount minimum, keep engine patched         |
+| Code signing         | You           | Sign release builds; HTTPS for update manifests             |
 
-For further reading, consult the [Electron Security
+Further reading: the [Electron Security
 documentation](https://www.electronjs.org/docs/latest/tutorial/security).

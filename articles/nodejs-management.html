@@ -49,7 +49,7 @@
     <li><a class="dropdown-item" href="../articles/multi-app-suites.html">Multi-App Suites</a></li>
     <li><a class="dropdown-item" href="../articles/container-strategy.html">Container Strategy</a></li>
     <li><a class="dropdown-item" href="../articles/security.html">Security Considerations</a></li>
-    <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced Features</a></li>
+    <li><a class="dropdown-item" href="../articles/customizations.html">Customizations</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
     <li><a class="dropdown-item" href="../articles/nodejs-management.html">Node.js Management</a></li>
@@ -87,293 +87,220 @@
 
 
 
-    <p>The shinyelectron package can manage its own Node.js installation, separate from any system-wide installation. This guide explains how to install, manage, and troubleshoot Node.js within shinyelectron.</p>
-<section class="level2"><h2 id="why-local-node-js">Why Local Node.js?<a class="anchor" aria-label="anchor" href="#why-local-node-js"></a>
+    <p>Packaging a Shiny app into an installer needs Node.js. Most R and Python users do not have Node.js on their machines and do not want to install it system-wide just to ship one app. shinyelectron solves the awkward middle by downloading a copy of Node into your user cache: no admin rights, no conflict with anything else, and you can pin or remove it cleanly later.</p>
+<p>If you already have a recent Node.js LTS (22 or higher) on your <code>PATH</code>, that works too. shinyelectron uses whichever copy it can find.</p>
+<section class="level2"><h2 id="why-a-local-install">Why a local install<a class="anchor" aria-label="anchor" href="#why-a-local-install"></a>
 </h2>
-<p>Managing Node.js locally through shinyelectron provides several advantages:</p>
+<p>A local install lives in your user cache rather than under <code>/usr/local</code> or <code>C:\Program Files</code>. Four things follow from that.</p>
 <table class="table caption-top">
 <colgroup>
-<col style="width: 40%">
-<col style="width: 59%">
+<col style="width: 37%">
+<col style="width: 62%">
 </colgroup>
 <thead><tr class="header">
 <th>Benefit</th>
-<th>Description</th>
+<th>What it means</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td><strong>No admin rights</strong></td>
-<td>Install without sudo/administrator privileges</td>
+<td>No <code>sudo</code> or Administrator prompts during install</td>
 </tr>
 <tr class="even">
 <td><strong>Isolation</strong></td>
-<td>Doesn’t affect system Node.js or other projects</td>
+<td>Stays out of the way of any system Node.js or other projects</td>
 </tr>
 <tr class="odd">
-<td><strong>Reproducibility</strong></td>
-<td>Pin specific versions for consistent builds</td>
+<td><strong>Pinnability</strong></td>
+<td>Lock to a specific version when reproducibility matters</td>
 </tr>
 <tr class="even">
 <td><strong>Portability</strong></td>
-<td>Works in environments where system installation isn’t possible</td>
+<td>Works on locked-down machines where a system install is not allowed</td>
 </tr>
 </tbody>
-</table></section><section class="level2"><h2 id="installing-node-js">Installing Node.js<a class="anchor" aria-label="anchor" href="#installing-node-js"></a>
+</table>
+<p>The minimum supported version is <strong>Node.js 22.0.0</strong> because Electron 41 requires it. shinyelectron’s installer always defaults to the latest LTS, which is well above that floor.</p>
+</section><section class="level2"><h2 id="installing">Installing<a class="anchor" aria-label="anchor" href="#installing"></a>
 </h2>
-<section class="level3"><h3 id="basic-installation">Basic Installation<a class="anchor" aria-label="anchor" href="#basic-installation"></a>
-</h3>
-<p>Install the latest LTS (Long Term Support) version:</p>
+<p><code><a href="../reference/install_nodejs.html">install_nodejs()</a></code> fetches the latest LTS build from nodejs.org, verifies the checksum, and unpacks it into the cache.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
-<pre><code>ℹ Detecting latest Node.js LTS version...
-✔ Latest LTS: v22.11.0
-── Installing Node.js v22.11.0 ───────────────────────────────────────────────
-ℹ Platform: mac
-ℹ Architecture: arm64
-ℹ Fetching checksums...
-ℹ Downloading from https://nodejs.org/dist/v22.11.0/node-v22.11.0-darwin-arm64.tar.gz
-✔ Checksum verified
-ℹ Extracting archive...
-✔ Node.js v22.11.0 installed successfully
-ℹ Location: ~/.shinyelectron/cache/assets/nodejs/v22.11.0/darwin-arm64
-ℹ shinyelectron will automatically use this installation</code></pre>
-</section><section class="level3"><h3 id="installing-a-specific-version">Installing a Specific Version<a class="anchor" aria-label="anchor" href="#installing-a-specific-version"></a>
-</h3>
-<p>Pin a specific version for reproducible builds:</p>
+<pre><code>i Detecting latest Node.js LTS version...
+v Latest LTS: v22.11.0
+-- Installing Node.js v22.11.0 ----------------------------------------------
+i Platform: mac
+i Architecture: arm64
+i Fetching checksums...
+i Downloading from https://nodejs.org/dist/v22.11.0/node-v22.11.0-darwin-arm64.tar.gz
+v Checksum verified
+i Extracting archive...
+v Node.js v22.11.0 installed successfully
+i Location: /Users/you/Library/Caches/shinyelectron/assets/nodejs/v22.11.0/darwin-arm64
+i shinyelectron will automatically use this installation</code></pre>
+<p>Two arguments worth knowing:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>version <span class="op">=</span> <span class="st">"20.18.0"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Pin a specific version for reproducible builds</span></span>
+<span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>version <span class="op">=</span> <span class="st">"22.11.0"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Force a fresh download when a previous one is corrupt</span></span>
+<span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
-</section><section class="level3"><h3 id="reinstalling-force">Reinstalling (Force)<a class="anchor" aria-label="anchor" href="#reinstalling-force"></a>
-</h3>
-<p>Force reinstall to fix corrupted installations:</p>
+<p>You can install several versions side by side; they sit in separate directories in the cache.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>version <span class="op">=</span> <span class="st">"22.11.0"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>version <span class="op">=</span> <span class="st">"20.18.0"</span><span class="op">)</span></span></code></pre></div>
 </div>
-</section></section><section class="level2"><h2 id="version-management">Version Management<a class="anchor" aria-label="anchor" href="#version-management"></a>
+<p>When more than one is present, <strong>the highest semantic version wins</strong> at resolution time. Install order does not matter.</p>
+</section><section class="level2"><h2 id="which-node-js-shinyelectron-uses">Which Node.js shinyelectron uses<a class="anchor" aria-label="anchor" href="#which-node-js-shinyelectron-uses"></a>
 </h2>
-<section class="level3"><h3 id="checking-installed-versions">Checking Installed Versions<a class="anchor" aria-label="anchor" href="#checking-installed-versions"></a>
-</h3>
-<p>shinyelectron reports on local Node.js installations in system diagnostics:</p>
+<p>Whenever shinyelectron needs to run <code>node</code> or <code>npm</code>, it picks one in this order:</p>
+<ol type="1">
+<li>
+<strong>The local install</strong> under the shinyelectron cache. If several local versions are present, the highest wins.</li>
+<li>
+<strong>The system Node.js</strong> found on <code>PATH</code>.</li>
+<li>If neither is available, the call fails with a message naming both options.</li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure><p><img src="../reference/figures/nodejs-resolution.svg" alt="Flow diagram showing export() checking the local shinyelectron cache first, falling back to the system PATH, and erroring if neither Node.js install is available."></p>
+<figcaption>Node.js resolution: local cache first, then system PATH, then error.</figcaption></figure>
+</div>
+<p><code><a href="../reference/sitrep_electron_system.html">sitrep_electron_system()</a></code> shows what it finds:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep_electron_system.html">sitrep_electron_system</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
-<pre><code>── System Requirements Report ────────────────────────────────────────────────
-✔ Platform: darwin
-✔ Architecture: arm64
-✔ Local Node.js (shinyelectron): v22.11.0 ✓
+<pre><code>-- System Requirements Report ------------------------------------------------
+v Platform: darwin
+v Architecture: arm64
+v Local Node.js (shinyelectron): v22.11.0
   Other versions: 20.18.0
-✔ Active Node.js: v22.11.0 (local) ✓
-✔ npm: v10.9.0 ✓</code></pre>
-</section><section class="level3"><h3 id="multiple-versions">Multiple Versions<a class="anchor" aria-label="anchor" href="#multiple-versions"></a>
-</h3>
-<p>You can have multiple Node.js versions installed simultaneously:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Install multiple versions</span></span>
-<span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>version <span class="op">=</span> <span class="st">"22.11.0"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>version <span class="op">=</span> <span class="st">"20.18.0"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>version <span class="op">=</span> <span class="st">"18.20.0"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<p>The most recently installed version (or the latest version if versions are equal) is used by default.</p>
-</section></section><section class="level2"><h2 id="how-it-works">How It Works<a class="anchor" aria-label="anchor" href="#how-it-works"></a>
+v Active Node.js: v22.11.0 (local)
+v npm: v10.9.0</code></pre>
+</section><section class="level2"><h2 id="auto-install-from-_shinyelectron-yml">Auto-install from <code>_shinyelectron.yml</code>
+<a class="anchor" aria-label="anchor" href="#auto-install-from-_shinyelectron-yml"></a>
 </h2>
-<section class="level3"><h3 id="installation-location">Installation Location<a class="anchor" aria-label="anchor" href="#installation-location"></a>
-</h3>
-<p>Node.js installations are stored in your user cache directory:</p>
-<pre><code>~/.shinyelectron/cache/assets/nodejs/
-├── v22.11.0/
-│   └── darwin-arm64/      # macOS ARM (M1/M2/M3)
-│       ├── bin/
-│       │   ├── node       # Node.js executable
-│       │   ├── npm        # npm executable
-│       │   └── npx        # npx executable
-│       ├── include/
-│       └── lib/
-├── v20.18.0/
-│   ├── darwin-arm64/
-│   └── win-x64/           # Windows 64-bit
-│       ├── node.exe
-│       ├── npm.cmd
-│       └── npx.cmd
-└── ...</code></pre>
-</section><section class="level3"><h3 id="checksum-verification">Checksum Verification<a class="anchor" aria-label="anchor" href="#checksum-verification"></a>
-</h3>
-<p>Downloads are verified using SHA256 checksums from the official Node.js distribution:</p>
-<ol type="1">
-<li>shinyelectron downloads <code>SHASUMS256.txt</code> from nodejs.org</li>
-<li>Downloads the Node.js archive</li>
-<li>Computes the SHA256 hash of the downloaded file</li>
-<li>Compares against the expected checksum</li>
-<li>Aborts if checksums don’t match</li>
-</ol>
-<p>This ensures the downloaded files haven’t been corrupted or tampered with.</p>
-</section><section class="level3"><h3 id="platform-detection">Platform Detection<a class="anchor" aria-label="anchor" href="#platform-detection"></a>
-</h3>
-<p>shinyelectron automatically detects your platform and architecture:</p>
+<p>If you would rather have <code><a href="../reference/export.html">export()</a></code> install Node.js on demand, set <code>auto_install: true</code>. shinyelectron will fetch Node when it cannot find one and then continue the build.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<p>Pin the version too, when you want it:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"22.11.0"</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<div>
+<blockquote>
+<p><strong>Opt-in only</strong></p>
+<p>Auto-install is off by default. shinyelectron does not download anything without explicit consent: either <code>auto_install: true</code> here, or a manual <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code> call.</p>
+</blockquote>
+</div>
+</section><section class="level2"><h2 id="cache-layout">Cache layout<a class="anchor" aria-label="anchor" href="#cache-layout"></a>
+</h2>
+<p>Everything lives under the shinyelectron user cache, organised by version and then platform/architecture. The base directory comes from <code>rappdirs::user_cache_dir("shinyelectron")</code>, so the exact path is platform-specific:</p>
 <table class="table caption-top">
 <thead><tr class="header">
 <th>Platform</th>
-<th>Detection</th>
-<th>Node.js Platform</th>
+<th>Typical cache base</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td>macOS</td>
-<td><code>Sys.info()[["sysname"]] == "Darwin"</code></td>
-<td>darwin</td>
+<td><code>~/Library/Caches/shinyelectron/assets/</code></td>
 </tr>
 <tr class="even">
-<td>Windows</td>
-<td><code>Sys.info()[["sysname"]] == "Windows"</code></td>
-<td>win</td>
+<td>Linux</td>
+<td><code>~/.cache/shinyelectron/assets/</code></td>
 </tr>
 <tr class="odd">
-<td>Linux</td>
-<td><code>Sys.info()[["sysname"]] == "Linux"</code></td>
-<td>linux</td>
+<td>Windows</td>
+<td><code>%LOCALAPPDATA%\shinyelectron\Cache\assets\</code></td>
 </tr>
 </tbody>
 </table>
+<p>Call <code><a href="../reference/cache_dir.html">cache_dir()</a></code> to get the actual path on your machine. Inside it, the Node.js layout looks like this:</p>
+<pre><code>{cache_dir()}/nodejs/
+|-- v22.11.0/
+|   `-- darwin-arm64/      # macOS Apple Silicon
+|       |-- bin/
+|       |   |-- node
+|       |   |-- npm
+|       |   `-- npx
+|       |-- include/
+|       `-- lib/
+|-- v20.18.0/
+|   `-- win-x64/           # Windows 64-bit
+|       |-- node.exe
+|       |-- npm.cmd
+|       `-- npx.cmd
+`-- ...</code></pre>
+<p>The platform and architecture come from <code><a href="https://rdrr.io/r/base/Sys.info.html" class="external-link">Sys.info()</a></code> and map to Node.js’s own naming:</p>
 <table class="table caption-top">
 <thead><tr class="header">
-<th>Architecture</th>
-<th>Detection</th>
-<th>Node.js Arch</th>
+<th>Detected (R)</th>
+<th>Node.js build</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td>x86-64</td>
-<td>Intel/AMD 64-bit</td>
-<td>x64</td>
+<td>Darwin / arm64</td>
+<td>darwin-arm64</td>
 </tr>
 <tr class="even">
-<td>ARM64</td>
-<td>Apple Silicon, ARM servers</td>
-<td>arm64</td>
+<td>Darwin / x86_64</td>
+<td>darwin-x64</td>
+</tr>
+<tr class="odd">
+<td>Windows / arm64</td>
+<td>win-arm64</td>
+</tr>
+<tr class="even">
+<td>Windows / x86_64</td>
+<td>win-x64</td>
+</tr>
+<tr class="odd">
+<td>Linux / arm64</td>
+<td>linux-arm64</td>
+</tr>
+<tr class="even">
+<td>Linux / x86_64</td>
+<td>linux-x64</td>
 </tr>
 </tbody>
-</table></section></section><section class="level2"><h2 id="auto-installation">Auto-Installation<a class="anchor" aria-label="anchor" href="#auto-installation"></a>
+</table></section><section class="level2"><h2 id="download-integrity">Download integrity<a class="anchor" aria-label="anchor" href="#download-integrity"></a>
 </h2>
-<section class="level3"><h3 id="via-configuration-file">Via Configuration File<a class="anchor" aria-label="anchor" href="#via-configuration-file"></a>
-</h3>
-<p>Enable automatic installation in <code>_shinyelectron.yml</code>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
-<p>With this setting, <code><a href="../reference/export.html">export()</a></code> will automatically install Node.js if not found.</p>
-</section><section class="level3"><h3 id="via-configuration-file-with-specific-version">Via Configuration File with Specific Version<a class="anchor" aria-label="anchor" href="#via-configuration-file-with-specific-version"></a>
-</h3>
-<p>Pin a specific version for auto-installation:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"22.11.0"</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
-<div>
-<blockquote>
-<p><strong>Opt-In Only</strong></p>
-<p>Auto-installation is disabled by default. You must explicitly set <code>auto_install: true</code> or call <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code> manually.</p>
-</blockquote>
-</div>
-</section></section><section class="level2"><h2 id="priority-and-fallback">Priority and Fallback<a class="anchor" aria-label="anchor" href="#priority-and-fallback"></a>
-</h2>
-<p>When shinyelectron needs Node.js, it checks in this order:</p>
+<p>Every download is checked against the official SHA256 manifest before it is unpacked:</p>
 <ol type="1">
-<li>
-<strong>Local installation</strong> (shinyelectron-managed)</li>
-<li>
-<strong>System installation</strong> (if local not found)</li>
+<li>Fetch <code>SHASUMS256.txt</code> from nodejs.org.</li>
+<li>Download the Node.js archive.</li>
+<li>Compute the SHA256 of the downloaded file.</li>
+<li>Compare against the expected checksum.</li>
+<li>Abort on any mismatch; the archive is never extracted.</li>
 </ol>
-<p>This means your local shinyelectron installation takes priority over any system-wide Node.js.</p>
-<p>To use the system Node.js instead of local (not recommended):</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Internal function - not typically needed</span></span>
-<span><span class="fu"><a href="../reference/get_node_command.html">get_node_command</a></span><span class="op">(</span>prefer_local <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-</div>
-</section><section class="level2"><h2 id="clearing-the-cache">Clearing the Cache<a class="anchor" aria-label="anchor" href="#clearing-the-cache"></a>
+<p>This catches both ordinary corruption and anything tampered with in transit.</p>
+</section><section class="level2"><h2 id="clearing-the-cache">Clearing the cache<a class="anchor" aria-label="anchor" href="#clearing-the-cache"></a>
 </h2>
-<section class="level3"><h3 id="remove-all-node-js-installations">Remove All Node.js Installations<a class="anchor" aria-label="anchor" href="#remove-all-node-js-installations"></a>
-</h3>
+<p>Remove every Node.js install shinyelectron has downloaded:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"nodejs"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<pre><code>✔ Cleared nodejs cache</code></pre>
-</section><section class="level3"><h3 id="remove-all-cached-assets">Remove All Cached Assets<a class="anchor" aria-label="anchor" href="#remove-all-cached-assets"></a>
-</h3>
+<pre><code>v Cleared nodejs cache</code></pre>
+<p>Remove everything shinyelectron has cached (Node.js, R/Python runtimes, npm modules):</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"all"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>This removes:</p>
-<ul>
-<li>Node.js installations</li>
-<li>npm packages cache</li>
-<li>R-related caches</li>
-</ul></section></section><section class="level2"><h2 id="troubleshooting">Troubleshooting<a class="anchor" aria-label="anchor" href="#troubleshooting"></a>
-</h2>
-<section class="level3"><h3 id="installation-fails-network-error">Installation Fails: Network Error<a class="anchor" aria-label="anchor" href="#installation-fails-network-error"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>✖ Failed to download Node.js
-x URL: https://nodejs.org/dist/v22.11.0/node-v22.11.0-darwin-arm64.tar.gz
-x Error: could not resolve host</code></pre>
-<p><strong>Solutions:</strong></p>
-<ol type="1">
-<li>Check your internet connection</li>
-<li>Try again later (nodejs.org may be temporarily unavailable)</li>
-<li>Check proxy settings if behind a corporate firewall</li>
-</ol></section><section class="level3"><h3 id="installation-fails-checksum-mismatch">Installation Fails: Checksum Mismatch<a class="anchor" aria-label="anchor" href="#installation-fails-checksum-mismatch"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>✖ Checksum verification failed
-x Downloaded file may be corrupted</code></pre>
-<p><strong>Solutions:</strong></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Retry with force to re-download</span></span>
-<span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-</div>
-<p>If the problem persists, nodejs.org may be having issues. Wait and try again later.</p>
-</section><section class="level3"><h3 id="wrong-architecture">Wrong Architecture<a class="anchor" aria-label="anchor" href="#wrong-architecture"></a>
-</h3>
-<p><strong>Symptom:</strong> Node.js runs but Electron fails with architecture mismatch errors.</p>
-<p><strong>Solution:</strong></p>
-<p>Check what architecture was installed:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep_electron_system.html">sitrep_electron_system</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-</div>
-<p>If the architecture is wrong, clear and reinstall:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"nodejs"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-</div>
-</section><section class="level3"><h3 id="local-node-js-not-being-used">Local Node.js Not Being Used<a class="anchor" aria-label="anchor" href="#local-node-js-not-being-used"></a>
-</h3>
-<p><strong>Symptom:</strong> System Node.js is used instead of local installation.</p>
-<p><strong>Cause:</strong> The local installation may be incomplete or corrupted.</p>
-<p><strong>Solution:</strong></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Clear and reinstall</span></span>
-<span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"nodejs"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Verify</span></span>
-<span><span class="fu"><a href="../reference/sitrep_electron_system.html">sitrep_electron_system</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-</div>
-</section></section><section class="level2"><h2 id="comparison-with-system-installation">Comparison with System Installation<a class="anchor" aria-label="anchor" href="#comparison-with-system-installation"></a>
+<p>Useful when an install is broken, when disk space is tight, or when you want to test a fresh download from scratch.</p>
+</section><section class="level2"><h2 id="local-versus-system">Local versus system<a class="anchor" aria-label="anchor" href="#local-versus-system"></a>
 </h2>
 <table class="table caption-top">
 <colgroup>
-<col style="width: 21%">
-<col style="width: 57%">
-<col style="width: 21%">
+<col style="width: 20%">
+<col style="width: 60%">
+<col style="width: 20%">
 </colgroup>
 <thead><tr class="header">
 <th>Aspect</th>
@@ -382,50 +309,87 @@ x Downloaded file may be corrupted</code></pre>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td>Installation</td>
+<td>Installs with</td>
 <td><code><a href="../reference/install_nodejs.html">install_nodejs()</a></code></td>
-<td>Download from nodejs.org</td>
+<td>OS package manager or nodejs.org</td>
 </tr>
 <tr class="even">
-<td>Location</td>
-<td><code>~/.shinyelectron/cache/</code></td>
+<td>Lives under</td>
+<td><code><a href="../reference/cache_dir.html">cache_dir()</a></code></td>
 <td>
-<code>/usr/local/</code>, <code>C:\Program Files\</code>
+<code>/usr/local</code>, <code>C:\Program Files\nodejs</code>
 </td>
 </tr>
 <tr class="odd">
-<td>Permissions</td>
-<td>User-only</td>
-<td>Often requires admin</td>
+<td>Admin rights</td>
+<td>No</td>
+<td>Usually yes</td>
 </tr>
 <tr class="even">
 <td>Updates</td>
-<td>Manual via <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code>
-</td>
-<td>System package manager</td>
+<td><code><a href="../reference/install_nodejs.html">install_nodejs()</a></code></td>
+<td>OS package manager</td>
 </tr>
 <tr class="odd">
-<td>Isolation</td>
-<td>Per-user, isolated</td>
-<td>System-wide, shared</td>
+<td>Multiple versions</td>
+<td>Yes</td>
+<td>Usually one</td>
 </tr>
 <tr class="even">
-<td>Version control</td>
-<td>Multiple versions supported</td>
-<td>Usually one version</td>
+<td>Affects other tools</td>
+<td>No</td>
+<td>Yes</td>
 </tr>
 </tbody>
 </table>
-<p>For most shinyelectron users, the local installation is recommended because it’s isolated and reproducible.</p>
-</section><section class="level2"><h2 id="next-steps">Next Steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+<p>Prefer the local install for most work. It is isolated, reproducible, and cannot be broken by an OS update. The system install makes sense when your team standardises on a Node version that is already installed everywhere.</p>
+</section><section class="level2"><h2 id="troubleshooting">Troubleshooting<a class="anchor" aria-label="anchor" href="#troubleshooting"></a>
+</h2>
+<section class="level3"><h3 id="network-error-during-download">Network error during download<a class="anchor" aria-label="anchor" href="#network-error-during-download"></a>
+</h3>
+<pre><code>x Failed to download Node.js
+x URL: https://nodejs.org/dist/v22.11.0/node-v22.11.0-darwin-arm64.tar.gz
+x Error: could not resolve host</code></pre>
+<p>Check your connection. If you are behind a corporate proxy, make sure R sees it (set <code>HTTPS_PROXY</code> in your <code>.Renviron</code>). If nodejs.org itself is unreachable, retry later.</p>
+</section><section class="level3"><h3 id="checksum-mismatch">Checksum mismatch<a class="anchor" aria-label="anchor" href="#checksum-mismatch"></a>
+</h3>
+<pre><code>x Checksum verification failed
+x Downloaded file may be corrupted</code></pre>
+<p>Force a re-download:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+</div>
+<p>If the mismatch persists, nodejs.org may be serving a bad mirror. Wait and retry, or pin to a known-good earlier version with <code>version = "..."</code>.</p>
+</section><section class="level3"><h3 id="wrong-architecture">Wrong architecture<a class="anchor" aria-label="anchor" href="#wrong-architecture"></a>
+</h3>
+<p>Symptom: Node.js runs but Electron fails with an architecture mismatch (for example, <code>node was compiled for darwin-x64 but the system is darwin-arm64</code>).</p>
+<p>The cached install is the wrong build for your machine. Clear and reinstall:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep_electron_system.html">sitrep_electron_system</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"nodejs"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+</div>
+</section><section class="level3"><h3 id="local-install-skipped">Local install skipped<a class="anchor" aria-label="anchor" href="#local-install-skipped"></a>
+</h3>
+<p>Symptom: shinyelectron keeps reaching for the system Node.js even though <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code> reported success.</p>
+<p>The local install is probably incomplete. Clear and reinstall, then verify with <code><a href="../reference/sitrep_electron_system.html">sitrep_electron_system()</a></code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"nodejs"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/sitrep_electron_system.html">sitrep_electron_system</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+</div>
+</section></section><section class="level2"><h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>
 <ul>
 <li>
-<strong><a href="getting-started.html">Getting Started</a></strong>: First-time user walkthrough</li>
+<strong><a href="getting-started.html">Getting Started</a></strong>: first-time walkthrough.</li>
 <li>
-<strong><a href="configuration.html">Configuration</a></strong>: Set Node.js options in config files</li>
+<strong><a href="configuration.html">Configuration</a></strong>: full <code>_shinyelectron.yml</code> reference.</li>
 <li>
-<strong><a href="troubleshooting.html">Troubleshooting</a></strong>: Diagnose other issues</li>
+<strong><a href="troubleshooting.html">Troubleshooting</a></strong>: diagnose other build issues.</li>
 </ul></section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);

@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 240" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Shinylive strategy: ships an Electron shell and a WebAssembly bundle (WebR or Pyodide), opens instantly offline on first launch, and runs the app entirely client-side inside the browser with no server process">
+  <defs>
+    <filter id="sl-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
+    </filter>
+    <marker id="sl-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <!-- Column headers -->
+  <text x="130" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">SHIPS</text>
+  <text x="380" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">FIRST LAUNCH</text>
+  <text x="630" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">RUNNING</text>
+
+  <!-- Column 1: Ships -->
+  <g transform="translate(20,34)" filter="url(#sl-shadow)">
+    <rect width="220" height="188" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="220" height="3" rx="1.5" fill="#3b82f6"/>
+
+    <text x="110" y="24" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">Electron shell</text>
+    <text x="110" y="38" text-anchor="middle" font-size="9" fill="#94a3b8">.app | .exe | AppImage</text>
+
+    <!-- WASM bundle -->
+    <g transform="translate(16,54)">
+      <rect width="188" height="56" rx="4" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+      <text x="94" y="16" text-anchor="middle" font-size="10" font-weight="600" fill="#2563eb">WebAssembly bundle</text>
+      <text x="94" y="32" text-anchor="middle" font-size="9" fill="#3b82f6">WebR (R) or Pyodide (Python)</text>
+      <text x="94" y="46" text-anchor="middle" font-size="8" fill="#64748b">~50 to 100 MB</text>
+    </g>
+
+    <!-- App source as static -->
+    <g transform="translate(16,120)">
+      <rect width="188" height="50" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+      <text x="94" y="16" text-anchor="middle" font-size="10" font-weight="500" fill="#475569">Static app assets</text>
+      <text x="94" y="30" text-anchor="middle" font-size="8" fill="#94a3b8">converted by {shinylive}</text>
+      <text x="94" y="42" text-anchor="middle" font-size="8" fill="#94a3b8">served over local Express</text>
+    </g>
+  </g>
+
+  <!-- Arrow 1 -->
+  <g>
+    <path d="M 244 128 L 282 128" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,3" fill="none" marker-end="url(#sl-arrow)"/>
+  </g>
+
+  <!-- Column 2: First launch -->
+  <g transform="translate(286,34)" filter="url(#sl-shadow)">
+    <rect width="188" height="188" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="188" height="3" rx="1.5" fill="#3b82f6"/>
+
+    <!-- Check badge -->
+    <g transform="translate(68,24)">
+      <circle cx="26" cy="26" r="22" fill="#dcfce7" stroke="#86efac" stroke-width="1.5"/>
+      <path d="M 16 27 L 23 34 L 36 19" stroke="#16a34a" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <text x="94" y="104" text-anchor="middle" font-size="11" font-weight="600" fill="#166534">Opens instantly</text>
+    <text x="94" y="122" text-anchor="middle" font-size="9" fill="#64748b">No download</text>
+    <text x="94" y="136" text-anchor="middle" font-size="9" fill="#64748b">No process to spawn</text>
+    <text x="94" y="150" text-anchor="middle" font-size="9" fill="#64748b">Works fully offline</text>
+    <text x="94" y="170" text-anchor="middle" font-size="8" fill="#94a3b8">WASM boot on first paint</text>
+  </g>
+
+  <!-- Arrow 2 -->
+  <g>
+    <path d="M 478 128 L 516 128" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,3" fill="none" marker-end="url(#sl-arrow)"/>
+  </g>
+
+  <!-- Column 3: Running -->
+  <g transform="translate(520,34)" filter="url(#sl-shadow)">
+    <rect width="220" height="188" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="220" height="3" rx="1.5" fill="#3b82f6"/>
+
+    <text x="110" y="22" text-anchor="middle" font-size="10" font-weight="600" fill="#1e293b">Electron window</text>
+
+    <!-- Window chrome -->
+    <g transform="translate(16,34)">
+      <rect width="188" height="136" rx="4" fill="#fff" stroke="#e2e8f0" stroke-width="1"/>
+      <rect width="188" height="14" rx="4" fill="#f8fafc"/>
+      <circle cx="8" cy="7" r="2" fill="#f87171"/>
+      <circle cx="15" cy="7" r="2" fill="#fbbf24"/>
+      <circle cx="22" cy="7" r="2" fill="#34d399"/>
+      <text x="94" y="10" text-anchor="middle" font-size="7" fill="#94a3b8">Chromium (COOP/COEP)</text>
+
+      <!-- WebR or Pyodide block -->
+      <g transform="translate(14,26)">
+        <rect width="160" height="50" rx="4" fill="#dbeafe" stroke="#93c5fd" stroke-width="1"/>
+        <text x="80" y="18" text-anchor="middle" font-size="10" font-weight="600" fill="#2563eb">WebR / Pyodide</text>
+        <text x="80" y="32" text-anchor="middle" font-size="9" fill="#3b82f6">app runs client-side</text>
+        <text x="80" y="44" text-anchor="middle" font-size="8" fill="#64748b">SharedArrayBuffer</text>
+      </g>
+
+      <!-- No server -->
+      <g transform="translate(14,84)">
+        <rect width="160" height="42" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,2"/>
+        <text x="80" y="16" text-anchor="middle" font-size="9" font-weight="500" fill="#64748b">No R/Python process</text>
+        <text x="80" y="30" text-anchor="middle" font-size="8" fill="#94a3b8">no localhost server</text>
+      </g>
+    </g>
+  </g>
+</svg>

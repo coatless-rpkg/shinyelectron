@@ -34,7 +34,7 @@ package dependencies for an app. Called from export() for native app types."></h
     <li><a class="dropdown-item" href="../articles/multi-app-suites.html">Multi-App Suites</a></li>
     <li><a class="dropdown-item" href="../articles/container-strategy.html">Container Strategy</a></li>
     <li><a class="dropdown-item" href="../articles/security.html">Security Considerations</a></li>
-    <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced Features</a></li>
+    <li><a class="dropdown-item" href="../articles/customizations.html">Customizations</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
     <li><a class="dropdown-item" href="../articles/nodejs-management.html">Node.js Management</a></li>
@@ -65,7 +65,7 @@ package dependencies for an app. Called from export() for native app types.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">resolve_app_dependencies</span><span class="op">(</span><span class="va">appdir</span>, <span class="va">app_type</span>, <span class="va">config</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">resolve_app_dependencies</span><span class="op">(</span><span class="va">appdir</span>, <span class="va">app_type</span>, <span class="va">runtime_strategy</span>, <span class="va">config</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -77,7 +77,12 @@ package dependencies for an app. Called from export() for native app types.</p>
 
 
 <dt id="arg-app-type">app_type<a class="anchor" aria-label="anchor" href="#arg-app-type"></a></dt>
-<dd><p>Character string. The app type.</p></dd>
+<dd><p>Character string. The app type (<code>"r-shiny"</code> or <code>"py-shiny"</code>).</p></dd>
+
+
+<dt id="arg-runtime-strategy">runtime_strategy<a class="anchor" aria-label="anchor" href="#arg-runtime-strategy"></a></dt>
+<dd><p>Character string. The resolved runtime strategy.
+Returns NULL when <code>"shinylive"</code>, since shinylive manages its own deps.</p></dd>
 
 
 <dt id="arg-config">config<a class="anchor" aria-label="anchor" href="#arg-config"></a></dt>
@@ -87,7 +92,7 @@ package dependencies for an app. Called from export() for native app types.</p>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>List with <code>packages</code>, <code>language</code>, and <code>repos</code>/<code>index_urls</code>,
-or NULL for shinylive types (which don't need dependency management).</p>
+or NULL for the shinylive strategy.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

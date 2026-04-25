@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 360" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Three-phase troubleshooting map. Install phase happens before any build and covers runtimes, packages, and compilers; the matching diagnostics are sitrep_electron_system, sitrep_electron_dependencies, and sitrep_electron_build_tools; common errors include Node.js not found, missing R packages, missing build tools, and Python or shinylive CLI issues. Build phase happens during export(), npm install, and electron-builder; the matching diagnostic is sitrep_electron_project, which checks package.json, main.js, node_modules, and build scripts; common errors include missing package.json, container pull failure, tar or EBUSY problems on Windows, and slow npm install. Runtime phase happens after packaging when the user launches the app; there is no sitrep at this stage, so the diagnostic is launching the app with SHINYELECTRON_DEBUG=1 and reading its own log output; common errors include Gatekeeper on macOS, SmartScreen on Windows, R not on PATH on Windows, and the app crashing on launch.">
+  <defs>
+    <filter id="ts-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
+    </filter>
+  </defs>
+
+  <!-- Column headers -->
+  <text x="125" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">INSTALL</text>
+  <text x="380" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">BUILD</text>
+  <text x="635" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">RUNTIME</text>
+
+  <!-- ============ INSTALL ============ -->
+  <g transform="translate(20,34)" filter="url(#ts-shadow)">
+    <rect width="210" height="300" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="210" height="3" rx="1.5" fill="#f59e0b"/>
+
+    <text x="105" y="28" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">Before any build</text>
+    <text x="105" y="44" text-anchor="middle" font-size="9" fill="#94a3b8">runtimes, packages, compilers</text>
+
+    <!-- Diagnostics -->
+    <text x="14" y="72" font-size="9" font-weight="600" fill="#94a3b8" letter-spacing="0.6">DIAGNOSTICS</text>
+    <line x1="14" y1="78" x2="196" y2="78" stroke="#e2e8f0" stroke-width="1"/>
+
+    <text x="14" y="94" font-size="10" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">sitrep_electron_system()</text>
+    <text x="14" y="110" font-size="10" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">sitrep_electron_dependencies()</text>
+    <text x="14" y="126" font-size="10" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">sitrep_electron_build_tools()</text>
+
+    <!-- Common errors -->
+    <text x="14" y="160" font-size="9" font-weight="600" fill="#94a3b8" letter-spacing="0.6">COMMON ERRORS</text>
+    <line x1="14" y1="166" x2="196" y2="166" stroke="#e2e8f0" stroke-width="1"/>
+
+    <g transform="translate(14,176)">
+      <rect width="182" height="22" rx="4" fill="#fffbeb" stroke="#fde68a" stroke-width="1"/>
+      <text x="10" y="15" font-size="10" fill="#92400e">Node.js not found</text>
+    </g>
+    <g transform="translate(14,204)">
+      <rect width="182" height="22" rx="4" fill="#fffbeb" stroke="#fde68a" stroke-width="1"/>
+      <text x="10" y="15" font-size="10" fill="#92400e">R package missing</text>
+    </g>
+    <g transform="translate(14,232)">
+      <rect width="182" height="22" rx="4" fill="#fffbeb" stroke="#fde68a" stroke-width="1"/>
+      <text x="10" y="15" font-size="10" fill="#92400e">Build tools missing</text>
+    </g>
+    <g transform="translate(14,260)">
+      <rect width="182" height="22" rx="4" fill="#fffbeb" stroke="#fde68a" stroke-width="1"/>
+      <text x="10" y="15" font-size="10" fill="#92400e">Python or shinylive CLI</text>
+    </g>
+  </g>
+
+  <!-- ============ BUILD ============ -->
+  <g transform="translate(275,34)" filter="url(#ts-shadow)">
+    <rect width="210" height="300" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="210" height="3" rx="1.5" fill="#3b82f6"/>
+
+    <text x="105" y="28" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">During export()</text>
+    <text x="105" y="44" text-anchor="middle" font-size="9" fill="#94a3b8">npm install, electron-builder</text>
+
+    <text x="14" y="72" font-size="9" font-weight="600" fill="#94a3b8" letter-spacing="0.6">DIAGNOSTICS</text>
+    <line x1="14" y1="78" x2="196" y2="78" stroke="#e2e8f0" stroke-width="1"/>
+
+    <text x="14" y="94" font-size="10" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">sitrep_electron_project()</text>
+    <text x="14" y="116" font-size="9" fill="#94a3b8">checks package.json, main.js,</text>
+    <text x="14" y="128" font-size="9" fill="#94a3b8">node_modules, build scripts</text>
+
+    <text x="14" y="160" font-size="9" font-weight="600" fill="#94a3b8" letter-spacing="0.6">COMMON ERRORS</text>
+    <line x1="14" y1="166" x2="196" y2="166" stroke="#e2e8f0" stroke-width="1"/>
+
+    <g transform="translate(14,176)">
+      <rect width="182" height="22" rx="4" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+      <text x="10" y="15" font-size="10" fill="#1d4ed8">package.json or node_modules</text>
+    </g>
+    <g transform="translate(14,204)">
+      <rect width="182" height="22" rx="4" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+      <text x="10" y="15" font-size="10" fill="#1d4ed8">Container pull failure</text>
+    </g>
+    <g transform="translate(14,232)">
+      <rect width="182" height="22" rx="4" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+      <text x="10" y="15" font-size="10" fill="#1d4ed8">tar or EBUSY (Windows)</text>
+    </g>
+    <g transform="translate(14,260)">
+      <rect width="182" height="22" rx="4" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+      <text x="10" y="15" font-size="10" fill="#1d4ed8">Slow npm install</text>
+    </g>
+  </g>
+
+  <!-- ============ RUNTIME ============ -->
+  <g transform="translate(530,34)" filter="url(#ts-shadow)">
+    <rect width="210" height="300" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="210" height="3" rx="1.5" fill="#16a34a"/>
+
+    <text x="105" y="28" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">After packaging</text>
+    <text x="105" y="44" text-anchor="middle" font-size="9" fill="#94a3b8">when the app launches</text>
+
+    <text x="14" y="72" font-size="9" font-weight="600" fill="#94a3b8" letter-spacing="0.6">DIAGNOSTICS</text>
+    <line x1="14" y1="78" x2="196" y2="78" stroke="#e2e8f0" stroke-width="1"/>
+
+    <text x="14" y="94" font-size="10" fill="#475569" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">SHINYELECTRON_DEBUG=1</text>
+    <text x="14" y="116" font-size="9" fill="#94a3b8">no sitrep here; the only signal</text>
+    <text x="14" y="128" font-size="9" fill="#94a3b8">is the app's own log output</text>
+
+    <text x="14" y="160" font-size="9" font-weight="600" fill="#94a3b8" letter-spacing="0.6">COMMON ERRORS</text>
+    <line x1="14" y1="166" x2="196" y2="166" stroke="#e2e8f0" stroke-width="1"/>
+
+    <g transform="translate(14,176)">
+      <rect width="182" height="22" rx="4" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+      <text x="10" y="15" font-size="10" fill="#166534">Gatekeeper (macOS)</text>
+    </g>
+    <g transform="translate(14,204)">
+      <rect width="182" height="22" rx="4" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+      <text x="10" y="15" font-size="10" fill="#166534">SmartScreen (Windows)</text>
+    </g>
+    <g transform="translate(14,232)">
+      <rect width="182" height="22" rx="4" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+      <text x="10" y="15" font-size="10" fill="#166534">R not on PATH (Windows)</text>
+    </g>
+    <g transform="translate(14,260)">
+      <rect width="182" height="22" rx="4" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+      <text x="10" y="15" font-size="10" fill="#166534">App crashes on launch</text>
+    </g>
+  </g>
+
+  <!-- Caption -->
+  <text x="380" y="352" text-anchor="middle" font-size="9" fill="#94a3b8">Run the matching sitrep first. If every check is green, scroll to the phase that contains your error.</text>
+</svg>

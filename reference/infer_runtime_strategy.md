@@ -1,23 +1,25 @@
-# Infer the default runtime strategy for an app type
+# Infer the default runtime strategy
 
-Infer the default runtime strategy for an app type
+Returns the passed strategy, or falls back to the package default
+(`"shinylive"`) when unset. The `app_type` argument is accepted for
+backwards compatibility and ignored.
 
 ## Usage
 
 ``` r
-infer_runtime_strategy(strategy, app_type)
+infer_runtime_strategy(strategy, app_type = NULL)
 ```
 
 ## Arguments
 
 - strategy:
 
-  Character string or NULL. Explicit strategy, or NULL to infer.
+  Character string or NULL. Explicit strategy, or NULL.
 
 - app_type:
 
-  Character string. The app type.
+  Ignored. Retained for signature compatibility.
 
 ## Value
 
-Character string. The resolved runtime strategy.
+Character string. Either the explicit strategy or `"shinylive"`.

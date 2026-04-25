@@ -49,7 +49,7 @@
     <li><a class="dropdown-item" href="../articles/multi-app-suites.html">Multi-App Suites</a></li>
     <li><a class="dropdown-item" href="../articles/container-strategy.html">Container Strategy</a></li>
     <li><a class="dropdown-item" href="../articles/security.html">Security Considerations</a></li>
-    <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced Features</a></li>
+    <li><a class="dropdown-item" href="../articles/customizations.html">Customizations</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
     <li><a class="dropdown-item" href="../articles/nodejs-management.html">Node.js Management</a></li>
@@ -87,33 +87,35 @@
 
 
 
-    <p>Turn any Shiny app — R or Python — into a standalone desktop application that runs on macOS, Windows, and Linux. No web server, no browser tab, no deployment infrastructure. Just an <code>.app</code>, <code>.exe</code>, or AppImage your users double-click to open.</p>
+    <p>Ship a Shiny app as a desktop application. R or Python, macOS, Windows, or Linux. Your users double-click an <code>.app</code>, <code>.exe</code>, or AppImage. No server, no browser tab, no deployment.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure><p><img src="../reference/figures/pipeline-overview.svg" style="width:100.0%" alt="Flow diagram showing three steps: Shiny App containing app.R or app.py passes through shinyelectron (convert and package via electron-builder) to produce a Desktop App distributed as .app, .exe, or AppImage."></p>
 <figcaption>The shinyelectron export pipeline: a Shiny app (R or Python) is converted and packaged into a standalone desktop application.</figcaption></figure>
 </div>
-<section class="level2"><h2 id="install">Install<a class="anchor" aria-label="anchor" href="#install"></a>
+<section class="level2"><h2 id="install-the-package">Install the package<a class="anchor" aria-label="anchor" href="#install-the-package"></a>
 </h2>
+<p>shinyelectron is not on CRAN yet. Install it from GitHub with pak.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"pak"</span><span class="op">)</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"coatless-rpkg/shinyelectron"</span><span class="op">)</span></span></code></pre></div>
 </div>
-</section><section class="level2"><h2 id="check-your-system">Check your system<a class="anchor" aria-label="anchor" href="#check-your-system"></a>
+</section><section class="level2"><h2 id="run-a-pre-flight-check">Run a pre-flight check<a class="anchor" aria-label="anchor" href="#run-a-pre-flight-check"></a>
 </h2>
+<p>Diagnose before you build. It saves hours later.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/">shinyelectron</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/sitrep_shinyelectron.html">sitrep_shinyelectron</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>This checks Node.js (&gt;= 22.0.0), npm, R packages, Python availability, and platform build tools. If Node.js is missing, install it locally — no admin rights needed:</p>
+<p><code><a href="../reference/sitrep_shinyelectron.html">sitrep_shinyelectron()</a></code> verifies Node.js (&gt;= 22.0.0), npm, required R packages, Python, and platform build tools. If Node.js is missing, install it locally without admin rights.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
-</section><section class="level2"><h2 id="try-a-demo">Try a demo<a class="anchor" aria-label="anchor" href="#try-a-demo"></a>
+</section><section class="level2"><h2 id="build-a-demo-end-to-end">Build a demo end to end<a class="anchor" aria-label="anchor" href="#build-a-demo-end-to-end"></a>
 </h2>
-<p>The fastest way to see shinyelectron in action is with a bundled demo:</p>
+<p>Ship a bundled example before touching your own app. It confirms the toolchain works.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># List available demos</span></span>
@@ -126,59 +128,45 @@
 <span>  run_after <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>This converts the demo to shinylive format, wraps it in Electron, builds a distributable, and opens the app. The whole process takes about a minute.</p>
-</section><section class="level2"><h2 id="export-your-own-app">Export your own app<a class="anchor" aria-label="anchor" href="#export-your-own-app"></a>
+<p>One call converts the demo to shinylive, wraps it in Electron, builds a distributable, and launches it. Roughly a minute on a small app.</p>
+</section><section class="level2"><h2 id="export-your-shiny-app">Export your Shiny app<a class="anchor" aria-label="anchor" href="#export-your-shiny-app"></a>
 </h2>
-<section class="level3"><h3 id="shinylive-browser-based">Shinylive (browser-based)<a class="anchor" aria-label="anchor" href="#shinylive-browser-based"></a>
+<section class="level3"><h3 id="shinylive-runs-in-the-browser">Shinylive: runs in the browser<a class="anchor" aria-label="anchor" href="#shinylive-runs-in-the-browser"></a>
 </h3>
-<p>The default path converts your Shiny app to run entirely inside the browser via WebR (R) or Pyodide (Python). WebR compiles R to WebAssembly so it runs directly in the browser. Pyodide does the same for Python. The end user needs nothing installed — everything is self-contained.</p>
-<div class="panel-tabset">
-<ul id="tabset-1" class="panel-tabset-tabby">
-<li><a data-tabby-default="" href="#tabset-1-1">R</a></li>
-<li><a href="#tabset-1-2">Python</a></li>
-</ul>
-<ul class="nav nav-tabs" id="NA" role="tablist"><li role="presentation" class="nav-item"><button data-bs-toggle="tab" data-bs-target="#NA" id="NA-tab" type="button" role="tab" aria-controls="NA" aria-selected="true" class="active nav-link">
+<p>The default runtime strategy compiles your app to WebAssembly. R uses WebR. Python uses Pyodide. Either way, the app runs in the browser, and the browser runs inside Electron. The user installs nothing.</p>
+<p>Use this strategy whenever your dependencies allow it. shinyelectron detects the app language from the files in <code>appdir</code>, so you usually only need to point at the directory.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="co"># R (language autodetected from app.R, shinylive is the default strategy)</span></span>
+<span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"path/to/my-app"</span>,       <span class="co"># directory containing app.R</span></span>
 <span>  destdir <span class="op">=</span> <span class="st">"my-electron-app"</span>,</span>
 <span>  app_name <span class="op">=</span> <span class="st">"My App"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-</div>
-</button></li></ul>
-<div class="tab-content"><div class="active  tab-pane" id="NA" role="tabpanel" aria-labelledby="NA-tab">
-
-<div id="tabset-1-2">
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Python (language autodetected from app.py)</span></span>
+<span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"path/to/my-py-app"</span>,    <span class="co"># directory containing app.py</span></span>
 <span>  destdir <span class="op">=</span> <span class="st">"my-py-electron-app"</span>,</span>
-<span>  app_name <span class="op">=</span> <span class="st">"My App"</span>,</span>
-<span>  app_type <span class="op">=</span> <span class="st">"py-shinylive"</span></span>
+<span>  app_name <span class="op">=</span> <span class="st">"My App"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-</div>
-</div></div>
-</div>
-</section><section class="level3"><h3 id="native-runtime-based">Native (runtime-based)<a class="anchor" aria-label="anchor" href="#native-runtime-based"></a>
+</section><section class="level3"><h3 id="native-runs-a-real-r-or-python-process">Native: runs a real R or Python process<a class="anchor" aria-label="anchor" href="#native-runs-a-real-r-or-python-process"></a>
 </h3>
-<p>Some R and Python packages don’t work in WebAssembly. For full compatibility, use the native path — your app runs in a real R or Python process instead of in the browser.</p>
+<p>Some packages do not compile to WebAssembly. For those, spawn a real R or Python process behind the Electron window by picking a non-shinylive <code>runtime_strategy</code>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># R Shiny with auto-download (default: downloads R on first launch)</span></span>
+<div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># R Shiny with auto-download (downloads R on first launch)</span></span>
 <span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"path/to/my-app"</span>,</span>
 <span>  destdir <span class="op">=</span> <span class="st">"my-native-app"</span>,</span>
-<span>  app_type <span class="op">=</span> <span class="st">"r-shiny"</span></span>
+<span>  runtime_strategy <span class="op">=</span> <span class="st">"auto-download"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Python Shiny with bundled runtime (ships Python inside the app)</span></span>
+<span><span class="co"># Python Shiny with a bundled runtime (ships Python inside the app)</span></span>
 <span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"path/to/my-py-app"</span>,</span>
 <span>  destdir <span class="op">=</span> <span class="st">"my-bundled-py-app"</span>,</span>
-<span>  app_type <span class="op">=</span> <span class="st">"py-shiny"</span>,</span>
 <span>  runtime_strategy <span class="op">=</span> <span class="st">"bundled"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -186,105 +174,93 @@
 <figure><p><img src="../reference/figures/app-types.svg" style="width:100.0%" alt="Architecture diagram comparing three modes. Shinylive: Electron window contains a Chromium browser running WebR or Pyodide with the app compiled to WebAssembly. Native: Electron window loads localhost, a child R or Python process runs the Shiny server, runtime sourced from bundled, auto-download, or system install. Container: Electron window loads localhost, a Docker or Podman container runs the app with full isolation and all system dependencies."></p>
 <figcaption>Three execution modes: Shinylive runs entirely in-browser, Native spawns a real R or Python process, and Container runs inside Docker or Podman.</figcaption></figure>
 </div>
-</section></section><section class="level2"><h2 id="choosing-an-app-type">Choosing an app type<a class="anchor" aria-label="anchor" href="#choosing-an-app-type"></a>
+</section></section><section class="level2"><h2 id="choose-an-app-type-and-runtime-strategy">Choose an app type and runtime strategy<a class="anchor" aria-label="anchor" href="#choose-an-app-type-and-runtime-strategy"></a>
 </h2>
-<p>The key distinction: shinylive apps run entirely in the browser (no server needed), while native apps talk to a real R or Python process behind the scenes.</p>
+<p>Two dials drive every shinyelectron build: the app language (<code>app_type</code>) and how the runtime reaches the user (<code>runtime_strategy</code>). shinyelectron autodetects <code>app_type</code> from the files in <code>appdir</code>, so you usually set only the strategy.</p>
 <table class="table caption-top">
-<colgroup>
-<col style="width: 19%">
-<col style="width: 21%">
-<col style="width: 17%">
-<col style="width: 21%">
-<col style="width: 19%">
-</colgroup>
 <thead><tr class="header">
 <th>App Type</th>
 <th>Entry File</th>
-<th>Runs In</th>
-<th>User Needs</th>
 <th>Best For</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td><code>r-shinylive</code></td>
-<td><code>app.R</code></td>
-<td>Browser (WebR)</td>
-<td>Nothing</td>
-<td>Simple R apps</td>
-</tr>
-<tr class="even">
-<td><code>py-shinylive</code></td>
-<td><code>app.py</code></td>
-<td>Browser (Pyodide)</td>
-<td>Nothing</td>
-<td>Simple Python apps</td>
-</tr>
-<tr class="odd">
 <td><code>r-shiny</code></td>
 <td><code>app.R</code></td>
-<td>R process</td>
-<td>R (or bundled)</td>
-<td>Full R package support</td>
+<td>R Shiny apps</td>
 </tr>
 <tr class="even">
 <td><code>py-shiny</code></td>
 <td><code>app.py</code></td>
-<td>Python process</td>
-<td>Python (or bundled)</td>
-<td>Full Python package support</td>
+<td>Python Shiny apps</td>
 </tr>
 </tbody>
 </table>
-<p>For native app types, the <code>runtime_strategy</code> controls how the runtime reaches the end user:</p>
+<p><code>runtime_strategy</code> decides how your code actually runs. All five strategies work with both <code>r-shiny</code> and <code>py-shiny</code>.</p>
 <table class="table caption-top">
 <colgroup>
-<col style="width: 21%">
-<col style="width: 28%">
-<col style="width: 21%">
-<col style="width: 28%">
+<col style="width: 18%">
+<col style="width: 18%">
+<col style="width: 18%">
+<col style="width: 25%">
+<col style="width: 18%">
 </colgroup>
 <thead><tr class="header">
 <th>Strategy</th>
-<th>How it Works</th>
+<th>Behavior</th>
 <th>App Size</th>
 <th>First Launch</th>
+<th>Best For</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
+<td><code>shinylive</code></td>
+<td>Compiles app to WebAssembly, runs in-browser</td>
+<td>Medium</td>
+<td>Instant, offline</td>
+<td>Simple apps whose deps run in WebR or Pyodide (default)</td>
+</tr>
+<tr class="even">
 <td><code>auto-download</code></td>
 <td>Downloads R/Python on first launch</td>
 <td>Small</td>
 <td>Needs internet</td>
+<td>Public distribution, smaller download</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>bundled</code></td>
 <td>Ships R/Python inside the app</td>
 <td>Large (~200MB+)</td>
 <td>Instant, offline</td>
-</tr>
-<tr class="odd">
-<td><code>system</code></td>
-<td>Uses R/Python already on the machine</td>
-<td>Smallest</td>
-<td>Requires pre-install</td>
+<td>Public distribution, offline first run</td>
 </tr>
 <tr class="even">
+<td><code>system</code></td>
+<td>Uses R/Python already installed</td>
+<td>Smallest</td>
+<td>Requires pre-install</td>
+<td>Internal tools for users who already have R or Python</td>
+</tr>
+<tr class="odd">
 <td><code>container</code></td>
 <td>Runs inside Docker/Podman</td>
 <td>Small</td>
 <td>Needs Docker</td>
+<td>Complex system dependencies, reproducibility</td>
 </tr>
 </tbody>
 </table>
-<p>See <a href="runtime-strategies.html">Runtime Strategies</a> for a deep dive on each.</p>
-</section><section class="level2"><h2 id="what-you-get">What you get<a class="anchor" aria-label="anchor" href="#what-you-get"></a>
+<p>See <a href="runtime-strategies.html">Runtime Strategies</a> for when to pick each.</p>
+</section><section class="level2"><h2 id="what-export-produces">What export produces<a class="anchor" aria-label="anchor" href="#what-export-produces"></a>
 </h2>
-<p>After export, your destination directory looks like this:</p>
+<p><code><a href="../reference/export.html">export()</a></code> writes two siblings into <code>destdir</code>: the prepared app and the Electron project that wraps it. The app is then copied into <code>electron-app/src/app/</code>, which is the path Electron actually loads at runtime.</p>
 <pre><code>my-electron-app/
-├── shinylive-app/          # Converted app (shinylive types only)
+├── shinylive-app/          # shinylive strategy: WebAssembly bundle
+│   (or shiny-app/)         # other strategies: app source plus a manifest
 └── electron-app/
-    ├── src/app/            # Your application files
-    ├── main.js             # Electron shell
+    ├── src/app/            # Copy of the sibling above (what Electron loads)
+    ├── main.js             # Electron entry point
+    ├── renderer.html
     ├── package.json
     ├── node_modules/
     └── dist/               # Ready-to-distribute binaries
@@ -292,12 +268,14 @@
         │   └── My App.app
         ├── win-x64/
         │   └── My App Setup.exe
-        └─��� linux-x64/
+        └── linux-x64/
             └── My App.AppImage</code></pre>
-</section><section class="level2"><h2 id="build-for-multiple-platforms">Build for multiple platforms<a class="anchor" aria-label="anchor" href="#build-for-multiple-platforms"></a>
+<p>Ship <code>dist/</code>. The rest is build scaffolding, though the sibling app directory is useful when you want to inspect exactly what Electron is serving.</p>
+</section><section class="level2"><h2 id="build-for-several-platforms-in-one-call">Build for several platforms in one call<a class="anchor" aria-label="anchor" href="#build-for-several-platforms-in-one-call"></a>
 </h2>
+<p>Pass vectors to <code>platform</code> and <code>arch</code> to produce several targets in one call.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"my-app"</span>,</span>
 <span>  destdir <span class="op">=</span> <span class="st">"my-electron-app"</span>,</span>
@@ -306,57 +284,60 @@
 <span>  overwrite <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-<div>
-<blockquote>
-<p><strong>Note</strong></p>
-<p>macOS apps can only be built on macOS. Windows and Linux apps can be cross-compiled from macOS, but native builds are more reliable.</p>
-</blockquote>
-</div>
-</section><section class="level2"><h2 id="add-a-custom-icon">Add a custom icon<a class="anchor" aria-label="anchor" href="#add-a-custom-icon"></a>
+<p>Not every combination is portable. Two rules to keep in mind:</p>
+<ul>
+<li>
+<strong>macOS apps build only on macOS.</strong> Apple’s signing and <code>.app</code> packaging run through native tools. Windows and Linux will cross-compile from macOS, but each platform’s own native build is more reliable.</li>
+<li>
+<strong>The <code>bundled</code> runtime strategy needs a matching host.</strong> A bundled app embeds a platform-specific R or Python binary at build time, so exporting for Windows requires building on Windows, and the same for macOS and Linux. <code>auto-download</code>, <code>system</code>, and <code>container</code> sidestep this: the runtime is fetched, found, or isolated at launch instead of at build, so any host can target any platform.</li>
+</ul>
+<p>In practice, if you want a single workstation to emit installers for every OS, reach for auto-download or container. If you want bundled everywhere, hand the job to CI (see the <a href="github-actions.html">GitHub Actions</a> article).</p>
+</section><section class="level2"><h2 id="give-the-app-a-custom-icon">Give the app a custom icon<a class="anchor" aria-label="anchor" href="#give-the-app-a-custom-icon"></a>
 </h2>
+<p>Point <code>icon</code> at a single file. Each platform wants its own format: <code>.icns</code> for macOS, <code>.ico</code> for Windows, <code>.png</code> for Linux.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"my-app"</span>,</span>
 <span>  destdir <span class="op">=</span> <span class="st">"my-electron-app"</span>,</span>
-<span>  icon <span class="op">=</span> <span class="st">"icon.icns"</span>   <span class="co"># .icns (macOS), .ico (Windows), .png (Linux)</span></span>
+<span>  icon <span class="op">=</span> <span class="st">"icon.icns"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-</section><section class="level2"><h2 id="use-a-configuration-file">Use a configuration file<a class="anchor" aria-label="anchor" href="#use-a-configuration-file"></a>
+</section><section class="level2"><h2 id="capture-build-settings-in-a-config-file">Capture build settings in a config file<a class="anchor" aria-label="anchor" href="#capture-build-settings-in-a-config-file"></a>
 </h2>
-<p>For repeated builds, create a <code>_shinyelectron.yml</code> in your app directory instead of passing parameters every time:</p>
+<p>Once your build options are settled, move them out of the function call and into <code>_shinyelectron.yml</code> alongside your app.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/init_config.html">init_config</a></span><span class="op">(</span><span class="st">"my-app"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<div class="sourceCode" id="cb12"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"My Dashboard"</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"1.0.0"</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"r-shiny"</span></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"bundled"</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">platforms</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">mac</span><span class="kw">,</span><span class="at"> win</span><span class="kw">]</span></span></code></pre></div>
-<p>Then export reads the config automatically:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"My Dashboard"</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"1.0.0"</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"r-shiny"</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"bundled"</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">platforms</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">mac</span><span class="kw">,</span><span class="at"> win</span><span class="kw">]</span></span></code></pre></div>
+<p><code><a href="../reference/export.html">export()</a></code> picks it up automatically.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span>appdir <span class="op">=</span> <span class="st">"my-app"</span>, destdir <span class="op">=</span> <span class="st">"output"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>See the <a href="configuration.html">Configuration Guide</a> for all available options.</p>
-</section><section class="level2"><h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+<p>See the <a href="configuration.html">Configuration Guide</a> for every option.</p>
+</section><section class="level2"><h2 id="where-to-go-next">Where to go next<a class="anchor" aria-label="anchor" href="#where-to-go-next"></a>
 </h2>
 <ul>
 <li>
-<a href="configuration.html">Configuration Guide</a> — all <code>_shinyelectron.yml</code> options</li>
+<a href="configuration.html">Configuration Guide</a>: every <code>_shinyelectron.yml</code> option</li>
 <li>
-<a href="runtime-strategies.html">Runtime Strategies</a> — bundled vs system vs auto-download vs container</li>
+<a href="runtime-strategies.html">Runtime Strategies</a>: bundled, system, auto-download, container</li>
 <li>
-<a href="multi-app-suites.html">Multi-App Suites</a> — bundle multiple apps in one shell</li>
+<a href="multi-app-suites.html">Multi-App Suites</a>: bundle several apps in one shell</li>
 <li>
-<a href="code-signing.html">Code Signing</a> — sign your app for macOS GateKeeper and Windows SmartScreen</li>
+<a href="code-signing.html">Code Signing</a>: sign for macOS GateKeeper and Windows SmartScreen</li>
 <li>
-<a href="troubleshooting.html">Troubleshooting</a> — common issues and fixes</li>
-</ul></section><section class="level2"><h2 id="quick-reference">Quick reference<a class="anchor" aria-label="anchor" href="#quick-reference"></a>
+<a href="troubleshooting.html">Troubleshooting</a>: common issues and fixes</li>
+</ul></section><section class="level2"><h2 id="function-cheat-sheet">Function cheat sheet<a class="anchor" aria-label="anchor" href="#function-cheat-sheet"></a>
 </h2>
 <table class="table caption-top">
 <thead><tr class="header">

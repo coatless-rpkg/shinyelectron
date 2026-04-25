@@ -1,86 +1,132 @@
 # Building with GitHub Actions
 
-GitHub Actions provides a powerful way to automatically build your Shiny
-application as an Electron desktop app for Windows, macOS, and Linux.
-This guide explains how to set up CI/CD for your shinyelectron project.
+A desktop installer has to be built on the OS it targets: a `.dmg` on
+macOS, an `.exe` on Windows, an `.AppImage` on Linux, and once again per
+architecture. That is six builds for full coverage, and most teams do
+not have all six machines on a desk. GitHub Actions rents them by the
+minute, runs them in parallel, and hands back the installers as
+artifacts. One push, six builds, no hardware juggling.
 
-## Why Use GitHub Actions?
+![A git push node on the left fans out to six runner rows (macos-latest,
+macos-15-intel, windows-latest, windows-11-arm, ubuntu-latest,
+ubuntu-24.04-arm), each producing a platform-specific installer, which
+fan back in to a Release job on the right that runs only on tag
+pushes.](../reference/figures/ci-build-matrix.svg)
 
-Building desktop applications manually for multiple platforms is
-time-consuming:
+The build matrix: one push fans out across platform runners, each
+producing an installer; a tag push adds a release job that attaches them
+all.
 
-| Challenge                                | GitHub Actions Solution                |
-|------------------------------------------|----------------------------------------|
-| Need access to Windows, macOS, and Linux | Runners available for all platforms    |
-| Manual builds are error-prone            | Automated, reproducible builds         |
-| Distributing builds is tedious           | Automatic artifact upload and releases |
-| Testing across platforms                 | Matrix builds run in parallel          |
+## Why automate
 
-## Prerequisites
+Doing this by hand is slow and hard to reproduce. CI fixes four specific
+things at once:
 
-Before setting up GitHub Actions, ensure you have:
+| Problem                                      | What CI gives you                                           |
+|----------------------------------------------|-------------------------------------------------------------|
+| You need macOS, Windows, and Linux hardware  | Hosted runners for each                                     |
+| Local builds drift with your laptop’s state  | Fresh, versioned environments every run                     |
+| Uploading binaries to a Release page by hand | Artifacts and releases produced by a workflow step          |
+| Platform-specific regressions slip through   | The matrix runs in parallel and surfaces them on every push |
 
-1.  A GitHub repository containing your Shiny app
-2.  Your Shiny app in a subdirectory (default: `app/`)
-3.  (Optional) A `_shinyelectron.yml` configuration file
+## Before you start
 
-**Example repository structure:**
+You need:
+
+1.  A GitHub repo containing your Shiny app.
+2.  The app in a subdirectory, `app/` by default.
+3.  Optionally, a `_shinyelectron.yml` alongside the app.
+
+A typical layout:
 
     my-shiny-project/
     ├── .github/
     │   └── workflows/
-    │       └── build-electron.yml   # Workflow file
+    │       └── build-electron.yml
     ├── app/
-    │   ├── app.R                    # Your Shiny app
+    │   ├── app.R
     │   └── ...
-    ├── _shinyelectron.yml           # Optional config
+    ├── _shinyelectron.yml
     └── README.md
 
-## Quick Start
+## Use the bundled workflow
 
-### Step 1: Copy the Template
-
-shinyelectron includes a ready-to-use workflow template. Copy it to your
-repository:
+shinyelectron ships a ready-to-run workflow at
+`inst/templates/github-actions-build.yml`. Copy it into your repo:
 
 ``` r
-# Find the template location
-template_path <- system.file(
- "templates",
- "github-actions-build.yml",
- package = "shinyelectron"
+template <- system.file(
+  "templates", "github-actions-build.yml",
+  package = "shinyelectron"
 )
 
-# View the template
-file.show(template_path)
-
-# Copy to your project (run from your project root)
 dir.create(".github/workflows", recursive = TRUE, showWarnings = FALSE)
 file.copy(
- template_path,
- ".github/workflows/build-electron.yml"
+  template,
+  ".github/workflows/build-electron.yml"
 )
 ```
 
-Or download directly from:
-<https://github.com/coatless-rpkg/shinyelectron/blob/main/inst/templates/github-actions-build.yml>
+Or grab it directly from
+[GitHub](https://github.com/coatless-rpkg/shinyelectron/blob/main/inst/templates/github-actions-build.yml).
 
-### Step 2: Configure the Workflow
+The workflow runs three jobs in sequence: a build matrix, a release step
+gated on tag pushes, and a summary recap.
 
-Edit `.github/workflows/build-electron.yml` and update the environment
-variables at the top:
+### Configure the env vars
+
+Edit four variables at the top of the workflow. They are the only fields
+most projects need to change:
 
 ``` yaml
 env:
- APP_DIR: 'app'           # Directory containing your Shiny app
- APP_NAME: 'MyApp'        # Name of your application
- NODE_VERSION: '22'       # Node.js version
- R_VERSION: 'release'     # R version
+  # Configure these for your project
+  APP_DIR: 'app'           # Directory containing your Shiny app
+  APP_NAME: 'MyApp'        # Name of your application
+  NODE_VERSION: '22'       # Node.js version
+  R_VERSION: 'release'     # R version (release, devel, or specific version)
 ```
 
-### Step 3: Push and Build
+`APP_DIR` is the path to your Shiny app inside the repo. `APP_NAME`
+becomes the installer’s display name. `NODE_VERSION` and `R_VERSION` pin
+the toolchain; leave them at the defaults unless you have a reason to
+deviate.
 
-Commit and push your changes:
+### What the matrix builds
+
+The matrix spreads installers across six runners. Each runner starts
+from a clean image:
+
+| Runner             | Platform | Architecture          | Output      |
+|--------------------|----------|-----------------------|-------------|
+| `macos-latest`     | macOS    | arm64 (Apple Silicon) | `.dmg`      |
+| `macos-15-intel`   | macOS    | x64 (Intel)           | `.dmg`      |
+| `windows-latest`   | Windows  | x64                   | `.exe`      |
+| `windows-11-arm`   | Windows  | arm64                 | `.exe`      |
+| `ubuntu-latest`    | Ubuntu   | x64                   | `.AppImage` |
+| `ubuntu-24.04-arm` | Ubuntu   | arm64                 | `.AppImage` |
+
+CPU and RAM allocations come from GitHub’s hosted-runner specs, which
+evolve over time; check [the GitHub-hosted runners
+documentation](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners)
+for current numbers.
+
+Every runner steps through the same recipe:
+
+1.  Checkout the repo.
+2.  Set up R with `r-lib/actions/setup-r`.
+3.  Set up Node.js (version from `NODE_VERSION`).
+4.  Install `shinyelectron` and dependencies.
+5.  Run
+    [`shinyelectron::export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md).
+6.  Upload the build output as a run artifact.
+
+A release job runs after the matrix when the trigger is a tag push,
+downloading every artifact and attaching them to a fresh GitHub Release.
+
+### Push and tag
+
+Commit and push to fire the workflow on `main` or `master`:
 
 ``` bash
 git add .github/workflows/build-electron.yml
@@ -88,335 +134,249 @@ git commit -m "Add Electron build workflow"
 git push
 ```
 
-The workflow triggers automatically on push to main/master branches.
-
-## Workflow Structure
-
-The template workflow has three jobs:
-
-### Build Job
-
-Runs on each platform in parallel:
-
-| Runner             | Platform     | Architecture | CPU / RAM       | Output      |
-|--------------------|--------------|--------------|-----------------|-------------|
-| `macos-latest`     | macOS        | arm64 (M1)   | 3 cores / 7 GB  | `.dmg`      |
-| `macos-15-intel`   | macOS        | x64 (Intel)  | 4 cores / 14 GB | `.dmg`      |
-| `windows-latest`   | Windows 2025 | x64          | 4 cores / 16 GB | `.exe`      |
-| `ubuntu-latest`    | Ubuntu 24.04 | x64          | 4 cores / 16 GB | `.AppImage` |
-| `ubuntu-24.04-arm` | Ubuntu 24.04 | arm64        | 4 cores / 16 GB | `.AppImage` |
-| `windows-11-arm`   | Windows 11   | arm64        | 4 cores / 16 GB | `.exe`      |
-
-**Key steps:**
-
-1.  **Checkout** - Clone your repository
-2.  **Setup R** - Install R using r-lib/actions
-3.  **Setup Node.js** - Install Node.js 22
-4.  **Install dependencies** - R packages including shinyelectron
-5.  **Build** - Run
-    [`shinyelectron::export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
-6.  **Upload artifacts** - Save build outputs
-
-### Release Job
-
-Triggers only when you push a version tag (e.g., `v1.0.0`):
-
-- Downloads all build artifacts
-- Creates a GitHub Release
-- Attaches all platform builds
-
-### Summary Job
-
-Provides a build status summary in the Actions UI.
-
-## Customization
-
-### Changing the App Directory
-
-If your Shiny app isn’t in `app/`, update `APP_DIR`:
-
-``` yaml
-env:
- APP_DIR: 'src/shiny-app'  # Custom location
-```
-
-### Building for Specific Platforms
-
-To build only for certain platforms, modify the matrix:
-
-``` yaml
-matrix:
- include:
-   # Only macOS and Windows
-   - os: macos-latest
-     platform: mac
-     arch: arm64
-   - os: windows-latest
-     platform: win
-     arch: x64
-```
-
-### Using a Configuration File
-
-If you have a `_shinyelectron.yml` in your app directory, the build will
-automatically use it. The workflow parameters override config file
-values.
-
-Example `app/_shinyelectron.yml`:
-
-``` yaml
-app:
- name: "My Shiny Dashboard"
- version: "1.0.0"
-
-window:
- width: 1400
- height: 900
-
-build:
- type: "r-shinylive"
-```
-
-### Adding Custom Icons
-
-Place icons in your repository and reference them:
-
-``` yaml
-- name: Build Electron app
- run: |
-   Rscript -e "
-     shinyelectron::export(
-       appdir = '${{ env.APP_DIR }}',
-       destdir = 'build',
-       icon = 'assets/icon.icns',
-       # ... other options
-     )
-   "
-```
-
-> **Note**
->
-> Icon format requirements:
->
-> - macOS: `.icns` (use `iconutil` to create)
-> - Windows: `.ico` (multi-resolution recommended)
-> - Linux: `.png` (512x512 recommended)
-
-## Creating Releases
-
-### Automatic Releases
-
-Push a version tag to create a release automatically:
+Tag a version to cut a release:
 
 ``` bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-The workflow will:
+Tags containing `-alpha` or `-beta` are marked as pre-releases
+automatically.
 
-1.  Build for all platforms
-2.  Create a GitHub Release named “v1.0.0”
-3.  Attach all build artifacts
+### Status badge
 
-### Pre-releases
+Drop a badge in your README so contributors see build state at a glance:
 
-Tags containing `-alpha` or `-beta` are marked as pre-releases:
-
-``` bash
-git tag v1.0.0-beta.1
-git push origin v1.0.0-beta.1
+``` markdown
+[![Release](https://github.com/YOUR-USERNAME/YOUR-REPO/actions/workflows/build-electron.yml/badge.svg)](https://github.com/YOUR-USERNAME/YOUR-REPO/actions/workflows/build-electron.yml)
 ```
 
-### Manual Releases
+## Customising
 
-Trigger a build manually from the Actions tab using “workflow_dispatch”:
+The bundled workflow expects most projects to adjust four things: where
+the app lives, which platforms to ship, what icons to use, and whether
+to cache R packages aggressively. Each can be edited in place.
 
-1.  Go to Actions → Build Electron App
-2.  Click “Run workflow”
-3.  Select branch and click “Run workflow”
+### App in a different folder
 
-## Advanced Topics
+Override `APP_DIR`:
 
-### Caching Dependencies
+``` yaml
+env:
+  APP_DIR: 'src/shiny-app'
+```
 
-The template includes npm caching. To also cache R packages:
+### Narrower platform list
+
+Trim the matrix to what you ship. Each entry corresponds to one runner;
+remove the rest:
+
+``` yaml
+strategy:
+  matrix:
+    include:
+      - os: macos-latest
+        platform: mac
+        arch: arm64
+      - os: windows-latest
+        platform: win
+        arch: x64
+```
+
+### Custom icons
+
+Ship icons from the repo and pass them to
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md):
+
+``` yaml
+- name: Build Electron app
+  run: |
+    Rscript -e "
+      shinyelectron::export(
+        appdir = '${{ env.APP_DIR }}',
+        destdir = 'build',
+        icon = 'assets/icon.icns'
+      )
+    "
+```
+
+> **Note**
+>
+> Icon requirements: macOS uses `.icns` (build with `iconutil`), Windows
+> uses `.ico` (multi-resolution recommended), Linux uses `.png` at
+> 512x512.
+
+### Caching R packages
+
+`npm` caching is on by default. R packages are worth caching too:
 
 ``` yaml
 - name: Setup R
- uses: r-lib/actions/setup-r@v2
- with:
-   r-version: ${{ env.R_VERSION }}
-   use-public-rspm: true
+  uses: r-lib/actions/setup-r@v2
+  with:
+    r-version: ${{ env.R_VERSION }}
+    use-public-rspm: true
 
 - name: Cache R packages
- uses: actions/cache@v4
- with:
-   path: ${{ env.R_LIBS_USER }}
-   key: ${{ runner.os }}-r-${{ hashFiles('**/DESCRIPTION') }}
+  uses: actions/cache@v5
+  with:
+    path: ${{ env.R_LIBS_USER }}
+    key: ${{ runner.os }}-r-${{ hashFiles('**/DESCRIPTION') }}
 ```
 
-### Build Status Badge
+### Config file wins, workflow overrides
 
-Add a badge to your README:
-
-``` markdown
-[![Build Electron App](https://github.com/YOUR-USERNAME/YOUR-REPO/actions/workflows/build-electron.yml/badge.svg)](https://github.com/YOUR-USERNAME/YOUR-REPO/actions/workflows/build-electron.yml)
-```
-
-### Code Signing
-
-Code signing requires additional setup:
-
-**macOS:**
+A `_shinyelectron.yml` in the app directory is picked up automatically.
+Workflow parameters passed to
+[`shinyelectron::export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+override its values when set.
 
 ``` yaml
-env:
- CSC_LINK: ${{ secrets.MAC_CERTIFICATE }}
- CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
- APPLE_ID: ${{ secrets.APPLE_ID }}
- APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+app:
+  name: "My Shiny Dashboard"
+  version: "1.0.0"
+
+window:
+  width: 1400
+  height: 900
+
+build:
+  type: "r-shiny"
+  runtime_strategy: "shinylive"
 ```
 
-**Windows:**
+## Signing in CI
+
+Signing keeps the same `electron-builder` environment variables as a
+local build, just stored as GitHub Secrets instead. Open Settings,
+Secrets and variables, Actions, and add each value by name. Reference
+them from the build job’s `env`:
 
 ``` yaml
-env:
- CSC_LINK: ${{ secrets.WIN_CERTIFICATE }}
- CSC_KEY_PASSWORD: ${{ secrets.WIN_CERTIFICATE_PASSWORD }}
+- name: Build Electron app
+  env:
+    # macOS
+    CSC_LINK: ${{ secrets.MAC_CERTIFICATE }}
+    CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+    APPLE_ID: ${{ secrets.APPLE_ID }}
+    APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+    # Windows
+    WIN_CSC_LINK: ${{ secrets.WIN_CERTIFICATE }}
+    WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CERTIFICATE_PASSWORD }}
+  run: |
+    Rscript -e "
+      shinyelectron::export(
+        appdir = '${{ env.APP_DIR }}',
+        destdir = 'build',
+        sign = TRUE
+      )
+    "
 ```
 
 > **Warning**
 >
-> Code signing requires purchasing certificates from Apple and/or a
-> Certificate Authority. Unsigned apps may trigger security warnings on
-> user machines.
+> Certificates come from Apple (macOS) and a commercial CA (Windows).
+> Unsigned apps trigger Gatekeeper and SmartScreen warnings on end-user
+> machines. See [Code Signing and
+> Distribution](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/code-signing.md)
+> for the full setup.
 
-### Secrets Management
+## Coming soon: a composite action
 
-Store sensitive values in GitHub Secrets:
-
-1.  Go to Settings → Secrets and variables → Actions
-2.  Click “New repository secret”
-3.  Add your secret (e.g., `MAC_CERTIFICATE`)
-
-Reference in workflow:
+A composite GitHub Action at
+[`coatless-actions/shiny-to-electron`](https://github.com/coatless-actions/shiny-to-electron)
+is in development. The goal is to wrap the whole build pipeline so a
+workflow shrinks to a few lines:
 
 ``` yaml
-env:
- MY_SECRET: ${{ secrets.MY_SECRET_NAME }}
+on:
+  push:
+    tags: ['v*']
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: coatless-actions/shiny-to-electron@v1
+        with:
+          appdir: app
 ```
 
-## Troubleshooting
+The action does not have a published release yet, so the bundled
+template above is the path to use today. Once the action ships, this
+section will become the recommended quickstart.
 
-### Build Fails on Linux
+## CI-specific troubleshooting
 
-**Symptom:** Missing system libraries
+The general guide in
+[Troubleshooting](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/troubleshooting.md)
+covers symptoms that show up on any machine. The items below are CI-only
+or turn up much more often on hosted runners than on a developer laptop.
 
-**Solution:** Add system dependencies:
+### Linux build fails on missing libraries
+
+Hosted Ubuntu runners are minimal. Install whatever system packages your
+R or Python dependencies need before the build:
 
 ``` yaml
 - name: Install system dependencies (Linux)
- if: runner.os == 'Linux'
- run: |
-   sudo apt-get update
-   sudo apt-get install -y libcurl4-openssl-dev libxml2-dev
+  if: runner.os == 'Linux'
+  run: |
+    sudo apt-get update
+    sudo apt-get install -y libcurl4-openssl-dev libxml2-dev
 ```
 
-### Build Fails: App Directory Not Found
+### `appdir` points at the wrong directory
 
-**Symptom:** “App directory ‘app’ not found”
+A workflow that hardcodes `appdir: app` will fail with
+`App directory 'app' not found` if your repo puts the Shiny code
+somewhere else. Update `APP_DIR` to match the actual path.
 
-**Solution:** Ensure your Shiny app is in the correct directory and
-update `APP_DIR` if needed.
+### R package install fails on a runner but not locally
 
-### R Package Installation Fails
-
-**Symptom:** “Package not available” errors
-
-**Solution:** Ensure packages are available on CRAN or add custom
-repositories:
+Most often the package is not on CRAN and the workflow never told
+`setup-r-dependencies` where to find it. Add the repo or the GitHub
+source explicitly:
 
 ``` yaml
 - name: Install R dependencies
- uses: r-lib/actions/setup-r-dependencies@v2
- with:
-   extra-packages: |
-     any::shinyelectron
-     github::user/package
+  uses: r-lib/actions/setup-r-dependencies@v2
+  with:
+    extra-packages: |
+      any::shinyelectron
+      github::user/package
 ```
 
-### Build Times Out
+### Job hits the six-hour limit
 
-**Symptom:** Job exceeds 6 hour limit
+GitHub-hosted runners cap individual jobs at six hours. If a build comes
+close, shrink the matrix, cache packages more aggressively, or split the
+build into separate workflows that run in parallel.
 
-**Solution:** Optimize your build or split into smaller jobs. Consider
-building fewer platforms per workflow run.
+### Run sitrep on the runner
 
-### Artifacts Not Found
-
-**Symptom:** Upload step shows “No files found”
-
-**Solution:** Check the build output path. Run `ls -laR build/` to
-debug:
-
-``` yaml
-- name: Debug build output
- run: ls -laR build/
- shell: bash
-```
-
-### Using sitrep for Diagnostics
-
-Add diagnostic output to your workflow:
+When a build is failing in CI but works on your laptop, run the
+diagnostic on the runner itself to compare environments:
 
 ``` yaml
 - name: Run diagnostics
- run: |
-   Rscript -e "
-     library(shinyelectron)
-     sitrep_shinyelectron()
-   "
+  run: |
+    Rscript -e "
+      library(shinyelectron)
+      sitrep_shinyelectron()
+    "
 ```
 
-## Complete Example
+## Next steps
 
-Here’s a minimal working example:
-
-**Repository structure:**
-
-    my-app/
-    ├── .github/workflows/build-electron.yml
-    ├── app/
-    │   └── app.R
-    └── README.md
-
-**app/app.R:**
-
-``` r
-library(shiny)
-
-ui <- fluidPage(
- titlePanel("Hello Shiny!"),
- sliderInput("n", "Number:", 1, 100, 50),
- textOutput("result")
-)
-
-server <- function(input, output) {
- output$result <- renderText(paste("You selected:", input$n))
-}
-
-shinyApp(ui, server)
-```
-
-**Workflow trigger:** Push to main or create a tag like `v1.0.0`.
-
-## Next Steps
-
-- **[Getting
-  Started](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/getting-started.md)**:
-  Local development workflow
-- **[Configuration](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/configuration.md)**:
-  Customize with `_shinyelectron.yml`
-- **[Troubleshooting](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/troubleshooting.md)**:
-  Diagnose build issues
+- [Getting
+  Started](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/getting-started.md):
+  local development workflow.
+- [Configuration](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/configuration.md):
+  customize with `_shinyelectron.yml`.
+- [Troubleshooting](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/troubleshooting.md):
+  diagnose build issues.

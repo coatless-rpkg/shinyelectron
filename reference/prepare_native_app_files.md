@@ -31,7 +31,7 @@ prepare_native_app_files(
 
 - app_type:
 
-  Character. One of SHINYLIVE_TYPES.
+  Character. `"r-shiny"` or `"py-shiny"`.
 
 - runtime_strategy:
 

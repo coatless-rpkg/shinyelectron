@@ -35,7 +35,7 @@ generate_template_variables(
 
 - app_type:
 
-  Character. One of ALL_APP_TYPES.
+  Character. `"r-shiny"` or `"py-shiny"`.
 
 - runtime_strategy:
 

@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 280" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Three preloader styles side by side, each rendered into a sample lifecycle window. Spinner shows a rotating circle above the message. Bar shows nothing above the message; the indeterminate progress bar is the only signal. Dots shows three prominent loading dots inline after the message text. Each card has a label below identifying what animates and how.">
+  <defs>
+    <filter id="pl-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
+    </filter>
+  </defs>
+
+  <!-- Column headers -->
+  <text x="125" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">SPINNER</text>
+  <text x="380" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">BAR</text>
+  <text x="635" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">DOTS</text>
+
+  <!-- ============ Card 1: spinner ============ -->
+  <g transform="translate(20,34)" filter="url(#pl-shadow)">
+    <rect width="210" height="200" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="210" height="3" rx="1.5" fill="#3b82f6"/>
+
+    <!-- chrome -->
+    <rect x="0" y="3" width="210" height="14" fill="#f8fafc"/>
+    <circle cx="10" cy="13" r="2" fill="#f87171"/>
+    <circle cx="17" cy="13" r="2" fill="#fbbf24"/>
+    <circle cx="24" cy="13" r="2" fill="#34d399"/>
+
+    <!-- Big rotating-circle indicator -->
+    <g transform="translate(105,62)">
+      <circle cx="0" cy="0" r="20" fill="none" stroke="#e2e8f0" stroke-width="4"/>
+      <path d="M -20 0 A 20 20 0 0 1 14.14 -14.14" stroke="#3b82f6" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <!-- Subtle rotation arc -->
+      <path d="M 26 -2 A 26 26 0 0 1 22 12" stroke="#3b82f6" stroke-width="0.8" fill="none" stroke-dasharray="2,2" opacity="0.5"/>
+      <polygon points="22,12 25,15 19,16" fill="#3b82f6" opacity="0.5"/>
+    </g>
+
+    <!-- Message -->
+    <text x="105" y="118" text-anchor="middle" font-size="11" fill="#64748b">Starting your dashboard</text>
+    <text x="105" y="138" text-anchor="middle" font-size="11" font-weight="500" fill="#1e293b">Found Rscript</text>
+
+    <!-- Progress bar (small, neutral) -->
+    <rect x="35" y="158" width="140" height="6" rx="3" fill="#e2e8f0"/>
+    <rect x="35" y="158" width="42" height="6" rx="3" fill="#3b82f6" opacity="0.5"/>
+
+    <text x="105" y="184" text-anchor="middle" font-size="9" fill="#94a3b8">circle rotates above the message</text>
+  </g>
+
+  <!-- ============ Card 2: bar ============ -->
+  <g transform="translate(275,34)" filter="url(#pl-shadow)">
+    <rect width="210" height="200" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="210" height="3" rx="1.5" fill="#3b82f6"/>
+
+    <!-- chrome -->
+    <rect x="0" y="3" width="210" height="14" fill="#f8fafc"/>
+    <circle cx="10" cy="13" r="2" fill="#f87171"/>
+    <circle cx="17" cy="13" r="2" fill="#fbbf24"/>
+    <circle cx="24" cy="13" r="2" fill="#34d399"/>
+
+    <!-- Empty space marker (stylised "no indicator here") -->
+    <g transform="translate(85,42)" opacity="0.3">
+      <rect width="40" height="40" rx="6" fill="none" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,3"/>
+      <text x="20" y="25" text-anchor="middle" font-size="9" fill="#94a3b8">no</text>
+      <text x="20" y="36" text-anchor="middle" font-size="9" fill="#94a3b8">extra</text>
+    </g>
+
+    <!-- Message -->
+    <text x="105" y="106" text-anchor="middle" font-size="11" fill="#64748b">Starting your dashboard</text>
+    <text x="105" y="124" text-anchor="middle" font-size="11" font-weight="500" fill="#1e293b">Found Rscript</text>
+
+    <!-- Progress bar (HIGHLIGHTED as the indicator: indeterminate, mid-slide) -->
+    <rect x="35" y="142" width="140" height="8" rx="4" fill="#e2e8f0"/>
+    <rect x="74" y="142" width="48" height="8" rx="4" fill="#3b82f6"/>
+    <!-- arrow showing slide -->
+    <line x1="62" y1="146" x2="78" y2="146" stroke="#3b82f6" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+    <line x1="118" y1="146" x2="134" y2="146" stroke="#3b82f6" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+
+    <text x="105" y="184" text-anchor="middle" font-size="9" fill="#94a3b8">progress bar slides; nothing else</text>
+  </g>
+
+  <!-- ============ Card 3: dots ============ -->
+  <g transform="translate(530,34)" filter="url(#pl-shadow)">
+    <rect width="210" height="200" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="210" height="3" rx="1.5" fill="#3b82f6"/>
+
+    <!-- chrome -->
+    <rect x="0" y="3" width="210" height="14" fill="#f8fafc"/>
+    <circle cx="10" cy="13" r="2" fill="#f87171"/>
+    <circle cx="17" cy="13" r="2" fill="#fbbf24"/>
+    <circle cx="24" cy="13" r="2" fill="#34d399"/>
+
+    <!-- Three frames showing the cycling, stacked vertically -->
+    <text x="105" y="50" text-anchor="middle" font-size="10" fill="#cbd5e1">Starting your dashboard</text>
+    <text x="105" y="68" text-anchor="middle" font-size="10" fill="#cbd5e1">Starting your dashboard<tspan fill="#3b82f6" font-weight="700">.</tspan></text>
+    <text x="105" y="86" text-anchor="middle" font-size="10" fill="#cbd5e1">Starting your dashboard<tspan fill="#3b82f6" font-weight="700">..</tspan></text>
+    <text x="105" y="104" text-anchor="middle" font-size="11" fill="#64748b">Starting your dashboard<tspan fill="#3b82f6" font-weight="700">...</tspan></text>
+
+    <text x="105" y="128" text-anchor="middle" font-size="11" font-weight="500" fill="#1e293b">Found Rscript</text>
+
+    <!-- Progress bar (small, neutral) -->
+    <rect x="35" y="148" width="140" height="6" rx="3" fill="#e2e8f0"/>
+    <rect x="35" y="148" width="42" height="6" rx="3" fill="#3b82f6" opacity="0.5"/>
+
+    <text x="105" y="184" text-anchor="middle" font-size="9" fill="#94a3b8">dots cycle . to .. to ... after the text</text>
+  </g>
+
+  <!-- Caption -->
+  <text x="380" y="258" text-anchor="middle" font-size="10" fill="#475569">All three share the same progress bar. The style controls what sits with the message.</text>
+  <text x="380" y="272" text-anchor="middle" font-size="9" fill="#94a3b8">When the runtime reports a percent, every style fills the bar to match.</text>
+</svg>

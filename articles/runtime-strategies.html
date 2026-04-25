@@ -49,7 +49,7 @@
     <li><a class="dropdown-item" href="../articles/multi-app-suites.html">Multi-App Suites</a></li>
     <li><a class="dropdown-item" href="../articles/container-strategy.html">Container Strategy</a></li>
     <li><a class="dropdown-item" href="../articles/security.html">Security Considerations</a></li>
-    <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced Features</a></li>
+    <li><a class="dropdown-item" href="../articles/customizations.html">Customizations</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
     <li><a class="dropdown-item" href="../articles/nodejs-management.html">Node.js Management</a></li>
@@ -87,50 +87,22 @@
 
 
 
-    <p>When you export a Shiny app with shinyelectron, the package needs to decide how the R or Python runtime reaches the end user’s machine. This decision is controlled by the <strong>runtime strategy</strong>. Choosing the right strategy depends on your audience, distribution channel, and dependency complexity.</p>
-<section class="level2"><h2 id="which-strategy-should-i-use">Which Strategy Should I Use?<a class="anchor" aria-label="anchor" href="#which-strategy-should-i-use"></a>
+    <p>The runtime strategy decides how your Shiny app actually runs inside the Electron shell. Five options, five tradeoffs. The right one depends on your audience, your package dependencies, and whether you can assume internet access on first launch.</p>
+<p>All five strategies work with both <code>r-shiny</code> and <code>py-shiny</code>. <code>shinylive</code> is the default when you do not set one explicitly.</p>
+<p>Set the strategy either as the <code>runtime_strategy</code> argument to <code><a href="../reference/export.html">export()</a></code> or as <code>build.runtime_strategy</code> in <code>_shinyelectron.yml</code>. Function arguments override the config file, so passing <code>runtime_strategy = "bundled"</code> wins even if the config says something else.</p>
+<section class="level2"><h2 id="picking-a-strategy">Picking a strategy<a class="anchor" aria-label="anchor" href="#picking-a-strategy"></a>
 </h2>
-<table class="table caption-top">
-<colgroup>
-<col style="width: 32%">
-<col style="width: 67%">
-</colgroup>
-<thead><tr class="header">
-<th>Scenario</th>
-<th>Recommended Strategy</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td>Public distribution, minimal friction</td>
-<td><code>bundled</code></td>
-</tr>
-<tr class="even">
-<td>Internal tool for developers who have R/Python</td>
-<td><code>system</code></td>
-</tr>
-<tr class="odd">
-<td>Public distribution, smaller initial download</td>
-<td><code>auto-download</code></td>
-</tr>
-<tr class="even">
-<td>Complex system dependencies or reproducibility needs</td>
-<td><code>container</code></td>
-</tr>
-<tr class="odd">
-<td>App can run entirely in the browser (no native extensions)</td>
-<td>
-<code>r-shinylive</code> / <code>py-shinylive</code>
-</td>
-</tr>
-<tr class="even">
-<td>You want the simplest possible setup</td>
-<td>
-<code>r-shinylive</code> / <code>py-shinylive</code>
-</td>
-</tr>
-</tbody>
-</table></section><section class="level2"><h2 id="comparison-table">Comparison Table<a class="anchor" aria-label="anchor" href="#comparison-table"></a>
-</h2>
+<p>The matrix below lays out what each strategy ships in the exported bundle, what happens on first launch, and how the pieces fit together once the app is running. Start here if you want the shape of each option at a glance.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure><p><img src="../reference/figures/strategy-comparison.svg" style="width:100.0%" alt="Five-row matrix comparing the shinylive, bundled, auto-download, system, and container runtime strategies across three columns: what ships in the exported package, what happens on first launch, and the running architecture. Shinylive ships an Electron plus WASM bundle, opens offline, and runs the app in the browser. Bundled ships Electron plus a portable R or Python runtime, opens offline, and spawns the bundled runtime. Auto-download ships Electron plus a small downloader, fetches and caches the runtime on first launch, and then spawns the cached runtime. System ships Electron only, finds Rscript or python3 on PATH at first launch, and spawns the system runtime. Container ships Electron plus container config, pulls the image and starts a container on first launch, and then talks to the containerized app over localhost."></p>
+<figcaption>The five runtime strategies side by side: what each one ships in the exported bundle, what happens on first launch, and how the pieces fit together at steady state.</figcaption></figure>
+</div>
+<p>If you want to be walked through the choice one question at a time (packages, audience, system dependencies, internet access), follow the decision tree below. Each branch ends at the strategy that fits.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure><p><img src="../reference/figures/runtime-decision.svg" style="width:100.0%" alt="Flowchart with branching decisions. Top node asks if packages run in WebR or Pyodide; yes leads to Shinylive. No leads to whether the user has R or Python installed; yes leads to the system strategy. No leads to whether the app has complex system dependencies; yes leads to container. No leads to whether the user has internet on first launch; yes leads to auto-download, no leads to bundled."></p>
+<figcaption>Decision tree for picking a shinyelectron runtime strategy. Start by asking whether your packages compile to WebAssembly; if not, walk through audience, system dependencies, and internet access to reach a strategy.</figcaption></figure>
+</div>
+<p>Once you have narrowed it down, the table below compares the five strategies on the dimensions that usually drive the final call: how much you ship, what the first launch costs, and what the end user needs on their machine.</p>
 <table class="table caption-top">
 <colgroup>
 <col style="width: 3%">
@@ -151,9 +123,9 @@
 <tbody>
 <tr class="odd">
 <td><strong>App size</strong></td>
-<td>50–100 MB</td>
+<td>50 to 100 MB</td>
 <td>~5 MB</td>
-<td>150–300 MB</td>
+<td>150 to 300 MB</td>
 <td>~5 MB</td>
 <td>~5 MB</td>
 </tr>
@@ -201,192 +173,153 @@
 <td><strong>Linux support</strong></td>
 <td>Yes</td>
 <td>Yes</td>
-<td>No (use system/container)</td>
-<td>No (use system/container)</td>
+<td>No (use system or container)</td>
+<td>No (use system or container)</td>
 <td>Yes</td>
 </tr>
 </tbody>
-</table></section><section class="level2"><h2 id="shinylive-r-shinylive-py-shinylive">Shinylive (r-shinylive / py-shinylive)<a class="anchor" aria-label="anchor" href="#shinylive-r-shinylive-py-shinylive"></a>
+</table></section><section class="level2"><h2 id="shinylive-strategy">Shinylive strategy<a class="anchor" aria-label="anchor" href="#shinylive-strategy"></a>
 </h2>
-<p>Shinylive does not use a runtime strategy. When you choose <code>app_type = "r-shinylive"</code> or <code>app_type = "py-shinylive"</code>, the Shiny app runs entirely in the browser using <a href="https://docs.r-wasm.org/webr/" class="external-link">WebR</a> or <a href="https://pyodide.org/" class="external-link">Pyodide</a>. There is no server-side R or Python process — everything executes client-side inside the Electron window.</p>
-<p>Because shinylive types run in the browser, the <code>runtime_strategy</code> parameter is ignored. You do not set it:</p>
+<p>Shinylive compiles your app to WebAssembly and runs it entirely in the browser. WebR handles R. Pyodide handles Python. Either way, no server-side process ever starts: the browser runs inside Electron and the whole thing ships without a real R or Python runtime.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure><p><img src="../reference/figures/strategy-shinylive.svg" style="width:100.0%" alt="Three-column diagram for the shinylive strategy. Ships column shows the Electron shell containing a WebAssembly bundle (WebR or Pyodide) and static app assets. First launch column shows a green check badge labeled opens instantly, with notes that there is no download and no process to spawn. Running column shows the Electron window running Chromium with WebR or Pyodide executing the app client-side and no R or Python process behind it."></p>
+<figcaption>Shinylive ships an Electron shell with a WebAssembly bundle and static app assets, opens instantly offline, and runs the app client-side inside the browser window with no server process.</figcaption></figure>
+</div>
+<p><code>shinylive</code> is the default strategy, so a bare call with no explicit strategy picks it automatically.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Shinylive R app -- no runtime_strategy needed</span></span>
+<code class="sourceCode R"><span><span class="co"># Language autodetected from files in appdir; shinylive is the default strategy</span></span>
+<span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
+<span>  appdir <span class="op">=</span> <span class="st">"my-app"</span>,</span>
+<span>  destdir <span class="op">=</span> <span class="st">"output"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Equivalent, fully explicit</span></span>
 <span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"my-app"</span>,</span>
 <span>  destdir <span class="op">=</span> <span class="st">"output"</span>,</span>
-<span>  app_type <span class="op">=</span> <span class="st">"r-shinylive"</span></span>
+<span>  app_type <span class="op">=</span> <span class="st">"r-shiny"</span>,</span>
+<span>  runtime_strategy <span class="op">=</span> <span class="st">"shinylive"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Shinylive Python app</span></span>
+<span><span class="co"># Python</span></span>
 <span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"my-py-app"</span>,</span>
 <span>  destdir <span class="op">=</span> <span class="st">"output"</span>,</span>
-<span>  app_type <span class="op">=</span> <span class="st">"py-shinylive"</span></span>
+<span>  app_type <span class="op">=</span> <span class="st">"py-shiny"</span>,</span>
+<span>  runtime_strategy <span class="op">=</span> <span class="st">"shinylive"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-<section class="level3"><h3 id="how-it-works">How It Works<a class="anchor" aria-label="anchor" href="#how-it-works"></a>
+<section class="level3"><h3 id="the-export-flow">The export flow<a class="anchor" aria-label="anchor" href="#the-export-flow"></a>
 </h3>
 <ol type="1">
 <li>
-<code><a href="../reference/export.html">export()</a></code> calls the <a href="https://posit-dev.github.io/r-shinylive/" class="external-link">shinylive</a> R package (for R) or the <code>shinylive</code> CLI (for Python) to convert your app into static assets.</li>
-<li>The Electron app serves these assets via a local Express server with the required COOP/COEP headers. These are browser security headers that enable the shared memory WebR needs to run efficiently.</li>
-<li>WebR or Pyodide boots inside the browser and runs your app code.</li>
-</ol></section><section class="level3"><h3 id="pros">Pros<a class="anchor" aria-label="anchor" href="#pros"></a>
+<code><a href="../reference/export.html">export()</a></code> calls the <a href="https://posit-dev.github.io/r-shinylive/" class="external-link">shinylive</a> R package (for R) or the <code>shinylive</code> CLI (for Python) to convert your app to static assets.</li>
+<li>The Electron app serves those assets over a local Express server with COOP and COEP headers. Those headers enable the <code>SharedArrayBuffer</code> that WebR needs.</li>
+<li>WebR or Pyodide boots inside the browser and runs your code.</li>
+</ol></section><section class="level3"><h3 id="tradeoffs">Tradeoffs<a class="anchor" aria-label="anchor" href="#tradeoffs"></a>
 </h3>
-<ul>
-<li>Zero runtime dependencies for the end user.</li>
-<li>No native process to manage or clean up.</li>
-<li>Works on all platforms (Windows, macOS, Linux).</li>
-</ul></section><section class="level3"><h3 id="cons">Cons<a class="anchor" aria-label="anchor" href="#cons"></a>
-</h3>
-<ul>
-<li>Large app size due to WebR/Pyodide assets (~50–100 MB for R).</li>
-<li>Not all R packages work in WebR. Packages with compiled C/Fortran code need WebR-compatible WASM builds.</li>
-<li>Python packages must be available in Pyodide.</li>
-<li>Slower initial page load as the WASM runtime boots.</li>
-</ul></section><section class="level3"><h3 id="when-to-use">When to Use<a class="anchor" aria-label="anchor" href="#when-to-use"></a>
-</h3>
-<p>Choose shinylive when your app uses packages that are available in WebR/Pyodide and you want the simplest deployment with no runtime management.</p>
-</section></section><section class="level2"><h2 id="system-strategy">System Strategy<a class="anchor" aria-label="anchor" href="#system-strategy"></a>
+<p>You pay for zero runtime management in app size (around 50 to 100 MB on disk for R, a bit less for Python) and in a slower first paint while WebR or Pyodide boots. Package compatibility is the real catch: anything with C or Fortran needs a WebR-compatible build, and Python packages must exist in Pyodide. In exchange, the end user installs nothing, the same build runs identically on Windows, macOS, and Linux, and there is no native child process to crash or clean up.</p>
+<p>Start here whenever your dependencies allow it. Only move to a native strategy when a package actually fails to load in the browser.</p>
+</section></section><section class="level2"><h2 id="system-strategy">System strategy<a class="anchor" aria-label="anchor" href="#system-strategy"></a>
 </h2>
-<p>The system strategy assumes R or Python is already installed on the end user’s machine. The Electron app launches Rscript or Python directly from the system PATH.</p>
+<p>The system strategy assumes R or Python is already installed. The Electron app spawns <code>Rscript</code> or <code>python3</code> from the user’s <code>PATH</code>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure><p><img src="../reference/figures/strategy-system.svg" style="width:100.0%" alt="Three-column diagram for the system strategy. Ships column shows the Electron shell with app source and an amber dashed box noting no runtime is embedded. First launch column shows two outcomes: Found, which spawns and continues, or Missing, which raises a clear error with install instructions. Running column shows the Electron window connecting over localhost to the user's own Rscript or python3 spawned from PATH."></p>
+<figcaption>System ships only the Electron shell and app source, locates Rscript or python3 on PATH at launch (failing with a clear message if missing), and spawns the user’s own runtime to serve Shiny over localhost.</figcaption></figure>
+</div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"my-app"</span>,</span>
 <span>  destdir <span class="op">=</span> <span class="st">"output"</span>,</span>
-<span>  app_type <span class="op">=</span> <span class="st">"r-shiny"</span>,</span>
 <span>  runtime_strategy <span class="op">=</span> <span class="st">"system"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-<section class="level3"><h3 id="how-it-works-1">How It Works<a class="anchor" aria-label="anchor" href="#how-it-works-1"></a>
+<section class="level3"><h3 id="the-launch-flow">The launch flow<a class="anchor" aria-label="anchor" href="#the-launch-flow"></a>
 </h3>
 <ol type="1">
 <li>
-<code><a href="../reference/export.html">export()</a></code> packages the Shiny app files into the Electron project.</li>
+<code><a href="../reference/export.html">export()</a></code> packages your app files into the Electron project. No runtime is embedded.</li>
 <li>At launch, the Electron backend (<code>native-r.js</code> or <code>native-py.js</code>) spawns <code>Rscript</code> or <code>python3</code> as a child process.</li>
-<li>The child process starts the Shiny server, and Electron connects to it.</li>
-</ol></section><section class="level3"><h3 id="pros-1">Pros<a class="anchor" aria-label="anchor" href="#pros-1"></a>
+<li>That child starts the Shiny server. Electron connects to it.</li>
+</ol></section><section class="level3"><h3 id="tradeoffs-1">Tradeoffs<a class="anchor" aria-label="anchor" href="#tradeoffs-1"></a>
 </h3>
-<ul>
-<li>Smallest possible app size (just your app code + Electron shell).</li>
-<li>No download step, no container engine required.</li>
-<li>Full package compatibility — whatever the user has installed works.</li>
-</ul></section><section class="level3"><h3 id="cons-1">Cons<a class="anchor" aria-label="anchor" href="#cons-1"></a>
-</h3>
-<ul>
-<li>User must have R or Python installed and on their PATH.</li>
-<li>Different users may have different package versions, leading to inconsistencies.</li>
-<li>No dependency isolation.</li>
-</ul></section><section class="level3"><h3 id="when-to-use-1">When to Use<a class="anchor" aria-label="anchor" href="#when-to-use-1"></a>
-</h3>
-<p>Best for internal tools distributed to developers or data scientists who already have R or Python installed. Also useful during development and testing.</p>
-</section></section><section class="level2"><h2 id="bundled-strategy">Bundled Strategy<a class="anchor" aria-label="anchor" href="#bundled-strategy"></a>
+<p>System gives you the smallest possible build: the Electron shell, your app, and nothing else. There is no download, no container engine, no runtime embedding. Whatever R or Python the user has already installed is what runs.</p>
+<p>The cost is that the end user must have a working R or Python on <code>PATH</code>, and different users may be running different versions of your package dependencies. Reach for <code>system</code> for internal tools shipped to developers or data scientists who already have the language installed, or for your own local development loop.</p>
+</section></section><section class="level2"><h2 id="bundled-strategy">Bundled strategy<a class="anchor" aria-label="anchor" href="#bundled-strategy"></a>
 </h2>
-<p>The bundled strategy embeds a complete portable R or Python runtime inside the Electron app at build time. The end user needs nothing beyond the app itself.</p>
-<p>Bundled is like shipping a laptop with the OS pre-installed — larger package, but the user opens it and everything works. Auto-download (covered below) is like including a setup script that fetches the OS on first boot — smaller download, but needs internet once.</p>
+<p>Bundled embeds a complete portable R or Python runtime inside the Electron app at build time. The user needs nothing beyond the app itself.</p>
+<p>Think of it as shipping a laptop with the OS pre-installed: heavy download, then everything works offline. Auto-download (the next section) is the other extreme, shipping a setup script that fetches the OS on first boot.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure><p><img src="../reference/figures/strategy-bundled.svg" style="width:100.0%" alt="Three-column diagram for the bundled strategy. Ships column shows the Electron shell containing a portable runtime under resources with a private package library, plus the app source. First launch column shows a green check badge noting the app opens instantly with no download because the runtime is already on disk. Running column shows the Electron window connecting over localhost to a bundled Rscript or python3 spawned as a child process from the packaged resources directory."></p>
+<figcaption>Bundled ships the Electron shell together with a portable R or Python runtime and the app source, opens instantly offline, and runs by spawning the bundled Rscript or python3 from the packaged resources directory.</figcaption></figure>
+</div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"my-app"</span>,</span>
 <span>  destdir <span class="op">=</span> <span class="st">"output"</span>,</span>
-<span>  app_type <span class="op">=</span> <span class="st">"r-shiny"</span>,</span>
 <span>  runtime_strategy <span class="op">=</span> <span class="st">"bundled"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-<section class="level3"><h3 id="how-it-works-2">How It Works<a class="anchor" aria-label="anchor" href="#how-it-works-2"></a>
+<section class="level3"><h3 id="the-build-flow">The build flow<a class="anchor" aria-label="anchor" href="#the-build-flow"></a>
 </h3>
 <ol type="1">
-<li>During <code><a href="../reference/export.html">export()</a></code>, shinyelectron downloads a portable runtime and embeds it in the Electron project’s <code>resources/</code> directory.</li>
-<li>App dependencies are installed into the bundled runtime’s library.</li>
-<li>At launch, the Electron backend uses the bundled Rscript/Python instead of the system one.</li>
-</ol></section><section class="level3"><h3 id="platform-specific-runtimes">Platform-Specific Runtimes<a class="anchor" aria-label="anchor" href="#platform-specific-runtimes"></a>
+<li>During <code><a href="../reference/export.html">export()</a></code>, shinyelectron downloads a portable runtime and writes it into the Electron project’s <code>resources/</code> directory.</li>
+<li>Your app dependencies are installed into that runtime’s library.</li>
+<li>At launch, the Electron backend uses the bundled <code>Rscript</code> or <code>python3</code> instead of anything on the user’s system.</li>
+</ol></section><section class="level3"><h3 id="tradeoffs-2">Tradeoffs<a class="anchor" aria-label="anchor" href="#tradeoffs-2"></a>
 </h3>
-<p>Portable R builds come from the <a href="https://github.com/portable-r" class="external-link">portable-r</a> project:</p>
-<ul>
-<li>
-<strong>Windows</strong>: <code>portable-r-windows</code> releases (x64 and aarch64)</li>
-<li>
-<strong>macOS</strong>: <code>portable-r-macos</code> releases (arm64 and x86_64)</li>
-<li>
-<strong>Linux</strong>: No portable R builds exist for Linux. The bundled and auto-download strategies for R apps require macOS or Windows. Use <code>system</code> or <code>container</code> on Linux.</li>
-</ul>
-<p>Portable Python builds come from <a href="https://github.com/astral-sh/python-build-standalone" class="external-link">python-build-standalone</a> by Astral, available for all three platforms (Windows, macOS, and Linux). Python apps can use any strategy on any platform.</p>
-</section><section class="level3"><h3 id="pros-2">Pros<a class="anchor" aria-label="anchor" href="#pros-2"></a>
-</h3>
-<ul>
-<li>Zero dependencies for the end user.</li>
-<li>Works offline immediately — no first-launch download.</li>
-<li>Complete package compatibility (native R/Python, not WASM).</li>
-<li>Fully isolated from the user’s system R/Python.</li>
-</ul></section><section class="level3"><h3 id="cons-2">Cons<a class="anchor" aria-label="anchor" href="#cons-2"></a>
-</h3>
-<ul>
-<li>Large app size (150–300 MB depending on runtime + packages).</li>
-<li>Portable R not available for Linux.</li>
-<li>Build time is longer due to runtime download and dependency installation.</li>
-</ul></section><section class="level3"><h3 id="when-to-use-2">When to Use<a class="anchor" aria-label="anchor" href="#when-to-use-2"></a>
-</h3>
-<p>Best for public-facing applications where you cannot assume the user has R or Python. Ideal when offline support is required from the first launch.</p>
-</section></section><section class="level2"><h2 id="auto-download-strategy">Auto-download Strategy<a class="anchor" aria-label="anchor" href="#auto-download-strategy"></a>
+<p>Bundled gets you full native package compatibility with zero dependencies on the end user’s machine, and the app works offline from the very first launch. The price is a much larger installer (150 to 300 MB depending on runtime and packages) and a longer build because the runtime has to be downloaded and populated with packages during <code><a href="../reference/export.html">export()</a></code>.</p>
+<p>The one platform hole is Linux. Portable R is unavailable there today, so an R app targeting Linux has to fall back to <code>system</code> or <code>container</code>. Python apps can bundle on every platform.</p>
+<p>Choose bundled for public-facing apps when you cannot assume internet on first launch and the end user probably does not have R or Python installed.</p>
+</section></section><section class="level2"><h2 id="auto-download-strategy">Auto-download strategy<a class="anchor" aria-label="anchor" href="#auto-download-strategy"></a>
 </h2>
-<p>Auto-download is the default strategy for native app types. The app ships without a runtime, downloads it on first launch, and caches it locally for subsequent runs.</p>
+<p>Auto-download is the compromise between <code>system</code> and <code>bundled</code>. The installer stays small because no runtime ships with the app, and the end user needs nothing pre-installed because the runtime arrives on first launch. After that, every launch uses a cached copy on disk.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure><p><img src="../reference/figures/strategy-auto-download.svg" style="width:100.0%" alt="Three-column diagram for the auto-download strategy. Ships column shows the Electron shell with app source and a downloader module (runtime-downloader.js), with no runtime embedded. First launch column shows three numbered steps: check cache directory, download portable runtime, extract and install packages, with the cache path noted as tilde slash dot shinyelectron slash cache. Running column shows the Electron window connecting over localhost to a cached Rscript or python3 spawned from the cache directory that is shared across all shinyelectron apps."></p>
+<figcaption>Auto-download ships the Electron shell, the app source, and a downloader module but no runtime; on first launch it checks the local cache, downloads a portable runtime, and installs packages, then later launches spawn the cached runtime shared across shinyelectron apps.</figcaption></figure>
+</div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># auto-download is the default for native types, so these are equivalent:</span></span>
-<span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"my-app"</span>,</span>
 <span>  destdir <span class="op">=</span> <span class="st">"output"</span>,</span>
-<span>  app_type <span class="op">=</span> <span class="st">"r-shiny"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
-<span>  appdir <span class="op">=</span> <span class="st">"my-app"</span>,</span>
-<span>  destdir <span class="op">=</span> <span class="st">"output"</span>,</span>
-<span>  app_type <span class="op">=</span> <span class="st">"r-shiny"</span>,</span>
 <span>  runtime_strategy <span class="op">=</span> <span class="st">"auto-download"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-<section class="level3"><h3 id="how-it-works-3">How It Works<a class="anchor" aria-label="anchor" href="#how-it-works-3"></a>
+<section class="level3"><h3 id="the-launch-flow-1">The launch flow<a class="anchor" aria-label="anchor" href="#the-launch-flow-1"></a>
 </h3>
 <ol type="1">
 <li>
-<code><a href="../reference/export.html">export()</a></code> packages the app without a runtime, but includes the <code>runtime-downloader.js</code> backend module.</li>
-<li>On first launch, the downloader checks a local cache directory. If no runtime is found, it downloads and extracts a portable R or Python build.</li>
-<li>The runtime is cached in a platform-appropriate location (e.g., <code>~/.shinyelectron/cache/</code> on macOS/Linux, <code>%LOCALAPPDATA%\shinyelectron\cache\</code> on Windows).</li>
-<li>Subsequent launches skip the download and use the cached runtime.</li>
+<code><a href="../reference/export.html">export()</a></code> packages the app without a runtime and includes the <code>runtime-downloader.js</code> backend.</li>
+<li>On first launch, the downloader checks a local cache directory. If it finds no runtime, it downloads and extracts a portable build.</li>
+<li>The runtime is cached per-user: <code>~/.shinyelectron/cache/</code> on macOS and Linux, <code>%LOCALAPPDATA%\shinyelectron\cache\</code> on Windows.</li>
+<li>Subsequent launches skip the download and reuse the cached runtime.</li>
 </ol>
-<p>The download sources are the same as the bundled strategy: portable-r for R and python-build-standalone for Python.</p>
-</section><section class="level3"><h3 id="pros-3">Pros<a class="anchor" aria-label="anchor" href="#pros-3"></a>
+<p>The download sources are the same ones bundled uses: portable-r for R, python-build-standalone for Python.</p>
+</section><section class="level3"><h3 id="tradeoffs-3">Tradeoffs<a class="anchor" aria-label="anchor" href="#tradeoffs-3"></a>
 </h3>
-<ul>
-<li>Small initial app size (just app code + Electron shell).</li>
-<li>Full package compatibility after runtime is downloaded.</li>
-<li>Runtime is shared across multiple shinyelectron apps on the same machine.</li>
-</ul></section><section class="level3"><h3 id="cons-3">Cons<a class="anchor" aria-label="anchor" href="#cons-3"></a>
-</h3>
-<ul>
-<li>First launch requires an internet connection and is slower (runtime download).</li>
-<li>Users see a download progress screen on first run.</li>
-<li>Same Linux limitation as bundled: portable R is not available for Linux.</li>
-</ul></section><section class="level3"><h3 id="when-to-use-3">When to Use<a class="anchor" aria-label="anchor" href="#when-to-use-3"></a>
-</h3>
-<p>Good middle ground when you want a smaller download but cannot assume the user has R/Python. Works well for apps distributed via GitHub releases or a website where download size matters.</p>
-</section></section><section class="level2"><h2 id="container-strategy">Container Strategy<a class="anchor" aria-label="anchor" href="#container-strategy"></a>
+<p>Auto-download wins on download size (essentially the Electron shell plus your app) and on package compatibility, since the user ends up with a real R or Python behind the window. The cached runtime is shared across every shinyelectron app installed on the same machine, so the cost amortizes after the first install.</p>
+<p>The price lands on first-launch UX. The user sees a progress screen while the runtime downloads, and offline first-runs do not work at all. Same Linux limitation as bundled: no portable R there today.</p>
+<p>This is the middle ground when download size matters (a GitHub release, a landing-page link) and you can reasonably assume the user has internet the first time they open the app.</p>
+</section></section><section class="level2"><h2 id="container-strategy">Container strategy<a class="anchor" aria-label="anchor" href="#container-strategy"></a>
 </h2>
-<p>The container strategy runs your Shiny app inside a Docker or Podman container. The Electron shell communicates with the containerized app over a local port.</p>
+<p>The container strategy runs your Shiny app inside a Docker or Podman container. The Electron shell talks to the containerized app over a local port.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure><p><img src="../reference/figures/strategy-container.svg" style="width:100.0%" alt="Three-column diagram for the container strategy. Ships column shows the Electron shell with the app source and container configuration (engine, image, tag from _shinyelectron.yml plus container.js), with the container image pulled later rather than shipped. First launch column shows three numbered steps: detect Docker or Podman, pull image if pull_on_start is true, and start container with a mapped port, plus a note that Docker or Podman is required. Running column shows the Electron window connecting over localhost on a mapped host port into a Docker or Podman container holding R or Python with system dependencies, which is stopped on window close."></p>
+<figcaption>Container ships the Electron shell with the app source and container config; on first launch it detects Docker or Podman, pulls the image if configured, and starts a container. At steady state, Electron talks to the containerized Shiny app over a mapped localhost port and stops the container when the window closes.</figcaption></figure>
+</div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"my-app"</span>,</span>
 <span>  destdir <span class="op">=</span> <span class="st">"output"</span>,</span>
-<span>  app_type <span class="op">=</span> <span class="st">"r-shiny"</span>,</span>
 <span>  runtime_strategy <span class="op">=</span> <span class="st">"container"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>You can also configure the container engine and image in <code>_shinyelectron.yml</code>:</p>
+<p>Configure the engine and image in <code>_shinyelectron.yml</code>:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"r-shiny"</span></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"container"</span></span>
@@ -396,62 +329,42 @@
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">image</span><span class="kw">:</span><span class="at"> </span><span class="st">"my-org/my-app"</span></span>
 <span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">tag</span><span class="kw">:</span><span class="at"> </span><span class="st">"latest"</span></span>
 <span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">pull_on_start</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
-<section class="level3"><h3 id="how-it-works-4">How It Works<a class="anchor" aria-label="anchor" href="#how-it-works-4"></a>
+<section class="level3"><h3 id="the-launch-flow-2">The launch flow<a class="anchor" aria-label="anchor" href="#the-launch-flow-2"></a>
 </h3>
 <ol type="1">
 <li>
-<code><a href="../reference/export.html">export()</a></code> packages the app and includes the <code>container.js</code> backend module.</li>
-<li>At launch, Electron detects Docker or Podman on the system.</li>
-<li>It pulls the specified image (if <code>pull_on_start</code> is true) and starts a container with the app directory mounted.</li>
-<li>The Shiny server runs inside the container and Electron connects to it via the exposed port.</li>
+<code><a href="../reference/export.html">export()</a></code> packages the app and includes the <code>container.js</code> backend.</li>
+<li>At launch, Electron detects Docker or Podman.</li>
+<li>It pulls the image if <code>pull_on_start</code> is true, then starts a container with the app directory mounted.</li>
+<li>The Shiny server runs inside the container. Electron connects to the exposed port.</li>
 <li>When the Electron window closes, the container is stopped and removed.</li>
-</ol></section><section class="level3"><h3 id="pros-4">Pros<a class="anchor" aria-label="anchor" href="#pros-4"></a>
+</ol></section><section class="level3"><h3 id="tradeoffs-4">Tradeoffs<a class="anchor" aria-label="anchor" href="#tradeoffs-4"></a>
 </h3>
-<ul>
-<li>Complete environment isolation (OS-level, not just packages).</li>
-<li>Works on all platforms where Docker/Podman runs.</li>
-<li>Handles complex system dependencies (C libraries, system tools) that are hard to bundle portably.</li>
-<li>Reproducible across machines.</li>
-</ul></section><section class="level3"><h3 id="cons-4">Cons<a class="anchor" aria-label="anchor" href="#cons-4"></a>
-</h3>
-<ul>
-<li>User must have Docker or Podman installed and running.</li>
-<li>First launch may be slow (image pull).</li>
-<li>Container images can be large.</li>
-<li>Docker Desktop requires a license for commercial use in larger organizations.</li>
-</ul></section><section class="level3"><h3 id="when-to-use-4">When to Use<a class="anchor" aria-label="anchor" href="#when-to-use-4"></a>
-</h3>
-<p>Best for apps with complex system dependencies (e.g., geospatial libraries, database drivers) or when you need exact environment reproducibility. Also useful when your team already uses containers.</p>
-</section></section><section class="level2"><h2 id="setting-the-strategy-via-configuration">Setting the Strategy via Configuration<a class="anchor" aria-label="anchor" href="#setting-the-strategy-via-configuration"></a>
+<p>Containers buy you OS-level isolation rather than just package-level, which is the right answer for apps with complex system dependencies (C libraries, database drivers, geospatial tools) that are awkward or impossible to bundle portably. Reproducibility is exact across machines.</p>
+<p>In return, the end user must have Docker or Podman installed and running, first launch can be slow while the image pulls, and images tend to be large. Docker Desktop also requires a commercial license at larger organizations.</p>
+<p>Reach for containers when the dependencies demand it, or when your team already ships software this way.</p>
+</section></section><section class="level2"><h2 id="platform-considerations">Platform considerations<a class="anchor" aria-label="anchor" href="#platform-considerations"></a>
 </h2>
-<p>Instead of passing <code>runtime_strategy</code> to <code><a href="../reference/export.html">export()</a></code>, you can set it in <code>_shinyelectron.yml</code>:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"r-shiny"</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"auto-download"</span></span></code></pre></div>
-<p>Function parameters always take precedence over the config file. If you pass <code>runtime_strategy = "bundled"</code> to <code><a href="../reference/export.html">export()</a></code> but the config says <code>auto-download</code>, the bundled strategy is used.</p>
-</section><section class="level2"><h2 id="platform-considerations">Platform Considerations<a class="anchor" aria-label="anchor" href="#platform-considerations"></a>
-</h2>
-<section class="level3"><h3 id="linux">Linux<a class="anchor" aria-label="anchor" href="#linux"></a>
+<p>Most strategy choices are platform-neutral, but a few constraints are worth calling out before you commit to a build target.</p>
+<section class="level3"><h3 id="portable-runtime-coverage">Portable runtime coverage<a class="anchor" aria-label="anchor" href="#portable-runtime-coverage"></a>
 </h3>
-<p>Portable R builds are not available for Linux. If you are targeting Linux users, use the <code>system</code> or <code>container</code> strategy for R apps. Python apps can use any strategy on Linux since python-build-standalone provides Linux builds.</p>
-</section><section class="level3"><h3 id="macos-code-signing">macOS Code Signing<a class="anchor" aria-label="anchor" href="#macos-code-signing"></a>
+<p>Portable R comes from the <a href="https://github.com/portable-r" class="external-link">portable-r</a> project. It covers Windows (x64 and aarch64) and macOS (arm64 and x86_64), and includes Rtools on Windows so the user does not install R separately. There is no portable-r Linux build today, which is why <code>bundled</code> and <code>auto-download</code> are unavailable for R apps on Linux. Use <code>system</code> or <code>container</code> for Linux R targets.</p>
+<p>Portable Python comes from <a href="https://github.com/astral-sh/python-build-standalone" class="external-link">python-build-standalone</a> by Astral and covers all three platforms. Python apps can use every strategy everywhere.</p>
+</section><section class="level3"><h3 id="cross-platform-builds">Cross-platform builds<a class="anchor" aria-label="anchor" href="#cross-platform-builds"></a>
 </h3>
-<p>Bundled and auto-download strategies that embed or download a runtime may require re-signing the runtime binaries for macOS notarization. Pass <code>sign = TRUE</code> to <code><a href="../reference/export.html">export()</a></code> and configure your signing credentials.</p>
-</section><section class="level3"><h3 id="windows">Windows<a class="anchor" aria-label="anchor" href="#windows"></a>
+<p>A bundled build can only target the platform you built on, because the embedded runtime is a platform-specific binary. To ship installers for Windows, macOS, and Linux from one machine, use <code>auto-download</code> or <code>container</code>, or build each platform separately. The <a href="github-actions.html">GitHub Actions</a> vignette shows how to fan out bundled builds across matrix runners in CI.</p>
+</section><section class="level3"><h3 id="macos-code-signing">macOS code signing<a class="anchor" aria-label="anchor" href="#macos-code-signing"></a>
 </h3>
-<p>The portable-r-windows builds are self-contained and do not require the user to install R. They include Rtools where needed. Python builds from python-build-standalone are similarly self-contained.</p>
-</section><section class="level3"><h3 id="cross-platform-builds">Cross-Platform Builds<a class="anchor" aria-label="anchor" href="#cross-platform-builds"></a>
-</h3>
-<p>You can only build bundled apps for the platform you are currently on, because the runtime must match the target. To build for Windows and macOS, you need to run the export on each platform (or use CI — see the <a href="github-actions.html">GitHub Actions</a> article).</p>
-</section></section><section class="level2"><h2 id="next-steps">Next Steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+<p><code>bundled</code> and <code>auto-download</code> embed or download a runtime that may need re-signing for macOS notarization. Pass <code>sign = TRUE</code> to <code><a href="../reference/export.html">export()</a></code> and set up your signing credentials; see the <a href="code-signing.html">Code Signing</a> vignette for specifics.</p>
+</section></section><section class="level2"><h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>
 <ul>
 <li>
-<strong><a href="container-strategy.html">Container Strategy</a></strong>: Deep dive into Docker/Podman setup, custom Dockerfiles, and platform considerations</li>
+<strong><a href="container-strategy.html">Container Strategy</a></strong>: Docker and Podman setup, custom Dockerfiles, platform gotchas.</li>
 <li>
-<strong><a href="code-signing.html">Code Signing and Distribution</a></strong>: Sign your builds for macOS notarization and Windows SmartScreen trust</li>
+<strong><a href="code-signing.html">Code Signing and Distribution</a></strong>: macOS notarization, Windows SmartScreen, signing credentials.</li>
 <li>
-<strong><a href="security.html">Security Considerations</a></strong>: Electron security model, secure defaults, and what to avoid</li>
+<strong><a href="security.html">Security Considerations</a></strong>: Electron’s security model, secure defaults, common pitfalls.</li>
 </ul></section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);

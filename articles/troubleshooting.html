@@ -49,7 +49,7 @@
     <li><a class="dropdown-item" href="../articles/multi-app-suites.html">Multi-App Suites</a></li>
     <li><a class="dropdown-item" href="../articles/container-strategy.html">Container Strategy</a></li>
     <li><a class="dropdown-item" href="../articles/security.html">Security Considerations</a></li>
-    <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced Features</a></li>
+    <li><a class="dropdown-item" href="../articles/customizations.html">Customizations</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
     <li><a class="dropdown-item" href="../articles/nodejs-management.html">Node.js Management</a></li>
@@ -87,63 +87,67 @@
 
 
 
-    <p>When something goes wrong with shinyelectron, the diagnostic functions (called “sitrep” for “situation report”) help identify and resolve issues. This guide explains how to use these functions effectively.</p>
-<section class="level2"><h2 id="quick-start-run-full-diagnostics">Quick Start: Run Full Diagnostics<a class="anchor" aria-label="anchor" href="#quick-start-run-full-diagnostics"></a>
+    <p>shinyelectron problems break down into three phases: install, build, and runtime. The <code>sitrep_*</code> (situation report) functions check the environment first, so you can narrow the search before reading error messages. This guide covers the diagnostics, then walks through the common failures in each phase.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure><p><img src="../reference/figures/troubleshooting-phases.svg" style="width:100.0%" alt="Three columns side by side, labelled INSTALL, BUILD, and RUNTIME. The INSTALL column has an amber stripe and the heading Before any build, with the diagnostic functions sitrep_electron_system, sitrep_electron_dependencies, and sitrep_electron_build_tools, plus four error pills: Node.js not found, R package missing, Build tools missing, and Python or shinylive CLI. The BUILD column has a blue stripe and the heading During export(), with the diagnostic function sitrep_electron_project (checks package.json, main.js, node_modules, build scripts) and four error pills: package.json or node_modules, Container pull failure, tar or EBUSY (Windows), and Slow npm install. The RUNTIME column has a green stripe and the heading After packaging, when the app launches, noting that there is no sitrep at this stage and the only diagnostic is launching the app with SHINYELECTRON_DEBUG=1 to read its own log output, plus four error pills: Gatekeeper (macOS), SmartScreen (Windows), R not on PATH (Windows), and App crashes on launch. A caption at the bottom reads: Run the matching sitrep first. If every check is green, scroll to the phase that contains your error."></p>
+<figcaption>Three-phase troubleshooting map. Each phase lists the matching sitrep functions and the common errors users hit there.</figcaption></figure>
+</div>
+<section class="level2"><h2 id="start-with-a-full-report">Start with a full report<a class="anchor" aria-label="anchor" href="#start-with-a-full-report"></a>
 </h2>
-<p>When you encounter problems, start with a complete diagnostic check:</p>
+<p>When you hit a problem, run the full diagnostic first.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep_shinyelectron.html">sitrep_shinyelectron</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
-<pre><code>── Complete shinyelectron Diagnostic Report ──────────────────────────────────
-────────────────────────────────────────────────────────────────────────────────
+<pre><code>-- Complete shinyelectron Diagnostic Report ----------------------------------
+-------------------------------------------------------------------------------
 
-── System Requirements Report ────────────────────────────────────────────────
-✔ Platform: darwin
-✔ Architecture: arm64
-✔ Local Node.js (shinyelectron): v22.11.0 ✓
-✔ Active Node.js: v22.11.0 (local) ✓
-✔ npm: v10.9.0 ✓
-✔ R: v4.4.2 ✓
+-- System Requirements Report -----------------------------------------------
+v Platform: darwin
+v Architecture: arm64
+v Local Node.js (shinyelectron): v22.11.0
+v Active Node.js: v22.11.0 (local)
+v npm: v10.9.0
+v R: v4.4.2
 
-── Python
-✔ Python 3.12.4
-✔ Python shinylive: 0.7.0 (ready)
-✔ Python shiny: 1.2.1 (ready)
+-- Python
+v Python 3.12.4
+v Python shinylive: 0.7.0 (ready)
+v Python shiny: 1.2.1 (ready)
 
-── Container Engine
-✔ Container engine: docker
+-- Container Engine
+v Container engine: docker
 
-── Cached Runtimes
-ℹ No cached runtimes found
+-- Cached Runtimes
+i No cached runtimes found
 
-✔ All system requirements satisfied ✓
-────────────────────────────────────────────────────────────────────────────────
+v All system requirements satisfied
+-------------------------------------------------------------------------------
 
-── Dependencies Report ───────────────────────────────────────────────────────
-── Required Packages
-✔ cli: v3.6.5 ✓
-✔ fs: v1.6.6 ✓
-✔ jsonlite: v2.0.0 ✓
-✔ processx: v3.8.6 ✓
-✔ whisker: v0.4.1 ✓
-✔ utils: v4.4.2 ✓
-✔ tools: v4.4.2 ✓
-✔ All required dependencies satisfied ✓
-────────────────────────────────────────────────────────────────────────────────
+-- Dependencies Report ------------------------------------------------------
+-- Required Packages
+v cli: v3.6.5
+v fs: v1.6.6
+v jsonlite: v2.0.0
+v processx: v3.8.6
+v whisker: v0.4.1
+v utils: v4.4.2
+v tools: v4.4.2
+v All required dependencies satisfied
+-------------------------------------------------------------------------------
 
-── Build Tools Report ────────────────────────────────────────────────────────
-ℹ Checking build tools for platform: darwin
-✔ Xcode Command Line Tools: Found ✓
-✔ Build tools ready ✓
-────────────────────────────────────────────────────────────────────────────────
+-- Build Tools Report -------------------------------------------------------
+i Checking build tools for platform: darwin
+v Xcode Command Line Tools: Found
+v Build tools ready
+-------------------------------------------------------------------------------
 
-── Overall Summary ───────────────────────────────────────────────────────────
-✔ All systems ready! You should be able to build Electron apps successfully ✓</code></pre>
-<p>This command runs all diagnostic checks and provides prioritized recommendations if issues are found. The system report now includes Python availability, Python package checks (shinylive and shiny), container engine detection, and cached runtime inventories.</p>
-</section><section class="level2"><h2 id="individual-diagnostic-functions">Individual Diagnostic Functions<a class="anchor" aria-label="anchor" href="#individual-diagnostic-functions"></a>
+-- Overall Summary ----------------------------------------------------------
+v All systems ready! You should be able to build Electron apps successfully</code></pre>
+<p>This runs every check and ranks any issues by priority. A red <code>x</code> is a hard failure; a yellow <code>!</code> is a warning the build will probably get past.</p>
+</section><section class="level2"><h2 id="targeted-diagnostics">Targeted diagnostics<a class="anchor" aria-label="anchor" href="#targeted-diagnostics"></a>
 </h2>
-<p>Each diagnostic function focuses on a specific area:</p>
+<p>Once you know which subsystem is unhappy, run its check directly.</p>
 <table class="table caption-top">
 <colgroup>
 <col style="width: 38%">
@@ -151,12 +155,12 @@
 </colgroup>
 <thead><tr class="header">
 <th>Function</th>
-<th>What It Checks</th>
+<th>What it checks</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td><code><a href="../reference/sitrep_electron_system.html">sitrep_electron_system()</a></code></td>
-<td>Node.js, npm, platform, R version, Python (+ shinylive/shiny packages), container engine, cached runtimes</td>
+<td>Node.js, npm, platform, R, Python (plus the <code>shinylive</code> and <code>shiny</code> Python packages), container engine, cached runtimes</td>
 </tr>
 <tr class="even">
 <td><code><a href="../reference/sitrep_electron_dependencies.html">sitrep_electron_dependencies()</a></code></td>
@@ -172,505 +176,383 @@
 </tr>
 </tbody>
 </table>
-<section class="level3"><h3 id="system-requirements">System Requirements<a class="anchor" aria-label="anchor" href="#system-requirements"></a>
-</h3>
-<p>Check Node.js, npm, and platform configuration:</p>
+<div>
+<blockquote>
+<p><strong>Local versus system Node.js</strong></p>
+<p>shinyelectron prefers its own Node.js install whenever one exists. See <a href="nodejs-management.html">Node.js Management</a> for the full resolution order.</p>
+</blockquote>
+</div>
+</section><section class="level2"><h2 id="reading-sitrep-results-in-code">Reading sitrep results in code<a class="anchor" aria-label="anchor" href="#reading-sitrep-results-in-code"></a>
+</h2>
+<p>Every <code>sitrep_*</code> function returns its results invisibly. Capture them when you want to automate checks (CI, custom dashboards, pre-flight scripts):</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep_electron_system.html">sitrep_electron_system</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-</div>
-<p>This function checks:</p>
-<ul>
-<li>
-<strong>Platform and architecture</strong> (darwin/win/linux, x64/arm64)</li>
-<li>
-<strong>Local Node.js</strong> installed by shinyelectron</li>
-<li>
-<strong>Active Node.js</strong> version (local or system)</li>
-<li>
-<strong>npm</strong> availability and version</li>
-<li>
-<strong>R version</strong> compatibility</li>
-<li>
-<strong>Python</strong> availability, plus whether <code>shinylive</code> and <code>shiny</code> Python packages are usable</li>
-<li>
-<strong>Container engine</strong> (Docker or Podman)</li>
-<li>
-<strong>Cached runtimes</strong> (previously downloaded R and Python runtimes)</li>
-</ul>
-<div>
-<blockquote>
-<p><strong>Local vs System Node.js</strong></p>
-<p>shinyelectron can use either a locally installed Node.js (via <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code>) or your system’s Node.js. The local installation is preferred when available.</p>
-</blockquote>
-</div>
-</section><section class="level3"><h3 id="r-package-dependencies">R Package Dependencies<a class="anchor" aria-label="anchor" href="#r-package-dependencies"></a>
-</h3>
-<p>Check required and optional R packages:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep_electron_dependencies.html">sitrep_electron_dependencies</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-</div>
-<p><strong>Required packages:</strong></p>
-<ul>
-<li>
-<code>cli</code> - Formatted console output</li>
-<li>
-<code>fs</code> - File system operations</li>
-<li>
-<code>jsonlite</code> - JSON parsing</li>
-<li>
-<code>processx</code> - Process execution</li>
-<li>
-<code>whisker</code> - Template rendering</li>
-<li>
-<code>utils</code> - Utility functions</li>
-<li>
-<code>tools</code> - R tools</li>
-</ul>
-<p><strong>Optional packages:</strong></p>
-<ul>
-<li>
-<code>shinylive</code> - Required for r-shinylive app type</li>
-<li>
-<code>DT</code> - Enhanced data tables (for your apps)</li>
-<li>
-<code>ggplot2</code> - Graphics (for your apps)</li>
-</ul></section><section class="level3"><h3 id="build-tools">Build Tools<a class="anchor" aria-label="anchor" href="#build-tools"></a>
-</h3>
-<p>Check platform-specific build tools:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep_electron_build_tools.html">sitrep_electron_build_tools</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-</div>
-<p><strong>Requirements by platform:</strong></p>
-<table class="table caption-top">
-<thead><tr class="header">
-<th>Platform</th>
-<th>Required Tools</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td>macOS</td>
-<td>Xcode Command Line Tools</td>
-</tr>
-<tr class="even">
-<td>Windows</td>
-<td>Visual Studio Build Tools, Python</td>
-</tr>
-<tr class="odd">
-<td>Linux</td>
-<td>gcc, make (build-essential)</td>
-</tr>
-</tbody>
-</table></section><section class="level3"><h3 id="electron-project">Electron Project<a class="anchor" aria-label="anchor" href="#electron-project"></a>
-</h3>
-<p>Check an existing Electron project structure:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Check current directory</span></span>
-<span><span class="fu"><a href="../reference/sitrep_electron_project.html">sitrep_electron_project</a></span><span class="op">(</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sitrep_shinyelectron.html">sitrep_shinyelectron</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Check specific directory</span></span>
-<span><span class="fu"><a href="../reference/sitrep_electron_project.html">sitrep_electron_project</a></span><span class="op">(</span><span class="st">"path/to/electron-app"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<p>This function validates:</p>
-<ul>
-<li>
-<strong>package.json</strong> existence and validity</li>
-<li>
-<strong>main.js</strong> presence</li>
-<li>
-<strong>App files</strong> in expected locations</li>
-<li>
-<strong>Build scripts</strong> completeness</li>
-<li>
-<strong>node_modules</strong> installation status</li>
-</ul></section></section><section class="level2"><h2 id="common-issues-and-solutions">Common Issues and Solutions<a class="anchor" aria-label="anchor" href="#common-issues-and-solutions"></a>
-</h2>
-<section class="level3"><h3 id="node-js-not-found">Node.js Not Found<a class="anchor" aria-label="anchor" href="#node-js-not-found"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>✖ Node.js: Not found</code></pre>
-<p><strong>Solutions:</strong></p>
-<ol type="1">
-<li>
-<p><strong>Install locally with shinyelectron</strong> (recommended):</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-</div>
-</li>
-<li><p><strong>Install from nodejs.org:</strong> Download and install from <a href="https://nodejs.org/" class="external-link uri">https://nodejs.org/</a></p></li>
-<li>
-<p><strong>Enable auto-install in config:</strong></p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
-</li>
-</ol></section><section class="level3"><h3 id="node-js-version-too-old">Node.js Version Too Old<a class="anchor" aria-label="anchor" href="#node-js-version-too-old"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>⚠ Node.js: v18.20.0 (version 22+ required)</code></pre>
-<p>shinyelectron requires Node.js &gt;= 22.0.0. Older LTS lines (18.x, 20.x) are not supported because the Electron version used by the package depends on features introduced in Node.js 22.</p>
-<p><strong>Solution:</strong></p>
-<p>Install a newer version locally:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Install latest LTS (currently 22.x)</span></span>
-<span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Or install specific version</span></span>
-<span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>version <span class="op">=</span> <span class="st">"22.11.0"</span><span class="op">)</span></span></code></pre></div>
-</div>
-</section><section class="level3"><h3 id="npm-not-found">npm Not Found<a class="anchor" aria-label="anchor" href="#npm-not-found"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>✖ npm: Not found</code></pre>
-<p><strong>Solution:</strong></p>
-<p>npm is bundled with Node.js. If Node.js is installed but npm is missing, reinstall Node.js:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-</div>
-</section><section class="level3"><h3 id="missing-r-packages">Missing R Packages<a class="anchor" aria-label="anchor" href="#missing-r-packages"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>✖ shinylive: Not installed</code></pre>
-<p><strong>Solution:</strong></p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"shinylive"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<p>For multiple missing packages:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"shinylive"</span>, <span class="st">"cli"</span>, <span class="st">"fs"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-</div>
-</section><section class="level3"><h3 id="xcode-command-line-tools-not-found-macos">Xcode Command Line Tools Not Found (macOS)<a class="anchor" aria-label="anchor" href="#xcode-command-line-tools-not-found-macos"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>⚠ Xcode Command Line Tools: Not found</code></pre>
-<p><strong>Solution:</strong></p>
-<p>Run in Terminal:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ex">xcode-select</span> <span class="at">--install</span></span></code></pre></div>
-</section><section class="level3"><h3 id="visual-studio-build-tools-not-found-windows">Visual Studio Build Tools Not Found (Windows)<a class="anchor" aria-label="anchor" href="#visual-studio-build-tools-not-found-windows"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>⚠ Visual Studio Build Tools: Not found</code></pre>
-<p><strong>Solution:</strong></p>
-<ol type="1">
-<li>Download Visual Studio Build Tools from <a href="https://visualstudio.microsoft.com/downloads/" class="external-link uri">https://visualstudio.microsoft.com/downloads/</a>
-</li>
-<li>Install the “Desktop development with C++” workload</li>
-<li>Restart your R session</li>
-</ol></section><section class="level3"><h3 id="build-tools-not-found-linux">Build Tools Not Found (Linux)<a class="anchor" aria-label="anchor" href="#build-tools-not-found-linux"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>⚠ Build tools: Incomplete</code></pre>
-<p><strong>Solution:</strong></p>
-<p>Install build-essential (Ubuntu/Debian):</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get update</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get install build-essential</span></code></pre></div>
-<p>Install development tools (Fedora/RHEL):</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> dnf groupinstall <span class="st">"Development Tools"</span></span></code></pre></div>
-</section><section class="level3"><h3 id="package-json-not-found">package.json Not Found<a class="anchor" aria-label="anchor" href="#package-json-not-found"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>✖ package.json: Not found</code></pre>
-<p><strong>Cause:</strong> You’re checking a directory that isn’t an Electron project.</p>
-<p><strong>Solution:</strong></p>
-<p>Run the diagnostic on the correct directory:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb24"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Check the electron-app subdirectory</span></span>
-<span><span class="fu"><a href="../reference/sitrep_electron_project.html">sitrep_electron_project</a></span><span class="op">(</span><span class="st">"my-export/electron-app"</span><span class="op">)</span></span></code></pre></div>
-</div>
-</section><section class="level3"><h3 id="node_modules-not-found">node_modules Not Found<a class="anchor" aria-label="anchor" href="#node_modules-not-found"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>ℹ node_modules: Not found (run 'npm install')</code></pre>
-<p><strong>Solution:</strong></p>
-<p>Navigate to the Electron project and install dependencies:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># From R</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="st">"my-export/electron-app"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/system.html" class="external-link">system</a></span><span class="op">(</span><span class="st">"npm install"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<p>Or from the terminal:</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> my-export/electron-app</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install</span></code></pre></div>
-</section></section><section class="level2"><h2 id="python-issues">Python Issues<a class="anchor" aria-label="anchor" href="#python-issues"></a>
-</h2>
-<section class="level3"><h3 id="python-not-found">Python Not Found<a class="anchor" aria-label="anchor" href="#python-not-found"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>ℹ Python: not found (needed for py-shinylive and py-shiny)</code></pre>
-<p><strong>Solutions:</strong></p>
-<ol type="1">
-<li><p><strong>Install Python</strong> from <a href="https://www.python.org/downloads/" class="external-link uri">https://www.python.org/downloads/</a>. Version 3.9 or newer is recommended.</p></li>
-<li><p><strong>Windows:</strong> During installation, check <strong>“Add python.exe to PATH”</strong>. If you already installed Python without that option, add the install directory manually. The default location is typically <code>C:\Users\&lt;you&gt;\AppData\Local\Programs\Python\Python3XX\</code>.</p></li>
-<li><p><strong>macOS:</strong> The system <code>python3</code> from Xcode Command Line Tools usually works. If not, install via Homebrew: <code>brew install python</code>.</p></li>
-<li>
-<p><strong>Verify</strong> Python is reachable:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb29"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.which.html" class="external-link">Sys.which</a></span><span class="op">(</span><span class="st">"python3"</span><span class="op">)</span></span>
-<span><span class="co"># On Windows, Sys.which("python") is also checked</span></span></code></pre></div>
-</div>
-</li>
-</ol></section><section class="level3"><h3 id="python-shinylive-cli-not-working">Python shinylive CLI Not Working<a class="anchor" aria-label="anchor" href="#python-shinylive-cli-not-working"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>✖ The shinylive Python package CLI is required for py-shinylive conversion
-  … cannot be directly executed
-  … No module named shinylive.__main__</code></pre>
-<p>The <code>shinylive</code> Python package installs a console script, but the package itself ships no <code>__main__.py</code>, so <code>python -m shinylive</code> alone fails. This usually means the <code>shinylive</code> console script is not on your PATH.</p>
-<p><strong>Solutions:</strong></p>
-<ol type="1">
-<li>
-<p><strong>Reinstall</strong> to make sure the console script is created:</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">--upgrade</span> <span class="at">--force-reinstall</span> shinylive</span></code></pre></div>
-</li>
-<li>
-<p><strong>Windows PATH issue:</strong> <code>pip install</code> places scripts in <code>%APPDATA%\Python\Python3XX\Scripts</code>. Add that directory to your PATH:</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find where pip installed the script</span></span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>python <span class="op">-</span>c <span class="st">"import sysconfig; print(sysconfig.get_path('scripts'))"</span></span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Add that directory to your user PATH</span></span>
-<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="va">$scriptsDir</span> <span class="op">=</span> python <span class="op">-</span>c <span class="st">"import sysconfig; print(sysconfig.get_path('scripts'))"</span></span>
-<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a><span class="op">[</span>Environment<span class="op">]::</span>SetEnvironmentVariable<span class="op">(</span><span class="st">'Path'</span><span class="op">,</span> <span class="st">"</span><span class="va">$env</span><span class="op">:</span><span class="va">Path</span><span class="st">;</span><span class="va">$scriptsDir</span><span class="st">"</span><span class="op">,</span> <span class="st">'User'</span><span class="op">)</span></span></code></pre></div>
-<p>Then restart your R session.</p>
-</li>
-<li>
-<p><strong>Verify</strong> the CLI works:</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="ex">shinylive</span> <span class="at">--version</span></span></code></pre></div>
-</li>
-</ol></section><section class="level3"><h3 id="python-shiny-package-not-installed">Python shiny Package Not Installed<a class="anchor" aria-label="anchor" href="#python-shiny-package-not-installed"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>ℹ Python shiny: not usable</code></pre>
-<p><strong>Solution:</strong></p>
-<div class="sourceCode" id="cb35"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install shiny</span></code></pre></div>
-<p>This is only required for <code>py-shiny</code> (native Python Shiny) apps. The <code>py-shinylive</code> app type uses the <code>shinylive</code> package instead.</p>
-</section></section><section class="level2"><h2 id="container-issues-docker-podman">Container Issues (Docker / Podman)<a class="anchor" aria-label="anchor" href="#container-issues-docker-podman"></a>
-</h2>
-<section class="level3"><h3 id="docker-or-podman-not-found">Docker or Podman Not Found<a class="anchor" aria-label="anchor" href="#docker-or-podman-not-found"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>ℹ Docker/Podman: not found (needed for container strategy)</code></pre>
-<p><strong>Solution:</strong></p>
-<p>Install a container engine:</p>
-<ul>
-<li>
-<strong>Docker Desktop:</strong> <a href="https://docs.docker.com/get-docker/" class="external-link uri">https://docs.docker.com/get-docker/</a>
-</li>
-<li>
-<strong>Podman:</strong> <a href="https://podman.io/getting-started/installation" class="external-link uri">https://podman.io/getting-started/installation</a>
-</li>
-</ul>
-<p>After installation, verify the engine is running:</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> info</span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
-<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> info</span></code></pre></div>
-<div>
-<blockquote>
-<p><strong>Docker on Parallels / nested virtualization</strong></p>
-<p>Docker Desktop requires hardware virtualization. If you are running macOS inside a Parallels VM (e.g. on Apple Silicon), Docker Desktop will fail because Parallels does not expose nested virtualization to the guest.</p>
-<p><strong>Workaround:</strong> Use the <code>system</code>, <code>bundled</code>, or <code>auto-download</code> runtime strategy instead, or run the Docker build on the host machine.</p>
-</blockquote>
-</div>
-</section><section class="level3"><h3 id="container-image-pull-failures">Container Image Pull Failures<a class="anchor" aria-label="anchor" href="#container-image-pull-failures"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>Error: … manifest unknown … or image not found</code></pre>
-<p><strong>Solutions:</strong></p>
-<ol type="1">
-<li>
-<p><strong>Check the image name</strong> in your <code>_shinyelectron.yml</code>:</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">container</span><span class="kw">:</span></span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">image</span><span class="kw">:</span><span class="at"> </span><span class="st">"shinyelectron/r-shiny"</span></span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">tag</span><span class="kw">:</span><span class="at"> </span><span class="st">"latest"</span></span></code></pre></div>
-</li>
-<li>
-<p><strong>Network/auth issues:</strong> Make sure you can pull manually:</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> pull shinyelectron/r-shiny:latest</span></code></pre></div>
-</li>
-<li><p><strong>Private registries:</strong> Log in first with <code>docker login</code>.</p></li>
-</ol></section><section class="level3"><h3 id="container-port-conflicts">Container Port Conflicts<a class="anchor" aria-label="anchor" href="#container-port-conflicts"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>Error: … bind: address already in use</code></pre>
-<p>Another process (or a previous container) is already using the same port.</p>
-<p><strong>Solutions:</strong></p>
-<ol type="1">
-<li>
-<p><strong>Change the port</strong> in <code>_shinyelectron.yml</code>:</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">server</span><span class="kw">:</span></span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">port</span><span class="kw">:</span><span class="at"> </span><span class="dv">3839</span></span></code></pre></div>
-</li>
-<li>
-<p><strong>Stop the conflicting container:</strong></p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> ps                     <span class="co"># find the running container</span></span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> stop <span class="op">&lt;</span>container-id<span class="op">&gt;</span>    <span class="co"># stop it</span></span></code></pre></div>
-</li>
-</ol></section></section><section class="level2"><h2 id="windows-specific-issues">Windows-Specific Issues<a class="anchor" aria-label="anchor" href="#windows-specific-issues"></a>
-</h2>
-<section class="level3"><h3 id="r-not-on-path">R Not on PATH<a class="anchor" aria-label="anchor" href="#r-not-on-path"></a>
-</h3>
-<p><strong>Symptom:</strong> The packaged app cannot find <code>Rscript</code> on the end user’s machine when using the <code>system</code> runtime strategy.</p>
-<p><strong>Cause:</strong> The default R installer on Windows places R under <code>C:\Program Files</code> (or <code>C:\Program Files (x86)</code> for 32-bit), but does not add it to the system PATH.</p>
-<p><strong>Solutions:</strong></p>
-<ol type="1">
-<li><p><strong>During R installation:</strong> Check the option to add R to the PATH.</p></li>
-<li>
-<p><strong>After installation:</strong> Add the R <code>bin</code> directory manually. For example:</p>
-<pre><code>C:\Program Files\R\R-4.4.2\bin</code></pre>
-</li>
-<li><p><strong>In production:</strong> Use the <code>bundled</code> or <code>auto-download</code> runtime strategy so that end users do not need R pre-installed.</p></li>
-</ol></section><section class="level3"><h3 id="gnu-tar-vs-bsdtar-conflict">GNU tar vs bsdtar Conflict<a class="anchor" aria-label="anchor" href="#gnu-tar-vs-bsdtar-conflict"></a>
-</h3>
-<p><strong>Symptom:</strong> Extracting a runtime archive fails with:</p>
-<pre><code>Cannot connect to C: resolve failed</code></pre>
-<p><strong>Cause:</strong> Git for Windows ships GNU tar on the PATH. GNU tar interprets paths like <code>C:\...</code> as a remote host specification (<code>host:path</code>). The runtime downloader needs Windows 10’s built-in bsdtar (<code>%SystemRoot%\System32\tar.exe</code>), which handles drive letters correctly.</p>
-<p>shinyelectron works around this automatically: the JavaScript runtime downloader resolves the full path to <code>System32\tar.exe</code>, and the R-side extraction uses R’s internal tar. If you still hit this error, check whether something has overridden the tar command:</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="ex">where</span> tar</span></code></pre></div>
-<p>The first result should be <code>C:\Windows\System32\tar.exe</code>, not <code>C:\Program Files\Git\usr\bin\tar.exe</code>.</p>
-</section><section class="level3"><h3 id="ebusy-file-locks-when-rebuilding">EBUSY File Locks When Rebuilding<a class="anchor" aria-label="anchor" href="#ebusy-file-locks-when-rebuilding"></a>
-</h3>
-<p><strong>Symptom:</strong></p>
-<pre><code>Error: EBUSY: resource busy or locked, unlink '...\electron.exe'</code></pre>
-<p><strong>Cause:</strong> On Windows, a running Electron process locks its own executable and DLLs. If you try to rebuild the app while the previous build is still running, <code>npm</code> / <code>electron-builder</code> cannot overwrite the locked files.</p>
-<p><strong>Solution:</strong></p>
-<ol type="1">
-<li>Close the running Electron app.</li>
-<li>If the process lingers, end it from Task Manager (<code>electron.exe</code>).</li>
-<li>Re-run the build.</li>
-</ol></section><section class="level3"><h3 id="windows-defender-scanning-delays">Windows Defender Scanning Delays<a class="anchor" aria-label="anchor" href="#windows-defender-scanning-delays"></a>
-</h3>
-<p><strong>Symptom:</strong> Builds are extremely slow, especially the <code>npm install</code> step and the final packaging step.</p>
-<p><strong>Cause:</strong> Windows Defender real-time scanning inspects every file that <code>npm</code> creates inside <code>node_modules</code> (thousands of small files).</p>
-<p><strong>Solutions:</strong></p>
-<ol type="1">
-<li>
-<p><strong>Add an exclusion</strong> for the project directory:</p>
-<p>Settings &gt; Privacy &amp; Security &gt; Virus &amp; threat protection &gt; Manage settings &gt; Exclusions &gt; Add an exclusion &gt; Folder</p>
-</li>
-<li><p><strong>Add an exclusion</strong> for the shinyelectron cache directory (<code>~/.shinyelectron</code>).</p></li>
-</ol></section></section><section class="level2"><h2 id="code-signing">Code Signing<a class="anchor" aria-label="anchor" href="#code-signing"></a>
-</h2>
-<section class="level3"><h3 id="unsigned-app-warnings-on-macos-gatekeeper">Unsigned App Warnings on macOS (GateKeeper)<a class="anchor" aria-label="anchor" href="#unsigned-app-warnings-on-macos-gatekeeper"></a>
-</h3>
-<p><strong>Symptom:</strong> Users see “app is damaged and can’t be opened” or “app can’t be opened because Apple cannot check it for malicious software” when launching the packaged app.</p>
-<p><strong>Cause:</strong> macOS GateKeeper blocks unsigned or unnotarized applications.</p>
-<p><strong>Solutions:</strong></p>
-<ol type="1">
-<li>
-<p><strong>For distribution:</strong> Sign and notarize the app. Configure signing in <code>_shinyelectron.yml</code>:</p>
-<div class="sourceCode" id="cb48"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">signing</span><span class="kw">:</span></span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">mac</span><span class="kw">:</span></span>
-<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">identity</span><span class="kw">:</span><span class="at"> </span><span class="st">"Developer ID Application: Your Name (TEAMID)"</span></span>
-<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">team_id</span><span class="kw">:</span><span class="at"> </span><span class="st">"TEAMID"</span></span>
-<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">notarize</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
-<p>Set the environment variables <code>APPLE_TEAM_ID</code>, <code>APPLE_ID</code>, and <code>APPLE_APP_SPECIFIC_PASSWORD</code> before building.</p>
-</li>
-<li>
-<p><strong>For local testing only:</strong> Right-click the app and choose “Open”, then confirm. This bypasses GateKeeper for that specific app. Or remove the quarantine attribute:</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="ex">xattr</span> <span class="at">-cr</span> /Applications/MyApp.app</span></code></pre></div>
-</li>
-</ol></section><section class="level3"><h3 id="smartscreen-warning-on-windows">SmartScreen Warning on Windows<a class="anchor" aria-label="anchor" href="#smartscreen-warning-on-windows"></a>
-</h3>
-<p><strong>Symptom:</strong> Windows SmartScreen shows “Windows protected your PC” when the user tries to run the installer or app.</p>
-<p><strong>Cause:</strong> The executable is unsigned or does not have enough SmartScreen reputation.</p>
-<p><strong>Solutions:</strong></p>
-<ol type="1">
-<li>
-<p><strong>For distribution:</strong> Sign the app with a code signing certificate. Configure in <code>_shinyelectron.yml</code>:</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">signing</span><span class="kw">:</span></span>
-<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">win</span><span class="kw">:</span></span>
-<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">certificate_file</span><span class="kw">:</span><span class="at"> </span><span class="st">"path/to/cert.pfx"</span></span></code></pre></div>
-<p>Set the <code>CSC_LINK</code> and <code>CSC_KEY_PASSWORD</code> environment variables before building.</p>
-</li>
-<li><p><strong>For local testing:</strong> Click “More info” then “Run anyway”.</p></li>
-<li><p><strong>EV certificates</strong> receive immediate SmartScreen reputation. Standard certificates build reputation over time as more users run the signed installer.</p></li>
-</ol></section></section><section class="level2"><h2 id="accessing-diagnostic-results-programmatically">Accessing Diagnostic Results Programmatically<a class="anchor" aria-label="anchor" href="#accessing-diagnostic-results-programmatically"></a>
-</h2>
-<p>All sitrep functions return their results invisibly for programmatic use:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb51"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Get results without printing</span></span>
-<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sitrep_shinyelectron.html">sitrep_shinyelectron</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Check for issues</span></span>
+<span><span class="co"># Surface system issues</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">results</span><span class="op">$</span><span class="va">system</span><span class="op">$</span><span class="va">issues</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"System issues found:\n"</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">results</span><span class="op">$</span><span class="va">system</span><span class="op">$</span><span class="va">issues</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span></span>
-<span><span class="co"># Check Node.js status</span></span>
+<span><span class="co"># Inspect Node.js status</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="va">results</span><span class="op">$</span><span class="va">system</span><span class="op">$</span><span class="va">node</span><span class="op">$</span><span class="va">installed</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Node.js version:"</span>, <span class="va">results</span><span class="op">$</span><span class="va">system</span><span class="op">$</span><span class="va">node</span><span class="op">$</span><span class="va">version</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 </div>
-</section><section class="level2"><h2 id="cache-management">Cache Management<a class="anchor" aria-label="anchor" href="#cache-management"></a>
+<p>The structure mirrors what gets printed: each <code>sitrep_*</code> family returns a list with <code>installed</code>, <code>version</code>, <code>issues</code>, and <code>recommendations</code> slots where they apply.</p>
+</section><section class="level2"><h2 id="install-time-problems">Install-time problems<a class="anchor" aria-label="anchor" href="#install-time-problems"></a>
 </h2>
-<p>If you encounter persistent issues, clearing the cache may help:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb52"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Clear all cached assets</span></span>
-<span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"all"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Clear only Node.js installations</span></span>
-<span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"nodejs"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Clear npm cache</span></span>
-<span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"npm"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<p>After clearing the cache, reinstall Node.js:</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb53"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-</div>
-</section><section class="level2"><h2 id="debugging-a-packaged-app">Debugging a Packaged App<a class="anchor" aria-label="anchor" href="#debugging-a-packaged-app"></a>
-</h2>
-<p>The packaged Electron app is silent by default — only warnings and errors print to the console. To see what is happening during runtime detection, dependency installation, and server startup, launch the app with the <code>SHINYELECTRON_DEBUG</code> environment variable set to <code>1</code>:</p>
-<div class="sourceCode" id="cb54"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="co"># macOS / Linux</span></span>
-<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a><span class="va">SHINYELECTRON_DEBUG</span><span class="op">=</span>1 <span class="ex">/path/to/YourApp.app/Contents/MacOS/YourApp</span></span>
-<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Windows (PowerShell)</span></span>
-<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="ex">:SHINYELECTRON_DEBUG</span> = <span class="st">"1"</span><span class="kw">;</span> <span class="kw">&amp;</span> <span class="st">"C:\Path\To\YourApp.exe"</span></span></code></pre></div>
-<p>Messages are prefixed with <code>[shinyelectron]</code> and include which runtime was found, the spawn command for R or Python, port retries, and server ready events — useful context when filing a bug report.</p>
-</section><section class="level2"><h2 id="getting-help">Getting Help<a class="anchor" aria-label="anchor" href="#getting-help"></a>
-</h2>
-<p>If diagnostics show all systems ready but you still encounter issues:</p>
+<p>These break before you run a build: missing runtimes, missing R packages, missing compilers.</p>
+<section class="level3"><h3 id="node-js-not-found">Node.js not found<a class="anchor" aria-label="anchor" href="#node-js-not-found"></a>
+</h3>
+<pre><code>x Node.js: Not found</code></pre>
+<p>Pick one:</p>
 <ol type="1">
 <li>
-<strong>Check the console output</strong> for specific error messages (enable <code>SHINYELECTRON_DEBUG=1</code> for verbose backend logs)</li>
-<li>
-<strong>Verify your Shiny app</strong> runs locally with <code>shiny::runApp()</code>
-</li>
-<li>
-<strong>Check file permissions</strong> in your project directory</li>
-<li>
-<strong>Report issues</strong> at <a href="https://github.com/coatless-rpkg/shinyelectron/issues" class="external-link uri">https://github.com/coatless-rpkg/shinyelectron/issues</a>
-</li>
-</ol>
-<p>When reporting issues, include the output of:</p>
+<p>Install locally with shinyelectron (recommended).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb55"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+</div>
+</li>
+<li><p>Install from <a href="https://nodejs.org/" class="external-link uri">https://nodejs.org/</a>.</p></li>
+<li>
+<p>Enable auto-install in <code>_shinyelectron.yml</code>.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+</li>
+</ol></section><section class="level3"><h3 id="node-js-version-too-old">Node.js version too old<a class="anchor" aria-label="anchor" href="#node-js-version-too-old"></a>
+</h3>
+<pre><code>! Node.js: v18.20.0 (version 22+ required)</code></pre>
+<p>shinyelectron requires Node.js 22.0.0 or newer because Electron 41 requires it. Older LTS lines (18.x, 20.x) miss features the bundled Electron version needs.</p>
+<p>Install a newer local copy:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Latest LTS (currently 22.x)</span></span>
+<span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Or pin a specific version</span></span>
+<span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>version <span class="op">=</span> <span class="st">"22.11.0"</span><span class="op">)</span></span></code></pre></div>
+</div>
+</section><section class="level3"><h3 id="npm-not-found">npm not found<a class="anchor" aria-label="anchor" href="#npm-not-found"></a>
+</h3>
+<pre><code>x npm: Not found</code></pre>
+<p>npm ships with Node.js. If Node is installed but npm is gone, the install is broken; reinstall it.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+</div>
+</section><section class="level3"><h3 id="missing-r-packages">Missing R packages<a class="anchor" aria-label="anchor" href="#missing-r-packages"></a>
+</h3>
+<pre><code>x shinylive: Not installed</code></pre>
+<p>Install whichever package is missing:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"shinylive"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<p>Multiple at once:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"shinylive"</span>, <span class="st">"cli"</span>, <span class="st">"fs"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+</div>
+</section><section class="level3"><h3 id="xcode-command-line-tools-missing-macos">Xcode Command Line Tools missing (macOS)<a class="anchor" aria-label="anchor" href="#xcode-command-line-tools-missing-macos"></a>
+</h3>
+<pre><code>! Xcode Command Line Tools: Not found</code></pre>
+<p>In Terminal:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">xcode-select</span> <span class="at">--install</span></span></code></pre></div>
+</section><section class="level3"><h3 id="visual-studio-build-tools-missing-windows">Visual Studio Build Tools missing (Windows)<a class="anchor" aria-label="anchor" href="#visual-studio-build-tools-missing-windows"></a>
+</h3>
+<pre><code>! Visual Studio Build Tools: Not found</code></pre>
+<ol type="1">
+<li>Download from <a href="https://visualstudio.microsoft.com/downloads/" class="external-link uri">https://visualstudio.microsoft.com/downloads/</a>.</li>
+<li>Install the “Desktop development with C++” workload.</li>
+<li>Restart your R session so the new tools are picked up.</li>
+</ol></section><section class="level3"><h3 id="build-tools-missing-linux">Build tools missing (Linux)<a class="anchor" aria-label="anchor" href="#build-tools-missing-linux"></a>
+</h3>
+<pre><code>! Build tools: Incomplete</code></pre>
+<p>Ubuntu and Debian:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get update</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get install build-essential</span></code></pre></div>
+<p>Fedora and RHEL:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> dnf groupinstall <span class="st">"Development Tools"</span></span></code></pre></div>
+</section><section class="level3"><h3 id="python-not-found">Python not found<a class="anchor" aria-label="anchor" href="#python-not-found"></a>
+</h3>
+<pre><code>i Python: not found (needed for py-shiny apps)</code></pre>
+<ol type="1">
+<li><p>Install Python 3.9 or newer from <a href="https://www.python.org/downloads/" class="external-link uri">https://www.python.org/downloads/</a>.</p></li>
+<li><p>On <strong>Windows</strong>, tick “Add python.exe to PATH” during install. If you skipped that step, add the install directory manually. It usually lives at <code>C:\Users\&lt;you&gt;\AppData\Local\Programs\Python\Python3XX\</code>.</p></li>
+<li><p>On <strong>macOS</strong>, the <code>python3</code> that ships with Xcode Command Line Tools usually works. If it does not, install via Homebrew: <code>brew install python</code>.</p></li>
+<li>
+<p>Verify it is reachable from R:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.which.html" class="external-link">Sys.which</a></span><span class="op">(</span><span class="st">"python3"</span><span class="op">)</span></span>
+<span><span class="co"># On Windows, Sys.which("python") is also checked</span></span></code></pre></div>
+</div>
+</li>
+</ol></section><section class="level3"><h3 id="python-shinylive-cli-not-working">Python <code>shinylive</code> CLI not working<a class="anchor" aria-label="anchor" href="#python-shinylive-cli-not-working"></a>
+</h3>
+<pre><code>x The shinylive Python package CLI is required for the shinylive strategy with Python apps
+  ... cannot be directly executed
+  ... No module named shinylive.__main__</code></pre>
+<p>The <code>shinylive</code> package ships a console script, not a <code>__main__.py</code>, so <code>python -m shinylive</code> fails. The actual problem is that the console script is not on <code>PATH</code>.</p>
+<ol type="1">
+<li>
+<p>Reinstall to recreate the script.</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">--upgrade</span> <span class="at">--force-reinstall</span> shinylive</span></code></pre></div>
+</li>
+<li>
+<p>On <strong>Windows</strong>, pip installs scripts in <code>%APPDATA%\Python\Python3XX\Scripts</code>. Add that directory to <code>PATH</code>:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find where pip installed the script</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>python <span class="op">-</span>c <span class="st">"import sysconfig; print(sysconfig.get_path('scripts'))"</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Add it to your user PATH</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="va">$scriptsDir</span> <span class="op">=</span> python <span class="op">-</span>c <span class="st">"import sysconfig; print(sysconfig.get_path('scripts'))"</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="op">[</span>Environment<span class="op">]::</span>SetEnvironmentVariable<span class="op">(</span><span class="st">'Path'</span><span class="op">,</span> <span class="st">"</span><span class="va">$env</span><span class="op">:</span><span class="va">Path</span><span class="st">;</span><span class="va">$scriptsDir</span><span class="st">"</span><span class="op">,</span> <span class="st">'User'</span><span class="op">)</span></span></code></pre></div>
+<p>Restart your R session.</p>
+</li>
+<li>
+<p>Verify:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="ex">shinylive</span> <span class="at">--version</span></span></code></pre></div>
+</li>
+</ol></section><section class="level3"><h3 id="python-shiny-package-not-installed">Python <code>shiny</code> package not installed<a class="anchor" aria-label="anchor" href="#python-shiny-package-not-installed"></a>
+</h3>
+<pre><code>i Python shiny: not usable</code></pre>
+<div class="sourceCode" id="cb27"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install shiny</span></code></pre></div>
+<p>You need this for <code>py-shiny</code> apps under any non-shinylive strategy (<code>system</code>, <code>bundled</code>, <code>auto-download</code>, <code>container</code>). The <code>shinylive</code> strategy uses the <code>shinylive</code> Python package instead.</p>
+</section><section class="level3"><h3 id="docker-or-podman-not-found">Docker or Podman not found<a class="anchor" aria-label="anchor" href="#docker-or-podman-not-found"></a>
+</h3>
+<pre><code>i Docker/Podman: not found (needed for container strategy)</code></pre>
+<p>Install one:</p>
+<ul>
+<li>Docker Desktop: <a href="https://docs.docker.com/get-docker/" class="external-link uri">https://docs.docker.com/get-docker/</a>
+</li>
+<li>Podman: <a href="https://podman.io/getting-started/installation" class="external-link uri">https://podman.io/getting-started/installation</a>
+</li>
+</ul>
+<p>Confirm the engine is running:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> info</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> info</span></code></pre></div>
+<div>
+<blockquote>
+<p><strong>Docker on Parallels and other nested virtualization</strong></p>
+<p>Docker Desktop needs hardware virtualization. If you run macOS inside a Parallels VM (common on Apple Silicon), Docker Desktop will fail because Parallels does not expose nested virtualization to the guest.</p>
+<p>Workaround: use the <code>system</code>, <code>bundled</code>, or <code>auto-download</code> runtime strategy, or run the Docker build on the host.</p>
+</blockquote>
+</div>
+</section></section><section class="level2"><h2 id="build-time-problems">Build-time problems<a class="anchor" aria-label="anchor" href="#build-time-problems"></a>
+</h2>
+<p>These appear during <code><a href="../reference/export.html">export()</a></code>, <code>npm install</code>, or the electron-builder packaging step.</p>
+<section class="level3"><h3 id="package-json-not-found">
+<code>package.json</code> not found<a class="anchor" aria-label="anchor" href="#package-json-not-found"></a>
+</h3>
+<pre><code>x package.json: Not found</code></pre>
+<p>You pointed the diagnostic at the wrong directory. Point it at the Electron sub-project:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep_electron_project.html">sitrep_electron_project</a></span><span class="op">(</span><span class="st">"my-export/electron-app"</span><span class="op">)</span></span></code></pre></div>
+</div>
+</section><section class="level3"><h3 id="node_modules-not-found">
+<code>node_modules</code> not found<a class="anchor" aria-label="anchor" href="#node_modules-not-found"></a>
+</h3>
+<pre><code>i node_modules: Not found (run 'npm install')</code></pre>
+<p>Install the project’s dependencies:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="st">"my-export/electron-app"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.html" class="external-link">system</a></span><span class="op">(</span><span class="st">"npm install"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<p>Or from a terminal:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> my-export/electron-app</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install</span></code></pre></div>
+</section><section class="level3"><h3 id="container-image-pull-failure">Container image pull failure<a class="anchor" aria-label="anchor" href="#container-image-pull-failure"></a>
+</h3>
+<pre><code>Error: ... manifest unknown ... or image not found</code></pre>
+<ol type="1">
+<li>
+<p>Check the image name in <code>_shinyelectron.yml</code>.</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">container</span><span class="kw">:</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">image</span><span class="kw">:</span><span class="at"> </span><span class="st">"shinyelectron/r-shiny"</span></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">tag</span><span class="kw">:</span><span class="at"> </span><span class="st">"latest"</span></span></code></pre></div>
+</li>
+<li>
+<p>Pull the image manually to rule out a network or auth problem.</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> pull shinyelectron/r-shiny:latest</span></code></pre></div>
+</li>
+<li><p>For private registries, run <code>docker login</code> first.</p></li>
+</ol></section><section class="level3"><h3 id="container-port-conflict">Container port conflict<a class="anchor" aria-label="anchor" href="#container-port-conflict"></a>
+</h3>
+<pre><code>Error: ... bind: address already in use</code></pre>
+<p>Something else is on the port already, often a container you forgot to stop.</p>
+<ol type="1">
+<li>
+<p>Move to a different port in <code>_shinyelectron.yml</code>.</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">server</span><span class="kw">:</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">port</span><span class="kw">:</span><span class="at"> </span><span class="dv">3839</span></span></code></pre></div>
+</li>
+<li>
+<p>Or stop the offending container.</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> ps                     <span class="co"># find the running container</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> stop <span class="op">&lt;</span>container-id<span class="op">&gt;</span>    <span class="co"># stop it</span></span></code></pre></div>
+</li>
+</ol></section><section class="level3"><h3 id="gnu-tar-versus-bsdtar-on-windows">GNU <code>tar</code> versus <code>bsdtar</code> on Windows<a class="anchor" aria-label="anchor" href="#gnu-tar-versus-bsdtar-on-windows"></a>
+</h3>
+<p>A runtime archive fails to extract with:</p>
+<pre><code>Cannot connect to C: resolve failed</code></pre>
+<p>Git for Windows puts GNU <code>tar</code> on the <code>PATH</code>. GNU <code>tar</code> reads <code>C:\...</code> as a remote host spec (<code>host:path</code>), not a drive letter. The runtime downloader needs Windows 10’s bundled bsdtar at <code>%SystemRoot%\System32\tar.exe</code>, which understands drive letters.</p>
+<p>shinyelectron already handles this: the JavaScript downloader resolves the full path to <code>System32\tar.exe</code>, and the R-side extraction uses R’s internal tar. If you still hit the error, check what is actually on <code>PATH</code>:</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="ex">where</span> tar</span></code></pre></div>
+<p>The first hit should be <code>C:\Windows\System32\tar.exe</code>, not <code>C:\Program Files\Git\usr\bin\tar.exe</code>.</p>
+</section><section class="level3"><h3 id="ebusy-file-locks-when-rebuilding-windows">
+<code>EBUSY</code> file locks when rebuilding (Windows)<a class="anchor" aria-label="anchor" href="#ebusy-file-locks-when-rebuilding-windows"></a>
+</h3>
+<pre><code>Error: EBUSY: resource busy or locked, unlink '...\electron.exe'</code></pre>
+<p>A running Electron process on Windows holds a lock on its own executable and DLLs, so a rebuild cannot overwrite the locked files.</p>
+<ol type="1">
+<li>Close the running Electron app.</li>
+<li>If the process lingers, kill <code>electron.exe</code> from Task Manager.</li>
+<li>Re-run the build.</li>
+</ol></section><section class="level3"><h3 id="slow-builds-windows">Slow builds (Windows)<a class="anchor" aria-label="anchor" href="#slow-builds-windows"></a>
+</h3>
+<p>Symptom: builds crawl, especially the <code>npm install</code> step and the final packaging.</p>
+<p>Cause: Windows Defender real-time scanning inspects every file <code>npm</code> writes inside <code>node_modules</code>, and there are thousands of small files.</p>
+<ol type="1">
+<li>
+<p>Add a Defender exclusion for the project directory.</p>
+<p>Settings &gt; Privacy &amp; Security &gt; Virus &amp; threat protection &gt; Manage settings &gt; Exclusions &gt; Add an exclusion &gt; Folder.</p>
+</li>
+<li><p>Add an exclusion for the shinyelectron cache directory. Run <code><a href="../reference/cache_dir.html">cache_dir()</a></code> in R to see the exact path on your machine; on Windows it is typically under <code>%LOCALAPPDATA%\shinyelectron\Cache\assets\</code>.</p></li>
+</ol></section></section><section class="level2"><h2 id="runtime-problems">Runtime problems<a class="anchor" aria-label="anchor" href="#runtime-problems"></a>
+</h2>
+<p>These show up after the app is packaged, when the end user (or you) launches it.</p>
+<section class="level3"><h3 id="r-not-on-path-windows">R not on <code>PATH</code> (Windows)<a class="anchor" aria-label="anchor" href="#r-not-on-path-windows"></a>
+</h3>
+<p>Symptom: a packaged app using the <code>system</code> runtime cannot find <code>Rscript</code> on the user’s machine.</p>
+<p>Cause: the default R installer on Windows puts R under <code>C:\Program Files</code> (or <code>C:\Program Files (x86)</code> for 32-bit) and does not add it to <code>PATH</code>.</p>
+<ol type="1">
+<li><p>During R installation, tick the option to add R to <code>PATH</code>.</p></li>
+<li>
+<p>After installation, add the R <code>bin</code> directory manually, for example:</p>
+<pre><code>C:\Program Files\R\R-4.4.2\bin</code></pre>
+</li>
+<li><p>For production, use the <code>bundled</code> or <code>auto-download</code> runtime strategy so end users do not need R pre-installed.</p></li>
+</ol></section><section class="level3"><h3 id="gatekeeper-blocks-the-app-macos">Gatekeeper blocks the app (macOS)<a class="anchor" aria-label="anchor" href="#gatekeeper-blocks-the-app-macos"></a>
+</h3>
+<p>Symptom: users see “app is damaged and can’t be opened” or “app can’t be opened because Apple cannot check it for malicious software”.</p>
+<p>Cause: Gatekeeper blocks unsigned or unnotarized apps.</p>
+<p>For <strong>distribution</strong>, sign and notarize. Configure in <code>_shinyelectron.yml</code>:</p>
+<div class="sourceCode" id="cb45"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">signing</span><span class="kw">:</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">mac</span><span class="kw">:</span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">identity</span><span class="kw">:</span><span class="at"> </span><span class="st">"Developer ID Application: Your Name (TEAMID)"</span></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">team_id</span><span class="kw">:</span><span class="at"> </span><span class="st">"TEAMID"</span></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">notarize</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<p>Set <code>APPLE_TEAM_ID</code>, <code>APPLE_ID</code>, and <code>APPLE_APP_SPECIFIC_PASSWORD</code> before building.</p>
+<p>For <strong>local testing</strong>, right-click the app and choose Open, then confirm. That bypasses Gatekeeper for that app only. Or strip the quarantine attribute:</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="ex">xattr</span> <span class="at">-cr</span> /Applications/MyApp.app</span></code></pre></div>
+</section><section class="level3"><h3 id="smartscreen-blocks-the-installer-windows">SmartScreen blocks the installer (Windows)<a class="anchor" aria-label="anchor" href="#smartscreen-blocks-the-installer-windows"></a>
+</h3>
+<p>Symptom: SmartScreen shows “Windows protected your PC” when the installer or app is run.</p>
+<p>Cause: the executable is unsigned or lacks SmartScreen reputation.</p>
+<p>For <strong>distribution</strong>, sign the app with a code signing certificate.</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">signing</span><span class="kw">:</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">win</span><span class="kw">:</span></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">certificate_file</span><span class="kw">:</span><span class="at"> </span><span class="st">"path/to/cert.pfx"</span></span></code></pre></div>
+<p>Set <code>CSC_LINK</code> and <code>CSC_KEY_PASSWORD</code> before building.</p>
+<p>For <strong>local testing</strong>, click “More info” then “Run anyway”.</p>
+<p>EV certificates receive SmartScreen reputation immediately. Standard certificates build reputation over time, as more users run the signed installer.</p>
+</section></section><section class="level2"><h2 id="clear-the-cache">Clear the cache<a class="anchor" aria-label="anchor" href="#clear-the-cache"></a>
+</h2>
+<p>When nothing else explains a problem, clear the cache. shinyelectron stores downloaded Node.js, runtimes, and npm assets under your user cache directory; a stale or partial download in there is a common silent failure.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Clear everything</span></span>
+<span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"all"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Or only the relevant subset</span></span>
+<span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"nodejs"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"npm"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<p>Reinstall Node.js after a clear:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+</div>
+<p>Run <code><a href="../reference/cache_dir.html">cache_dir()</a></code> to see the exact path on your machine. See the <a href="nodejs-management.html">Node.js Management</a> vignette for the full layout.</p>
+</section><section class="level2"><h2 id="debugging-a-packaged-app">Debugging a packaged app<a class="anchor" aria-label="anchor" href="#debugging-a-packaged-app"></a>
+</h2>
+<p>A packaged Electron app is quiet by default; only warnings and errors print. To watch runtime detection, dependency installation, and server startup, launch the app with <code>SHINYELECTRON_DEBUG=1</code>:</p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="co"># macOS / Linux</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a><span class="va">SHINYELECTRON_DEBUG</span><span class="op">=</span>1 <span class="ex">/path/to/YourApp.app/Contents/MacOS/YourApp</span></span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Windows (PowerShell)</span></span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="ex">:SHINYELECTRON_DEBUG</span> = <span class="st">"1"</span><span class="kw">;</span> <span class="kw">&amp;</span> <span class="st">"C:\Path\To\YourApp.exe"</span></span></code></pre></div>
+<p>Debug messages are prefixed with <code>[shinyelectron]</code> and include which runtime was found, the spawn command for R or Python, port retries, and server-ready events. Include this output when you file a bug report.</p>
+</section><section class="level2"><h2 id="deprecation-warnings-shinylive-as-an-app-type">Deprecation warnings: shinylive as an app type<a class="anchor" aria-label="anchor" href="#deprecation-warnings-shinylive-as-an-app-type"></a>
+</h2>
+<p>Earlier releases treated shinylive as an app type. <code>app_type</code> accepted <code>r-shinylive</code> and <code>py-shinylive</code> alongside <code>r-shiny</code> and <code>py-shiny</code>. That is gone. shinylive is now a runtime strategy.</p>
+<table class="table caption-top">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead><tr class="header">
+<th>Old API</th>
+<th>New API</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>app_type = "r-shinylive"</code></td>
+<td>
+<code>app_type = "r-shiny"</code>, <code>runtime_strategy = "shinylive"</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>app_type = "py-shinylive"</code></td>
+<td>
+<code>app_type = "py-shiny"</code>, <code>runtime_strategy = "shinylive"</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>app_type = "r-shiny"</code></td>
+<td>
+<code>app_type = "r-shiny"</code> (pick any <code>runtime_strategy</code>)</td>
+</tr>
+<tr class="even">
+<td><code>app_type = "py-shiny"</code></td>
+<td>
+<code>app_type = "py-shiny"</code> (pick any <code>runtime_strategy</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><code>app_type</code> is now optional. shinyelectron autodetects <code>r-shiny</code> or <code>py-shiny</code> from the files in <code>appdir</code>, and <code>runtime_strategy</code> defaults to <code>"shinylive"</code> when neither the function argument nor the config sets one.</p>
+<p>The legacy values still work, but they emit a deprecation warning. If you see a warning about <code>r-shinylive</code> or <code>py-shinylive</code>, rewrite the call to the new two-axis form. Update <code>_shinyelectron.yml</code> the same way: replace <code>build.type: "r-shinylive"</code> with either <code>build.runtime_strategy: "shinylive"</code> (relying on autodetect) or <code>build.type: "r-shiny"</code> plus <code>build.runtime_strategy: "shinylive"</code> (explicit).</p>
+</section><section class="level2"><h2 id="getting-help">Getting help<a class="anchor" aria-label="anchor" href="#getting-help"></a>
+</h2>
+<p>If every diagnostic is green but something still breaks:</p>
+<ol type="1">
+<li>Read the console output for the exact error message. Enable <code>SHINYELECTRON_DEBUG=1</code> for verbose backend logs.</li>
+<li>Confirm your Shiny app runs locally with <code>shiny::runApp()</code> (R) or <code>shiny run</code> (Python).</li>
+<li>Check file permissions on your project directory.</li>
+<li>Open an issue at <a href="https://github.com/coatless-rpkg/shinyelectron/issues" class="external-link uri">https://github.com/coatless-rpkg/shinyelectron/issues</a>.</li>
+</ol>
+<p>When you file an issue, include the output of:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep_shinyelectron.html">sitrep_shinyelectron</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
-</section><section class="level2"><h2 id="next-steps">Next Steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+</section><section class="level2"><h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>
 <ul>
 <li>
-<strong><a href="getting-started.html">Getting Started</a></strong>: First-time user walkthrough</li>
+<strong><a href="getting-started.html">Getting Started</a></strong>: first-time walkthrough.</li>
 <li>
-<strong><a href="configuration.html">Configuration</a></strong>: Customize your builds</li>
+<strong><a href="configuration.html">Configuration</a></strong>: customise your builds.</li>
 <li>
-<strong><a href="nodejs-management.html">Node.js Management</a></strong>: Manage Node.js installations</li>
+<strong><a href="nodejs-management.html">Node.js Management</a></strong>: manage Node.js installs and the cache.</li>
 </ul></section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);

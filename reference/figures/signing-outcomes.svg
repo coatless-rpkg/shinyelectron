@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="What the end user sees when opening a signed versus unsigned shinyelectron app on macOS, Windows, and Linux. On macOS, unsigned apps are blocked by Gatekeeper; signed and notarized apps open cleanly. On Windows, unsigned installers trigger SmartScreen warnings; signed installers open cleanly. On Linux, neither signed nor unsigned apps trigger OS warnings, though GPG signatures let users verify authenticity manually.">
+  <defs>
+    <filter id="so-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
+    </filter>
+  </defs>
+
+  <!-- Section label -->
+  <text x="440" y="26" text-anchor="middle" font-size="12" font-weight="700" fill="#64748b" letter-spacing="1">WHAT THE USER SEES ON LAUNCH</text>
+
+  <!-- Column headers -->
+  <g transform="translate(140, 48)">
+    <text x="150" y="14" text-anchor="middle" font-size="11" font-weight="700" fill="#b45309" letter-spacing="0.5">WITHOUT SIGNING</text>
+  </g>
+  <g transform="translate(560, 48)">
+    <text x="150" y="14" text-anchor="middle" font-size="11" font-weight="700" fill="#16a34a" letter-spacing="0.5">WITH SIGNING</text>
+  </g>
+
+  <!-- Row labels and per-platform pairs -->
+
+  <!-- macOS row -->
+  <g transform="translate(20, 72)">
+    <rect width="100" height="96" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#so-shadow)"/>
+    <rect width="3" height="96" rx="1.5" fill="#3b82f6"/>
+    <text x="56" y="42" text-anchor="middle" font-size="13" font-weight="700" fill="#1e293b">macOS</text>
+    <text x="56" y="62" text-anchor="middle" font-size="10" fill="#64748b">Gatekeeper</text>
+    <text x="56" y="78" text-anchor="middle" font-size="10" fill="#64748b">enforced</text>
+  </g>
+
+  <!-- macOS without signing -->
+  <g transform="translate(140, 72)" filter="url(#so-shadow)">
+    <rect width="300" height="96" rx="8" fill="#fff" stroke="#fecaca" stroke-width="1.5"/>
+    <rect width="300" height="3" rx="1.5" fill="#ef4444"/>
+    <circle cx="28" cy="46" r="14" fill="#fef2f2" stroke="#fecaca" stroke-width="1.5"/>
+    <text x="28" y="51" text-anchor="middle" font-size="14" font-weight="700" fill="#ef4444">!</text>
+    <text x="54" y="40" font-size="12" font-weight="700" fill="#991b1b">Blocked by Gatekeeper</text>
+    <text x="54" y="58" font-size="11" fill="#475569">&quot;App can&#39;t be opened because Apple</text>
+    <text x="54" y="74" font-size="11" fill="#475569">cannot check it for malicious software.&quot;</text>
+  </g>
+
+  <!-- macOS with signing -->
+  <g transform="translate(560, 72)" filter="url(#so-shadow)">
+    <rect width="300" height="96" rx="8" fill="#fff" stroke="#bbf7d0" stroke-width="1.5"/>
+    <rect width="300" height="3" rx="1.5" fill="#10b981"/>
+    <circle cx="28" cy="46" r="14" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+    <path d="M 22 46 L 27 51 L 35 41" stroke="#10b981" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="54" y="40" font-size="12" font-weight="700" fill="#166534">Opens cleanly</text>
+    <text x="54" y="58" font-size="11" fill="#475569">Apple verifies Developer ID and</text>
+    <text x="54" y="74" font-size="11" fill="#475569">notarization ticket. No dialog.</text>
+  </g>
+
+  <!-- Windows row -->
+  <g transform="translate(20, 188)">
+    <rect width="100" height="96" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#so-shadow)"/>
+    <rect width="3" height="96" rx="1.5" fill="#8b5cf6"/>
+    <text x="56" y="42" text-anchor="middle" font-size="13" font-weight="700" fill="#1e293b">Windows</text>
+    <text x="56" y="62" text-anchor="middle" font-size="10" fill="#64748b">SmartScreen</text>
+    <text x="56" y="78" text-anchor="middle" font-size="10" fill="#64748b">enforced</text>
+  </g>
+
+  <!-- Windows without signing -->
+  <g transform="translate(140, 188)" filter="url(#so-shadow)">
+    <rect width="300" height="96" rx="8" fill="#fff" stroke="#fecaca" stroke-width="1.5"/>
+    <rect width="300" height="3" rx="1.5" fill="#ef4444"/>
+    <circle cx="28" cy="46" r="14" fill="#fef2f2" stroke="#fecaca" stroke-width="1.5"/>
+    <text x="28" y="51" text-anchor="middle" font-size="14" font-weight="700" fill="#ef4444">!</text>
+    <text x="54" y="40" font-size="12" font-weight="700" fill="#991b1b">SmartScreen warning</text>
+    <text x="54" y="58" font-size="11" fill="#475569">&quot;Windows protected your PC. Microsoft</text>
+    <text x="54" y="74" font-size="11" fill="#475569">Defender SmartScreen prevented...&quot;</text>
+  </g>
+
+  <!-- Windows with signing -->
+  <g transform="translate(560, 188)" filter="url(#so-shadow)">
+    <rect width="300" height="96" rx="8" fill="#fff" stroke="#bbf7d0" stroke-width="1.5"/>
+    <rect width="300" height="3" rx="1.5" fill="#10b981"/>
+    <circle cx="28" cy="46" r="14" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+    <path d="M 22 46 L 27 51 L 35 41" stroke="#10b981" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="54" y="40" font-size="12" font-weight="700" fill="#166534">Opens cleanly</text>
+    <text x="54" y="58" font-size="11" fill="#475569">EV certs pass immediately; OV certs</text>
+    <text x="54" y="74" font-size="11" fill="#475569">build reputation over a few weeks.</text>
+  </g>
+
+  <!-- Linux row -->
+  <g transform="translate(20, 304)">
+    <rect width="100" height="96" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#so-shadow)"/>
+    <rect width="3" height="96" rx="1.5" fill="#10b981"/>
+    <text x="56" y="42" text-anchor="middle" font-size="13" font-weight="700" fill="#1e293b">Linux</text>
+    <text x="56" y="62" text-anchor="middle" font-size="10" fill="#64748b">no OS</text>
+    <text x="56" y="78" text-anchor="middle" font-size="10" fill="#64748b">enforcement</text>
+  </g>
+
+  <!-- Linux without signing -->
+  <g transform="translate(140, 304)" filter="url(#so-shadow)">
+    <rect width="300" height="96" rx="8" fill="#fff" stroke="#fed7aa" stroke-width="1.5"/>
+    <rect width="300" height="3" rx="1.5" fill="#f59e0b"/>
+    <circle cx="28" cy="46" r="14" fill="#fffbeb" stroke="#fed7aa" stroke-width="1.5"/>
+    <text x="28" y="51" text-anchor="middle" font-size="14" font-weight="700" fill="#f59e0b">?</text>
+    <text x="54" y="40" font-size="12" font-weight="700" fill="#92400e">Opens, unverifiable</text>
+    <text x="54" y="58" font-size="11" fill="#475569">No OS warning. Users who care</text>
+    <text x="54" y="74" font-size="11" fill="#475569">cannot verify the artifact.</text>
+  </g>
+
+  <!-- Linux with signing -->
+  <g transform="translate(560, 304)" filter="url(#so-shadow)">
+    <rect width="300" height="96" rx="8" fill="#fff" stroke="#bbf7d0" stroke-width="1.5"/>
+    <rect width="300" height="3" rx="1.5" fill="#10b981"/>
+    <circle cx="28" cy="46" r="14" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+    <path d="M 22 46 L 27 51 L 35 41" stroke="#10b981" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="54" y="40" font-size="12" font-weight="700" fill="#166534">Opens, verifiable</text>
+    <text x="54" y="58" font-size="11" fill="#475569">GPG signature lets security-minded</text>
+    <text x="54" y="74" font-size="11" fill="#475569">users verify authenticity manually.</text>
+  </g>
+</svg>

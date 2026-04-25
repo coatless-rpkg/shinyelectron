@@ -49,7 +49,7 @@
     <li><a class="dropdown-item" href="../articles/multi-app-suites.html">Multi-App Suites</a></li>
     <li><a class="dropdown-item" href="../articles/container-strategy.html">Container Strategy</a></li>
     <li><a class="dropdown-item" href="../articles/security.html">Security Considerations</a></li>
-    <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced Features</a></li>
+    <li><a class="dropdown-item" href="../articles/customizations.html">Customizations</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
     <li><a class="dropdown-item" href="../articles/nodejs-management.html">Node.js Management</a></li>
@@ -87,18 +87,27 @@
 
 
 
-    <p>Without code signing, macOS Gatekeeper blocks your app (“unidentified developer”) and Windows SmartScreen warns on every download (“unrecognized app”). This guide covers what you need, what it costs, and how to set it up. For broader Electron security topics, see <a href="security.html">Security Considerations</a>.</p>
-<section class="level2"><h2 id="why-code-signing-matters">Why Code Signing Matters<a class="anchor" aria-label="anchor" href="#why-code-signing-matters"></a>
+    <p>Signing tells the operating system who built this. Notarization tells the OS that Apple has seen it. Without either, macOS Gatekeeper blocks your app as an “unidentified developer” and Windows SmartScreen warns on every download. This guide covers what you need, what it costs, and how to wire it up. For the wider security picture, see <a href="security.html">Security Considerations</a>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure><p><img src="../reference/figures/signing-chain.svg" style="width:100.0%" alt="Four-stage horizontal flow diagram. Stage 1 is a blue Certificate card noting the certificate is issued by a CA such as Apple, DigiCert, Sectigo, GlobalSign, or a GPG key. A trusts arrow points to Stage 2, a purple Signing card labeled export(sign = TRUE) where electron-builder stamps the app and notarizes on macOS. A produces arrow points to Stage 3, a green Signed Build card containing a .app, .exe, or AppImage with an embedded cryptographic signature. A verified-by arrow leads to Stage 4, an amber User OS card noting the operating system verifies and launches the app cleanly. A platform strip below repeats the summary for macOS, Windows, and Linux, with certificate type, representative cost, the CSC_LINK or GPG_KEY environment variable, and what happens without signing."></p>
+<figcaption>The code signing chain of trust: a certificate from a trusted authority signs the app during export, the signed build is distributed, and the end user’s OS verifies the signature before launching. The bottom strip summarises what each stage looks like on macOS, Windows, and Linux.</figcaption></figure>
+</div>
+<section class="level2"><h2 id="when-signing-matters">When signing matters<a class="anchor" aria-label="anchor" href="#when-signing-matters"></a>
 </h2>
-<p>Unsigned apps still work once users bypass the warning, but signing matters for:</p>
+<p>Users can click past warnings, but the friction is real. Three reasons to sign anyway:</p>
 <ul>
 <li>
-<strong>User trust</strong>: Security warnings scare non-technical users away.</li>
+<strong>Trust.</strong> Non-technical users read “unidentified developer” as “malware” and leave.</li>
 <li>
-<strong>Enterprise deployment</strong>: Many organizations block unsigned software via policy.</li>
+<strong>Enterprise.</strong> Many IT policies block anything unsigned outright.</li>
 <li>
-<strong>Auto-updates</strong>: macOS and Windows require signed builds for electron-updater to verify update integrity.</li>
+<strong>Auto-updates.</strong> <code>electron-updater</code> verifies signatures on macOS and Windows before applying an update, so unsigned builds lose the update path entirely.</li>
 </ul>
+<p>The concrete outcomes differ per platform:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure><p><img src="../reference/figures/signing-outcomes.svg" style="width:100.0%" alt="Three-row comparison table showing what happens on launch without and with signing on each platform. macOS row: without signing the app is blocked by Gatekeeper with an error message that the app can't be opened because Apple cannot check it for malicious software; with signing the app opens cleanly after Apple verifies the Developer ID and notarization ticket. Windows row: without signing SmartScreen warns that Windows protected your PC and prevented the unrecognized app from starting; with signing the app opens cleanly, with EV certificates trusted immediately and OV certificates building reputation over weeks. Linux row: without signing the app opens without any OS warning but users cannot verify the artifact; with signing the GPG signature allows security-minded users to verify authenticity manually."></p>
+<figcaption>Side-by-side comparison of launch behaviour with and without signing on macOS, Windows, and Linux. macOS and Windows block or warn on unsigned builds, while Linux has no OS-level enforcement but benefits from an optional GPG signature.</figcaption></figure>
+</div>
 <table class="table caption-top">
 <colgroup>
 <col style="width: 25%">
@@ -122,7 +131,7 @@
 <tr class="even">
 <td><strong>Cost</strong></td>
 <td>$99/year (Apple Developer)</td>
-<td>$200–$700/year (CA cert)</td>
+<td>$200 to $700/year (CA cert)</td>
 <td>Free (GPG)</td>
 </tr>
 <tr class="odd">
@@ -138,60 +147,71 @@
 <td>N/A</td>
 </tr>
 </tbody>
-</table></section><section class="level2"><h2 id="macos-code-signing-and-notarization">macOS: Code Signing and Notarization<a class="anchor" aria-label="anchor" href="#macos-code-signing-and-notarization"></a>
+</table></section><section class="level2"><h2 id="turning-signing-on">Turning signing on<a class="anchor" aria-label="anchor" href="#turning-signing-on"></a>
 </h2>
-<section class="level3"><h3 id="what-you-need">What You Need<a class="anchor" aria-label="anchor" href="#what-you-need"></a>
-</h3>
-<ol type="1">
-<li>
-<strong>Apple Developer Program membership</strong> ($99/year) at <a href="https://developer.apple.com/programs/" class="external-link">developer.apple.com</a>
-</li>
-<li>
-<strong>Developer ID Application certificate</strong> — this is different from a Mac App Store certificate. Create one in the Apple Developer portal under Certificates, Identifiers &amp; Profiles.</li>
-<li>
-<strong>App-specific password</strong> for notarization (generated at <a href="https://appleid.apple.com/account/manage" class="external-link">appleid.apple.com</a>)</li>
-</ol></section><section class="level3"><h3 id="setup">Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
-</h3>
-<p>Export your Developer ID Application certificate as a <code>.p12</code> file from Keychain Access, then set these environment variables:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Certificate (path to .p12 file, or base64-encoded content)</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">CSC_LINK</span><span class="op">=</span><span class="st">"/path/to/certificate.p12"</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">CSC_KEY_PASSWORD</span><span class="op">=</span><span class="st">"your-certificate-password"</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Notarization credentials</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">APPLE_ID</span><span class="op">=</span><span class="st">"your@apple.id"</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">APPLE_APP_SPECIFIC_PASSWORD</span><span class="op">=</span><span class="st">"xxxx-xxxx-xxxx-xxxx"</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">APPLE_TEAM_ID</span><span class="op">=</span><span class="st">"XXXXXXXXXX"</span></span></code></pre></div>
-<p>Then export your app with signing enabled:</p>
+<p>Pass <code>sign = TRUE</code> to <code><a href="../reference/export.html">export()</a></code> and electron-builder does the rest:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"my-app"</span>,</span>
 <span>  destdir <span class="op">=</span> <span class="st">"build"</span>,</span>
 <span>  sign <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>electron-builder handles the entire signing and notarization flow automatically when these environment variables are present. You do not need to run <code>codesign</code> or <code>xcrun notarytool</code> yourself.</p>
-<p>You can also configure signing behavior in <code>_shinyelectron.yml</code> (credentials should still come from environment variables):</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">signing</span><span class="kw">:</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">mac</span><span class="kw">:</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">identity</span><span class="kw">:</span><span class="at"> </span><span class="st">"Developer ID Application: Your Name (TEAMID)"</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">team_id</span><span class="kw">:</span><span class="at"> </span><span class="st">"XXXXXXXXXX"</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">notarize</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
-<p>To open an unsigned <code>.app</code> on macOS during development, clear the quarantine attribute (<code>xattr -cr /path/to/YourApp.app</code>) or right-click and choose <strong>Open</strong>.</p>
-</section></section><section class="level2"><h2 id="windows-code-signing">Windows: Code Signing<a class="anchor" aria-label="anchor" href="#windows-code-signing"></a>
-</h2>
-<section class="level3"><h3 id="what-you-need-1">What You Need<a class="anchor" aria-label="anchor" href="#what-you-need-1"></a>
-</h3>
-<p>An OV or EV code signing certificate from a CA (DigiCert, Sectigo, GlobalSign, SSL.com). EV certificates (~$300–$700/year) provide immediate SmartScreen trust. OV certificates (~$200–$500/year) build reputation gradually — users may still see warnings for the first few weeks.</p>
-</section><section class="level3"><h3 id="setup-1">Setup<a class="anchor" aria-label="anchor" href="#setup-1"></a>
-</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Path to your .pfx certificate file (or base64-encoded content)</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">CSC_LINK</span><span class="op">=</span><span class="st">"/path/to/certificate.pfx"</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">CSC_KEY_PASSWORD</span><span class="op">=</span><span class="st">"your-certificate-password"</span></span></code></pre></div>
-<p>Then build with signing:</p>
+<p><code>sign = TRUE</code> tells electron-builder to use whatever credentials it finds in the environment. It writes the signing configuration into <code>package.json</code>, sets the macOS identity, enables notarization (when configured), and points Windows at the certificate. It does <strong>not</strong> create certificates. If the credentials are missing, it warns and hands off to electron-builder, which then fails at the signing step with a specific error.</p>
+<p>The function argument overrides the config file. <code>export(..., sign = TRUE)</code> signs even when <code>_shinyelectron.yml</code> says <code>sign: false</code>. You can also enable signing purely through the config:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">signing</span><span class="kw">:</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">mac</span><span class="kw">:</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">identity</span><span class="kw">:</span><span class="at"> </span><span class="st">"Developer ID Application: Your Name (TEAMID)"</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">team_id</span><span class="kw">:</span><span class="at"> </span><span class="st">"XXXXXXXXXX"</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">notarize</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<p>Credentials themselves (certificate password, Apple ID password, etc.) must stay in environment variables. Never commit them to the config file.</p>
+<p>Before you kick off a full build, verify your setup with <code><a href="../reference/app_check.html">app_check()</a></code>:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/app_check.html">app_check</a></span><span class="op">(</span><span class="st">"my-app"</span>, sign <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+</div>
+<p>That catches missing certificates or environment variables cheaply, without going through the full build.</p>
+</section><section class="level2"><h2 id="macos-sign-and-notarize">macOS: sign and notarize<a class="anchor" aria-label="anchor" href="#macos-sign-and-notarize"></a>
+</h2>
+<p><strong>Cost:</strong> $99/year for Apple Developer Program membership, plus the time to generate an app-specific password.</p>
+<p><strong>What you need:</strong></p>
+<ol type="1">
+<li>An <strong>Apple Developer Program</strong> membership at <a href="https://developer.apple.com/programs/" class="external-link">developer.apple.com/programs</a>.</li>
+<li>A <strong>Developer ID Application certificate</strong>. Not the same as a Mac App Store certificate. Create it in the Apple Developer portal under Certificates, Identifiers &amp; Profiles.</li>
+<li>An <strong>app-specific password</strong> for notarization, generated at <a href="https://appleid.apple.com/account/manage" class="external-link">appleid.apple.com/account/manage</a>.</li>
+</ol>
+<p><strong>Wiring it up.</strong> Export the Developer ID Application certificate from Keychain Access as a <code>.p12</code> file, then set these environment variables:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Certificate (path to .p12 file, or base64-encoded content)</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">CSC_LINK</span><span class="op">=</span><span class="st">"/path/to/certificate.p12"</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">CSC_KEY_PASSWORD</span><span class="op">=</span><span class="st">"your-certificate-password"</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Notarization credentials</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">APPLE_ID</span><span class="op">=</span><span class="st">"your@apple.id"</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">APPLE_APP_SPECIFIC_PASSWORD</span><span class="op">=</span><span class="st">"xxxx-xxxx-xxxx-xxxx"</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">APPLE_TEAM_ID</span><span class="op">=</span><span class="st">"XXXXXXXXXX"</span></span></code></pre></div>
+<p>Then run <code>export(..., sign = TRUE)</code>. electron-builder drives the full signing and notarization flow. You do not call <code>codesign</code> or <code>xcrun notarytool</code> yourself.</p>
+<p><strong>Without signing:</strong> Gatekeeper blocks the app on first launch with “App can’t be opened because Apple cannot check it for malicious software.” To open an unsigned <code>.app</code> during local development, strip the quarantine flag:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">xattr</span> <span class="at">-cr</span> /path/to/YourApp.app</span></code></pre></div>
+<p>Or right-click the app in Finder and choose <strong>Open</strong> to bypass Gatekeeper once.</p>
+</section><section class="level2"><h2 id="windows-sign-with-a-code-signing-certificate">Windows: sign with a code signing certificate<a class="anchor" aria-label="anchor" href="#windows-sign-with-a-code-signing-certificate"></a>
+</h2>
+<p><strong>Cost:</strong> $200 to $700/year depending on validation level. An EV certificate builds SmartScreen trust immediately; an OV certificate builds reputation over several weeks, during which users still see warnings.</p>
+<p><strong>What you need:</strong> An OV or EV code signing certificate from a commercial CA. Common options:</p>
+<ul>
+<li><a href="https://www.digicert.com/signing/code-signing-certificates" class="external-link">DigiCert</a></li>
+<li><a href="https://www.sectigo.com/ssl-certificates-tls/code-signing" class="external-link">Sectigo</a></li>
+<li><a href="https://www.globalsign.com/en/code-signing-certificate" class="external-link">GlobalSign</a></li>
+<li><a href="https://www.ssl.com/certificates/code-signing/" class="external-link">SSL.com</a></li>
+</ul>
+<p>EV certificates ship on a hardware token (USB dongle or HSM) and require a different signing workflow when used from CI; plan for that up front.</p>
+<p><strong>Wiring it up.</strong></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">CSC_LINK</span><span class="op">=</span><span class="st">"/path/to/certificate.pfx"</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">CSC_KEY_PASSWORD</span><span class="op">=</span><span class="st">"your-certificate-password"</span></span></code></pre></div>
+<p>Then:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"my-app"</span>,</span>
 <span>  destdir <span class="op">=</span> <span class="st">"build"</span>,</span>
@@ -199,95 +219,56 @@
 <span>  sign <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>Unsigned Windows builds trigger SmartScreen on every download with no workaround.</p>
-</section></section><section class="level2"><h2 id="linux-optional-gpg-signing">Linux: Optional GPG Signing<a class="anchor" aria-label="anchor" href="#linux-optional-gpg-signing"></a>
+<p><strong>Without signing:</strong> unsigned Windows installers trigger SmartScreen on every download. There is no workaround short of signing the build.</p>
+</section><section class="level2"><h2 id="linux-optional-gpg-signing">Linux: optional GPG signing<a class="anchor" aria-label="anchor" href="#linux-optional-gpg-signing"></a>
 </h2>
-<p>Linux distributions do not enforce code signing for desktop apps. However, AppImage files can be GPG-signed so users can verify authenticity.</p>
-<section class="level3"><h3 id="setup-2">Setup<a class="anchor" aria-label="anchor" href="#setup-2"></a>
-</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">GPG_KEY</span><span class="op">=</span><span class="st">"your-gpg-key-id"</span></span></code></pre></div>
-<div class="sourceCode" id="cb7"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">signing</span><span class="kw">:</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">linux</span><span class="kw">:</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">gpg_sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
-<p>This is optional and only matters if your users explicitly verify signatures.</p>
-</section></section><section class="level2"><h2 id="the-sign-parameter">The <code>sign</code> Parameter<a class="anchor" aria-label="anchor" href="#the-sign-parameter"></a>
+<p><strong>Cost:</strong> free. Uses a GPG key you already control.</p>
+<p><strong>What you need:</strong> a GPG key whose private half lives on the build machine. Generate one with <code>gpg --full-generate-key</code> if you do not have one, and publish the public key where your users can find it (your website, a keyserver, or your GitHub profile).</p>
+<p><strong>Wiring it up.</strong></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">GPG_KEY</span><span class="op">=</span><span class="st">"your-gpg-key-id"</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">signing</span><span class="kw">:</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">linux</span><span class="kw">:</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">gpg_sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<p><strong>Without signing:</strong> nothing visibly changes. AppImage files do not require a signature to run, so most users never notice. Sign if your audience includes security-minded users who want to verify authenticity with <code>gpg --verify</code> before installing.</p>
+</section><section class="level2"><h2 id="signing-in-ci">Signing in CI<a class="anchor" aria-label="anchor" href="#signing-in-ci"></a>
 </h2>
-<p><code>export(..., sign = TRUE)</code> tells electron-builder to sign using available credentials. It passes signing configuration to <code>package.json</code>, sets the macOS identity, enables notarization (if configured), and includes the Windows certificate path. It does <strong>not</strong> create certificates or error on missing credentials — it warns, then electron-builder proceeds (and may fail at the signing step).</p>
-<p>The function parameter overrides the config file: <code>export(..., sign = TRUE)</code> enables signing even if <code>_shinyelectron.yml</code> says <code>sign: false</code>. You can also enable signing solely via config (<code>signing: sign: true</code>).</p>
-<p>Use <code>app_check("my-app", sign = TRUE)</code> to verify your signing setup before building.</p>
-</section><section class="level2"><h2 id="using-with-github-actions">Using with GitHub Actions<a class="anchor" aria-label="anchor" href="#using-with-github-actions"></a>
-</h2>
-<p>Store credentials as GitHub Actions secrets (<strong>Settings &gt; Secrets and variables &gt; Actions</strong>), then reference them in your workflow.</p>
-<table class="table caption-top">
-<colgroup>
-<col style="width: 63%">
-<col style="width: 36%">
-</colgroup>
-<thead><tr class="header">
-<th>Secret Name</th>
-<th>Value</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td><code>MAC_CERTIFICATE</code></td>
-<td>Base64-encoded <code>.p12</code> file (<code>base64 -i cert.p12</code>)</td>
-</tr>
-<tr class="even">
-<td><code>MAC_CERTIFICATE_PASSWORD</code></td>
-<td>Password for the <code>.p12</code> file</td>
-</tr>
-<tr class="odd">
-<td><code>APPLE_ID</code></td>
-<td>Your Apple ID email</td>
-</tr>
-<tr class="even">
-<td><code>APPLE_APP_SPECIFIC_PASSWORD</code></td>
-<td>App-specific password from appleid.apple.com</td>
-</tr>
-<tr class="odd">
-<td><code>APPLE_TEAM_ID</code></td>
-<td>10-character team ID from developer.apple.com</td>
-</tr>
-<tr class="even">
-<td><code>WIN_CERTIFICATE</code></td>
-<td>Base64-encoded <code>.pfx</code> file</td>
-</tr>
-<tr class="odd">
-<td><code>WIN_CERTIFICATE_PASSWORD</code></td>
-<td>Password for the <code>.pfx</code> file</td>
-</tr>
-</tbody>
-</table>
-<p>Reference secrets in your workflow:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Build Electron app</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">env</span><span class="kw">:</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">    # macOS</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">CSC_LINK</span><span class="kw">:</span><span class="at"> ${{ secrets.MAC_CERTIFICATE }}</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">CSC_KEY_PASSWORD</span><span class="kw">:</span><span class="at"> ${{ secrets.MAC_CERTIFICATE_PASSWORD }}</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">APPLE_ID</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_ID }}</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">APPLE_APP_SPECIFIC_PASSWORD</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">APPLE_TEAM_ID</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_TEAM_ID }}</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co">    # Windows</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co">    # CSC_LINK: ${{ secrets.WIN_CERTIFICATE }}</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="co">    # CSC_KEY_PASSWORD: ${{ secrets.WIN_CERTIFICATE_PASSWORD }}</span></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="fu">  run</span><span class="kw">: </span><span class="ch">|</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    Rscript -e "</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>      shinyelectron::export(</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>        appdir = 'app',</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        destdir = 'build',</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        sign = TRUE</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>      )</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    "</span></code></pre></div>
+<p>CI is where signing usually lives in the long run: no human holds the keys on a laptop, and every tagged release is signed automatically. Store credentials as GitHub Actions secrets (<strong>Settings → Secrets and variables → Actions</strong>) and reference them from your workflow:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Build Electron app</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">env</span><span class="kw">:</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co">    # macOS</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">CSC_LINK</span><span class="kw">:</span><span class="at"> ${{ secrets.MAC_CERTIFICATE }}</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">CSC_KEY_PASSWORD</span><span class="kw">:</span><span class="at"> ${{ secrets.MAC_CERTIFICATE_PASSWORD }}</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">APPLE_ID</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_ID }}</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">APPLE_APP_SPECIFIC_PASSWORD</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">APPLE_TEAM_ID</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_TEAM_ID }}</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co">    # Windows (set in the Windows job instead)</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co">    # CSC_LINK: ${{ secrets.WIN_CERTIFICATE }}</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co">    # CSC_KEY_PASSWORD: ${{ secrets.WIN_CERTIFICATE_PASSWORD }}</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="fu">  run</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    Rscript -e "</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>      shinyelectron::export(</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>        appdir = 'app',</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>        destdir = 'build',</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>        sign = TRUE</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>    "</span></code></pre></div>
 <div>
 <blockquote>
 <p><strong>Important</strong></p>
-<p>macOS and Windows use different certificates, so <code>CSC_LINK</code> and <code>CSC_KEY_PASSWORD</code> must point to the correct certificate for each platform. In a matrix build, set these per-platform using conditional env blocks or separate build steps.</p>
+<p>macOS and Windows certificates use different files. <code>CSC_LINK</code> and <code>CSC_KEY_PASSWORD</code> must point at the right one for the runner. In a matrix build, set them per-platform in a conditional <code>env</code> block or split the build into separate jobs so each runner gets only its own credentials.</p>
 </blockquote>
 </div>
-<p>For a complete workflow template, see <a href="github-actions.html">GitHub Actions</a>.</p>
-</section><section class="level2"><h2 id="development-vs--production">Development vs. Production<a class="anchor" aria-label="anchor" href="#development-vs--production"></a>
+<p>For the full workflow template (toolchain setup, matrix jobs, artifact upload), see <a href="github-actions.html">Building with GitHub Actions</a>.</p>
+</section><section class="level2"><h2 id="development-versus-production">Development versus production<a class="anchor" aria-label="anchor" href="#development-versus-production"></a>
 </h2>
+<p>A working rhythm:</p>
+<ol type="1">
+<li>Develop and iterate locally with <code>sign = FALSE</code> (the default). Use <code>xattr -cr</code> on macOS when you need to launch your own unsigned build.</li>
+<li>Set up signing credentials once, per platform, in a secure vault or password manager.</li>
+<li>Flip <code>sign = TRUE</code> for release builds, either in the <code><a href="../reference/export.html">export()</a></code> call or through <code>signing: sign: true</code> in <code>_shinyelectron.yml</code>.</li>
+<li>Move signing into CI so human laptops never touch the keys.</li>
+</ol>
 <table class="table caption-top">
 <thead><tr class="header">
 <th></th>
@@ -309,7 +290,7 @@
 <tr class="odd">
 <td><strong>Build speed</strong></td>
 <td>Fast</td>
-<td>Slower (notarization takes 1–5 minutes)</td>
+<td>Slower: notarization takes 1 to 5 minutes</td>
 </tr>
 <tr class="even">
 <td><strong>OS warnings?</strong></td>
@@ -317,16 +298,9 @@
 <td>No</td>
 </tr>
 </tbody>
-</table>
-<p>A typical workflow:</p>
-<ol type="1">
-<li>Develop and test with <code>sign = FALSE</code>
-</li>
-<li>Set up signing credentials once</li>
-<li>Use <code>sign = TRUE</code> (or <code>signing: sign: true</code> in config) for release builds</li>
-<li>Automate signed builds with GitHub Actions</li>
-</ol></section><section class="level2"><h2 id="quick-reference">Quick Reference<a class="anchor" aria-label="anchor" href="#quick-reference"></a>
+</table></section><section class="level2"><h2 id="environment-variables-reference">Environment variables reference<a class="anchor" aria-label="anchor" href="#environment-variables-reference"></a>
 </h2>
+<p>One canonical table for every variable the signing pipeline reads.</p>
 <table class="table caption-top">
 <colgroup>
 <col style="width: 52%">
@@ -334,7 +308,7 @@
 <col style="width: 22%">
 </colgroup>
 <thead><tr class="header">
-<th>Environment Variable</th>
+<th>Variable</th>
 <th>Platform</th>
 <th>Purpose</th>
 </tr></thead>
@@ -342,22 +316,23 @@
 <tr class="odd">
 <td><code>CSC_LINK</code></td>
 <td>macOS, Windows</td>
-<td>Path to <code>.p12</code>/<code>.pfx</code> certificate (or base64)</td>
+<td>Path to <code>.p12</code> or <code>.pfx</code> certificate (or base64-encoded content)</td>
 </tr>
 <tr class="even">
 <td><code>CSC_KEY_PASSWORD</code></td>
 <td>macOS, Windows</td>
-<td>Certificate password</td>
+<td>Password for the <code>.p12</code> or <code>.pfx</code> file</td>
 </tr>
 <tr class="odd">
 <td><code>APPLE_ID</code></td>
 <td>macOS</td>
-<td>Apple ID for notarization</td>
+<td>Apple ID email used for notarization</td>
 </tr>
 <tr class="even">
 <td><code>APPLE_APP_SPECIFIC_PASSWORD</code></td>
 <td>macOS</td>
-<td>App-specific password for notarization</td>
+<td>App-specific password from <code>appleid.apple.com</code>
+</td>
 </tr>
 <tr class="odd">
 <td><code>APPLE_TEAM_ID</code></td>
@@ -370,15 +345,15 @@
 <td>GPG key ID for AppImage signing</td>
 </tr>
 </tbody>
-</table></section><section class="level2"><h2 id="next-steps">Next Steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+</table></section><section class="level2"><h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>
 <ul>
 <li>
-<strong><a href="github-actions.html">GitHub Actions</a></strong>: Automate signed builds in CI/CD</li>
+<strong><a href="github-actions.html">GitHub Actions</a></strong>: automate signed builds across platform runners.</li>
 <li>
-<strong><a href="auto-updates.html">Auto Updates</a></strong>: Signed builds are required for auto-updates on macOS and Windows</li>
+<strong><a href="auto-updates.html">Auto Updates</a></strong>: electron-updater requires signed builds on macOS and Windows.</li>
 <li>
-<strong><a href="configuration.html">Configuration</a></strong>: Full <code>_shinyelectron.yml</code> reference including signing options</li>
+<strong><a href="configuration.html">Configuration Guide</a></strong>: the full <code>_shinyelectron.yml</code> reference, signing included.</li>
 </ul></section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);

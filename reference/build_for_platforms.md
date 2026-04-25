@@ -22,6 +22,10 @@ build_for_platforms(output_dir, platform, arch, sign = FALSE, verbose = TRUE)
 
   Character vector of target architectures
 
+- sign:
+
+  Logical whether to code-sign the build
+
 - verbose:
 
   Logical whether to show progress

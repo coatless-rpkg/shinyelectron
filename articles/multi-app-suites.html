@@ -49,7 +49,7 @@
     <li><a class="dropdown-item" href="../articles/multi-app-suites.html">Multi-App Suites</a></li>
     <li><a class="dropdown-item" href="../articles/container-strategy.html">Container Strategy</a></li>
     <li><a class="dropdown-item" href="../articles/security.html">Security Considerations</a></li>
-    <li><a class="dropdown-item" href="../articles/advanced-features.html">Advanced Features</a></li>
+    <li><a class="dropdown-item" href="../articles/customizations.html">Customizations</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Reference</h6></li>
     <li><a class="dropdown-item" href="../articles/nodejs-management.html">Node.js Management</a></li>
@@ -87,100 +87,103 @@
 
 
 
-    <p>shinyelectron can bundle multiple Shiny apps – R or Python – into a single Electron application. Users see a launcher page where they pick which app to open, and can switch between apps at any time via the <strong>Apps</strong> menu.</p>
-<section class="level2"><h2 id="directory-structure">Directory structure<a class="anchor" aria-label="anchor" href="#directory-structure"></a>
+    <p>One repo, many apps, one launcher. A suite bundles several Shiny apps, R or Python, into a single Electron binary. Users open the launcher, pick an app, and switch whenever they like through the <strong>Apps</strong> menu.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure><p><img src="../reference/figures/multi-app-routing.svg" alt="A launcher panel on the left with three app cards. An arrow labelled 'pick an app' leads to an active backend window on the right. A return arrow labelled 'Apps menu: Back' leads from the backend back to the launcher. On the far right, the apps manifest lists dashboard, data-explorer, and about."></p>
+<figcaption>The launcher hands off to one backend at a time; picking a different app returns through the launcher.</figcaption></figure>
+</div>
+<section class="level2"><h2 id="layout">Layout<a class="anchor" aria-label="anchor" href="#layout"></a>
 </h2>
-<p>A multi-app suite is a directory that contains a <code>_shinyelectron.yml</code> config file and an <code>apps/</code> folder with one sub-directory per app. Each sub-directory holds a standard Shiny app (<code>app.R</code> for R, <code>app.py</code> for Python).</p>
+<p>A suite is a directory with a <code>_shinyelectron.yml</code> at the root and an <code>apps/</code> folder. Each subfolder holds a normal Shiny app (<code>app.R</code> for R, <code>app.py</code> for Python).</p>
 <section class="level3"><h3 id="r-suite">R suite<a class="anchor" aria-label="anchor" href="#r-suite"></a>
 </h3>
-<p>The bundled demo at <code>inst/demos/demo-r-app-suite/</code> looks like this:</p>
+<p>The bundled demo at <code>inst/demos/demo-r-app-suite/</code>, read live:</p>
 <pre><code>demo-r-app-suite/
 ├── _shinyelectron.yml
-└── apps/
-    ├── dashboard/
+└── apps
+    ├── about
     │   └── app.R
-    ├── data-explorer/
+    ├── dashboard
     │   └── app.R
-    └── about/
+    └── data-explorer
         └── app.R</code></pre>
 </section><section class="level3"><h3 id="python-suite">Python suite<a class="anchor" aria-label="anchor" href="#python-suite"></a>
 </h3>
-<p>The bundled demo at <code>inst/demos/demo-py-app-suite/</code> follows the same layout with one addition – a <code>requirements.txt</code> at the suite root:</p>
+<p>The Python demo at <code>inst/demos/demo-py-app-suite/</code> adds one file: a <code>requirements.txt</code> at the root that covers every app in the suite.</p>
 <pre><code>demo-py-app-suite/
 ├── _shinyelectron.yml
-├── requirements.txt
-└── apps/
-    ├── dashboard/
-    │   └── app.py
-    ├── data-explorer/
-    │   └── app.py
-    └── about/
-        └── app.py</code></pre>
+├── apps
+│   ├── about
+│   │   └── app.py
+│   ├── dashboard
+│   │   └── app.py
+│   └── data-explorer
+│       └── app.py
+└── requirements.txt</code></pre>
 </section></section><section class="level2"><h2 id="configuration">Configuration<a class="anchor" aria-label="anchor" href="#configuration"></a>
 </h2>
-<p>Multi-app mode is activated by including an <code>apps</code> array in <code>_shinyelectron.yml</code>. Each entry needs three required fields (<code>id</code>, <code>name</code>, <code>path</code>) and accepts optional <code>description</code>, <code>type</code>, and <code>icon</code> fields.</p>
+<p>A top-level <code>apps</code> array switches shinyelectron into suite mode. Each entry needs three fields (<code>id</code>, <code>name</code>, <code>path</code>) and accepts four optional ones (<code>description</code>, <code>type</code>, <code>runtime_strategy</code>, <code>icon</code>).</p>
 <section class="level3"><h3 id="r-suite-config">R suite config<a class="anchor" aria-label="anchor" href="#r-suite-config"></a>
 </h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># _shinyelectron.yml</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"R Shiny Demo Suite"</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"1.0.0"</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"r-shiny"</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"system"</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="fu">window</span><span class="kw">:</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">width</span><span class="kw">:</span><span class="at"> </span><span class="dv">1100</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">height</span><span class="kw">:</span><span class="at"> </span><span class="dv">750</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="fu">apps</span><span class="kw">:</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> dashboard</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Dashboard"</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"Real-time analytics with live-updating stats and charts"</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/dashboard"</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> data-explorer</span></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Data Explorer"</span></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"Browse and analyze built-in R datasets"</span></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/data-explorer"</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> about</span></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"About"</span></span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"System information and runtime details"</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/about"</span></span></code></pre></div>
+<p>Read live from <code>inst/demos/demo-r-app-suite/_shinyelectron.yml</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"R Shiny Demo Suite"</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"1.0.0"</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"r-shiny"</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"system"</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">window</span><span class="kw">:</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">width</span><span class="kw">:</span><span class="at"> </span><span class="dv">1100</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">height</span><span class="kw">:</span><span class="at"> </span><span class="dv">750</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="fu">apps</span><span class="kw">:</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> dashboard</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Dashboard"</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"Real-time analytics with live-updating stats and charts"</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/dashboard"</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> data-explorer</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Data Explorer"</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"Browse and analyze built-in R datasets"</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/data-explorer"</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> about</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"About"</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"System information and runtime details"</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/about"</span></span></code></pre></div>
 </section><section class="level3"><h3 id="python-suite-config">Python suite config<a class="anchor" aria-label="anchor" href="#python-suite-config"></a>
 </h3>
-<p>The Python config is nearly identical – only <code>build.type</code> changes:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># _shinyelectron.yml</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Python Shiny Demo Suite"</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"1.0.0"</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"py-shiny"</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"system"</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="fu">window</span><span class="kw">:</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">width</span><span class="kw">:</span><span class="at"> </span><span class="dv">1100</span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">height</span><span class="kw">:</span><span class="at"> </span><span class="dv">750</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="fu">apps</span><span class="kw">:</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> dashboard</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Dashboard"</span></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"Analytics overview with live-updating stats and charts"</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/dashboard"</span></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> data-explorer</span></span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Data Explorer"</span></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"Browse and analyze built-in datasets"</span></span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/data-explorer"</span></span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> about</span></span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"About"</span></span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"System information and runtime details"</span></span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/about"</span></span></code></pre></div>
-</section><section class="level3"><h3 id="app-entry-fields">App entry fields<a class="anchor" aria-label="anchor" href="#app-entry-fields"></a>
+<p>Only <code>build.type</code> changes. Read live from <code>inst/demos/demo-py-app-suite/_shinyelectron.yml</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Python Shiny Demo Suite"</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"1.0.0"</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"py-shiny"</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"system"</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="fu">window</span><span class="kw">:</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">width</span><span class="kw">:</span><span class="at"> </span><span class="dv">1100</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">height</span><span class="kw">:</span><span class="at"> </span><span class="dv">750</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="fu">apps</span><span class="kw">:</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> dashboard</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Dashboard"</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"Analytics overview with live-updating stats and charts"</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/dashboard"</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> data-explorer</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Data Explorer"</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"Browse and analyze built-in datasets"</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/data-explorer"</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> about</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"About"</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"System information and runtime details"</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/about"</span></span></code></pre></div>
+</section><section class="level3"><h3 id="fields-in-an-apps-entry">Fields in an <code>apps</code> entry<a class="anchor" aria-label="anchor" href="#fields-in-an-apps-entry"></a>
 </h3>
 <table class="table caption-top">
 <colgroup>
@@ -220,32 +223,74 @@
 <td>Override the default <code>build.type</code> for this specific app</td>
 </tr>
 <tr class="even">
+<td><code>runtime_strategy</code></td>
+<td>No</td>
+<td>Override the default <code>build.runtime_strategy</code> for this specific app</td>
+</tr>
+<tr class="odd">
 <td><code>icon</code></td>
 <td>No</td>
 <td>Path to an icon image displayed on the launcher card</td>
 </tr>
 </tbody>
 </table>
-<p>The default <code>build.type</code> from the config applies to every app that does not specify its own <code>type</code>. This means a single suite can mix app types if needed (e.g., some apps as <code>r-shinylive</code>, others as <code>r-shiny</code>), though in practice most suites use a single type throughout.</p>
-</section></section><section class="level2"><h2 id="dependency-detection">Dependency detection<a class="anchor" aria-label="anchor" href="#dependency-detection"></a>
+<p>Every app inherits <code>build.type</code> and <code>build.runtime_strategy</code> unless it overrides them. Suites can mix languages (some <code>r-shiny</code>, some <code>py-shiny</code>) and mix strategies (one app on <code>shinylive</code>, another on <code>system</code>). Most suites stay uniform, but the overrides are there when you need them.</p>
+</section></section><section class="level2"><h2 id="mixed-strategy-suites">Mixed-strategy suites<a class="anchor" aria-label="anchor" href="#mixed-strategy-suites"></a>
 </h2>
-<p>R and Python suites handle dependencies differently.</p>
-<section class="level3"><h3 id="r-suites-per-app-code-scanning">R suites: per-app code scanning<a class="anchor" aria-label="anchor" href="#r-suites-per-app-code-scanning"></a>
+<p>A single suite can bundle apps with different runtime strategies. Set a suite-wide default in <code>build.runtime_strategy</code>, then override it per app where it makes sense. This is handy when one app runs fine in the browser (shinylive) while another needs a real process for packages that do not compile to WebAssembly.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># _shinyelectron.yml</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Mixed Suite"</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"1.0.0"</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"r-shiny"</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"shinylive"</span><span class="co">   # suite default</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="fu">apps</span><span class="kw">:</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> </span><span class="st">"viewer"</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Data Viewer"</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"Lightweight tables and charts"</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/viewer"</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co">    # inherits shinylive from build.runtime_strategy</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> </span><span class="st">"modeler"</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Model Fitter"</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"Needs packages that are not in WebR"</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/modeler"</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"system"</span><span class="co">    # overrides the suite default</span></span></code></pre></div>
+<p>Per-app <code>runtime_strategy:</code> overrides the suite default for just that app. The other apps keep inheriting the default. You can mix all five strategies this way, with the usual platform caveats (for example, bundled R still needs a portable R build for the target OS).</p>
+</section><section class="level2"><h2 id="how-dependencies-are-handled">How dependencies are handled<a class="anchor" aria-label="anchor" href="#how-dependencies-are-handled"></a>
+</h2>
+<p>R apps can be scanned for dependencies; Python apps cannot. R lets you skip declaration entirely and rely on the source. Python always asks you to write a list, just in one of two files. Both languages can also use <code>_shinyelectron.yml</code> for explicit declarations, and lists from any source merge into one install plan.</p>
+<section class="level3"><h3 id="r-apps">R apps<a class="anchor" aria-label="anchor" href="#r-apps"></a>
 </h3>
-<p>For R apps, shinyelectron scans each app directory individually using <code><a href="https://rstudio.github.io/renv/reference/dependencies.html" class="external-link">renv::dependencies()</a></code>. This detects <code><a href="https://rdrr.io/r/base/library.html" class="external-link">library()</a></code>, <code><a href="https://rdrr.io/r/base/library.html" class="external-link">require()</a></code>, and <code>package::function()</code> calls in the app’s source files. Each app gets its own <code>dependencies.json</code> manifest, so only the packages that app actually uses are recorded.</p>
-</section><section class="level3"><h3 id="python-suites-suite-root-requirements-txt">Python suites: suite-root requirements.txt<a class="anchor" aria-label="anchor" href="#python-suites-suite-root-requirements-txt"></a>
+<p><strong>Automatic.</strong> shinyelectron runs <code><a href="https://rstudio.github.io/renv/reference/dependencies.html" class="external-link">renv::dependencies()</a></code> over each app directory. It picks up <code><a href="https://rdrr.io/r/base/library.html" class="external-link">library()</a></code>, <code><a href="https://rdrr.io/r/base/library.html" class="external-link">require()</a></code>, <code>pkg::func()</code>, and <code><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">loadNamespace()</a></code> references in the source. Base and recommended R packages (<code>stats</code>, <code>utils</code>, <code>MASS</code>, <code>lattice</code>, and friends) are excluded automatically.</p>
+<p><strong>Explicit.</strong> Add a <code>dependencies:</code> block to the suite-level <code>_shinyelectron.yml</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dependencies</span><span class="kw">:</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">r</span><span class="kw">:</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">packages</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">shiny</span><span class="kw">,</span><span class="at"> ggplot2</span><span class="kw">,</span><span class="at"> dplyr</span><span class="kw">]</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">repos</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">"https://cloud.r-project.org"</span><span class="kw">]</span></span></code></pre></div>
+<p>Source-scan and declared packages merge. Set <code>dependencies.auto_detect: false</code> to skip the renv scan and install only the declared list.</p>
+</section><section class="level3"><h3 id="python-apps">Python apps<a class="anchor" aria-label="anchor" href="#python-apps"></a>
 </h3>
-<p>For Python apps, dependencies are read from a single <code>requirements.txt</code> (or <code>pyproject.toml</code>) at the <strong>suite root</strong> – not from individual app directories. All apps in the suite share one virtual environment with the same set of packages installed.</p>
-<p>For example, the demo Python suite uses this <code>requirements.txt</code>:</p>
+<p>shinyelectron does not parse <code>import</code> statements: the module-name to package-name mapping is unreliable (<code>import cv2</code> is <code>opencv-python</code>, <code>import sklearn</code> is <code>scikit-learn</code>). You declare what gets installed, in one of two places.</p>
+<p><strong><code>requirements.txt</code> or <code>pyproject.toml</code>.</strong> A standard Python manifest at the suite root. All apps in the suite share one virtual environment. The demo’s <code>requirements.txt</code>:</p>
 <pre><code><span><span class="va">shiny</span></span>
 <span><span class="va">numpy</span></span>
 <span><span class="va">matplotlib</span></span></code></pre>
-<p>This file covers the dependencies for all three apps in the suite.</p>
-</section></section><section class="level2"><h2 id="exporting-a-multi-app-suite">Exporting a multi-app suite<a class="anchor" aria-label="anchor" href="#exporting-a-multi-app-suite"></a>
+<p>That file covers every app in the suite.</p>
+<p><strong><code>_shinyelectron.yml</code>.</strong> Add a <code>python</code> section to the same <code>dependencies:</code> block:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dependencies</span><span class="kw">:</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">python</span><span class="kw">:</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">packages</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">shiny</span><span class="kw">,</span><span class="at"> numpy</span><span class="kw">,</span><span class="at"> pandas</span><span class="kw">]</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">index_urls</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">"https://pypi.org/simple"</span><span class="kw">]</span></span></code></pre></div>
+<p>Manifest-file and YAML packages merge. Set <code>dependencies.auto_detect: false</code> to skip reading the manifest and install only the YAML list.</p>
+</section></section><section class="level2"><h2 id="exporting-a-suite">Exporting a suite<a class="anchor" aria-label="anchor" href="#exporting-a-suite"></a>
 </h2>
-<p>The standard <code><a href="../reference/export.html">export()</a></code> function handles multi-app suites automatically. When it reads the config and finds an <code>apps</code> array with two or more entries, it switches to multi-app mode internally.</p>
+<p><code><a href="../reference/export.html">export()</a></code> reads the config, sees an <code>apps</code> array with two or more entries, and switches to suite mode. No extra flags.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/">shinyelectron</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Export the bundled R demo suite</span></span>
@@ -255,38 +300,38 @@
 <span><span class="co"># Export a Python suite from your own project</span></span>
 <span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span>appdir <span class="op">=</span> <span class="st">"path/to/my-py-suite"</span>, destdir <span class="op">=</span> <span class="st">"output-py-suite"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>You do not need to pass <code>app_type</code> or <code>runtime_strategy</code> – the config file drives everything. The <code>build.type</code> and <code>build.runtime_strategy</code> fields in <code>_shinyelectron.yml</code> determine how the suite is built.</p>
-<p>All four <a href="runtime-strategies.html">runtime strategies</a> (system, bundled, auto-download, container) work with multi-app suites, just as they do with single apps.</p>
-</section><section class="level2"><h2 id="launcher-ui-and-app-switching">Launcher UI and app switching<a class="anchor" aria-label="anchor" href="#launcher-ui-and-app-switching"></a>
+<p>You do not pass <code>app_type</code> or <code>runtime_strategy</code>. The YAML owns those choices, through <code>build.type</code> and <code>build.runtime_strategy</code>.</p>
+<p>All five <a href="runtime-strategies.html">runtime strategies</a> (shinylive, system, bundled, auto-download, container) work with suites, exactly as they do with single apps. Per-app overrides let one suite mix them.</p>
+</section><section class="level2"><h2 id="launcher-and-app-switching">Launcher and app switching<a class="anchor" aria-label="anchor" href="#launcher-and-app-switching"></a>
 </h2>
-<p>When the Electron app starts, users see a <strong>launcher page</strong> instead of loading an app immediately. The launcher displays a card for each app in the suite, showing the name, description, type badge, and an icon (either a custom image or a generated initial).</p>
-<p>Clicking a card starts the backend for that app and navigates to it. While using any app, the <strong>Apps</strong> menu in the menu bar provides a “Back to Launcher” option that stops the current backend and returns to the launcher page.</p>
-<section class="level3"><h3 id="how-the-runtime-works">How the runtime works<a class="anchor" aria-label="anchor" href="#how-the-runtime-works"></a>
+<p>The Electron window opens to a launcher page. Each app gets a card with its name, description, type badge, and icon (your image, or a generated initial).</p>
+<p>Click a card: the backend for that app starts, and the window navigates to it. The <strong>Apps</strong> menu offers “Back to Launcher,” which stops the backend and returns to the card grid.</p>
+<section class="level3"><h3 id="one-runtime-one-active-app">One runtime, one active app<a class="anchor" aria-label="anchor" href="#one-runtime-one-active-app"></a>
 </h3>
-<p>All apps in a suite share a single runtime process (one R or Python instance). When the user switches from one app to another:</p>
+<p>A suite runs a single R or Python process. Switching apps follows four steps:</p>
 <ol type="1">
-<li>The current backend process is stopped.</li>
-<li>The launcher page is shown.</li>
-<li>The user selects the next app.</li>
-<li>A new backend process starts for the selected app.</li>
+<li>Stop the current backend.</li>
+<li>Show the launcher.</li>
+<li>User picks the next app.</li>
+<li>Start a fresh backend for that app.</li>
 </ol>
-<p>This means only one app runs at a time, keeping resource usage low. There is no need to install multiple runtimes or manage parallel processes.</p>
-</section></section><section class="level2"><h2 id="creating-your-own-suite">Creating your own suite<a class="anchor" aria-label="anchor" href="#creating-your-own-suite"></a>
+<p>Only one app runs at a time. No parallel runtimes, no duplicated processes, no extra installs.</p>
+</section></section><section class="level2"><h2 id="building-your-own-suite">Building your own suite<a class="anchor" aria-label="anchor" href="#building-your-own-suite"></a>
 </h2>
-<p>To create a multi-app suite from scratch:</p>
+<p>From scratch:</p>
 <ol type="1">
-<li>Create a directory with an <code>apps/</code> sub-folder.</li>
-<li>Add each Shiny app as its own sub-directory under <code>apps/</code>.</li>
-<li>Write a <code>_shinyelectron.yml</code> with the <code>apps</code> array listing every app.</li>
-<li>For Python suites, place a <code>requirements.txt</code> at the suite root.</li>
-<li>Run <code><a href="../reference/export.html">export()</a></code> pointing at the suite directory.</li>
+<li>Create a directory with an <code>apps/</code> subfolder.</li>
+<li>Put each Shiny app in its own subdirectory.</li>
+<li>Write <code>_shinyelectron.yml</code> with an <code>apps</code> array listing every app.</li>
+<li>For Python suites, add <code>requirements.txt</code> at the root.</li>
+<li>Run <code><a href="../reference/export.html">export()</a></code> on the suite directory.</li>
 </ol>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Minimal example: create suite structure, then export</span></span>
 <span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span>appdir <span class="op">=</span> <span class="st">"my-suite"</span>, destdir <span class="op">=</span> <span class="st">"my-suite-output"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>The config file is the single source of truth. As long as the <code>apps</code> array has at least two entries and each entry points to a valid Shiny app directory, shinyelectron will build the multi-app Electron application with the launcher UI and app-switching support.</p>
+<p>The config file is the single source of truth. Two or more entries in <code>apps</code>, each pointing at a valid app, and shinyelectron builds the launcher, the menu, and the switching logic for you.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);

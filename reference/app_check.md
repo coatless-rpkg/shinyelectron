@@ -26,7 +26,7 @@ app_check(
 - app_type:
 
   Character string or NULL. App type override. If NULL, reads from
-  config or defaults to "r-shinylive".
+  config or autodetects from files in `appdir`.
 
 - runtime_strategy:
 
