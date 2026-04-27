@@ -54,10 +54,18 @@ download_and_extract_portable_tool <- function(label, version, install_path,
 
   tryCatch({
     ext <- tools::file_ext(temp_file)
-    # Force R's internal tar on .gz so a system GNU tar (e.g. from Git for
-    # Windows) doesn't misparse "C:\\..." paths as remote hosts.
     if (ext == "gz") {
-      utils::untar(temp_file, exdir = install_path, tar = "internal")
+      if (.Platform$OS.type == "windows") {
+        # Force R's internal tar so a system GNU tar (e.g. from Git for
+        # Windows) doesn't misparse "C:\\..." paths as remote hosts.
+        utils::untar(temp_file, exdir = install_path, tar = "internal")
+      } else {
+        # Use system tar on macOS / Linux. macOS bsdtar and Linux GNU tar
+        # both handle PAX records that include xattrs (e.g. the Apple
+        # com.apple.cs.CodeSignature metadata in portable R archives),
+        # which R's internal tar cannot.
+        utils::untar(temp_file, exdir = install_path, tar = Sys.which("tar"))
+      }
     } else if (ext == "zip") {
       utils::unzip(temp_file, exdir = install_path)
     } else {
