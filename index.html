@@ -109,56 +109,79 @@
 <div class="section level2">
 <h2 id="what-you-can-export">What you can export<a class="anchor" aria-label="anchor" href="#what-you-can-export"></a>
 </h2>
+<p>shinyelectron supports two app types, autodetected from the contents of your <code>appdir</code>:</p>
+<ul>
+<li>
+<code>r-shiny</code>: detected from <code>app.R</code> or <code>ui.R</code> + <code>server.R</code>
+</li>
+<li>
+<code>py-shiny</code>: detected from <code>app.py</code>
+</li>
+</ul>
+<p>Both types work with five <strong>runtime strategies</strong> for delivering the app to the end user:</p>
 <table class="table">
 <colgroup>
-<col width="25%">
-<col width="25%">
-<col width="25%">
-<col width="25%">
+<col width="20%">
+<col width="20%">
+<col width="20%">
+<col width="20%">
+<col width="20%">
 </colgroup>
 <thead><tr class="header">
-<th>App Type</th>
-<th>Runs In</th>
+<th>Strategy</th>
+<th>What Ships</th>
+<th>First Launch</th>
 <th>User Needs</th>
 <th>Best For</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td><code>r-shinylive</code></td>
-<td>Browser (WebR)</td>
+<td><code>shinylive</code></td>
+<td>Electron + WASM bundle</td>
+<td>Instant, offline</td>
 <td>Nothing</td>
-<td>Simple R apps</td>
+<td>Simple apps; deps that run in WebR or Pyodide (default)</td>
 </tr>
 <tr class="even">
-<td><code>py-shinylive</code></td>
-<td>Browser (Pyodide)</td>
+<td><code>bundled</code></td>
+<td>Electron + R/Python runtime</td>
+<td>Instant, offline</td>
 <td>Nothing</td>
-<td>Simple Python apps</td>
+<td>Offline distribution; predictable runtime</td>
 </tr>
 <tr class="odd">
-<td><code>r-shiny</code></td>
-<td>R process</td>
-<td>R (or bundled)</td>
-<td>Full R package support</td>
+<td><code>auto-download</code></td>
+<td>Electron + downloader</td>
+<td>Needs internet</td>
+<td>Nothing</td>
+<td>Public distribution; smaller download</td>
 </tr>
 <tr class="even">
-<td><code>py-shiny</code></td>
-<td>Python process</td>
-<td>Python (or bundled)</td>
-<td>Full Python package support</td>
+<td><code>system</code></td>
+<td>Electron only</td>
+<td>Finds R/Python on PATH</td>
+<td>R or Python pre-installed</td>
+<td>Internal tools for users who already have R or Python</td>
+</tr>
+<tr class="odd">
+<td><code>container</code></td>
+<td>Electron + container config</td>
+<td>Needs Docker</td>
+<td>Docker or Podman</td>
+<td>Complex system deps; reproducibility</td>
 </tr>
 </tbody>
 </table>
-<p>Native types (<code>r-shiny</code> / <code>py-shiny</code>) support four <strong>runtime strategies</strong> for delivering R or Python to the end user: <code>auto-download</code> (default), <code>bundled</code>, <code>system</code>, or <code>container</code>. See the <a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/runtime-strategies.html">Runtime Strategies guide</a> for the decision matrix.</p>
+<p><code>shinylive</code> is the default when <code>runtime_strategy</code> is not set. See the <a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/runtime-strategies.html">Runtime Strategies guide</a> for the full decision matrix.</p>
 <blockquote>
 <p>[!NOTE]</p>
-<p><strong>Linux note for <code>r-shiny</code>:</strong> <code>bundled</code> and <code>auto-download</code> strategies rely on the <a href="https://github.com/portable-r" class="external-link">portable-r</a> project, which currently publishes builds for macOS and Windows only. On Linux, use <code>system</code> (the user has R installed) or <code>container</code> (Docker/Podman). Python apps work with all strategies on Linux via <a href="https://github.com/astral-sh/python-build-standalone" class="external-link">python-build-standalone</a>.</p>
+<p><strong>Linux note for <code>r-shiny</code>:</strong> the <code>bundled</code> and <code>auto-download</code> strategies rely on the <a href="https://github.com/portable-r" class="external-link">portable-r</a> project, which currently publishes builds for macOS and Windows only. On Linux, use <code>shinylive</code>, <code>system</code> (the user has R installed), or <code>container</code> (Docker or Podman). Python apps work with all strategies on Linux via <a href="https://github.com/astral-sh/python-build-standalone" class="external-link">python-build-standalone</a>.</p>
 </blockquote>
 </div>
 <div class="section level2">
 <h2 id="prerequisites">Prerequisites<a class="anchor" aria-label="anchor" href="#prerequisites"></a>
 </h2>
-<p>These are required on the <strong>build machine</strong> (where you run <code><a href="reference/export.html">export()</a></code>). End users of your packaged app need nothing pre-installed for <code>shinylive</code> types, and only R or Python for native types (unless you use the <code>bundled</code> runtime strategy, which ships the runtime inside the app).</p>
+<p>These are required on the <strong>build machine</strong> (where you run <code><a href="reference/export.html">export()</a></code>). What end users need depends on the runtime strategy: nothing for <code>shinylive</code>, <code>bundled</code>, or <code>auto-download</code>; R or Python pre-installed for <code>system</code>; Docker or Podman for <code>container</code>.</p>
 <ul>
 <li>
 <strong>R</strong> (&gt;= 4.4.0)</li>
