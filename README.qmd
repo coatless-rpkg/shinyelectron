@@ -63,33 +63,42 @@ minute for a small app.
 
 ## What you can export
 
-| App Type       | Runs In       | User Needs      | Best For                     |
-|----------------|---------------|-----------------|------------------------------|
-| `r-shinylive`  | Browser (WebR)    | Nothing     | Simple R apps                |
-| `py-shinylive` | Browser (Pyodide) | Nothing     | Simple Python apps           |
-| `r-shiny`      | R process         | R (or bundled)  | Full R package support   |
-| `py-shiny`     | Python process    | Python (or bundled) | Full Python package support |
+shinyelectron supports two app types, autodetected from the contents of
+your `appdir`:
 
-Native types (`r-shiny` / `py-shiny`) support four **runtime strategies**
-for delivering R or Python to the end user: `auto-download` (default),
-`bundled`, `system`, or `container`. See the
-[Runtime Strategies guide][runtime-strategies] for the decision matrix.
+- `r-shiny`: detected from `app.R` or `ui.R` + `server.R`
+- `py-shiny`: detected from `app.py`
+
+Both types work with five **runtime strategies** for delivering the app
+to the end user:
+
+| Strategy        | What Ships                  | First Launch           | User Needs                | Best For                                                |
+|-----------------|-----------------------------|------------------------|---------------------------|---------------------------------------------------------|
+| `shinylive`     | Electron + WASM bundle      | Instant, offline       | Nothing                   | Simple apps; deps that run in WebR or Pyodide (default) |
+| `bundled`       | Electron + R/Python runtime | Instant, offline       | Nothing                   | Offline distribution; predictable runtime               |
+| `auto-download` | Electron + downloader       | Needs internet         | Nothing                   | Public distribution; smaller download                   |
+| `system`        | Electron only               | Finds R/Python on PATH | R or Python pre-installed | Internal tools for users who already have R or Python   |
+| `container`     | Electron + container config | Needs Docker           | Docker or Podman          | Complex system deps; reproducibility                    |
+
+`shinylive` is the default when `runtime_strategy` is not set. See the
+[Runtime Strategies guide][runtime-strategies] for the full decision
+matrix.
 
 :::{.callout-note}
-**Linux note for `r-shiny`:** `bundled` and `auto-download` strategies
-rely on the [portable-r][portable-r] project, which currently publishes
-builds for macOS and Windows only. On Linux, use `system` (the user has
-R installed) or `container` (Docker/Podman). Python apps work with all
-strategies on Linux via [python-build-standalone][python-build-standalone].
+**Linux note for `r-shiny`:** the `bundled` and `auto-download`
+strategies rely on the [portable-r][portable-r] project, which currently
+publishes builds for macOS and Windows only. On Linux, use `shinylive`,
+`system` (the user has R installed), or `container` (Docker or Podman).
+Python apps work with all strategies on Linux via
+[python-build-standalone][python-build-standalone].
 :::
 
 ## Prerequisites
 
 These are required on the **build machine** (where you run `export()`).
-End users of your packaged app need nothing pre-installed for
-`shinylive` types, and only R or Python for native types (unless you
-use the `bundled` runtime strategy, which ships the runtime inside
-the app).
+What end users need depends on the runtime strategy: nothing for
+`shinylive`, `bundled`, or `auto-download`; R or Python pre-installed
+for `system`; Docker or Podman for `container`.
 
 - **R** (>= 4.4.0)
 - **Node.js** (>= 22.0.0) --- run `install_nodejs()` to install locally without admin rights
