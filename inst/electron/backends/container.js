@@ -533,22 +533,34 @@ class ContainerBackend extends EventEmitter {
    */
   stop() {
     if (this.containerId && this.containerEngine) {
+      const id = this.containerId;
+      const engine = this.containerEngine;
+      const env = this.getContainerEnv();
+      this.containerId = null; // mark stopped so a repeat stop() is a no-op
+
       this.emit('status', { phase: 'stopping_server', message: `Stopping container...` });
-      logDebug(`Stopping container ${this.containerId}...`);
+      logDebug(`Stopping container ${id}...`);
+
+      // Stop and remove asynchronously and detached. `docker/podman stop` blocks
+      // for the container's stop grace period (10s by default), and doing that
+      // synchronously freezes the main/UI thread so the shutdown screen can't
+      // render. Run it detached (and `-t 3` to shorten the grace) so the UI is
+      // free immediately; the child finishes even if the app quits first.
       try {
-        execFileSync(this.containerEngine, ['stop', this.containerId], { stdio: 'ignore', timeout: 10000, env: this.getContainerEnv() });
+        const proc = spawn(engine, ['stop', '-t', '3', id], { stdio: 'ignore', env, detached: true });
+        proc.on('error', (err) => console.warn(`Failed to stop container: ${err.message}`));
+        proc.on('close', () => {
+          try {
+            const rm = spawn(engine, ['rm', '-f', id], { stdio: 'ignore', env, detached: true });
+            rm.on('error', () => {});
+            rm.unref();
+          } catch { /* best effort */ }
+        });
+        proc.unref();
       } catch (err) {
-        console.warn(`Failed to stop container gracefully: ${err.message}`);
+        console.warn(`Failed to stop container: ${err.message}`);
       }
 
-      this.emit('status', { phase: 'cleanup', message: 'Removing container...' });
-      try {
-        execFileSync(this.containerEngine, ['rm', '-f', this.containerId], { stdio: 'ignore', env: this.getContainerEnv() });
-      } catch (err) {
-        console.warn(`Failed to remove container: ${err.message}`);
-      }
-
-      this.containerId = null;
       this.emit('status', { phase: 'app_exit' });
     }
   }
