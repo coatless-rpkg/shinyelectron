@@ -20,6 +20,31 @@ class ContainerBackend extends EventEmitter {
    * @returns {string|null} Docker host URI or null if not found.
    */
   resolveDockerHost() {
+    const engine = this.containerEngine || 'docker';
+
+    // Podman resolves its machine/connection from ~/.config/containers, so it
+    // generally works without an explicit host env. Use the machine's socket
+    // when one is exposed; otherwise verify it is reachable via the default
+    // connection. (Runs cross-platform: `podman machine inspect` works the
+    // same on macOS, Windows, and Linux.)
+    if (engine === 'podman') {
+      try {
+        const sock = execFileSync('podman', ['machine', 'inspect', '--format', '{{.ConnectionInfo.PodmanSocket.Path}}'], {
+          encoding: 'utf8', timeout: 5000, stdio: ['ignore', 'pipe', 'pipe']
+        }).trim();
+        if (sock && fs.existsSync(sock)) {
+          logDebug(`Podman socket found: ${sock}`);
+          return `unix://${sock}`;
+        }
+      } catch { /* no machine (e.g. native Linux Podman); fall through */ }
+      try {
+        execFileSync('podman', ['info'], { stdio: 'ignore', timeout: 8000 });
+        return 'podman-default';
+      } catch { /* not reachable */ }
+      console.warn('Podman is not reachable');
+      return null;
+    }
+
     try {
       const ctx = execFileSync('docker', ['context', 'inspect', '--format', '{{.Endpoints.docker.Host}}'], {
         encoding: 'utf8', timeout: 5000, stdio: ['ignore', 'pipe', 'pipe']
@@ -34,8 +59,7 @@ class ContainerBackend extends EventEmitter {
     if (process.platform === 'win32') {
       const pipes = [
         'npipe:////./pipe/docker_engine',
-        'npipe:////./pipe/dockerDesktopLinuxEngine',
-        'npipe:////./pipe/podman-machine-default'
+        'npipe:////./pipe/dockerDesktopLinuxEngine'
       ];
       for (const pipe of pipes) {
         try {
@@ -71,8 +95,14 @@ class ContainerBackend extends EventEmitter {
    */
   getDockerEnv() {
     const env = { ...process.env };
-    if (this.dockerHost) {
-      env.DOCKER_HOST = this.dockerHost;
+    // "podman-default" is a sentinel meaning "reachable via Podman's own
+    // default connection", so no host override is needed in that case.
+    if (this.dockerHost && this.dockerHost !== 'podman-default') {
+      if (this.containerEngine === 'podman') {
+        env.CONTAINER_HOST = this.dockerHost;
+      } else {
+        env.DOCKER_HOST = this.dockerHost;
+      }
     }
     return env;
   }
@@ -305,24 +335,30 @@ class ContainerBackend extends EventEmitter {
     // Note: do NOT removeAllListeners() here; it would wipe the main process's
     // 'status'/'error' subscribers. This backend registers no one-shot
     // internal listeners, so there is nothing to clear.
-    this.dockerHost = this.resolveDockerHost();
-    if (!this.dockerHost) {
-      const err = new Error(
-        'Cannot find Docker daemon.\n\n' +
-        'Ensure Docker Desktop is running, or check your Docker installation.\n' +
-        'On macOS: Open Docker Desktop from Applications.\n' +
-        'On Windows: Start Docker Desktop from the Start Menu.\n' +
-        'On Linux: Run "sudo systemctl start docker"'
-      );
-      this.emit('status', { phase: 'error', message: err.message });
-      throw err;
-    }
-
+    // Detect the engine first so the host resolution below is engine-aware
+    // (detectEngine only runs `<engine> --version`, which needs no daemon).
     this.emit('status', { phase: 'finding_runtime', message: 'Detecting container engine...' });
 
     try {
       this.containerEngine = this.detectEngine(config || {});
     } catch (err) {
+      this.emit('status', { phase: 'error', message: err.message });
+      throw err;
+    }
+
+    this.dockerHost = this.resolveDockerHost();
+    if (!this.dockerHost) {
+      const isPodman = this.containerEngine === 'podman';
+      const err = new Error(
+        `Cannot connect to ${isPodman ? 'Podman' : 'Docker'}.\n\n` +
+        (isPodman
+          ? 'Start the Podman machine with: podman machine start\n' +
+            '(On native Linux, ensure the Podman service is available.)'
+          : 'Ensure Docker Desktop is running, or check your Docker installation.\n' +
+            'On macOS: Open Docker Desktop from Applications.\n' +
+            'On Windows: Start Docker Desktop from the Start Menu.\n' +
+            'On Linux: Run "sudo systemctl start docker"')
+      );
       this.emit('status', { phase: 'error', message: err.message });
       throw err;
     }
