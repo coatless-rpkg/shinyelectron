@@ -344,17 +344,17 @@ class ContainerBackend extends EventEmitter {
 
     this.emit('status', { phase: 'starting_server', message: 'Starting container...' });
 
-    // Find an available host port (container always listens on its internal port)
-    const { findAvailablePort } = require('./utils');
+    // Let Docker assign a free host port on the loopback interface. Picking a
+    // port ourselves races other container apps (two can both see a port as
+    // free and then collide on `docker run -p`); Docker's allocation is atomic.
+    // Binding to 127.0.0.1 also keeps the container off the local network.
+    // The assigned host port is read back from `docker port` after the run.
     const containerPort = port;
-    const hostPort = await findAvailablePort(port, config?.port_retry_count || 10, (attempted, next) => {
-      this.emit('status', { phase: 'port_conflict', message: `Port ${attempted} in use, trying ${next}...` });
-    });
 
     // Build docker run arguments
     const args = [
       'run', '-d',
-      '-p', `${hostPort}:${containerPort}`,
+      '-p', `127.0.0.1::${containerPort}`,
       '-v', `${appPath}:/app`,
       '-e', `PORT=${containerPort}`,
       '-e', `HOST=0.0.0.0`
@@ -409,6 +409,25 @@ class ContainerBackend extends EventEmitter {
 
         this.containerId = stdout.trim().substring(0, 12);
         logDebug(`Container started: ${this.containerId}`);
+
+        // Read the host port Docker assigned (output like "127.0.0.1:54321").
+        let hostPort;
+        try {
+          const portOut = execFileSync(
+            this.containerEngine, ['port', this.containerId, `${containerPort}/tcp`],
+            { encoding: 'utf8', env: this.getDockerEnv() }
+          ).trim();
+          const match = portOut.split('\n')[0].match(/:(\d+)\s*$/);
+          hostPort = match ? parseInt(match[1], 10) : null;
+        } catch {
+          hostPort = null;
+        }
+        if (!hostPort) {
+          this.emit('status', { phase: 'error', message: 'Could not determine the container host port' });
+          reject(new Error('Could not determine the container host port'));
+          return;
+        }
+        logDebug(`Container ${this.containerId} mapped ${containerPort} -> host ${hostPort}`);
 
         // Stream container logs while waiting for startup
         const logProc = spawn(this.containerEngine, ['logs', '-f', this.containerId], {
