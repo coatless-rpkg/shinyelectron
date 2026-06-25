@@ -1,7 +1,14 @@
-// Prevent EPIPE crashes from container log streaming after shutdown
+// EPIPE is expected when container log streaming is torn down at shutdown.
 process.on('uncaughtException', (err) => {
-  if (err.code === 'EPIPE') return;
+  if (err && err.code === 'EPIPE') return;
   console.error('Uncaught exception:', err);
+  try {
+    if (logStream) {
+      logStream.write(`[${new Date().toISOString()}] [ERROR] uncaughtException: ${(err && err.stack) || err}\n`);
+    }
+  } catch { /* logging is best-effort */ }
+  // Surface genuine faults instead of silently continuing in a half-broken state.
+  process.exit(1);
 });
 
 const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage } = require('electron');
@@ -9,7 +16,7 @@ const path = require('path');
 const fs = require('fs');
 const backend = require('./backends/{{backend_module}}');
 
-// File logging — writes to configured log directory or app userData
+// File logging -- writes to configured log directory or app userData
 const LOG_LEVEL = '{{log_level}}';
 const LOG_LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
 const LOG_THRESHOLD = LOG_LEVELS[LOG_LEVEL] || 1;
@@ -54,15 +61,16 @@ function getBackendForApp(appType, runtimeStrategy) {
 
 {{#updates_enabled}}
 const { autoUpdater } = require('electron-updater');
-const log = require('electron-log');
+const updaterLog = require('electron-log');
 {{/updates_enabled}}
 
 let mainWindow;
 let isShuttingDown = false;
 let serverRunning = false;
 let actualPort = null;
+let lastSelectedAppId = null;
 
-// Window state persistence — remembers size and position between sessions
+// Window state persistence -- remembers size and position between sessions
 const windowStatePath = path.join(app.getPath('userData'), 'window-state.json');
 
 function loadWindowState() {
@@ -79,8 +87,16 @@ function saveWindowState() {
   try {
     const bounds = mainWindow.getBounds();
     const isMaximized = mainWindow.isMaximized();
-    fs.writeFileSync(windowStatePath, JSON.stringify({ bounds, isMaximized }));
+    fs.writeFile(windowStatePath, JSON.stringify({ bounds, isMaximized }), () => {});
   } catch { /* ignore write errors */ }
+}
+
+// resize/move fire continuously during a drag; debounce so we write once the
+// interaction settles rather than synchronously on every frame.
+let saveWindowStateTimer = null;
+function scheduleSaveWindowState() {
+  if (saveWindowStateTimer) clearTimeout(saveWindowStateTimer);
+  saveWindowStateTimer = setTimeout(saveWindowState, 400);
 }
 {{#tray_enabled}}
 let tray = null;
@@ -144,7 +160,7 @@ function createMenu() {
   const isMac = process.platform === 'darwin';
 
   {{#menu_minimal}}
-  // Minimal menu — File, Edit, Help only
+  // Minimal menu -- File, Edit, Help only
   const template = [
     ...(isMac ? [{
       label: app.name,
@@ -224,7 +240,7 @@ function createMenu() {
   ];
   {{/menu_minimal}}
   {{^menu_minimal}}
-  // Default menu — full menu bar
+  // Default menu -- full menu bar
   const template = [
     ...(isMac ? [{
       label: app.name,
@@ -349,18 +365,18 @@ function createMenu() {
 
 {{#updates_enabled}}
 function setupAutoUpdater() {
-  autoUpdater.logger = log;
+  autoUpdater.logger = updaterLog;
   autoUpdater.logger.transports.file.level = 'info';
 
   autoUpdater.autoDownload = {{#auto_download}}true{{/auto_download}}{{^auto_download}}false{{/auto_download}};
   autoUpdater.autoInstallOnAppQuit = {{#auto_install}}true{{/auto_install}}{{^auto_install}}false{{/auto_install}};
 
   autoUpdater.on('checking-for-update', () => {
-    log.info('Checking for updates...');
+    updaterLog.info('Checking for updates...');
   });
 
   autoUpdater.on('update-available', (info) => {
-    log.info('Update available:', info.version);
+    updaterLog.info('Update available:', info.version);
     // Show non-intrusive notification instead of modal
     const { Notification } = require('electron');
     if (Notification.isSupported()) {
@@ -375,20 +391,20 @@ function setupAutoUpdater() {
       notification.show();
     } else {
       // Fallback to log
-      log.info(`Update ${info.version} available — user will be notified on next check`);
+      updaterLog.info(`Update ${info.version} available; user will be notified on next check`);
     }
   });
 
   autoUpdater.on('update-not-available', () => {
-    log.info('No updates available');
+    updaterLog.info('No updates available');
   });
 
   autoUpdater.on('download-progress', (progress) => {
-    log.info(`Download progress: ${progress.percent}%`);
+    updaterLog.info(`Download progress: ${progress.percent}%`);
   });
 
   autoUpdater.on('update-downloaded', (info) => {
-    log.info('Update downloaded');
+    updaterLog.info('Update downloaded');
     const { dialog } = require('electron');
     dialog.showMessageBox(mainWindow, {
       type: 'info',
@@ -404,7 +420,7 @@ function setupAutoUpdater() {
   });
 
   autoUpdater.on('error', (err) => {
-    log.error('AutoUpdater error:', err);
+    updaterLog.error('AutoUpdater error:', err);
   });
 }
 {{/updates_enabled}}
@@ -434,7 +450,7 @@ function createWindow() {
       // cross-contamination between multiple shinyelectron apps
       partition: 'persist:{{app_slug}}'
     },
-    {{#has_icon}}icon: path.join(__dirname, 'assets', 'icon.png'),{{/has_icon}}
+    {{#has_icon}}icon: path.join(__dirname, 'assets', '{{icon_file}}'),{{/has_icon}}
     show: false
   });
 
@@ -442,9 +458,10 @@ function createWindow() {
     mainWindow.maximize();
   }
 
-  // Save window state on resize/move
-  mainWindow.on('resize', saveWindowState);
-  mainWindow.on('move', saveWindowState);
+  // Save window state on resize/move (debounced; these events fire rapidly)
+  mainWindow.on('resize', scheduleSaveWindowState);
+  mainWindow.on('move', scheduleSaveWindowState);
+  mainWindow.on('close', saveWindowState);
 
   // Multi-app: load launcher instead of starting backend immediately
   if (appsManifest) {
@@ -457,7 +474,7 @@ function createWindow() {
   // Start backend server
   const port = {{server_port}};
 
-  // Resolve app path — for native backends, files are unpacked from ASAR
+  // Resolve app path -- for native backends, files are unpacked from ASAR
   let appPath = path.join(__dirname, 'src', 'app');
   const unpackedPath = appPath.replace('app.asar', 'app.asar.unpacked');
   if (unpackedPath !== appPath && fs.existsSync(unpackedPath)) {
@@ -474,7 +491,7 @@ function createWindow() {
 
     // Track server running state
     if (data.phase === 'server_ready') serverRunning = true;
-    if (data.phase === 'stopping_server' || data.phase === 'error') serverRunning = false;
+    if (data.phase === 'stopping_server' || data.phase === 'error' || data.phase === 'server_crashed') serverRunning = false;
 
     // Update tray status
     {{#tray_enabled}}
@@ -492,6 +509,12 @@ function createWindow() {
     {{/tray_enabled}}
   });
 
+  // Defensive: an 'error' event with no listener throws in Node and would
+  // crash the main process, so always keep one attached.
+  backend.on('error', (err) => {
+    log('error', 'Backend error event:', err && err.message ? err.message : err);
+  });
+
   backend.start({
     appPath: appPath,
     port: port,
@@ -505,6 +528,69 @@ function createWindow() {
   });
   } // end if (!appsManifest)
 
+  // Launch (or re-launch) a selected multi-app sub-app. Shared by the
+  // select_app and retry IPC actions so retry re-attempts the SAME app
+  // rather than the single-app defaults.
+  function startSelectedApp(appId) {
+    // Stop current backend and purge all listeners (status, error,
+    // install-packages, runtime-selected) to prevent dangling handlers
+    if (currentBackend) {
+      currentBackend.removeAllListeners();
+      currentBackend.stop();
+    }
+
+    var selectedApp = appsManifest && appsManifest.apps.find(function(a) { return a.id === appId; });
+    if (!selectedApp) return;
+
+    // Load the correct backend for this app, preferring per-app
+    // runtime_strategy when present (mixed-strategy suites).
+    var appStrategy = selectedApp.runtime_strategy || appsManifest.runtime_strategy;
+    var appType = selectedApp.type || appsManifest.default_type;
+    currentBackend = getBackendForApp(appType, appStrategy);
+
+    // Forward status to lifecycle.html and track running state (so multi-app
+    // builds get the same quit-confirmation / shutdown UI as single-app).
+    currentBackend.on('status', function(data) {
+      log('info', '[lifecycle] ' + data.phase + ': ' + (data.message || ''));
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('lifecycle-status', data);
+      }
+      if (data.phase === 'server_ready') serverRunning = true;
+      if (data.phase === 'stopping_server' || data.phase === 'error' || data.phase === 'server_crashed') serverRunning = false;
+    });
+    // Defensive: never let an 'error' event with no listener crash the process.
+    currentBackend.on('error', function(err) {
+      log('error', 'Backend error event:', err && err.message ? err.message : err);
+    });
+
+    // Show lifecycle page during startup
+    mainWindow.loadFile('lifecycle.html');
+
+    // Resolve the app path (ASAR-aware)
+    var selectedAppPath = path.join(__dirname, selectedApp.path);
+    var unpackedAppPath = selectedAppPath.replace('app.asar', 'app.asar.unpacked');
+    if (unpackedAppPath !== selectedAppPath && fs.existsSync(unpackedAppPath)) {
+      selectedAppPath = unpackedAppPath;
+    }
+
+    // Start the backend
+    // app_slug stays as the suite-level slug (for shared venv/runtime);
+    // app_id identifies the sub-app (for per-app prefs/caching).
+    currentBackend.start({
+      appPath: selectedAppPath,
+      port: port,
+      config: Object.assign({}, {{{backend_config_json}}}, {
+        app_type: appType,
+        app_id: selectedApp.id
+      })
+    }).then(function(result) {
+      actualPort = result.port;
+      mainWindow.loadURL('http://localhost:' + actualPort);
+    }).catch(function(err) {
+      log('error', 'Backend start failed:', err.message);
+    });
+  }
+
   // Handle IPC actions from lifecycle.html and launcher.html (retry, quit, select_app, etc.)
   // Wrapped in try/catch: a backend emit or getBackendForApp throwing
   // should not crash the Electron main process silently.
@@ -513,13 +599,22 @@ function createWindow() {
     var actionType = typeof action === 'string' ? action : action.type;
 
     if (actionType === 'retry') {
-      mainWindow.loadFile('lifecycle.html');
-      backend.start({ appPath, port, config: {{{backend_config_json}}} }).then(({ port: p }) => {
-        actualPort = p;
-        mainWindow.loadURL(`http://localhost:${actualPort}`);
-      }).catch((err) => {
-        log('error', 'Backend retry failed:', err.message);
-      });
+      if (appsManifest) {
+        // Multi-app: re-attempt the last selected app, or return to launcher.
+        if (lastSelectedAppId) {
+          startSelectedApp(lastSelectedAppId);
+        } else {
+          mainWindow.loadFile('launcher.html');
+        }
+      } else {
+        mainWindow.loadFile('lifecycle.html');
+        backend.start({ appPath, port, config: {{{backend_config_json}}} }).then(({ port: p }) => {
+          actualPort = p;
+          mainWindow.loadURL(`http://localhost:${actualPort}`);
+        }).catch((err) => {
+          log('error', 'Backend retry failed:', err.message);
+        });
+      }
     } else if (actionType === 'quit') {
       app.quit();
     } else if (actionType === 'install') {
@@ -531,56 +626,8 @@ function createWindow() {
     } else if (actionType === 'select_runtime') {
       backend.emit('runtime-selected', { runtimePath: action.runtimePath });
     } else if (actionType === 'select_app') {
-      // Stop current backend and purge all listeners (status, error,
-      // install-packages, runtime-selected) to prevent dangling handlers
-      if (currentBackend) {
-        currentBackend.removeAllListeners();
-        currentBackend.stop();
-      }
-
-      // Find the selected app
-      var selectedApp = appsManifest && appsManifest.apps.find(function(a) { return a.id === action.appId; });
-      if (!selectedApp) return;
-
-      // Load the correct backend for this app, preferring per-app
-      // runtime_strategy when present (mixed-strategy suites).
-      var appStrategy = selectedApp.runtime_strategy || appsManifest.runtime_strategy;
-      currentBackend = getBackendForApp(selectedApp.type, appStrategy);
-
-      // Subscribe to status events (forward to lifecycle.html only — navigation handled in .then())
-      currentBackend.on('status', function(data) {
-        log('info', '[lifecycle] ' + data.phase + ': ' + (data.message || ''));
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('lifecycle-status', data);
-        }
-      });
-
-      // Show lifecycle page during startup
-      mainWindow.loadFile('lifecycle.html');
-
-      // Resolve the app path (ASAR-aware)
-      var selectedAppPath = path.join(__dirname, selectedApp.path);
-      var unpackedAppPath = selectedAppPath.replace('app.asar', 'app.asar.unpacked');
-      if (unpackedAppPath !== selectedAppPath && fs.existsSync(unpackedAppPath)) {
-        selectedAppPath = unpackedAppPath;
-      }
-
-      // Start the backend
-      // app_slug stays as the suite-level slug (for shared venv/runtime);
-      // app_id identifies the sub-app (for per-app prefs/caching).
-      currentBackend.start({
-        appPath: selectedAppPath,
-        port: port,
-        config: Object.assign({}, {{{backend_config_json}}}, {
-          app_type: selectedApp.type,
-          app_id: selectedApp.id
-        })
-      }).then(function(result) {
-        actualPort = result.port;
-        mainWindow.loadURL('http://localhost:' + actualPort);
-      }).catch(function(err) {
-        log('error', 'Backend start failed:', err.message);
-      });
+      lastSelectedAppId = action.appId;
+      startSelectedApp(action.appId);
 
     } else if (actionType === 'back_to_launcher') {
       if (currentBackend) {
@@ -658,12 +705,16 @@ function createWindow() {
       if (choice === 0) {
         isShuttingDown = true;
         if (mainWindow && !mainWindow.isDestroyed()) {
+          // Send the shutdown status only once the lifecycle page has loaded
+          // and subscribed, otherwise the message races the renderer and is lost.
+          mainWindow.webContents.once('did-finish-load', () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('lifecycle-status', {
+                phase: 'shutting_down', message: 'Closing application...'
+              });
+            }
+          });
           mainWindow.loadFile('lifecycle.html');
-          setTimeout(() => {
-            mainWindow.webContents.send('lifecycle-status', {
-              phase: 'shutting_down', message: 'Closing application...'
-            });
-          }, 100);
         }
         if (currentBackend) currentBackend.stop();
         setTimeout(() => app.quit(), {{shutdown_timeout}});
@@ -674,7 +725,7 @@ function createWindow() {
     if (!isShuttingDown) {
       isShuttingDown = true;
       if (currentBackend) currentBackend.stop();
-      // Don't preventDefault — let the window close immediately
+      // Don't preventDefault -- let the window close immediately
     }
   });
 
@@ -718,7 +769,7 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (currentBackend) currentBackend.stop();
-  // Always quit when window closes — keeping a Shiny server running
+  // Always quit when window closes -- keeping a Shiny server running
   // in the background with no window doesn't make sense.
   // (Tray-enabled apps handle this differently via close-to-tray.)
   app.quit();

@@ -1,4 +1,4 @@
-// Native Python Shiny backend — spawns Python child process running shiny run
+// Native Python Shiny backend -- spawns Python child process running shiny run
 const { EventEmitter } = require('events');
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -16,8 +16,9 @@ class NativePyBackend extends EventEmitter {
   }
 
   /**
-   * Scan common Python installation directories and return the latest python path.
-   * @returns {string|null} Path to python executable, or null if not found.
+   * Scan common Python installation directories.
+   * @returns {Array<{version:string,path:string}>|null} Candidate python
+   *   installs sorted newest-first, or null if none are found.
    */
   findPythonInCommonLocations() {
     const candidates = [];
@@ -59,7 +60,6 @@ class NativePyBackend extends EventEmitter {
       for (const p of macPaths) {
         if (fs.existsSync(p)) {
           candidates.push({ version: '0.0.0', path: p });
-          break;
         }
       }
     } else {
@@ -71,7 +71,6 @@ class NativePyBackend extends EventEmitter {
       for (const p of linuxPaths) {
         if (fs.existsSync(p)) {
           candidates.push({ version: '0.0.0', path: p });
-          break;
         }
       }
     }
@@ -84,20 +83,14 @@ class NativePyBackend extends EventEmitter {
 
   /**
    * Find the Python executable.
-   * Priority: config.python_executable > cached auto-downloaded runtime > system PATH > common locations
+   * Priority: cached auto-downloaded runtime > bundled runtime > system PATH > common locations
    * @param {object} config - Backend configuration.
    * @returns {string} Path to Python executable.
    */
   findPython(config) {
     this.emit('status', { phase: 'finding_runtime', message: 'Looking for Python...' });
 
-    // 1. Explicit path from config
-    if (config && config.python_executable) {
-      this.emit('status', { phase: 'runtime_found', message: `Found Python: ${config.python_executable}` });
-      return config.python_executable;
-    }
-
-    // 2. Check for bundled runtime embedded in the Electron app
+    // Check for bundled runtime embedded in the Electron app
     // Resolve ASAR-unpacked path (runtime files are extracted outside app.asar)
     let appBasePath = path.join(__dirname, '..');
     const unpackedBase = appBasePath.replace('app.asar', 'app.asar.unpacked');
@@ -196,7 +189,12 @@ class NativePyBackend extends EventEmitter {
    * @returns {Promise<{port: number}>} Resolves when the Shiny server is ready.
    */
   async start({ appPath, port, config }) {
-    this.removeAllListeners();
+    // Clear only this backend's one-shot interactive handlers from a prior
+    // start(); do NOT removeAllListeners(), which would also wipe the main
+    // process's 'status'/'error' subscribers and freeze the lifecycle UI.
+    this.removeAllListeners('runtime-selected');
+    this.removeAllListeners('install-packages');
+    this.removeAllListeners('skip-install');
 
     // Resolve ASAR-unpacked base path for runtime access
     let startBasePath = path.join(__dirname, '..');
@@ -237,7 +235,7 @@ class NativePyBackend extends EventEmitter {
         }
       } catch (err) {
         const error = new Error(`Failed to set up Python runtime: ${err.message}`);
-        this.emit('error', error);
+        this.emit('status', { phase: 'error', message: error.message, detail: { stderr: err.message } });
         throw error;
       }
     }
@@ -309,7 +307,7 @@ class NativePyBackend extends EventEmitter {
       }
     }
 
-    // Check and install dependencies (skip for bundled — packages baked in at build time)
+    // Check and install dependencies (skip for bundled -- packages baked in at build time)
     const checker = require('./dependency-checker');
     const manifest = checker.readManifest(appPath);
 
@@ -368,12 +366,16 @@ class NativePyBackend extends EventEmitter {
     }
 
     // Port retry: find an available port starting from the requested one
-    const actualPort = await findAvailablePort(port, 10, (attempted, next) => {
+    const actualPort = await findAvailablePort(port, config?.port_retry_count || 10, (attempted, next) => {
       logDebug(`Port ${attempted} is in use, trying ${next}...`);
       this.emit('status', { phase: 'port_conflict', message: `Port ${attempted} in use, trying ${next}...`, attempted, next });
     });
 
     return new Promise((resolve, reject) => {
+      // Guard so the start() promise settles exactly once and a late
+      // waitForServer timeout cannot stop a process a retry has since spawned.
+      let settled = false;
+      const settle = (fn, arg) => { if (settled) return; settled = true; fn(arg); };
       // shiny run uses --app-dir for the directory and app:app as the module reference
       // See: https://shiny.posit.co/py/api/core/run_app.html
       const args = [
@@ -454,8 +456,8 @@ class NativePyBackend extends EventEmitter {
       this.pyProcess.on('error', (err) => {
         this.pyProcess = null;
         const error = new Error(`Failed to start Python: ${err.message}\n\nIs Python installed and on your PATH?`);
-        this.emit('error', error);
-        reject(error);
+        this.emit('status', { phase: 'error', message: error.message, detail: { stderr } });
+        settle(reject, error);
       });
 
       this.pyProcess.on('close', (code) => {
@@ -469,16 +471,22 @@ class NativePyBackend extends EventEmitter {
             message: msg,
             detail: { stderr, code }
           });
+          // Reject immediately instead of waiting out the readiness poll.
+          settle(reject, new Error(`${msg}\n\nPython stderr output:\n${stderr}`));
         }
       });
 
       waitForServer(actualPort, { timeout: 60000, interval: 500 })
         .then(() => {
+          if (settled) return;
           logDebug(`Python Shiny server ready on http://localhost:${actualPort}`);
           this.emit('status', { phase: 'server_ready', message: 'Python Shiny server ready', port: actualPort });
-          resolve({ port: actualPort });
+          settle(resolve, { port: actualPort });
         })
         .catch((err) => {
+          // A crash close-handler may have already settled and stopped us;
+          // do not stop() again (it could kill a retry's fresh process).
+          if (settled) return;
           this.stop();
           const error = new Error(
             `Python Shiny server failed to start within 60 seconds.\n\n` +
@@ -489,8 +497,8 @@ class NativePyBackend extends EventEmitter {
             `- The app has errors that prevent it from starting\n` +
             `- Port ${actualPort} is already in use`
           );
-          this.emit('error', error);
-          reject(error);
+          this.emit('status', { phase: 'error', message: error.message, detail: { stderr } });
+          settle(reject, error);
         });
     });
   }

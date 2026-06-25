@@ -1,4 +1,4 @@
-// Native R Shiny backend — spawns Rscript child process running shiny::runApp()
+// Native R Shiny backend -- spawns Rscript child process running shiny::runApp()
 const { EventEmitter } = require('events');
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -16,8 +16,9 @@ class NativeRBackend extends EventEmitter {
   }
 
   /**
-   * Scan common R installation directories and return the latest Rscript path.
-   * @returns {string|null} Path to Rscript, or null if not found.
+   * Scan common R installation directories.
+   * @returns {Array<{version:string,path:string}>|null} Candidate R installs
+   *   sorted newest-first, or null if none are found.
    */
   findRscriptInCommonLocations() {
     const candidates = [];
@@ -104,21 +105,14 @@ class NativeRBackend extends EventEmitter {
 
   /**
    * Find the Rscript executable.
-   * Priority: config.r_executable > cached auto-downloaded runtime > system PATH > common locations
+   * Priority: cached auto-downloaded runtime > bundled runtime > system PATH > common locations
    * @param {object} config - Backend configuration.
    * @returns {string} Path to Rscript executable.
    */
   findRscript(config) {
     this.emit('status', { phase: 'finding_runtime', message: 'Looking for R...' });
 
-    // 1. Explicit path from config
-    if (config && config.r_executable) {
-      const result = config.r_executable;
-      this.emit('status', { phase: 'runtime_found', message: `Found R: ${result}` });
-      return result;
-    }
-
-    // 2. Check for bundled runtime embedded in the Electron app
+    // Check for bundled runtime embedded in the Electron app
     // Resolve ASAR-unpacked path (runtime files are extracted outside app.asar)
     let appBasePath = path.join(__dirname, '..');
     const unpackedBase = appBasePath.replace('app.asar', 'app.asar.unpacked');
@@ -196,7 +190,7 @@ class NativeRBackend extends EventEmitter {
       return candidates[0].path;
     }
 
-    // 5. Last resort — return default and let it fail with a clear error
+    // 5. Last resort -- return default and let it fail with a clear error
     this.emit('status', { phase: 'runtime_found', message: `Found R: ${pathCmd}` });
     return pathCmd;
   }
@@ -210,7 +204,12 @@ class NativeRBackend extends EventEmitter {
    * @returns {Promise<{port: number}>} Resolves when the Shiny server is ready.
    */
   async start({ appPath, port, config }) {
-    this.removeAllListeners();
+    // Clear only this backend's one-shot interactive handlers from a prior
+    // start(); do NOT removeAllListeners(), which would also wipe the main
+    // process's 'status'/'error' subscribers and freeze the lifecycle UI.
+    this.removeAllListeners('runtime-selected');
+    this.removeAllListeners('install-packages');
+    this.removeAllListeners('skip-install');
 
     // Resolve ASAR-unpacked base path for runtime and library access
     let appBasePath = path.join(__dirname, '..');
@@ -291,7 +290,7 @@ class NativeRBackend extends EventEmitter {
       }
     }
 
-    // Check and install dependencies (skip for bundled — packages are baked in at build time)
+    // Check and install dependencies (skip for bundled -- packages are baked in at build time)
     const checker = require('./dependency-checker');
     const manifest = checker.readManifest(appPath);
     const isBundled = fs.existsSync(path.join(appBasePath, 'runtime', 'R'));
@@ -374,7 +373,12 @@ class NativeRBackend extends EventEmitter {
     this.emit('status', { phase: 'starting_server', message: 'Starting R Shiny server...' });
 
     return new Promise((resolve, reject) => {
-      // Resolve library path — check for bundled library first
+      // Guard so the start() promise settles exactly once and a late
+      // waitForServer timeout cannot stop a process a retry has since spawned.
+      let settled = false;
+      const settle = (fn, arg) => { if (settled) return; settled = true; fn(arg); };
+
+      // Resolve library path -- check for bundled library first
       const bundledLib = path.join(appBasePath, 'runtime', 'R', 'library');
       const checker2 = require('./dependency-checker');
       const userLibPath = checker2.resolveLibPath(config?.app_slug || 'default', config, checker2.readPreferences(config?.app_slug || 'default'));
@@ -432,7 +436,7 @@ class NativeRBackend extends EventEmitter {
 
       this.rProcess.on('error', (err) => {
         this.rProcess = null;
-        reject(new Error(`Failed to start Rscript: ${err.message}\n\nIs R installed and Rscript on your PATH?`));
+        settle(reject, new Error(`Failed to start Rscript: ${err.message}\n\nIs R installed and Rscript on your PATH?`));
       });
 
       this.rProcess.on('close', (code) => {
@@ -446,23 +450,29 @@ class NativeRBackend extends EventEmitter {
             message: msg,
             detail: { stderr, code }
           });
+          // Reject immediately instead of waiting out the readiness poll.
+          settle(reject, new Error(`${msg}\n\nR stderr output:\n${stderr}`));
         }
       });
 
       waitForServer(actualPort, { timeout: 60000, interval: 500 })
         .then(() => {
+          if (settled) return;
           logDebug(`R Shiny server ready on http://localhost:${actualPort}`);
           this.emit('status', { phase: 'server_ready', message: 'R Shiny server ready' });
-          resolve({ port: actualPort });
+          settle(resolve, { port: actualPort });
         })
         .catch((err) => {
+          // A crash close-handler may have already settled and stopped us;
+          // do not stop() again (it could kill a retry's fresh process).
+          if (settled) return;
           this.stop();
           this.emit('status', {
             phase: 'error',
             message: `R Shiny server failed to start within 60 seconds.`,
             detail: { stderr }
           });
-          reject(new Error(
+          settle(reject, new Error(
             `R Shiny server failed to start within 60 seconds.\n\n` +
             `R stderr output:\n${stderr}\n\n` +
             `Possible causes:\n` +

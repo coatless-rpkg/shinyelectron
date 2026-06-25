@@ -1,4 +1,4 @@
-// Container backend — runs Shiny app inside Docker/Podman container
+// Container backend -- runs Shiny app inside Docker/Podman container
 const { EventEmitter } = require('events');
 const { spawn, execFileSync } = require('child_process');
 const fs = require('fs');
@@ -110,8 +110,16 @@ class ContainerBackend extends EventEmitter {
    */
   selectImage(config) {
     if (config && config.container_image) {
+      // If the image reference already carries a tag or digest, use it as-is;
+      // only append the configured tag when none is present. A tag is the part
+      // after the last ':' that follows the final '/' (host:port colons aside).
+      const image = config.container_image;
+      const lastSlash = image.lastIndexOf('/');
+      const lastColon = image.lastIndexOf(':');
+      const hasTag = image.includes('@') || lastColon > lastSlash;
+      if (hasTag) return image;
       const tag = (config && config.container_tag) || 'latest';
-      return `${config.container_image}:${tag}`;
+      return `${image}:${tag}`;
     }
 
     const appType = (config && config.app_type) || 'r-shiny';
@@ -138,6 +146,36 @@ class ContainerBackend extends EventEmitter {
    */
   async ensureImage(image, config) {
     const env = this.getDockerEnv();
+    const pullOnStart = config?.pull_on_start !== false; // default true
+    const arch = process.arch === 'arm64' ? 'linux/arm64' : 'linux/amd64';
+
+    // For a configured registry image with pull_on_start, refresh from the
+    // registry rather than reusing a possibly-stale local copy.
+    if (config?.container_image && pullOnStart) {
+      this.emit('status', {
+        phase: 'downloading_runtime',
+        message: `Pulling image ${image}...`,
+        percent: -1
+      });
+      try {
+        execFileSync(this.containerEngine, ['pull', '--platform', arch, image],
+          { stdio: 'inherit', env, timeout: 600000 });
+        return;
+      } catch (err) {
+        // Pull failed (offline?); fall back to a local copy if one exists.
+        try {
+          execFileSync(this.containerEngine, ['image', 'inspect', image],
+            { stdio: 'ignore', env, timeout: 10000 });
+          logDebug(`Pull failed but image ${image} exists locally; using local copy`);
+          return;
+        } catch {
+          throw new Error(
+            `Failed to pull container image.\n\nImage: ${image}\n` +
+            `Platform: ${arch}\nError: ${err.message}`
+          );
+        }
+      }
+    }
 
     // Check if image exists locally
     try {
@@ -264,7 +302,9 @@ class ContainerBackend extends EventEmitter {
    * @returns {Promise<{port: number}>} Resolves when container is ready.
    */
   async start({ appPath, port, config }) {
-    this.removeAllListeners();
+    // Note: do NOT removeAllListeners() here; it would wipe the main process's
+    // 'status'/'error' subscribers. This backend registers no one-shot
+    // internal listeners, so there is nothing to clear.
     this.dockerHost = this.resolveDockerHost();
     if (!this.dockerHost) {
       const err = new Error(
@@ -283,7 +323,7 @@ class ContainerBackend extends EventEmitter {
     try {
       this.containerEngine = this.detectEngine(config || {});
     } catch (err) {
-      this.emit('error', err);
+      this.emit('status', { phase: 'error', message: err.message });
       throw err;
     }
 
@@ -307,7 +347,7 @@ class ContainerBackend extends EventEmitter {
     // Find an available host port (container always listens on its internal port)
     const { findAvailablePort } = require('./utils');
     const containerPort = port;
-    const hostPort = await findAvailablePort(port, 10, (attempted, next) => {
+    const hostPort = await findAvailablePort(port, config?.port_retry_count || 10, (attempted, next) => {
       this.emit('status', { phase: 'port_conflict', message: `Port ${attempted} in use, trying ${next}...` });
     });
 
@@ -320,9 +360,6 @@ class ContainerBackend extends EventEmitter {
       '-e', `HOST=0.0.0.0`
     ];
 
-    // App slug for volume naming
-    const appSlug = (config && config.app_slug) || 'shinyelectron-app';
-    const appType = (config && config.app_type) || 'r-shiny';
     // Note: dependencies are baked into the image at build time.
     // We no longer mount a cache volume over the package directory
     // as that hides the pre-installed packages.
@@ -365,7 +402,7 @@ class ContainerBackend extends EventEmitter {
             `Image: ${image}\n` +
             `Error: ${stderr}`
           );
-          this.emit('error', err);
+          this.emit('status', { phase: 'error', message: err.message, detail: { stderr } });
           reject(err);
           return;
         }
@@ -421,14 +458,14 @@ class ContainerBackend extends EventEmitter {
               `- App has errors that prevent it from starting\n` +
               `- Port ${port} conflict inside the container`
             );
-            this.emit('error', startErr);
+            this.emit('status', { phase: 'error', message: startErr.message });
             reject(startErr);
           });
       });
 
       proc.on('error', (err) => {
         const runErr = new Error(`Failed to run ${this.containerEngine}: ${err.message}`);
-        this.emit('error', runErr);
+        this.emit('status', { phase: 'error', message: runErr.message });
         reject(runErr);
       });
     });

@@ -187,12 +187,12 @@ function reportRuntimeCandidates(emitter, label, candidates) {
 
 // Current manifest schema version. Bump in lockstep with
 // R/constants.R::MANIFEST_SCHEMA_VERSION. Older apps built against an
-// older R version may ship older manifests — we warn rather than crash.
+// older R version may ship older manifests -- we warn rather than crash.
 const MANIFEST_SCHEMA_VERSION = '1';
 
 /**
  * Validate a parsed manifest object has the expected schema version.
- * Emits a console warning on mismatch but never throws — graceful
+ * Emits a console warning on mismatch but never throws -- graceful
  * degradation is preferable to a crash on user machines.
  * @param {object} manifest - Parsed JSON manifest from R.
  * @param {string} label - e.g. "dependencies", "runtime", "apps".

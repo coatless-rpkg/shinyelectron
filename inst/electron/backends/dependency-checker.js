@@ -1,4 +1,4 @@
-// Dependency checker — checks and installs missing R/Python packages at launch
+// Dependency checker -- checks and installs missing R/Python packages at launch
 const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -33,7 +33,7 @@ function readManifest(appPath) {
 async function checkMissingR(packages, rscript, libPath) {
   if (packages.length === 0) return [];
 
-  // Sanitize package names — strip anything that isn't alphanumeric, dot, or dash
+  // Sanitize package names -- strip anything that isn't alphanumeric, dot, or dash
   const pkgList = packages.map(p => `"${p.replace(/[^a-zA-Z0-9._-]/g, '')}"`).join(',');
   let rCode;
   if (libPath) {
@@ -111,7 +111,7 @@ print(json.dumps(missing))
  */
 function installR(packages, repos, rscript, libPath, onProgress) {
   return new Promise((resolve) => {
-    // Sanitize repo URLs — only allow URL-safe characters
+    // Sanitize repo URLs -- only allow URL-safe characters
     const repoStr = repos.map(r => `"${r.replace(/"/g, '')}"`).join(',');
     // Escape backslashes and double quotes in libPath to prevent R code injection
     const libArg = libPath ? `, lib="${libPath.replace(/\\/g, '/').replace(/"/g, '\\"')}"` : '';
@@ -135,7 +135,10 @@ function installR(packages, repos, rscript, libPath, onProgress) {
 
       // Sanitize package name before interpolating into R code
       const safePkg = pkg.replace(/[^a-zA-Z0-9._-]/g, '');
-      const rCode = `install.packages("${safePkg}", repos=c(${repoStr}), type="binary", quiet=TRUE, dependencies=TRUE${libArg})`;
+      // type="binary" is unsupported on Linux (.Platform$pkgType == "source");
+      // let R pick the platform default there to avoid an install error.
+      const typeArg = process.platform === 'linux' ? '' : ', type="binary"';
+      const rCode = `install.packages("${safePkg}", repos=c(${repoStr})${typeArg}, quiet=TRUE, dependencies=TRUE${libArg})`;
 
       try {
         execFileSync(rscript, ['-e', rCode], {

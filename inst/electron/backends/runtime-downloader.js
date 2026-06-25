@@ -1,4 +1,4 @@
-// Runtime downloader — downloads portable R on first launch (auto-download strategy)
+// Runtime downloader -- downloads portable R on first launch (auto-download strategy)
 const https = require('https');
 const http = require('http');
 const fs = require('fs');
@@ -13,24 +13,43 @@ const { logDebug } = require('./utils');
  * @param {string} url - URL to download.
  * @param {string} dest - Destination file path.
  * @param {function} onProgress - Callback: (percent) => void
+ * @param {number} [redirectsLeft] - Remaining redirect hops (internal).
  * @returns {Promise<void>}
  */
-function downloadFile(url, dest, onProgress) {
+function downloadFile(url, dest, onProgress, redirectsLeft = 5) {
   return new Promise((resolve, reject) => {
     const proto = url.startsWith('https') ? https : http;
     const file = fs.createWriteStream(dest);
 
-    proto.get(url, (response) => {
-      // Follow redirects
+    const cleanup = () => {
+      file.close();
+      if (fs.existsSync(dest)) {
+        try { fs.unlinkSync(dest); } catch { /* ignore */ }
+      }
+    };
+
+    // Surface disk-full / write errors instead of hanging.
+    file.on('error', (err) => {
+      cleanup();
+      reject(err);
+    });
+
+    const req = proto.get(url, (response) => {
+      // Follow redirects, but bound the depth to avoid an infinite loop.
       if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
-        file.close();
-        fs.unlinkSync(dest);
-        return downloadFile(response.headers.location, dest, onProgress).then(resolve).catch(reject);
+        response.resume();
+        cleanup();
+        if (redirectsLeft <= 0) {
+          reject(new Error('Too many redirects while downloading runtime'));
+          return;
+        }
+        return downloadFile(response.headers.location, dest, onProgress, redirectsLeft - 1)
+          .then(resolve).catch(reject);
       }
 
       if (response.statusCode !== 200) {
-        file.close();
-        fs.unlinkSync(dest);
+        response.resume();
+        cleanup();
         reject(new Error(`Download failed with status ${response.statusCode}`));
         return;
       }
@@ -47,12 +66,18 @@ function downloadFile(url, dest, onProgress) {
 
       response.pipe(file);
       file.on('finish', () => {
-        file.close();
-        resolve();
+        file.close(() => resolve());
       });
-    }).on('error', (err) => {
-      file.close();
-      if (fs.existsSync(dest)) fs.unlinkSync(dest);
+    });
+
+    // Abort if the connection stalls so a first-launch download cannot hang
+    // the splash indefinitely.
+    req.setTimeout(60000, () => {
+      req.destroy(new Error('Download stalled (no response within 60s)'));
+    });
+
+    req.on('error', (err) => {
+      cleanup();
       reject(err);
     });
   });
@@ -168,7 +193,7 @@ async function downloadRuntime(manifest, onProgress) {
     }
     logDebug('SHA-256 checksum verified');
   } else {
-    console.warn('No SHA-256 checksum in manifest — skipping integrity verification');
+    console.warn('No SHA-256 checksum in manifest -- skipping integrity verification');
   }
 
   if (onProgress) onProgress(`Extracting ${lang} runtime...`, -1);
@@ -176,7 +201,7 @@ async function downloadRuntime(manifest, onProgress) {
   // Create install directory
   fs.mkdirSync(installPath, { recursive: true });
 
-  // Extract based on file type — capture stderr so failures surface the real error.
+  // Extract based on file type -- capture stderr so failures surface the real error.
   //
   // On Windows, resolve tar to %SystemRoot%\System32\tar.exe explicitly. Windows
   // 10+ ships bsdtar at that path, which handles drive letters fine. A bare
@@ -212,7 +237,15 @@ async function downloadRuntime(manifest, onProgress) {
         runExtract('unzip', ['-q', tempFile, '-d', installPath]);
       }
     } else if (ext === '.pkg') {
-      runExtract('pkgutil', ['--expand-full', tempFile, installPath]);
+      // pkgutil --expand-full refuses to write into an existing directory, so
+      // expand into a fresh temp dir and move the contents into installPath.
+      const expandDir = `${installPath}.expand-${process.pid}`;
+      if (fs.existsSync(expandDir)) fs.rmSync(expandDir, { recursive: true, force: true });
+      runExtract('pkgutil', ['--expand-full', tempFile, expandDir]);
+      for (const entry of fs.readdirSync(expandDir)) {
+        fs.renameSync(path.join(expandDir, entry), path.join(installPath, entry));
+      }
+      fs.rmSync(expandDir, { recursive: true, force: true });
     } else {
       throw new Error(`Unsupported archive extension: ${ext}`);
     }

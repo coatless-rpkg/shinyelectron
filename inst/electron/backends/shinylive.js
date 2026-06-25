@@ -1,4 +1,4 @@
-// Shinylive backend — serves static shinylive app with required CORS headers
+// Shinylive backend -- serves static shinylive app with required CORS headers
 const { EventEmitter } = require('events');
 const express = require('express');
 const serveStatic = require('serve-static');
@@ -10,7 +10,9 @@ class ShinyliveBackend extends EventEmitter {
   }
 
   async start({ appPath, port, config }) {
-    this.removeAllListeners();
+    // Note: do NOT removeAllListeners() here; it would wipe the main process's
+    // 'status'/'error' subscribers. This backend registers no one-shot
+    // internal listeners, so there is nothing to clear.
     const { isOnline, logDebug } = require('./utils');
 
     this.emit('status', { phase: 'starting_server', message: 'Starting server...' });
@@ -23,7 +25,7 @@ class ShinyliveBackend extends EventEmitter {
         phase: 'error',
         message: 'No internet connection detected.\n\nShinylive apps need to download WebAssembly resources on first load. Please connect to the internet and try again.'
       });
-      throw new Error('No internet connection — shinylive requires network access for first load');
+      throw new Error('No internet connection -- shinylive requires network access for first load');
     }
 
     return new Promise((resolve, reject) => {
