@@ -26,35 +26,31 @@ test_that("detect_container_engine returns NULL when none found", {
   expect_null(detect_container_engine())
 })
 
-test_that("select_container_image returns correct image for r-shiny", {
-  result <- select_container_image("r-shiny")
-  expect_equal(result, "shinyelectron/r-shiny:latest")
-})
-
-test_that("select_container_image returns correct image for py-shiny", {
-  result <- select_container_image("py-shiny")
-  expect_equal(result, "shinyelectron/py-shiny:latest")
-})
-
-test_that("select_container_image uses custom image from config", {
-  result <- select_container_image("r-shiny", image = "myregistry/myimage", tag = "v2")
-  expect_equal(result, "myregistry/myimage:v2")
-})
-
-test_that("generate_container_config creates valid JSON", {
+test_that("generate_container_config returns container backend settings", {
   result <- generate_container_config(
-    app_type = "r-shiny",
-    engine = "docker",
     config = list(container = list(
-      image = NULL,
-      tag = "latest",
-      pull_on_start = TRUE
+      engine = "podman",
+      image = "myregistry/myimage",
+      tag = "v2",
+      pull_on_start = FALSE,
+      volumes = list("/host" = "/data"),
+      env = list(KEY = "value")
     ))
   )
-  parsed <- jsonlite::fromJSON(result, simplifyVector = FALSE)
-  expect_equal(parsed$container_engine, "docker")
-  expect_true(parsed$pull_on_start)
-  expect_equal(parsed$app_type, "r-shiny")
+  expect_type(result, "list")
+  expect_equal(result$container_engine, "podman")
+  expect_equal(result$container_image, "myregistry/myimage")
+  expect_equal(result$container_tag, "v2")
+  expect_false(result$pull_on_start)
+  expect_equal(result$container_volumes, list("/host" = "/data"))
+})
+
+test_that("generate_container_config falls back to defaults", {
+  result <- generate_container_config(config = list())
+  expect_equal(result$container_engine, "docker")
+  expect_null(result$container_image)
+  expect_equal(result$container_tag, "latest")
+  expect_true(result$pull_on_start)
 })
 
 test_that("validate_container_available errors when no engine found", {

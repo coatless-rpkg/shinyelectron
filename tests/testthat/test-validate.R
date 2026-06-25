@@ -49,3 +49,17 @@ test_that("validate_r_available returns the Rscript path invisibly", {
   result <- validate_r_available()
   expect_true(nzchar(result))
 })
+
+# Isolated tests that exercise the resolution logic without depending on the
+# live Rscript shim, so they run in the standard CRAN / R CMD check pipeline.
+test_that("validate_r_available errors when Rscript is not on PATH", {
+  mockery::stub(validate_r_available, "Sys.getenv", function(...) "")
+  mockery::stub(validate_r_available, "Sys.which", function(...) "")
+  expect_error(validate_r_available(), "Rscript is required")
+})
+
+test_that("validate_r_available returns the resolved Rscript path", {
+  mockery::stub(validate_r_available, "Sys.getenv", function(...) "checkmode")
+  mockery::stub(validate_r_available, "Sys.which", function(...) "/usr/local/bin/Rscript")
+  expect_equal(validate_r_available(), "/usr/local/bin/Rscript")
+})

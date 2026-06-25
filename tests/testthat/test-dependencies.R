@@ -3,6 +3,7 @@
 # --- R dependency detection ---
 
 test_that("detect_r_dependencies finds library/require calls via renv", {
+  skip_if_not_installed("renv")
   tmpdir <- tempfile()
   dir.create(tmpdir)
   on.exit(unlink(tmpdir, recursive = TRUE))
@@ -20,6 +21,7 @@ test_that("detect_r_dependencies finds library/require calls via renv", {
 })
 
 test_that("detect_r_dependencies finds namespace references", {
+  skip_if_not_installed("renv")
   tmpdir <- tempfile()
   dir.create(tmpdir)
   on.exit(unlink(tmpdir, recursive = TRUE))
@@ -36,6 +38,7 @@ test_that("detect_r_dependencies finds namespace references", {
 })
 
 test_that("detect_r_dependencies excludes base R packages", {
+  skip_if_not_installed("renv")
   tmpdir <- tempfile()
   dir.create(tmpdir)
   on.exit(unlink(tmpdir, recursive = TRUE))
@@ -53,6 +56,7 @@ test_that("detect_r_dependencies excludes base R packages", {
 })
 
 test_that("detect_r_dependencies scans multiple files", {
+  skip_if_not_installed("renv")
   tmpdir <- tempfile()
   dir.create(tmpdir)
   on.exit(unlink(tmpdir, recursive = TRUE))
@@ -66,6 +70,7 @@ test_that("detect_r_dependencies scans multiple files", {
 })
 
 test_that("detect_r_dependencies returns sorted unique vector", {
+  skip_if_not_installed("renv")
   tmpdir <- tempfile()
   dir.create(tmpdir)
   on.exit(unlink(tmpdir, recursive = TRUE))
@@ -82,6 +87,7 @@ test_that("detect_r_dependencies returns sorted unique vector", {
 })
 
 test_that("detect_r_dependencies returns empty for no dependencies", {
+  skip_if_not_installed("renv")
   tmpdir <- tempfile()
   dir.create(tmpdir)
   on.exit(unlink(tmpdir, recursive = TRUE))
@@ -328,15 +334,22 @@ test_that("install_r_binary_packages calls install.packages with correct args", 
     captured_args <<- list(pkgs = pkgs, lib = lib, repos = repos, type = type)
   })
 
+  # Inject a fake package db so no real CRAN metadata is fetched.
+  fake_db <- matrix(
+    "", nrow = 2, ncol = 4,
+    dimnames = list(c("shiny", "ggplot2"),
+                    c("Package", "Depends", "Imports", "LinkingTo"))
+  )
+  fake_db[, "Package"] <- rownames(fake_db)
+
   install_r_binary_packages(
     packages = c("shiny", "ggplot2"),
     lib_path = "/tmp/test-lib",
     repos = c("https://cloud.r-project.org"),
+    available_pkgs = fake_db,
     verbose = FALSE
   )
 
-  # The function resolves the full dependency tree, so the actual list
-  # will include transitive dependencies (R6, htmltools, etc.)
   expect_true(all(c("shiny", "ggplot2") %in% captured_args$pkgs))
   expect_equal(captured_args$lib, "/tmp/test-lib")
   expect_equal(captured_args$type, "binary")
@@ -349,10 +362,18 @@ test_that("install_r_binary_packages creates lib directory", {
   mockery::stub(install_r_binary_packages, "utils::install.packages",
                 function(...) NULL)
 
+  fake_db <- matrix(
+    "", nrow = 1, ncol = 4,
+    dimnames = list("shiny",
+                    c("Package", "Depends", "Imports", "LinkingTo"))
+  )
+  fake_db[, "Package"] <- rownames(fake_db)
+
   install_r_binary_packages(
     packages = "shiny",
     lib_path = lib_path,
     repos = c("https://cloud.r-project.org"),
+    available_pkgs = fake_db,
     verbose = FALSE
   )
 
@@ -376,6 +397,7 @@ test_that("install_r_binary_packages skips empty package list", {
 # --- Orchestration ---
 
 test_that("resolve_app_dependencies detects and merges for r-shiny", {
+  skip_if_not_installed("renv")
   tmpdir <- tempfile()
   dir.create(tmpdir)
   writeLines(c("library(shiny)", "library(ggplot2)"), file.path(tmpdir, "app.R"))

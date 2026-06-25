@@ -1,4 +1,8 @@
 test_that("app_check passes for valid R shiny app", {
+  # app_check resolves the default shinylive strategy and detects R deps,
+  # which require the shinylive and renv Suggested packages.
+  skip_if_not(r_shinylive_available(), "shinylive not available")
+  skip_if_not_installed("renv")
   tmpdir <- tempfile()
   dir.create(tmpdir)
   writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
@@ -32,7 +36,7 @@ test_that("app_check validates Python app structure", {
   writeLines("from shiny import App", file.path(tmpdir, "app.py"))
   on.exit(unlink(tmpdir, recursive = TRUE))
 
-  # Warns about missing requirements.txt — expected since we only test app structure
+  # Warns about missing requirements.txt -- expected since we only test app structure
   expect_warning(
     result <- app_check(tmpdir, app_type = "py-shiny", verbose = FALSE),
     "requirements.txt"
@@ -52,6 +56,7 @@ test_that("app_check warns about missing icon", {
 })
 
 test_that("app_check detects dependencies", {
+  skip_if_not_installed("renv")
   tmpdir <- tempfile()
   dir.create(tmpdir)
   writeLines(c("library(shiny)", "library(ggplot2)"),

@@ -3,7 +3,7 @@ test_that("export validates R app structure for r-shiny type", {
   dir.create(tmpdir)
   on.exit(unlink(tmpdir, recursive = TRUE))
 
-  # No app.R or server.R — should fail at app structure validation
+  # No app.R or server.R -- should fail at app structure validation
   expect_error(
     export(appdir = tmpdir, destdir = tempfile(), app_type = "r-shiny",
            build = FALSE, verbose = FALSE),
@@ -12,6 +12,7 @@ test_that("export validates R app structure for r-shiny type", {
 })
 
 test_that("export copies app source for r-shiny without conversion", {
+  skip_if_not_installed("renv")
   tmpdir <- tempfile()
   dir.create(tmpdir)
   writeLines("library(shiny)\nshinyApp(ui = fluidPage(), server = function(input, output) {})",
@@ -58,6 +59,7 @@ test_that("export defaults runtime_strategy to shinylive when NULL", {
 })
 
 test_that("export passes system strategy to build_electron_app", {
+  skip_if_not_installed("renv")
   tmpdir <- tempfile()
   dir.create(tmpdir)
   writeLines("library(shiny)\nshinyApp(ui = fluidPage(), server = function(input, output) {})",

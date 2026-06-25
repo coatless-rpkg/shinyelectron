@@ -6,6 +6,7 @@ shinylive_available <- r_shinylive_available
 # --- App Check ---
 
 test_that("e2e: app_check passes for valid R app", {
+  skip_if_not(shinylive_available(), "shinylive not available")
   d <- tempfile(); dir.create(d)
   on.exit(unlink(d, TRUE))
   writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})", file.path(d, "app.R"))
@@ -72,6 +73,7 @@ test_that("e2e: legacy r-shinylive export still works with deprecation warning",
 # --- r-shiny ---
 
 test_that("e2e: r-shiny system export copies app and writes dependencies", {
+  skip_if_not_installed("renv")
   d <- tempfile(); dir.create(d); o <- tempfile()
   on.exit(unlink(c(d, o), TRUE))
   writeLines(c("library(shiny)", "library(ggplot2)"), file.path(d, "app.R"))
@@ -88,11 +90,13 @@ test_that("e2e: r-shiny system export copies app and writes dependencies", {
 test_that("e2e: r-shiny auto-download writes runtime manifest", {
   # auto-download is unavailable on Linux (no portable-r builds).
   skip_on_os("linux")
+  skip_if_not_installed("renv")
   d <- tempfile(); dir.create(d); o <- tempfile()
   on.exit(unlink(c(d, o), TRUE))
   writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})", file.path(d, "app.R"))
   # Pin R version via config so the test doesn't depend on r_latest_version()
-  yaml::write_yaml(list(r = list(version = "4.4.1")), file.path(d, "_shinyelectron.yml"))
+  yaml::write_yaml(list(dependencies = list(r = list(version = "4.4.1"))),
+                   file.path(d, "_shinyelectron.yml"))
   r <- export(d, o, app_type = "r-shiny", runtime_strategy = "auto-download",
               sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
   manifest_path <- fs::path(o, "shiny-app", "runtime-manifest.json")
@@ -103,13 +107,21 @@ test_that("e2e: r-shiny auto-download writes runtime manifest", {
 })
 
 test_that("e2e: r-shiny container export warns but succeeds", {
+  skip_if_not_installed("renv")
   d <- tempfile(); dir.create(d); o <- tempfile()
   on.exit(unlink(c(d, o), TRUE))
   writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})", file.path(d, "app.R"))
-  suppressWarnings(
-    r <- export(d, o, app_type = "r-shiny", runtime_strategy = "container",
-                sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
-  )
+  call_export <- function() {
+    r <<- export(d, o, app_type = "r-shiny", runtime_strategy = "container",
+                 sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
+  }
+  r <- NULL
+  if (is.null(detect_container_engine())) {
+    # No docker/podman on the build machine: the missing-engine warning fires.
+    expect_warning(call_export(), "Container engine not available")
+  } else {
+    call_export()
+  }
   expect_true(!is.null(r$converted_app))
 })
 
@@ -120,10 +132,16 @@ test_that("e2e: py-shiny container export warns but succeeds", {
   on.exit(unlink(c(d, o), TRUE))
   writeLines("from shiny import App, ui\napp=App(ui.page_fluid(),None)", file.path(d, "app.py"))
   writeLines("shiny", file.path(d, "requirements.txt"))
-  suppressWarnings(
-    r <- export(d, o, app_type = "py-shiny", runtime_strategy = "container",
-                sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
-  )
+  call_export <- function() {
+    r <<- export(d, o, app_type = "py-shiny", runtime_strategy = "container",
+                 sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
+  }
+  r <- NULL
+  if (is.null(detect_container_engine())) {
+    expect_warning(call_export(), "Container engine not available")
+  } else {
+    call_export()
+  }
   expect_true(!is.null(r$converted_app))
 })
 
@@ -311,6 +329,7 @@ test_that("e2e: brand.yml is read and applied", {
 # --- Dependency Detection ---
 
 test_that("e2e: R dependencies detected via renv", {
+  skip_if_not_installed("renv")
   d <- tempfile(); dir.create(d)
   on.exit(unlink(d, TRUE))
   writeLines(c("library(shiny)", "library(ggplot2)", "DT::datatable(mtcars)"), file.path(d, "app.R"))

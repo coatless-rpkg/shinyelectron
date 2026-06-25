@@ -128,6 +128,7 @@ test_that("mixed-strategy multi-app suite picks per-app strategy in the manifest
 # --- Integration Tests ---
 
 test_that("export detects multi-app and copies all apps", {
+  skip_if_not_installed("renv")
   tmpdir <- tempfile(); dir.create(tmpdir)
   dir.create(file.path(tmpdir, "apps", "dash"), recursive = TRUE)
   dir.create(file.path(tmpdir, "apps", "admin"), recursive = TRUE)
@@ -148,9 +149,11 @@ test_that("export detects multi-app and copies all apps", {
   outdir <- tempfile()
   on.exit(unlink(c(tmpdir, outdir), recursive = TRUE))
 
-  mockery::stub(export, "build_multi_app", function(...) tempdir())
-
-  result <- export(appdir = tmpdir, destdir = outdir, build = TRUE,
+  # build = FALSE exercises multi-app detection and the app-copy step without
+  # a real Electron build. (Previously this stubbed build_multi_app on export,
+  # but export delegates to export_multi_app, so the stub never fired and a
+  # full npm/electron-builder build ran.)
+  result <- export(appdir = tmpdir, destdir = outdir, build = FALSE,
                    sign = FALSE, verbose = FALSE)
 
   expect_true(fs::dir_exists(fs::path(outdir, "apps", "dash")))

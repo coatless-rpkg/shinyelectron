@@ -66,7 +66,7 @@ test_that("export passes system strategy for py-shiny", {
   })
   mockery::stub(export, "validate_python_available", function() invisible(TRUE))
 
-  # Warns about missing requirements.txt — expected since we only test strategy passthrough
+  # Warns about missing requirements.txt -- expected since we only test strategy passthrough
   expect_warning(
     export(appdir = tmpdir, destdir = outdir, app_type = "py-shiny",
            runtime_strategy = "system", build = TRUE, verbose = FALSE),

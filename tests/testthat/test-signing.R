@@ -86,7 +86,7 @@ test_that("validate_signing_config warns about missing macOS team_id", {
     mac = list(identity = NULL, team_id = NULL, notarize = TRUE)
   ))
 
-  # Multiple warnings fire (team_id, notarize creds, identity) — check for the first
+  # Multiple warnings fire (team_id, notarize creds, identity) -- check for the first
   suppressWarnings(
     expect_warning(
       validate_signing_config(config, platform = "mac"),
@@ -102,7 +102,7 @@ test_that("validate_signing_config warns about missing notarization credentials"
   ))
 
   withr::with_envvar(c(APPLE_ID = NA, APPLE_APP_SPECIFIC_PASSWORD = NA), {
-    # Also fires identity warning — suppress it
+    # Also fires identity warning -- suppress it
     suppressWarnings(
       expect_warning(
         validate_signing_config(config, platform = "mac"),

@@ -1,4 +1,4 @@
-# True end-to-end tests — build full Electron apps and verify output
+# True end-to-end tests -- build full Electron apps and verify output
 # These are SLOW (1-2 minutes each) and require Node.js + npm.
 # Skipped on CI, CRAN, and inside R CMD check. Run locally with:
 #   testthat::test_file("tests/testthat/test-e2e.R")
@@ -180,7 +180,7 @@ test_that("e2e: r-shiny native Electron app starts and emits lifecycle events", 
 
   # Launch for 15 seconds and capture output.
   # SHINYELECTRON_DEBUG=1 surfaces the backend diagnostic log lines
-  # we grep for below — otherwise the app runs silently by design.
+  # we grep for below -- otherwise the app runs silently by design.
   result <- processx::run(
     "npx", c("electron", "."),
     wd = electron_dir,
