@@ -51,7 +51,7 @@ app = App(app_ui, server)
 
   test('window opens and serves on localhost', async () => {
     const window = await electronApp.firstWindow();
-    // Shinylive starts Express server then navigates — may take a moment
+    // Shinylive starts Express server then navigates -- may take a moment
     await window.waitForURL(/localhost/, { timeout: 60000 });
     const url = window.url();
     expect(url).toMatch(/localhost:\d+/);

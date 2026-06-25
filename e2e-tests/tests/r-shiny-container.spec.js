@@ -10,7 +10,7 @@ const APP_DIR = path.join(TMP_DIR, 'app');
 const BUILD_DIR = path.join(TMP_DIR, 'build');
 
 test.describe('R Shiny - container strategy', () => {
-  // Container strategy builds Docker image on first run — slow
+  // Container strategy builds Docker image on first run -- slow
   test.setTimeout(600000);
 
   /** @type {import('@playwright/test').ElectronApplication} */

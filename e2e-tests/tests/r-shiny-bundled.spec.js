@@ -10,7 +10,7 @@ const APP_DIR = path.join(TMP_DIR, 'app');
 const BUILD_DIR = path.join(TMP_DIR, 'build');
 
 test.describe('R Shiny - bundled strategy', () => {
-  // Bundled strategy downloads portable R + installs packages — can be very slow
+  // Bundled strategy downloads portable R + installs packages -- can be very slow
   test.setTimeout(600000);
 
   /** @type {import('@playwright/test').ElectronApplication} */

@@ -18,7 +18,7 @@ npm install
 ## Running Tests
 
 ```bash
-# Run ALL tests (all app types + strategies — takes 30+ min)
+# Run ALL tests (all app types + strategies -- takes 30+ min)
 npm test
 
 # Run only fast tests (r-shiny system, ~2 min)

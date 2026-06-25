@@ -10,7 +10,7 @@ const APP_DIR = path.join(TMP_DIR, 'app');
 const BUILD_DIR = path.join(TMP_DIR, 'build');
 
 test.describe('R Shiny - auto-download strategy', () => {
-  // Auto-download downloads R runtime on first launch — needs network + time
+  // Auto-download downloads R runtime on first launch -- needs network + time
   test.setTimeout(300000);
 
   /** @type {import('@playwright/test').ElectronApplication} */
@@ -68,7 +68,7 @@ test.describe('R Shiny - auto-download strategy', () => {
     await window.waitForLoadState('domcontentloaded');
 
     // Should eventually navigate to localhost after download + start
-    // First run downloads ~200MB portable R — can take 5+ minutes
+    // First run downloads ~200MB portable R -- can take 5+ minutes
     await window.waitForURL(/localhost/, { timeout: 280000 });
 
     await window.waitForSelector('#main-title', { timeout: 30000 });

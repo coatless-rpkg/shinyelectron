@@ -75,7 +75,7 @@ app = App(app_ui, server)
     // Python Shiny renders input_text as <input id="name"> inside a container
     await window.waitForSelector('#main-title', { timeout: 30000 });
 
-    // Find the text input — Python Shiny wraps it in a div
+    // Find the text input -- Python Shiny wraps it in a div
     const input = await window.$('input#name');
     if (input) {
       await window.fill('input#name', 'Playwright');

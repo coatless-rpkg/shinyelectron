@@ -57,7 +57,7 @@ test.describe('Error Recovery - r-shiny system', () => {
     try {
       await window.waitForSelector('#state-error.active', { timeout: 90000 });
     } catch {
-      // If window closed, the app quit due to unhandled error — still a valid signal
+      // If window closed, the app quit due to unhandled error -- still a valid signal
       // that the crash was detected (just not displayed in the UI we expected)
       return;
     }
@@ -82,7 +82,7 @@ test.describe('Error Recovery - r-shiny system', () => {
     try {
       await window.waitForSelector('#state-error.active', { timeout: 90000 });
     } catch {
-      // Window closed before error UI appeared — skip gracefully
+      // Window closed before error UI appeared -- skip gracefully
       return;
     }
 
