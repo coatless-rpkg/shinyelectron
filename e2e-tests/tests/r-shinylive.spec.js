@@ -52,24 +52,34 @@ test.describe('R Shinylive', () => {
     expect(url).toMatch(/localhost:\d+/);
   });
 
+  // Read the server response from Node rather than from inside the page:
+  // shinylive registers a service worker and reloads, which destroys the
+  // page execution context and makes in-page fetch()/content() flaky.
+  function httpGet(url) {
+    const http = require('http');
+    return new Promise((resolve, reject) => {
+      http.get(url, (res) => {
+        let body = '';
+        res.on('data', (c) => (body += c));
+        res.on('end', () => resolve({ headers: res.headers, body }));
+      }).on('error', reject);
+    });
+  }
+
   test('serves with required COOP/COEP headers', async () => {
     const window = await electronApp.firstWindow();
     await window.waitForURL(/localhost/, { timeout: 120000 });
-    await window.waitForLoadState('load');
 
-    const coopHeader = await window.evaluate(async () => {
-      const resp = await fetch(document.location.href);
-      return resp.headers.get('cross-origin-opener-policy');
-    });
-    expect(coopHeader).toBe('same-origin');
+    const { headers } = await httpGet(window.url());
+    expect(headers['cross-origin-opener-policy']).toBe('same-origin');
+    expect(headers['cross-origin-embedder-policy']).toBe('require-corp');
   });
 
-  test('shinylive page has content', async () => {
+  test('shinylive page serves content', async () => {
     const window = await electronApp.firstWindow();
     await window.waitForURL(/localhost/, { timeout: 120000 });
-    await window.waitForLoadState('load');
 
-    const html = await window.content();
-    expect(html.length).toBeGreaterThan(100);
+    const { body } = await httpGet(window.url());
+    expect(body.length).toBeGreaterThan(100);
   });
 });
