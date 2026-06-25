@@ -109,7 +109,7 @@ class ContainerBackend extends EventEmitter {
    * @returns {string} Full image reference.
    */
   selectImage(config) {
-    if (config && config.container_image) {
+    if (config && typeof config.container_image === 'string' && config.container_image) {
       // If the image reference already carries a tag or digest, use it as-is;
       // only append the configured tag when none is present. A tag is the part
       // after the last ':' that follows the final '/' (host:port colons aside).

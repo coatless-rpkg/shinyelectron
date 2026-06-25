@@ -48,6 +48,11 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     backend_config <- c(backend_config, generate_container_config(config))
   }
 
+  # Drop NULL entries: jsonlite serializes a NULL element as an empty object
+  # ({}), which the JS side would read as a truthy value (e.g. an unset
+  # container_image becoming {} instead of being absent).
+  backend_config <- Filter(Negate(is.null), backend_config)
+
   list(
     app_name = app_name,
     app_slug = app_slug,
