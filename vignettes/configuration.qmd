@@ -134,8 +134,10 @@ container:                   # Used when runtime_strategy is "container"
   image: null                # Container image (null = auto-select)
   tag: "latest"
   pull_on_start: true        # Pull latest image on app start
-  volumes: []                # Additional volume mounts
-  env: []                    # Additional environment variables
+  volumes:                   # Host-to-container volume map (not a list)
+    "/data": "/app/data"
+  env:                       # Environment variable map (not a list)
+    SHINY_LOG_LEVEL: "debug"
 
 # Multi-app suite (2+ apps packaged in one Electron shell)
 # apps:
@@ -285,8 +287,8 @@ Used when `runtime_strategy` is `"container"`. Ignored otherwise.
 | `image` | string | `null` | Container image name (`null` = auto-select based on `app.type`) |
 | `tag` | string | `"latest"` | Image tag |
 | `pull_on_start` | boolean | `true` | Pull the latest image when the app starts |
-| `volumes` | list | `[]` | Additional volume mounts |
-| `env` | list | `[]` | Additional environment variables |
+| `volumes` | map | `{}` | Host-to-container volume mounts (`host: container`) |
+| `env` | map | `{}` | Environment variables (`KEY: value`) |
 
 **Example:**
 
@@ -297,9 +299,9 @@ container:
   tag: "4.4.1"
   pull_on_start: true
   volumes:
-    - "/data:/app/data:ro"
+    "/data": "/app/data"
   env:
-    - "SHINY_LOG_LEVEL=DEBUG"
+    SHINY_LOG_LEVEL: "DEBUG"
 ```
 
 ### `apps`

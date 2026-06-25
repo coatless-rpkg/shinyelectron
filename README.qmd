@@ -17,11 +17,11 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/coatless-rpkg/shinyelectron/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/coatless-rpkg/shinyelectron/actions/workflows/R-CMD-check.yaml)
-![Prototype](https://img.shields.io/badge/Status-Prototype-orange)
-![Experimental](https://img.shields.io/badge/Status-Experimental-blue)
+<img src="https://img.shields.io/badge/Status-Prototype-orange" alt="Prototype">
+<img src="https://img.shields.io/badge/Status-Experimental-blue" alt="Experimental">
 <!-- badges: end -->
 
-Turn any Shiny app --- R or Python --- into a standalone desktop
+Turn any Shiny app (R or Python) into a standalone desktop
 application that runs on macOS, Windows, and Linux. No web server, no
 browser tab, no deployment infrastructure. Just an `.app`, `.exe`, or
 AppImage your users double-click to open.
@@ -51,7 +51,7 @@ sitrep_shinyelectron()
 
 # Try a bundled demo
 export(
-  appdir  = example_app("r-single"),
+  appdir  = example_app("r"),
   destdir = "~/Desktop/my-first-app",
   run_after = TRUE
 )
@@ -101,8 +101,8 @@ What end users need depends on the runtime strategy: nothing for
 for `system`; Docker or Podman for `container`.
 
 - **R** (>= 4.4.0)
-- **Node.js** (>= 22.0.0) --- run `install_nodejs()` to install locally without admin rights
-- **npm** (>= 11.5.0) --- included with Node.js
+- **Node.js** (>= 22.0.0): run `install_nodejs()` to install locally without admin rights
+- **npm** (>= 11.5.0): included with Node.js
 
 Platform build tools:
 
@@ -120,12 +120,12 @@ missing.
 
 ## Learn more
 
-- [Getting Started][getting-started] --- step-by-step tutorial
-- [Configuration Guide][configuration] --- `_shinyelectron.yml` reference
-- [Runtime Strategies][runtime-strategies] --- bundled vs system vs auto-download vs container
-- [Multi-App Suites][multi-app-suites] --- bundle multiple apps in one shell
-- [Code Signing][code-signing] --- macOS GateKeeper and Windows SmartScreen
-- [Troubleshooting][troubleshooting] --- common issues and fixes
+- [Getting Started][getting-started]: step-by-step tutorial
+- [Configuration Guide][configuration]: `_shinyelectron.yml` reference
+- [Runtime Strategies][runtime-strategies]: bundled vs system vs auto-download vs container
+- [Multi-App Suites][multi-app-suites]: bundle multiple apps in one shell
+- [Code Signing][code-signing]: macOS GateKeeper and Windows SmartScreen
+- [Troubleshooting][troubleshooting]: common issues and fixes
 
 ## Acknowledgements
 
@@ -139,25 +139,25 @@ in this space.
 
 ### Prior packaging attempts
 
-- [electricShine][electricShine] --- R package that streamlines distributable Shiny Electron apps via its `electrify()` function; automates Windows builds.
-- [Photon][photon] --- RStudio add-in that leverages Electron to build standalone Shiny apps for macOS and Windows by cloning an R-specific [`electron-quick-start`][COVAIL-electron-quick-start] repository and including portable R versions.
-- [RInno][rinno] --- standalone R application builder with Electron on Windows.
-- [DesktopDeployR][desktopdeployr] --- alternative framework for deploying self-contained R-based applications with a portable R environment and private package library.
+- [electricShine][electricShine]: R package that streamlines distributable Shiny Electron apps via its `electrify()` function; automates Windows builds.
+- [Photon][photon]: RStudio add-in that leverages Electron to build standalone Shiny apps for macOS and Windows by cloning an R-specific [`electron-quick-start`][COVAIL-electron-quick-start] repository and including portable R versions.
+- [RInno][rinno]: standalone R application builder with Electron on Windows.
+- [DesktopDeployR][desktopdeployr]: alternative framework for deploying self-contained R-based applications with a portable R environment and private package library.
 
 ### Talks, tutorials, and templates
 
-- **UseR! 2018** --- [Shiny meets Electron][ksassouser2018talk] by @ksasso demonstrating how to convert Shiny apps into standalone desktop apps.
-- **Developer tutorials** --- step-by-step guides from [@lawalter][shiny-electron-walter-tutorial] and [@dirkschumacher][shiny-electron-dirk-tutorial] on practical integration.
-- **Zarathu Corporation templates** --- cross-platform deployment templates for [macOS ARM][shiny-electron-zarathucorp-m1] and [Windows][shiny-electron-zarathucorp-windows], summarized in this [R-bloggers post][shiny-electron-zarathucorp-rbloggers].
+- **UseR! 2018**: [Shiny meets Electron][ksassouser2018talk] by @ksasso demonstrating how to convert Shiny apps into standalone desktop apps.
+- **Developer tutorials**: step-by-step guides from [@lawalter][shiny-electron-walter-tutorial] and [@dirkschumacher][shiny-electron-dirk-tutorial] on practical integration.
+- **Zarathu Corporation templates**: cross-platform deployment templates for [macOS ARM][shiny-electron-zarathucorp-m1] and [Windows][shiny-electron-zarathucorp-windows], summarized in this [R-bloggers post][shiny-electron-zarathucorp-rbloggers].
 
 ### Upstream projects
 
-- [Electron][electron-docs] --- the desktop framework.
-- [electron-builder][electron-builder] --- the packaging pipeline that produces platform installers.
-- [shinylive][shinylive] (Posit) and [WebR][webr] --- R in WebAssembly, enabling browser-only Shiny apps.
-- [py-shinylive][py-shinylive] and [Pyodide][pyodide] --- the Python equivalents.
-- [portable-r][portable-r] --- standalone R binaries used by the `bundled` and `auto-download` strategies.
-- [python-build-standalone][python-build-standalone] --- standalone Python builds used by the Python strategies.
+- [Electron][electron-docs]: the desktop framework.
+- [electron-builder][electron-builder]: the packaging pipeline that produces platform installers.
+- [shinylive][shinylive] (Posit) and [WebR][webr]: R in WebAssembly, enabling browser-only Shiny apps.
+- [py-shinylive][py-shinylive] and [Pyodide][pyodide]: the Python equivalents.
+- [portable-r][portable-r]: standalone R binaries used by the `bundled` and `auto-download` strategies.
+- [python-build-standalone][python-build-standalone]: standalone Python builds used by the Python strategies.
 
 ## License
 
@@ -170,12 +170,12 @@ AGPL (>= 3)
 - [`Photon` (RStudio Add-in)][photon]
 - [`COVAIL` electron-quick-start][COVAIL-electron-quick-start]
 - [`DesktopDeployR` (framework)][desktopdeployr]
-- [Electron ShinyApp Deployment --- @ksasso][ksassoshinyappdev]
-- [How to Make an R Shiny Electron App --- @lawalter][shiny-electron-walter-tutorial]
-- [R Shiny and Electron --- @dirkschumacher][shiny-electron-dirk-tutorial]
+- [Electron ShinyApp Deployment by @ksasso][ksassoshinyappdev]
+- [How to Make an R Shiny Electron App by @lawalter][shiny-electron-walter-tutorial]
+- [R Shiny and Electron by @dirkschumacher][shiny-electron-dirk-tutorial]
 - [Creating Standalone Shiny Apps with Electron on macOS M1][shiny-electron-zarathucorp-m1]
-- [Creating Standalone Shiny Apps with Electron on Windows --- @jhk0530][shiny-electron-zarathucorp-windows]
-- [Creating Standalone Apps from Shiny with Electron (R-bloggers) --- @jhk0530][shiny-electron-zarathucorp-rbloggers]
+- [Creating Standalone Shiny Apps with Electron on Windows by @jhk0530][shiny-electron-zarathucorp-windows]
+- [Creating Standalone Apps from Shiny with Electron (R-bloggers) by @jhk0530][shiny-electron-zarathucorp-rbloggers]
 - [Shiny meets Electron (UseR! 2018 talk)][ksassouser2018talk] ([slides and code][ksassouser2018code])
 - [Electron documentation][electron-docs]
 - [electron-builder documentation][electron-builder]

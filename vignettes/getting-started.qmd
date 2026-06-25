@@ -57,7 +57,7 @@ available_examples()
 
 # Export the R single-app demo to your Desktop
 export(
-  appdir = example_app("r-single"),
+  appdir = example_app("r"),
   destdir = "~/Desktop/my-first-app",
   run_after = TRUE
 )

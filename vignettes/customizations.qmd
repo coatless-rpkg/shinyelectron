@@ -260,22 +260,25 @@ menu:
   help_url: "https://docs.example.com/my-dashboard"
 ```
 
-That gives you a dark branded splash that lingers for two seconds, a spinner during runtime startup, a tray icon that holds onto the app when the user closes the window, and a clean three-menu bar with a Help → Documentation entry pointing at your docs. Every other key uses its default.
+That gives you a dark branded splash that lingers for two seconds, a spinner during runtime startup, a tray icon that holds onto the app when the user closes the window, and a clean three-menu bar with a Help > Documentation entry pointing at your docs. Every other key uses its default.
 
 ## Editing config from R
 
-`_shinyelectron.yml` is just a YAML file. When you want to set things from R, read it with `read_config()` (which validates as it loads, so bad values warn and fall back to defaults), mutate the list, and write it back:
+`_shinyelectron.yml` is just a YAML file. To edit it from R, read it with `yaml::read_yaml()`, mutate the list, and write it back:
 
 ```{r}
 #| eval: false
-config <- read_config("path/to/app")
+config_path <- file.path("path/to/app", "_shinyelectron.yml")
+config <- yaml::read_yaml(config_path)
 
 config$tray$enabled <- TRUE
 config$tray$close_to_tray <- TRUE
 config$splash$text <- "Loading dashboard..."
 
-yaml::write_yaml(config, file.path("path/to/app", "_shinyelectron.yml"))
+yaml::write_yaml(config, config_path)
 ```
+
+To inspect the effective configuration (your file deep-merged with the defaults and validated), call the exported `show_config("path/to/app")`.
 
 Useful for project setup scripts, CI templating, or any case where you want the configuration to live alongside the code that depends on it.
 
