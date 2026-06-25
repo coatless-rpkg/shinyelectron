@@ -43,11 +43,13 @@ Use \code{\link[=cache_info]{cache_info()}} to see what's actually installed wit
 }
 
 \examples{
-# Query without creating
+# Query the cache path without creating it
 cache_dir(create = FALSE)
 
-# Get or create
+# Get or create the cache directory (writes to the user cache dir)
+\donttest{
 cache_dir()
+}
 
 }
 \seealso{

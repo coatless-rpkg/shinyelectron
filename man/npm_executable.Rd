@@ -4,10 +4,14 @@
 \alias{npm_executable}
 \title{Get path to local npm executable}
 \usage{
-npm_executable(version = NULL)
+npm_executable(version = NULL, platform = NULL, arch = NULL)
 }
 \arguments{
 \item{version}{Character Node.js version (NULL = latest installed)}
+
+\item{platform}{Character target platform (NULL = current)}
+
+\item{arch}{Character target architecture (NULL = current)}
 }
 \value{
 Character path to npm executable, or NULL if not found

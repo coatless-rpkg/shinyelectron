@@ -12,14 +12,14 @@
 #'
 #' @section Details:
 #' This function converts a Python Shiny application to shinylive format using the
-#' Python \code{shinylive} package. The application will run entirely in the browser
+#' Python `shinylive` package. The application will run entirely in the browser
 #' using Pyodide (Python compiled to WebAssembly).
 #'
 #' \strong{Requirements:}
 #' \itemize{
 #'   \item Python 3 must be available on the build machine
-#'   \item The Python \code{shinylive} package must be installed (\code{pip install shinylive})
-#'   \item The app directory must contain an \code{app.py} file
+#'   \item The Python `shinylive` package must be installed (`pip install shinylive`)
+#'   \item The app directory must contain an `app.py` file
 #' }
 #'
 #' @examples

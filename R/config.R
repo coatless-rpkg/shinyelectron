@@ -86,25 +86,28 @@ read_config <- function(appdir) {
     return(default_config())
   }
 
-  tryCatch({
-    config <- yaml::read_yaml(config_path)
-
-    # Deep merge with defaults
-    defaults <- default_config()
-    merged <- merge_config_deep(defaults, config)
-
-    # Validate
-    validated <- validate_config(merged)
-
-    return(validated)
-  }, error = function(e) {
-    cli::cli_warn(c(
-      "Failed to parse configuration file: {.path {config_path}}",
-      "i" = "Error: {e$message}",
-      "i" = "Using default configuration"
-    ))
+  # Only the YAML parse itself is treated leniently (a genuinely unreadable
+  # file falls back to defaults). validate_config() errors -- e.g. a legacy
+  # app type combined with a conflicting runtime strategy -- are allowed to
+  # surface with their specific, actionable message instead of being masked
+  # as "Failed to parse" and silently replaced with defaults.
+  config <- tryCatch(
+    yaml::read_yaml(config_path),
+    error = function(e) {
+      cli::cli_warn(c(
+        "Failed to parse configuration file: {.path {config_path}}",
+        "i" = "Error: {conditionMessage(e)}",
+        "i" = "Using default configuration"
+      ))
+      NULL
+    }
+  )
+  if (is.null(config)) {
     return(default_config())
-  })
+  }
+
+  merged <- merge_config_deep(default_config(), config)
+  validate_config(merged)
 }
 
 #' Deep merge two lists
@@ -168,6 +171,20 @@ validate_config <- function(config) {
       "i" = "Falling back to autodetection"
     ))
     config$build$type <- NULL
+  }
+
+  # Validate runtime strategy against the canonical set. An invalid value in
+  # the config file warns and falls back to the default rather than aborting
+  # the build later (an explicit runtime_strategy = argument is still strict).
+  valid_strategies <- SHINYELECTRON_DEFAULTS$valid_runtime_strategies
+  if (!is.null(config$build$runtime_strategy) &&
+      !config$build$runtime_strategy %in% valid_strategies) {
+    cli::cli_warn(c(
+      "Invalid runtime_strategy in config: {.val {config$build$runtime_strategy}}",
+      "i" = "Valid strategies: {.val {valid_strategies}}",
+      "i" = "Falling back to {.val shinylive}"
+    ))
+    config$build$runtime_strategy <- NULL
   }
 
   # Validate platforms
@@ -377,11 +394,13 @@ nodejs:
 #   auto_detect: true        # Automatically detect dependencies
 #   extra_packages: []       # Additional packages to include
 #   r:
+#     version: null          # null = latest R; pin to embed a specific version
 #     packages: []           # Extra R packages
 #     repos:
 #       - "https://cloud.r-project.org"
-#     lib_path: null              # null = R default, "app-local", or custom path
+#     lib_path: null         # null = R default, "app-local", or custom path
 #   python:
+#     version: null          # null = default Python; pin a specific version
 #     packages: []           # Extra Python packages
 #     index_urls:
 #       - "https://pypi.org/simple"
@@ -392,8 +411,10 @@ nodejs:
 #   image: null              # Docker image to use (null = auto-select)
 #   tag: "latest"
 #   pull_on_start: true      # Pull latest image when app starts
-#   volumes: []              # Additional volume mounts
-#   env: []                  # Additional environment variables
+#   volumes:                 # Host-to-container volume map (not a list)
+#     "/host/path": "/container/path"
+#   env:                     # Environment variable map (not a list)
+#     KEY: "value"
 
 # Splash screen configuration
 # Shown briefly while the runtime starts up

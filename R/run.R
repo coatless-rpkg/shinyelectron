@@ -10,7 +10,10 @@
 #' @param open_devtools Logical. Whether to open Chromium DevTools automatically. Default is TRUE.
 #' @param verbose Logical. Whether to display detailed progress information. Default is TRUE.
 #'
-#' @return Invisibly returns the process object for the running application.
+#' @return Invisibly returns the completed `processx::run()` result list
+#'   (with `status`, `stdout`, and `stderr`) after Electron exits, or `NULL`
+#'   if the run is interrupted. Note that this call blocks until the Electron
+#'   window is closed.
 #'
 #' @section Details:
 #' This function starts the Electron application for testing, which:
@@ -78,8 +81,10 @@ run_electron_app <- function(app_dir, port = 3000, open_devtools = TRUE, verbose
     cli::cli_alert_info("Press Ctrl+C to stop the application")
   }
 
-  tryCatch({
-    result <- processx::run(
+  # Only the run itself is wrapped, so the exit-status check below produces its
+  # own clean error rather than being re-wrapped by this handler.
+  result <- tryCatch(
+    processx::run(
       command = get_npm_command(),
       args = c("run", "electron"),
       wd = app_dir,
@@ -87,31 +92,37 @@ run_electron_app <- function(app_dir, port = 3000, open_devtools = TRUE, verbose
       echo_cmd = verbose,
       spinner = verbose,
       error_on_status = FALSE
-    )
-
-    if (result$status != 0) {
+    ),
+    interrupt = function(int) {
+      if (verbose) {
+        cli::cli_alert_info("Stopping Electron application...")
+      }
+      NULL
+    },
+    error = function(e) {
       cli::cli_abort(c(
-        "Failed to start Electron application",
-        "x" = "Exit code: {result$status}",
-        "i" = "stderr: {result$stderr}"
-      ))
+        "Failed to run Electron application",
+        "x" = "Error: {conditionMessage(e)}"
+      ), parent = e)
     }
+  )
 
-    if (verbose) {
-      cli::cli_alert_success("Electron application started successfully")
-    }
-
-    return(invisible(result))
-
-  }, error = function(e) {
-    cli::cli_abort(c(
-      "Failed to run Electron application",
-      "x" = "Error: {e$message}"
-    ))
-  }, interrupt = function(int) {
-    if (verbose) {
-      cli::cli_alert_info("Stopping Electron application...")
-    }
+  # NULL means the run was interrupted (Ctrl+C).
+  if (is.null(result)) {
     return(invisible(NULL))
-  })
+  }
+
+  if (result$status != 0) {
+    cli::cli_abort(c(
+      "Failed to start Electron application",
+      "x" = "Exit code: {result$status}",
+      "i" = "stderr: {result$stderr}"
+    ))
+  }
+
+  if (verbose) {
+    cli::cli_alert_success("Electron application started successfully")
+  }
+
+  invisible(result)
 }

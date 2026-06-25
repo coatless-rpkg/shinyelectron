@@ -28,7 +28,7 @@ Character string. Path to the installed R directory.
 }
 \description{
 Downloads and caches a portable R build. Follows the same pattern
-as \code{\link{install_nodejs}()}.
+as \code{\link[=install_nodejs]{install_nodejs()}}.
 }
 \examples{
 \dontrun{

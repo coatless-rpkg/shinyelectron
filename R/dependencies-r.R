@@ -10,9 +10,9 @@ BASE_R_PACKAGES <- c(
 
 #' Detect R package dependencies from source files
 #'
-#' Uses \code{renv::dependencies()} to scan R source files for package
-#' references. This catches \code{library()}, \code{require()},
-#' \code{pkg::func()}, \code{loadNamespace()}, and other patterns.
+#' Uses `renv::dependencies()` to scan R source files for package
+#' references. This catches `library()`, `require()`,
+#' `pkg::func()`, `loadNamespace()`, and other patterns.
 #'
 #' @param appdir Character string. Path to the app directory.
 #' @return Character vector of unique package names (sorted), excluding
@@ -76,7 +76,7 @@ merge_r_dependencies <- function(detected, config_deps) {
 #' @param packages Character vector of package names.
 #' @param lib_path Character string. Target library directory.
 #' @param repos Character vector of repository URLs.
-#' @param available_pkgs Optional matrix from \code{utils::available.packages()}.
+#' @param available_pkgs Optional matrix from `utils::available.packages()`.
 #'   When supplied the CRAN lookup is skipped, avoiding a redundant network
 #'   call during the same export session.
 #' @param verbose Logical. Whether to show progress.

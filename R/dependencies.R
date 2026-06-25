@@ -26,20 +26,28 @@ generate_dependency_manifest <- function(packages, language,
       SHINYELECTRON_DEFAULTS$dependencies$python$index_urls
   }
 
-  # Look up Linux system dependencies at build time (optional, requires pak)
+  # Look up Linux system dependencies at build time (optional, requires pak).
+  # pkg_sysreqs() reports for a single platform per call, so query Debian/Ubuntu
+  # and Fedora separately and read the actual `system_packages` list column.
+  # as.list() forces JSON array shape so the JS consumer can iterate even when
+  # a distro has exactly one system package.
   if (language == "r" && length(packages) > 0) {
     if (requireNamespace("pak", quietly = TRUE)) {
-      tryCatch({
-        sysreqs <- pak::pkg_sysreqs(packages)
-        if (!is.null(sysreqs) && !is.null(sysreqs$packages)) {
-          manifest$system_deps <- list(
-            debian = unique(unlist(sysreqs$packages[grepl("debian|ubuntu", names(sysreqs$packages), ignore.case = TRUE)])),
-            fedora = unique(unlist(sysreqs$packages[grepl("fedora|rhel|centos", names(sysreqs$packages), ignore.case = TRUE)]))
-          )
-        }
-      }, error = function(e) {
-        # pak sysreqs lookup failed -- skip silently
-      })
+      sysreqs_for <- function(sysreqs_platform) {
+        tryCatch({
+          sr <- pak::pkg_sysreqs(packages, sysreqs_platform = sysreqs_platform)
+          if (!is.null(sr) && !is.null(sr$packages) &&
+              !is.null(sr$packages$system_packages)) {
+            sort(unique(unlist(sr$packages$system_packages)))
+          } else {
+            character(0)
+          }
+        }, error = function(e) character(0))
+      }
+      manifest$system_deps <- list(
+        debian = as.list(sysreqs_for("ubuntu")),
+        fedora = as.list(sysreqs_for("fedora"))
+      )
     }
   }
 

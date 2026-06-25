@@ -1,4 +1,4 @@
-#' Manifest Schemas (R → JS Contract)
+#' Manifest Schemas (R to JS Contract)
 #'
 #' shinyelectron generates three JSON manifest files at build time that
 #' the Electron runtime reads on the end user's machine. These are the
@@ -65,6 +65,7 @@
 #'       "description": "...",
 #'       "path": "src/apps/dashboard",
 #'       "type": "r-shiny",
+#'       "runtime_strategy": "auto-download",   // optional per-app override
 #'       "icon": null
 #'     }
 #'   ]

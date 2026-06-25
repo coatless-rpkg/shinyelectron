@@ -63,15 +63,25 @@ wizard <- function(appdir = ".") {
   if (!nzchar(platform_input)) platform_input <- "mac"
   platforms <- trimws(strsplit(platform_input, ",")[[1]])
 
+  # Numeric prompt helper: re-prompt on invalid input and fall back to the
+  # default on an empty answer (also covers non-interactive sessions, where
+  # readline() returns ""). Returns an integer so the config never stores NA.
+  read_numeric <- function(prompt, default, min_value) {
+    repeat {
+      input <- trimws(readline(prompt))
+      if (!nzchar(input)) return(default)
+      val <- suppressWarnings(as.integer(input))
+      if (!is.na(val) && val >= min_value) return(val)
+      cat(sprintf("  Please enter a whole number >= %d.\n", min_value))
+    }
+  }
+
   # Window dimensions
-  width <- readline("Window width [1200]: ")
-  if (!nzchar(width)) width <- "1200"
-  height <- readline("Window height [800]: ")
-  if (!nzchar(height)) height <- "800"
+  width <- read_numeric("Window width [1200]: ", 1200L, 100L)
+  height <- read_numeric("Window height [800]: ", 800L, 100L)
 
   # Port
-  port <- readline("Server port [3838]: ")
-  if (!nzchar(port)) port <- "3838"
+  port <- read_numeric("Server port [3838]: ", 3838L, 1L)
 
   # --- Advanced options ---
   cat("\n")
@@ -162,8 +172,8 @@ wizard <- function(appdir = ".") {
     config$build$runtime_strategy <- runtime_strategy
   }
 
-  config$window <- list(width = as.integer(width), height = as.integer(height))
-  config$server <- list(port = as.integer(port))
+  config$window <- list(width = width, height = height)
+  config$server <- list(port = port)
 
   if (!is.null(signing_config)) config$signing <- signing_config
   if (!is.null(tray_config)) config$tray <- tray_config
@@ -182,6 +192,9 @@ wizard <- function(appdir = ".") {
   }
 
   yaml::write_yaml(config, config_path)
+
+  # Confirm the generated file round-trips through the validator.
+  validate_config_file(config_path)
 
   cli::cli_alert_success("Created {.file {config_path}}")
   cat("\n")

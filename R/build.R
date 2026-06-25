@@ -95,6 +95,19 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
   validate_platform(platform)
   validate_arch(arch)
 
+  # Bundled and auto-download native runtimes embed a single platform/arch
+  # runtime (or manifest) that would be copied into every installer, so they
+  # cannot target multiple platforms or architectures in one build.
+  if (runtime_strategy %in% c("bundled", "auto-download") &&
+      grepl("^(r|py)-", app_type) &&
+      (length(platform) > 1 || length(arch) > 1)) {
+    cli::cli_abort(c(
+      "The {.val {runtime_strategy}} strategy supports only one platform and architecture per build.",
+      "i" = "It embeds a {.val {platform[1]}}/{.val {arch[1]}} runtime that would be packaged into every installer.",
+      "i" = "Build each target separately, or use the {.val system}, {.val container}, or {.val shinylive} strategy for multi-platform builds."
+    ))
+  }
+
   if (verbose) {
     cli::cli_alert_info("Platform(s): {.val {platform}}")
     cli::cli_alert_info("Architecture(s): {.val {arch}}")
@@ -137,7 +150,7 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
     if (runtime_strategy == "bundled" && grepl("^r-", app_type)) {
       if (verbose) cli::cli_alert_info("Embedding R runtime for bundled strategy...")
 
-      r_version <- config$r$version %||% NULL
+      r_version <- config$dependencies$r$version
       r_path <- install_r(
         version = r_version,
         platform = platform[1],
@@ -162,7 +175,7 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
             file.remove(f)
             file.copy(abs_target, f, copy.date = TRUE)
           } else {
-            # Dead symlink — remove it
+            # Dead symlink -- remove it
             file.remove(f)
           }
         }
@@ -237,23 +250,31 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
 
             pkg_str <- paste0("'", all_pkgs, "'", collapse = ", ")
             repo_str <- paste0("'", repos, "'", collapse = ", ")
+            # type = "binary" is unsupported on Linux (.Platform$pkgType ==
+            # "source"); only request it on the platforms that accept it.
+            type_clause <- if (identical(detect_current_platform(), "linux")) {
+              ""
+            } else {
+              "type = 'binary', "
+            }
             # Use the bundled library as both destination AND the only lib on
-            # .libPaths — avoids install.packages getting confused by packages
-            # the caller's R_LIBS_USER may have inherited.
+            # .libPaths, which avoids install.packages getting confused by
+            # packages the caller's R_LIBS_USER may have inherited.
             r_code <- sprintf(
               paste0(
                 ".libPaths('%s'); ",
                 "install.packages(c(%s), lib = '%s', repos = c(%s), ",
-                "type = 'binary', dependencies = FALSE, quiet = TRUE)"
+                "%sdependencies = FALSE, quiet = TRUE)"
               ),
               gsub("\\\\", "/", lib_path),
               pkg_str,
               gsub("\\\\", "/", lib_path),
-              repo_str
+              repo_str,
+              type_clause
             )
 
             # Pre-session code didn't scrub env or pass --vanilla and worked
-            # fine — the bundled library being a sibling (not the R's own
+            # fine -- the bundled library being a sibling (not the R's own
             # library) means R_LIBS_USER contamination doesn't override our
             # explicit lib_path argument to install.packages.
             result <- processx::run(
@@ -288,7 +309,7 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
     if (runtime_strategy == "bundled" && grepl("^py-", app_type)) {
       if (verbose) cli::cli_alert_info("Embedding Python runtime for bundled strategy...")
 
-      py_version <- config$python$version %||% "3.12.10"
+      py_version <- config$dependencies$python$version %||% "3.12.10"
       py_path <- install_python(
         version = py_version,
         platform = platform[1],
@@ -336,26 +357,9 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
       if (verbose) cli::cli_alert_success("Embedded Python runtime")
     }
 
-    # Prepare container configuration
-    if (runtime_strategy == "container") {
-      if (verbose) cli::cli_alert_info("Preparing container configuration...")
-
-      engine <- detect_container_engine(config$container$engine)
-      container_config_json <- generate_container_config(
-        app_type = app_type,
-        engine = engine %||% "docker",
-        config = config,
-        app_slug = slugify(app_name)
-      )
-
-      # Write container config for the backend to read
-      container_config_dir <- fs::path(output_dir, "src", "app")
-      fs::dir_create(container_config_dir, recurse = TRUE)
-      writeLines(container_config_json,
-                 fs::path(container_config_dir, "container-config.json"))
-
-      if (verbose) cli::cli_alert_success("Container configuration prepared")
-    }
+    # Container settings reach the backend via backend_config_json (inlined
+    # into main.js by generate_template_variables()); no separate config file
+    # is written here.
 
     # Step 3: Copy and process templates
     if (verbose) cli::cli_progress_update(id = pb, set = 3)

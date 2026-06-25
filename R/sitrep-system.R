@@ -41,7 +41,8 @@ sitrep_electron_system <- function(verbose = TRUE) {
       cli::cli_alert_success("Architecture: {results$arch}")
     }
   }, error = function(e) {
-    results$issues <- c(results$issues, "Could not detect platform/architecture")
+    # Use <<- so the issue persists to the outer results.
+    results$issues <<- c(results$issues, "Could not detect platform/architecture")
     if (verbose) {
       cli::cli_alert_danger("Could not detect platform/architecture")
     }
@@ -106,9 +107,9 @@ sitrep_electron_system <- function(verbose = TRUE) {
     results$npm$installed <- TRUE
     results$npm$version <- trimws(npm_result$stdout)
 
-    # Check if version is acceptable (>= 6.0.0)
+    # Check if version meets SystemRequirements (npm >= 11.5.0)
     npm_version_num <- numeric_version(results$npm$version)
-    if (npm_version_num >= "6.0.0") {
+    if (npm_version_num >= "11.5.0") {
       if (verbose) {
         cli::cli_alert_success("npm: v{results$npm$version}")
       }
@@ -116,7 +117,7 @@ sitrep_electron_system <- function(verbose = TRUE) {
       results$issues <- c(results$issues, "npm version too old")
       results$recommendations <- c(results$recommendations, "Update npm with: npm install -g npm@latest")
       if (verbose) {
-        cli::cli_alert_warning("npm: v{results$npm$version} (version 6+ required)")
+        cli::cli_alert_warning("npm: v{results$npm$version} (version 11.5.0+ required)")
       }
     }
   } else {
@@ -127,17 +128,17 @@ sitrep_electron_system <- function(verbose = TRUE) {
     }
   }
 
-  # Check R version
+  # Check R version (matches DESCRIPTION Depends: R (>= 4.4.0))
   r_version_num <- numeric_version(results$r_version)
-  if (r_version_num >= "4.0.0") {
+  if (r_version_num >= "4.4.0") {
     if (verbose) {
       cli::cli_alert_success("R: v{results$r_version}")
     }
   } else {
     results$issues <- c(results$issues, "R version too old")
-    results$recommendations <- c(results$recommendations, "Update R to version 4.0.0 or higher")
+    results$recommendations <- c(results$recommendations, "Update R to version 4.4.0 or higher")
     if (verbose) {
-      cli::cli_alert_warning("R: v{results$r_version} (version 4.0+ recommended)")
+      cli::cli_alert_warning("R: v{results$r_version} (version 4.4.0+ required)")
     }
   }
 

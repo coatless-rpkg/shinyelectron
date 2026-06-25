@@ -5,7 +5,9 @@
 #' HTTP servers.
 #'
 #' @param appdir Character path to app directory containing `_shinyelectron.yml`
-#' @param provider Character update provider: `"github"` (default), `"s3"`, or `"generic"`
+#' @param provider Character update provider. Currently only `"github"` is
+#'   supported; `"s3"` and `"generic"` are not yet wired into the build and
+#'   will be added in a future release.
 #' @param owner Character GitHub username or organization (required for github provider)
 #' @param repo Character GitHub repository name (required for github provider)
 #' @param check_on_startup Logical whether to check for updates when app starts. Default `TRUE`.
@@ -84,7 +86,7 @@
 #' @seealso [init_config()] for creating initial configuration
 #' @export
 enable_auto_updates <- function(appdir,
-                                 provider = c("github", "s3", "generic"),
+                                 provider = "github",
                                  owner = NULL,
                                  repo = NULL,
                                  check_on_startup = TRUE,
@@ -207,9 +209,12 @@ disable_auto_updates <- function(appdir, verbose = TRUE) {
 #'
 #' @param appdir Character path to app directory
 #'
-#' @return Invisibly returns a list with: \code{enabled} (logical),
-#'   \code{provider} (character or NULL), \code{repo} (character or NULL),
-#'   and \code{settings} (list of check_on_startup, auto_download, auto_install).
+#' @return Invisibly returns the `updates` configuration list, with elements
+#'   `enabled` (logical), `provider` (character or NULL),
+#'   `check_on_startup`, `auto_download`, `auto_install`
+#'   (logical), and, for the GitHub provider, `github` (a list with
+#'   `owner`, `repo`, `private`). Returns NULL when no
+#'   `updates` section is present.
 #'
 #' @examples
 #' \dontrun{

@@ -14,15 +14,20 @@ python_download_url <- function(version, platform = NULL, arch = NULL,
   platform <- platform %||% detect_current_platform()
   arch <- arch %||% detect_current_arch()
 
-  pbs_arch <- switch(arch, "arm64" = "aarch64", "x64" = "x86_64")
+  pbs_arch <- switch(arch,
+    "arm64" = "aarch64",
+    "x64" = "x86_64",
+    cli::cli_abort("Unsupported architecture for portable Python: {.val {arch}}")
+  )
   pbs_os <- switch(platform,
     "win" = "pc-windows-msvc",
     "mac" = "apple-darwin",
-    "linux" = "unknown-linux-gnu"
+    "linux" = "unknown-linux-gnu",
+    cli::cli_abort("Unsupported platform for portable Python: {.val {platform}}")
   )
 
   # python-build-standalone ships the `install_only` asset as tar.gz on every
-  # platform — Windows included. Modern Windows (10+) has tar.exe with gzip
+  # platform, Windows included. Modern Windows (10+) has tar.exe with gzip
   # support built in, so extraction works the same way everywhere.
   paste0(
     "https://github.com/astral-sh/python-build-standalone/releases/download/",

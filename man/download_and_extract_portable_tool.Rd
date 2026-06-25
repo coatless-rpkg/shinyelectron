@@ -12,6 +12,7 @@ download_and_extract_portable_tool(
   executable_finder,
   force = FALSE,
   is_installed = FALSE,
+  expected_sha256 = NULL,
   verbose = TRUE
 )
 }
@@ -31,6 +32,9 @@ path to the tool's executable after extraction, or NULL if not found.}
 \item{force}{Logical. Reinstall even if \code{install_path} already exists.}
 
 \item{is_installed}{Logical. Whether the runtime is already present.}
+
+\item{expected_sha256}{Character or NULL. Expected SHA-256 of the archive.
+When supplied, the download is verified before extraction.}
 
 \item{verbose}{Logical. Whether to print progress messages.}
 }

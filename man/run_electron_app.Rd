@@ -17,7 +17,10 @@ run_electron_app(app_dir, port = 3000, open_devtools = TRUE, verbose = TRUE)
 \item{verbose}{Logical. Whether to display detailed progress information. Default is TRUE.}
 }
 \value{
-Invisibly returns the process object for the running application.
+Invisibly returns the completed \code{processx::run()} result list
+(with \code{status}, \code{stdout}, and \code{stderr}) after Electron exits, or \code{NULL}
+if the run is interrupted. Note that this call blocks until the Electron
+window is closed.
 }
 \description{
 Launches a previously exported Electron application for testing and debugging

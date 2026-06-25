@@ -16,6 +16,8 @@
 #'   path to the tool's executable after extraction, or NULL if not found.
 #' @param force Logical. Reinstall even if `install_path` already exists.
 #' @param is_installed Logical. Whether the runtime is already present.
+#' @param expected_sha256 Character or NULL. Expected SHA-256 of the archive.
+#'   When supplied, the download is verified before extraction.
 #' @param verbose Logical. Whether to print progress messages.
 #' @return Invisibly returns the installation path.
 #' @keywords internal
@@ -23,6 +25,7 @@ download_and_extract_portable_tool <- function(label, version, install_path,
                                                download_url, executable_finder,
                                                force = FALSE,
                                                is_installed = FALSE,
+                                               expected_sha256 = NULL,
                                                verbose = TRUE) {
   if (is_installed && !force) {
     if (verbose) {
@@ -47,8 +50,28 @@ download_and_extract_portable_tool <- function(label, version, install_path,
     ))
   })
 
+  # Integrity check when an expected checksum is supplied.
+  if (!is.null(expected_sha256)) {
+    actual_sha256 <- compute_sha256(temp_file)
+    if (!identical(tolower(actual_sha256), tolower(expected_sha256))) {
+      unlink(temp_file)
+      cli::cli_abort(c(
+        "Checksum verification failed for {label} {version}",
+        "x" = "Expected SHA-256: {expected_sha256}",
+        "x" = "Actual SHA-256:   {actual_sha256}",
+        "i" = "The download may be corrupted or tampered with."
+      ))
+    }
+    if (verbose) cli::cli_alert_success("Verified SHA-256 checksum")
+  }
+
   install_path <- path.expand(install_path)
-  fs::dir_create(install_path, recurse = TRUE)
+
+  # Extract into a fresh staging directory so a failed extraction never
+  # destroys an existing (working) install; only swap into place on success.
+  staging <- paste0(install_path, ".staging-", Sys.getpid())
+  if (fs::dir_exists(staging)) unlink(staging, recursive = TRUE)
+  fs::dir_create(staging, recurse = TRUE)
 
   if (verbose) cli::cli_alert_info("Extracting {label} {version}...")
 
@@ -58,16 +81,16 @@ download_and_extract_portable_tool <- function(label, version, install_path,
       if (.Platform$OS.type == "windows") {
         # Force R's internal tar so a system GNU tar (e.g. from Git for
         # Windows) doesn't misparse "C:\\..." paths as remote hosts.
-        utils::untar(temp_file, exdir = install_path, tar = "internal")
+        utils::untar(temp_file, exdir = staging, tar = "internal")
       } else {
         # Use system tar on macOS / Linux. macOS bsdtar and Linux GNU tar
         # both handle PAX records that include xattrs (e.g. the Apple
         # com.apple.cs.CodeSignature metadata in portable R archives),
         # which R's internal tar cannot.
-        utils::untar(temp_file, exdir = install_path, tar = Sys.which("tar"))
+        utils::untar(temp_file, exdir = staging, tar = Sys.which("tar"))
       }
     } else if (ext == "zip") {
-      utils::unzip(temp_file, exdir = install_path)
+      utils::unzip(temp_file, exdir = staging)
     } else {
       cli::cli_abort(c(
         "Unsupported archive extension: {.val {ext}}",
@@ -75,7 +98,7 @@ download_and_extract_portable_tool <- function(label, version, install_path,
       ))
     }
   }, error = function(e) {
-    unlink(install_path, recursive = TRUE)
+    unlink(staging, recursive = TRUE)
     cli::cli_abort(c(
       "Failed to extract {label} {version}",
       "x" = "Error: {e$message}"
@@ -83,6 +106,11 @@ download_and_extract_portable_tool <- function(label, version, install_path,
   })
 
   unlink(temp_file)
+
+  # Swap staging into place. force/reinstall cleanly replaces any prior install.
+  if (fs::dir_exists(install_path)) unlink(install_path, recursive = TRUE)
+  fs::dir_create(fs::path_dir(install_path), recurse = TRUE)
+  fs::file_move(staging, install_path)
 
   exe <- executable_finder()
   if (is.null(exe)) {

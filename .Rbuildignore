@@ -21,7 +21,8 @@
 ^\.vscode$
 ^\.idea$
 ^\.DS_Store$
-^.*app$
+^\.Rhistory$
+^[^/]+-app$
 ^\.claude$
 ^\.superpowers$
 ^e2e-tests$

@@ -8,8 +8,8 @@ available_examples()
 }
 \value{
 A data frame with columns: \code{name} (character ID),
-\code{language} (R or Python), \code{type} (app type),
-and \code{description} (human-readable summary).
+\code{language} (\code{"r"} or \code{"python"}), \code{type} (app type, \code{"r-shiny"} or
+\code{"py-shiny"}), and \code{description} (human-readable summary).
 }
 \description{
 Shows all bundled example applications with their descriptions.

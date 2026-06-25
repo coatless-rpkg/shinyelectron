@@ -31,7 +31,7 @@ using Pyodide (Python compiled to WebAssembly).
 \strong{Requirements:}
 \itemize{
 \item Python 3 must be available on the build machine
-\item The Python \code{shinylive} package must be installed (\code{pip install shinylive})
+\item The Python \code{shinylive} package must be installed (\verb{pip install shinylive})
 \item The app directory must contain an \code{app.py} file
 }
 }

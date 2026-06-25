@@ -23,7 +23,7 @@ platform, and architecture.
 }
 \section{Details}{
 
-The path is structured as \code{cache_dir()/r/[platform]/[arch]/[version]}.
+The path is structured as \verb{cache_dir()/r/[platform]/[arch]/[version]}.
 This function does not check if the installation exists at that location.
 }
 

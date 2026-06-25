@@ -40,7 +40,7 @@ generate_package_json <- function(app_slug, app_version, backend, config,
       `build-linux-arm64` = "electron-builder --linux --arm64 --publish never"
     ),
     author = "",
-    license = "AGPL (>=3)",
+    license = "AGPL-3.0-or-later",
     devDependencies = list(
       electron = "^41.0.0",
       `electron-builder` = "^26.8.0"
@@ -131,10 +131,10 @@ generate_package_json <- function(app_slug, app_version, backend, config,
       win_config$certificateFile <- signing$win$certificate_file
       win_config$signingHashAlgorithms <- list("sha256")
     }
-  } else {
-    # Explicitly disable signing
-    mac_config$identity <- NULL
   }
+  # When sign is FALSE, signing is disabled at build time via the
+  # CSC_IDENTITY_AUTO_DISCOVERY=false environment variable set in
+  # build_for_platforms(); no package.json identity field is needed.
 
   if (!is.null(config$installer$license_file)) {
     win_config$license <- config$installer$license_file

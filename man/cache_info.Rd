@@ -22,7 +22,7 @@ platforms, architectures, and disk usage. Modeled after
 \code{shinylive::assets_info()}.
 }
 \examples{
-# Programmatic access (safe to run — just inspects the cache dir)
+# Programmatic access (safe to run -- just inspects the cache dir)
 df <- cache_info(quiet = TRUE)
 nrow(df)  # number of cached runtimes
 

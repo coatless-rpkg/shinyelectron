@@ -4,9 +4,12 @@
 #' assembling the Electron app. Kept separate from `process_templates()`
 #' so the variable construction is testable independently.
 #'
-#' Every variable here corresponds to a `{{...}}` placeholder in
-#' `inst/electron/shared/main.js`, `lifecycle.html`, `preload.js`, or
-#' `launcher.html`. Adding a new placeholder requires adding it here.
+#' Most variables here correspond to a `{{...}}` placeholder in
+#' `inst/electron/shared/main.js`, `lifecycle.html`, or `launcher.html`.
+#' The list is a superset: some entries are serialized into
+#' `backend_config_json` (and consumed by the backend modules rather than a
+#' template) or are reserved for future placeholders. Adding a new
+#' placeholder requires adding it here.
 #'
 #' @param app_name Character. Display name of the app.
 #' @param app_slug Character. Path-safe slug derived from app_name.
@@ -31,8 +34,19 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     app_type = app_type,
     app_slug = app_slug,
     port_retry_count = config$lifecycle$port_retry_count %||%
-      SHINYELECTRON_DEFAULTS$lifecycle$port_retry_count
+      SHINYELECTRON_DEFAULTS$lifecycle$port_retry_count,
+    prompt_before_install = config$lifecycle$prompt_before_install %||%
+      SHINYELECTRON_DEFAULTS$lifecycle$prompt_before_install,
+    prompt_runtime_version = config$lifecycle$prompt_runtime_version %||%
+      SHINYELECTRON_DEFAULTS$lifecycle$prompt_runtime_version
   )
+
+  # The container backend reads its image/engine/volume settings from the
+  # inlined backend config (see inst/electron/backends/container.js); fold
+  # them in here so `_shinyelectron.yml` container settings reach runtime.
+  if (identical(runtime_strategy, "container")) {
+    backend_config <- c(backend_config, generate_container_config(config))
+  }
 
   list(
     app_name = app_name,
@@ -40,6 +54,9 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     app_type = app_type,
     app_version = config$app$version %||% SHINYELECTRON_DEFAULTS$app_version,
     has_icon = !is.null(icon),
+    # copy_brand_assets() preserves the icon's extension (icon.ico/.icns/.png);
+    # carry the real filename so the BrowserWindow icon path is not broken.
+    icon_file = if (!is.null(icon)) paste0("icon.", tools::file_ext(icon)) else "icon.png",
     window_width = config$window$width %||% SHINYELECTRON_DEFAULTS$window_width,
     window_height = config$window$height %||% SHINYELECTRON_DEFAULTS$window_height,
     server_port = config$server$port %||% SHINYELECTRON_DEFAULTS$server_port,
@@ -63,7 +80,10 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     minimize_to_tray = config$tray$minimize_to_tray %||% SHINYELECTRON_DEFAULTS$tray$minimize_to_tray,
     close_to_tray = config$tray$close_to_tray %||% SHINYELECTRON_DEFAULTS$tray$close_to_tray,
     tray_tooltip = config$tray$tooltip %||% app_name,
-    tray_icon = config$tray$icon,
+    # copy_brand_assets() writes the tray icon to assets/<basename>, and
+    # main.js joins it under assets/, so the template must carry only the
+    # basename (mirrors the splash image handling below).
+    tray_icon = if (!is.null(config$tray$icon)) basename(config$tray$icon) else NULL,
 
     # Menus
     menu_enabled = config$menu$enabled %||% SHINYELECTRON_DEFAULTS$menu$enabled,

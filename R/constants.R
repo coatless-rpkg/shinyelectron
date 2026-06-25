@@ -1,11 +1,4 @@
-# App type group constants. After the shinylive-as-strategy change the app
-# type encodes only the language, so R_TYPES and PY_TYPES collapse to single
-# values. They are kept as vectors for readability at call sites that use
-# %in%.
-R_TYPES         <- c("r-shiny")
-PY_TYPES        <- c("py-shiny")
-
-# Schema version for R → JS manifest files (dependencies.json,
+# Schema version for R to JS manifest files (dependencies.json,
 # runtime-manifest.json, apps-manifest.json). Bump when the shape of
 # any manifest changes in a backwards-incompatible way. The JS side
 # warns on mismatch; see inst/electron/backends/utils.js.
@@ -25,11 +18,18 @@ MANIFEST_SCHEMA_VERSION <- "1"
 #'   \item{valid_app_types}{Valid application types}
 #'   \item{valid_platforms}{Valid target platforms}
 #'   \item{valid_architectures}{Valid CPU architectures}
+#'   \item{valid_runtime_strategies}{Valid runtime strategies}
+#'   \item{valid_container_engines}{Valid container engines}
 #'   \item{splash}{Default splash screen settings}
 #'   \item{tray}{Default system tray settings}
 #'   \item{menu}{Default application menu settings}
 #'   \item{updates}{Default auto-update settings}
 #'   \item{preloader}{Default preloader settings}
+#'   \item{container}{Default container strategy settings}
+#'   \item{dependencies}{Default dependency detection and runtime settings}
+#'   \item{logging}{Default logging settings}
+#'   \item{signing}{Default code-signing settings}
+#'   \item{lifecycle}{Default lifecycle and prompt settings}
 #'   \item{installer}{Default installer branding settings}
 #' }
 #' @keywords internal
@@ -46,8 +46,7 @@ SHINYELECTRON_DEFAULTS <- list(
   app_version = "1.0.0",
 
   # Valid options for validation
-
-valid_app_types = c(
+  valid_app_types = c(
     "r-shiny",
     "py-shiny"
   ),
@@ -149,14 +148,15 @@ valid_app_types = c(
     auto_detect = TRUE,
     extra_packages = list(),
     r = list(
+      version = NULL,   # NULL = latest R; pin to embed a specific version
       packages = list(),
       repos = list("https://cloud.r-project.org"),
       lib_path = NULL
     ),
     python = list(
+      version = NULL,   # NULL = default Python; pin to embed a specific version
       packages = list(),
-      index_urls = list("https://pypi.org/simple"),
-      lib_path = NULL
+      index_urls = list("https://pypi.org/simple")
     )
   ),
 

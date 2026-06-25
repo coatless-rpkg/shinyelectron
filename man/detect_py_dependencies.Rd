@@ -15,7 +15,7 @@ Character vector of unique package names (sorted).
 \description{
 Reads \code{requirements.txt} or \code{pyproject.toml} to determine
 Python package dependencies. Does NOT parse import statements -- the
-module-name-to-package-name mapping (e.g., \code{import cv2} maps to
+module-name-to-package-name mapping (e.g., \verb{import cv2} maps to
 \code{opencv-python}) makes import parsing unreliable.
 }
 \details{

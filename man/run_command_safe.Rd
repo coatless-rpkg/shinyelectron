@@ -18,7 +18,7 @@ List with status, stdout, stderr.
 }
 \description{
 Wraps processx::run with consistent error handling. Returns a list
-with status, stdout, and stderr. Never throws — failures are
+with status, stdout, and stderr. Never throws; failures are
 indicated by a non-zero status.
 }
 \keyword{internal}

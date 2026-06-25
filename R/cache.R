@@ -32,11 +32,13 @@
 #' Use [cache_info()] to see what's actually installed with disk usage.
 #'
 #' @examples
-#' # Query without creating
+#' # Query the cache path without creating it
 #' cache_dir(create = FALSE)
 #'
-#' # Get or create
+#' # Get or create the cache directory (writes to the user cache dir)
+#' \donttest{
 #' cache_dir()
+#' }
 #'
 #' @seealso [cache_info()] to see what's cached, [cache_clear()] to
 #'   remove cached assets, [cache_remove()] to remove a specific version.
@@ -62,7 +64,7 @@ cache_dir <- function(create = TRUE) {
 #'         specified version, platform, and architecture.
 #'
 #' @section Details:
-#' The path is structured as \code{cache_dir()/r/[platform]/[arch]/[version]}.
+#' The path is structured as `cache_dir()/r/[platform]/[arch]/[version]`.
 #' This function does not check if the installation exists at that location.
 #'
 #' @keywords internal
@@ -77,7 +79,7 @@ cache_r_path <- function(version, platform, arch) {
 #' @return Character string. The path to the npm packages cache.
 #'
 #' @section Details:
-#' The npm packages are cached at \code{cache_dir()/npm}. This allows for reuse
+#' The npm packages are cached at `cache_dir()/npm`. This allows for reuse
 #' of downloaded npm dependencies across multiple builds.
 #'
 #' @keywords internal
@@ -95,12 +97,12 @@ cache_npm_path <- function() {
 #'   the results invisibly. Default is FALSE.
 #'
 #' @return A data frame (returned invisibly) with columns:
-#'   \code{runtime} (character), \code{version} (character),
-#'   \code{platform} (character), \code{arch} (character),
-#'   \code{size} (character, human-readable), and \code{path} (character).
+#'   `runtime` (character), `version` (character),
+#'   `platform` (character), `arch` (character),
+#'   `size` (character, human-readable), and `path` (character).
 #'
 #' @examples
-#' # Programmatic access (safe to run — just inspects the cache dir)
+#' # Programmatic access (safe to run -- just inspects the cache dir)
 #' df <- cache_info(quiet = TRUE)
 #' nrow(df)  # number of cached runtimes
 #'
@@ -140,7 +142,9 @@ cache_info <- function(quiet = FALSE) {
         platform_dirs <- list.dirs(vdir, recursive = FALSE, full.names = TRUE)
         for (pdir in platform_dirs) {
           parts <- strsplit(basename(pdir), "-")[[1]]
-          plat <- parts[1]
+          # nodejs dir names use Node's platform tokens (darwin/win32); map
+          # back to the package's canonical names so rows stay consistent.
+          plat <- switch(parts[1], "darwin" = "mac", "win32" = "win", parts[1])
           ar <- if (length(parts) > 1) parts[2] else "unknown"
           sz <- format_dir_size(pdir)
           rows <- c(rows, list(data.frame(
@@ -228,15 +232,15 @@ format_dir_size <- function(path) {
 #' Removes a single cached runtime version instead of clearing the
 #' entire cache. Use [cache_info()] to see what's available.
 #'
-#' @param runtime Character string. One of \code{"r"}, \code{"python"},
-#'   or \code{"nodejs"}.
-#' @param version Character string. Version to remove (e.g., \code{"4.5.3"},
-#'   \code{"3.12.10"}, \code{"v22.11.0"}).
-#' @param platform Character string. Platform (e.g., \code{"win"},
-#'   \code{"mac"}, \code{"linux"}). For Node.js, use the combined
+#' @param runtime Character string. One of `"r"`, `"python"`,
+#'   or `"nodejs"`.
+#' @param version Character string. Version to remove (e.g., `"4.5.3"`,
+#'   `"3.12.10"`, `"v22.11.0"`).
+#' @param platform Character string. Platform (e.g., `"win"`,
+#'   `"mac"`, `"linux"`). For Node.js, use the combined
 #'   platform-arch format shown by [cache_info()].
-#' @param arch Character string. Architecture (\code{"x64"} or
-#'   \code{"arm64"}). Ignored for Node.js (embedded in platform).
+#' @param arch Character string. Architecture (`"x64"` or
+#'   `"arm64"`). Ignored for Node.js (embedded in platform).
 #'
 #' @return Invisibly returns TRUE if removed, FALSE if not found.
 #'
@@ -291,19 +295,18 @@ cache_remove <- function(runtime, version, platform = NULL, arch = NULL) {
 #' Removes cached R installations and/or npm packages from the cache directory.
 #'
 #' @param what Character string specifying what to clear. One of
-#'   \code{"all"}, \code{"nodejs"}, \code{"r"}, \code{"python"}, or a
-#'   specific cache subdirectory name.
+#'   `"all"`, `"r"`, `"npm"`, `"nodejs"`, or `"python"`.
 #'
 #' @return Invisibly returns NULL.
 #'
 #' @section Details:
 #' Use this function to free disk space or force re-downloading of assets:
 #' \itemize{
-#'   \item \code{"r"}: Removes only cached R installations
-#'   \item \code{"npm"}: Removes only cached npm packages
-#'   \item \code{"nodejs"}: Removes only cached Node.js installations
-#'   \item \code{"python"}: Removes only cached Python installations
-#'   \item \code{"all"}: Removes all cached assets
+#'   \item `"r"`: Removes only cached R installations
+#'   \item `"npm"`: Removes only cached npm packages
+#'   \item `"nodejs"`: Removes only cached Node.js installations
+#'   \item `"python"`: Removes only cached Python installations
+#'   \item `"all"`: Removes all cached assets
 #' }
 #' If the cache directory doesn't exist, a message is shown and nothing is done.
 #'

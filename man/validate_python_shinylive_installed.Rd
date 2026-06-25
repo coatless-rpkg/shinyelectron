@@ -13,7 +13,7 @@ Invisible character string with the detected shinylive version.
 Mirrors the command preference used by \code{convert_py_to_shinylive()}: first
 the \code{shinylive} console script on PATH, then \verb{python -m shinylive} as a
 fallback. Runs \code{--version} to confirm the CLI actually executes (an import
-check is not enough — shinylive ships no \verb{__main__.py}, so a package that
+check is not enough -- shinylive ships no \verb{__main__.py}, so a package that
 imports fine can still fail at export time).
 }
 \keyword{internal}

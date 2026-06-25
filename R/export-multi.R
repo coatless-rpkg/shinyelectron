@@ -1,13 +1,20 @@
 #' Export multi-app Shiny suite as Electron application
 #' @keywords internal
 export_multi_app <- function(appdir, destdir, config,
+                              app_name = NULL,
                               runtime_strategy = NULL, sign = FALSE,
                               platform = NULL, arch = NULL, icon = NULL,
                               overwrite = FALSE, build = TRUE,
                               run_after = FALSE, open_after = FALSE,
                               verbose = TRUE) {
 
-  app_name <- config$app$name %||% basename(appdir)
+  app_name <- app_name %||% config$app$name %||% basename(appdir)
+  validate_app_name(app_name)
+
+  # Validate the icon up front, matching the single-app path.
+  if (!is.null(icon)) {
+    validate_icon(icon, platform)
+  }
 
   # Normalize suite-level build.type (may be legacy) and resolve strategy
   raw_type <- config$build$type %||% "r-shiny"
@@ -43,6 +50,7 @@ export_multi_app <- function(appdir, destdir, config,
     unlink(destdir, recursive = TRUE)
   }
   fs::dir_create(destdir, recurse = TRUE)
+  created_destdir <- TRUE
 
   result <- list()
 
@@ -169,6 +177,12 @@ export_multi_app <- function(appdir, destdir, config,
       )
     }
 
+    # Step 4: Open output directory if requested
+    if (open_after) {
+      if (verbose) cli::cli_alert_info("Opening output directory...")
+      utils::browseURL(destdir)
+    }
+
     if (verbose) {
       cli::cli_alert_success("Successfully exported multi-app suite!")
       cli::cli_alert_info("Output: {.path {destdir}}")
@@ -177,6 +191,9 @@ export_multi_app <- function(appdir, destdir, config,
     return(result)
 
   }, error = function(e) {
+    if (isTRUE(created_destdir) && fs::dir_exists(destdir)) {
+      unlink(destdir, recursive = TRUE)
+    }
     cli::cli_abort(c(
       "Failed to export multi-app suite",
       "x" = "Error: {e$message}"
@@ -193,6 +210,20 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
 
   if (is.null(platform)) platform <- detect_current_platform()
   if (is.null(arch)) arch <- detect_current_arch()
+
+  validate_platform(platform)
+  validate_arch(arch)
+
+  # Bundled / auto-download native runtimes embed a single platform's runtime,
+  # so they cannot target multiple platforms or architectures in one build.
+  if (runtime_strategy %in% c("bundled", "auto-download") &&
+      grepl("^(r|py)-", default_type) &&
+      (length(platform) > 1 || length(arch) > 1)) {
+    cli::cli_abort(c(
+      "The {.val {runtime_strategy}} strategy supports only one platform and architecture per build.",
+      "i" = "Build each target separately, or use the {.val system}, {.val container}, or {.val shinylive} strategy for multi-platform builds."
+    ))
+  }
 
   validate_node_npm()
 

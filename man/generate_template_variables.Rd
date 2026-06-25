@@ -48,8 +48,11 @@ assembling the Electron app. Kept separate from \code{process_templates()}
 so the variable construction is testable independently.
 }
 \details{
-Every variable here corresponds to a \code{{{...}}} placeholder in
-\code{inst/electron/shared/main.js}, \code{lifecycle.html}, \code{preload.js}, or
-\code{launcher.html}. Adding a new placeholder requires adding it here.
+Most variables here correspond to a \code{{{...}}} placeholder in
+\code{inst/electron/shared/main.js}, \code{lifecycle.html}, or \code{launcher.html}.
+The list is a superset: some entries are serialized into
+\code{backend_config_json} (and consumed by the backend modules rather than a
+template) or are reserved for future placeholders. Adding a new
+placeholder requires adding it here.
 }
 \keyword{internal}

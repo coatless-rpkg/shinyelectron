@@ -42,8 +42,8 @@
 #' @section Supported Combinations:
 #' Two languages, five delivery strategies.
 #' \itemize{
-#'   \item \code{r-shiny} or \code{py-shiny} plus \code{runtime_strategy = "shinylive"}: app compiles to WebAssembly and runs inside the Electron window with no runtime on disk.
-#'   \item \code{r-shiny} or \code{py-shiny} plus \code{"auto-download"}, \code{"bundled"}, \code{"system"}, or \code{"container"}: app runs against a real R or Python process supplied by the chosen strategy.
+#'   \item `r-shiny` or `py-shiny` plus `runtime_strategy = "shinylive"`: app compiles to WebAssembly and runs inside the Electron window with no runtime on disk.
+#'   \item `r-shiny` or `py-shiny` plus `"auto-download"`, `"bundled"`, `"system"`, or `"container"`: app runs against a real R or Python process supplied by the chosen strategy.
 #' }
 #'
 #' @examples
@@ -98,9 +98,29 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   # validation so multi-app mode can be detected early
   config <- read_config(appdir)
 
+  # Resolve the icon: function arg > config `icon:` > per-platform `icons:`.
+  # Wiring the YAML keys here makes them effective for both single and
+  # multi-app builds (previously only the icon= argument was honored).
+  # Use [[ exact matching: `config$icon` would partial-match the `icons` list.
+  icon_platform <- (platform %||% detect_current_platform())[1]
+  icon <- icon %||% config[["icon"]] %||%
+    (if (!is.null(config[["icons"]])) config[["icons"]][[icon_platform]] else NULL)
+
+  # Resolve signing before the multi-app branch so suites honor
+  # `signing: sign: true`. The function arg can force signing on and the
+  # config can enable it; there is no way to force signing off via the arg.
+  sign <- sign || isTRUE(config$signing$sign)
+  if (sign && build) {
+    sign_platforms <- platform %||% detect_current_platform()
+    for (p in sign_platforms) {
+      validate_signing_config(config, platform = p)
+    }
+  }
+
   # Detect multi-app mode (skip single-app structure validation)
   if (is_multi_app(config)) {
     return(export_multi_app(appdir, destdir, config,
+                            app_name = app_name,
                             runtime_strategy = runtime_strategy,
                             sign = sign, platform = platform, arch = arch,
                             icon = icon, overwrite = overwrite, build = build,
@@ -138,24 +158,22 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   runtime_strategy <- runtime_strategy %||% config$build$runtime_strategy %||% "shinylive"
   validate_runtime_strategy(runtime_strategy)
 
-  # Resolve signing: function param overrides config
-  sign <- sign || isTRUE(config$signing$sign)
-
-  # Validate signing credentials (warns, doesn't error)
-  if (sign && build) {
-    sign_platforms <- platform %||% detect_current_platform()
-    for (p in sign_platforms) {
-      validate_signing_config(config, platform = p)
-    }
-  }
-
-  # Validate runtime requirements (skip for shinylive since nothing runs natively)
+  # Validate runtime requirements for the system strategy. R/Python are an
+  # end-user requirement (the bundle does not need them), so a missing runtime
+  # on the build machine is a warning, mirroring the container-engine check.
   if (runtime_strategy == "system") {
-    if (app_type == "r-shiny") {
-      validate_r_available()
-    } else if (app_type == "py-shiny") {
-      validate_python_available()
-    }
+    tryCatch({
+      if (app_type == "r-shiny") {
+        validate_r_available()
+      } else if (app_type == "py-shiny") {
+        validate_python_available()
+      }
+    }, error = function(e) {
+      cli::cli_warn(c(
+        "Runtime not available on build machine (the end user will need it)",
+        "i" = conditionMessage(e)
+      ))
+    })
   }
 
   if (runtime_strategy == "container") {
@@ -212,6 +230,9 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   }
 
   fs::dir_create(destdir, recurse = TRUE)
+  # Track that this call created/owns destdir so a failed export can clean up
+  # the partial output instead of forcing the user to pass overwrite = TRUE.
+  created_destdir <- TRUE
 
   result <- list()
 
@@ -287,6 +308,11 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
     return(result)
 
   }, error = function(e) {
+    # Remove the partially populated output so a retry does not require
+    # overwrite = TRUE (only the directory this call created).
+    if (isTRUE(created_destdir) && fs::dir_exists(destdir)) {
+      unlink(destdir, recursive = TRUE)
+    }
     cli::cli_abort(c(
       "Failed to export Shiny application",
       "x" = "Error: {e$message}"

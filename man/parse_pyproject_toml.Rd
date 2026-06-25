@@ -13,7 +13,7 @@ parse_pyproject_toml(path)
 Character vector of package names.
 }
 \description{
-Simple parser for the \code{[project] dependencies} array in pyproject.toml.
+Simple parser for the \verb{[project] dependencies} array in pyproject.toml.
 Does not handle complex TOML -- just extracts quoted dependency strings.
 }
 \keyword{internal}

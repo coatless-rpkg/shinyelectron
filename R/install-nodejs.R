@@ -182,17 +182,19 @@ nodejs_is_installed <- function(version = NULL) {
 #' Get path to local Node.js executable
 #'
 #' @param version Character Node.js version (NULL = latest installed)
+#' @param platform Character target platform (NULL = current)
+#' @param arch Character target architecture (NULL = current)
 #' @return Character path to node executable, or NULL if not found
 #' @keywords internal
-nodejs_executable <- function(version = NULL) {
+nodejs_executable <- function(version = NULL, platform = NULL, arch = NULL) {
   if (is.null(version)) {
     versions <- nodejs_list_installed()
     if (length(versions) == 0) return(NULL)
     version <- versions[1]  # Use latest/first
   }
 
-  install_path <- nodejs_install_path(version)
-  platform <- detect_current_platform()
+  platform <- platform %||% detect_current_platform()
+  install_path <- nodejs_install_path(version, platform, arch)
 
   if (platform == "win") {
     node_path <- fs::path(install_path, "node.exe")
@@ -206,17 +208,19 @@ nodejs_executable <- function(version = NULL) {
 #' Get path to local npm executable
 #'
 #' @param version Character Node.js version (NULL = latest installed)
+#' @param platform Character target platform (NULL = current)
+#' @param arch Character target architecture (NULL = current)
 #' @return Character path to npm executable, or NULL if not found
 #' @keywords internal
-npm_executable <- function(version = NULL) {
+npm_executable <- function(version = NULL, platform = NULL, arch = NULL) {
   if (is.null(version)) {
     versions <- nodejs_list_installed()
     if (length(versions) == 0) return(NULL)
     version <- versions[1]
   }
 
-  install_path <- nodejs_install_path(version)
-  platform <- detect_current_platform()
+  platform <- platform %||% detect_current_platform()
+  install_path <- nodejs_install_path(version, platform, arch)
 
   if (platform == "win") {
     npm_path <- fs::path(install_path, "npm.cmd")
@@ -402,8 +406,8 @@ install_nodejs <- function(version = NULL, platform = NULL, arch = NULL,
     }
   }
 
-  # Verify installation
-  node_exe <- nodejs_executable(version)
+  # Verify installation (against the target platform/arch, not the host)
+  node_exe <- nodejs_executable(version, platform, arch)
   if (is.null(node_exe) || !fs::file_exists(node_exe)) {
     cli::cli_abort(c(
       "Installation failed",

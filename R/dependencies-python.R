@@ -1,11 +1,11 @@
 #' Detect Python package dependencies from requirements files
 #'
-#' Reads \code{requirements.txt} or \code{pyproject.toml} to determine
+#' Reads `requirements.txt` or `pyproject.toml` to determine
 #' Python package dependencies. Does NOT parse import statements -- the
-#' module-name-to-package-name mapping (e.g., \code{import cv2} maps to
-#' \code{opencv-python}) makes import parsing unreliable.
+#' module-name-to-package-name mapping (e.g., `import cv2` maps to
+#' `opencv-python`) makes import parsing unreliable.
 #'
-#' Prefers \code{requirements.txt} over \code{pyproject.toml} when both exist.
+#' Prefers `requirements.txt` over `pyproject.toml` when both exist.
 #' Warns if neither file is found.
 #'
 #' @param appdir Character string. Path to the app directory.
@@ -45,6 +45,12 @@ parse_requirements_txt <- function(path) {
     if (!nzchar(line)) next
     if (grepl("^#", line)) next
     if (grepl("^-", line)) next
+    # Skip direct VCS references (e.g. git+https://github.com/x/y.git).
+    if (grepl("^(git|hg|svn|bzr)\\+", line)) next
+    # PEP 508 direct reference "name @ url": keep only the name part.
+    if (grepl("@", line)) line <- trimws(sub("@.*", "", line))
+    # Bare URL with no package name: nothing usable to install by name.
+    if (grepl("://", line)) next
 
     pkg <- sub("[>=<!~;\\[,].*", "", line)
     pkg <- trimws(pkg)
@@ -56,7 +62,7 @@ parse_requirements_txt <- function(path) {
 
 #' Parse pyproject.toml dependencies section
 #'
-#' Simple parser for the \code{[project] dependencies} array in pyproject.toml.
+#' Simple parser for the `[project] dependencies` array in pyproject.toml.
 #' Does not handle complex TOML -- just extracts quoted dependency strings.
 #'
 #' @param path Character string. Path to pyproject.toml.
@@ -66,28 +72,41 @@ parse_pyproject_toml <- function(path) {
   lines <- readLines(path, warn = FALSE)
   packages <- character(0)
 
+  # Extract every double-quoted token on a line (handles multiple per line).
+  extract_quoted <- function(s) {
+    m <- regmatches(s, gregexpr('"[^"]*"', s))[[1]]
+    gsub('"', '', m)
+  }
+  # Reduce a PEP 508 spec ("pandas>=2.0", "shiny[theme]", "x @ url") to a name.
+  spec_to_name <- function(spec) {
+    trimws(sub("[>=<!~;@\\[,].*", "", spec))
+  }
+  add_specs <- function(specs) {
+    for (spec in specs) {
+      pkg <- spec_to_name(spec)
+      if (nzchar(pkg)) packages <<- c(packages, pkg)
+    }
+  }
+
   in_deps <- FALSE
   for (line in lines) {
     trimmed <- trimws(line)
 
-    if (grepl("^dependencies\\s*=\\s*\\[", trimmed)) {
+    if (!in_deps && grepl("^dependencies\\s*=\\s*\\[", trimmed)) {
       in_deps <- TRUE
+      # Capture any packages declared on the opening line itself, e.g.
+      # dependencies = ["shiny", "pandas"].
+      after <- sub("^dependencies\\s*=\\s*\\[", "", trimmed)
+      add_specs(extract_quoted(after))
+      # A single-line array closes on the same line.
+      if (grepl("\\]", after)) in_deps <- FALSE
       next
     }
 
     if (in_deps) {
-      if (grepl("^\\]", trimmed)) {
-        in_deps <- FALSE
-        next
-      }
-
-      match <- regmatches(trimmed, regexpr('"([^"]+)"', trimmed))
-      if (length(match) > 0 && nzchar(match)) {
-        pkg_spec <- gsub('"', '', match)
-        pkg <- sub("[>=<!~;\\[,].*", "", pkg_spec)
-        pkg <- trimws(pkg)
-        if (nzchar(pkg)) packages <- c(packages, pkg)
-      }
+      add_specs(extract_quoted(trimmed))
+      # The closing bracket may share a line with the last entry.
+      if (grepl("\\]", trimmed)) in_deps <- FALSE
     }
   }
 

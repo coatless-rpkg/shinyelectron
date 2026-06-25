@@ -19,7 +19,7 @@ validate_python_available <- function() {
 #' Mirrors the command preference used by `convert_py_to_shinylive()`: first
 #' the `shinylive` console script on PATH, then `python -m shinylive` as a
 #' fallback. Runs `--version` to confirm the CLI actually executes (an import
-#' check is not enough — shinylive ships no `__main__.py`, so a package that
+#' check is not enough -- shinylive ships no `__main__.py`, so a package that
 #' imports fine can still fail at export time).
 #'
 #' @return Invisible character string with the detected shinylive version.
@@ -70,7 +70,7 @@ validate_python_shinylive_installed <- function() {
 
 #' Validate the Python shiny package is installed
 #'
-#' Used by the native `py-shiny` app type. Only checks importability — the
+#' Used by the native `py-shiny` app type. Only checks importability -- the
 #' export pipeline spawns `python -m shiny run` at runtime on the user's
 #' machine, not at build time.
 #'

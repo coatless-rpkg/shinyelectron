@@ -10,7 +10,7 @@ validate_python_shiny_installed()
 Invisible character string with the detected shiny version.
 }
 \description{
-Used by the native \code{py-shiny} app type. Only checks importability — the
+Used by the native \code{py-shiny} app type. Only checks importability -- the
 export pipeline spawns \verb{python -m shiny run} at runtime on the user's
 machine, not at build time.
 }

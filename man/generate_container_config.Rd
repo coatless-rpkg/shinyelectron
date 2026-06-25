@@ -2,23 +2,21 @@
 % Please edit documentation in R/container.R
 \name{generate_container_config}
 \alias{generate_container_config}
-\title{Generate container configuration JSON}
+\title{Build the container backend configuration}
 \usage{
-generate_container_config(app_type, engine, config, app_slug = NULL)
+generate_container_config(config)
 }
 \arguments{
-\item{app_type}{Character string. The app type.}
-
-\item{engine}{Character string. Container engine.}
-
 \item{config}{List. Full app configuration.}
-
-\item{app_slug}{Character string. Slugified app name.}
 }
 \value{
-Character string. JSON content.
+Named list of container settings.
 }
 \description{
-Creates the backend config JSON that container.js reads at runtime.
+Produces the container-specific settings that are merged into
+\code{backend_config} (see \code{\link[=generate_template_variables]{generate_template_variables()}}) and consumed by
+\code{inst/electron/backends/container.js} at runtime. The configured engine is
+passed through as-is; image selection and engine auto-detection happen on
+the end user's machine in \code{container.js}.
 }
 \keyword{internal}

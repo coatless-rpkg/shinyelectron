@@ -11,7 +11,7 @@ SHINYELECTRON_EXAMPLES <- list(
     description = "Python Shiny dashboard with runtime detection and interactive plot (works in all strategies including shinylive)"
   ),
   suite = list(
-    dir = "demos/multi-app-suite",
+    dir = "demos/demo-r-app-suite",
     language = "r",
     description = "Multi-app launcher with 3 bslib-themed R Shiny apps"
   )
@@ -21,9 +21,9 @@ SHINYELECTRON_EXAMPLES <- list(
 #'
 #' Shows all bundled example applications with their descriptions.
 #'
-#' @return A data frame with columns: \code{name} (character ID),
-#'   \code{language} (R or Python), \code{type} (app type),
-#'   and \code{description} (human-readable summary).
+#' @return A data frame with columns: `name` (character ID),
+#'   `language` (`"r"` or `"python"`), `type` (app type, `"r-shiny"` or
+#'   `"py-shiny"`), and `description` (human-readable summary).
 #'
 #' @examples
 #' available_examples()
@@ -48,6 +48,9 @@ available_examples <- function() {
   df <- data.frame(
     name = names(SHINYELECTRON_EXAMPLES),
     language = vapply(SHINYELECTRON_EXAMPLES, `[[`, character(1), "language"),
+    type = vapply(SHINYELECTRON_EXAMPLES, function(ex) {
+      if (ex$language == "r") "r-shiny" else "py-shiny"
+    }, character(1)),
     description = vapply(SHINYELECTRON_EXAMPLES, `[[`, character(1), "description"),
     stringsAsFactors = FALSE,
     row.names = NULL

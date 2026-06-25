@@ -41,10 +41,10 @@ slugify <- function(name) {
     cli::cli_abort("App name cannot be empty")
   }
   slug <- tolower(name)
+  # Each maximal run of non-alphanumerics becomes a single dash, so no
+  # consecutive dashes can remain afterwards.
   slug <- gsub("[^a-z0-9]+", "-", slug)
   slug <- gsub("^-|-$", "", slug)
-  # Collapse multiple consecutive dashes
-  slug <- gsub("-{2,}", "-", slug)
   if (!nzchar(slug)) {
     cli::cli_abort("Cannot create an empty slug from input: {.val {name}}")
   }
@@ -75,7 +75,7 @@ validate_slug <- function(slug) {
 #' Run a command safely and return the result
 #'
 #' Wraps processx::run with consistent error handling. Returns a list
-#' with status, stdout, and stderr. Never throws — failures are
+#' with status, stdout, and stderr. Never throws; failures are
 #' indicated by a non-zero status.
 #'
 #' @param command Character command to run.

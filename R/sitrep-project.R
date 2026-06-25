@@ -75,14 +75,16 @@ sitrep_electron_project <- function(project_dir = ".", verbose = TRUE) {
       } else {
         results$issues <- c(results$issues, "Missing build scripts")
         results$recommendations <- c(results$recommendations,
-                                     "Run fix_build_scripts() to add missing build scripts")
+                                     "Re-run export() to regenerate the Electron project and its build scripts")
         if (verbose) {
           cli::cli_alert_warning("Build scripts: Missing {length(missing_scripts)} script{?s}")
         }
       }
 
     }, error = function(e) {
-      results$issues <- c(results$issues, "Invalid package.json")
+      # Use <<- so the issue persists to the outer results (an assignment with
+      # <- inside this handler would only modify a local copy).
+      results$issues <<- c(results$issues, "Invalid package.json")
       if (verbose) {
         cli::cli_alert_danger("package.json: Invalid JSON")
       }

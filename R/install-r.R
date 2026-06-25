@@ -121,7 +121,7 @@ r_executable <- function(version, platform = NULL, arch = NULL) {
 #' Install a portable R distribution
 #'
 #' Downloads and caches a portable R build. Follows the same pattern
-#' as \code{\link{install_nodejs}()}.
+#' as [install_nodejs()].
 #'
 #' @param version Character string. R version to install. If NULL, installs latest.
 #' @param platform Character string. Target platform.

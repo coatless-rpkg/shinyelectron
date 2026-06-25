@@ -106,7 +106,12 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
   tryCatch({
     if (app_type == "r-shiny") {
       validate_shiny_app_structure(appdir)
-      if (verbose) cli::cli_alert_success("App structure: {.file app.R} found")
+      entry <- if (fs::file_exists(fs::path(appdir, "app.R"))) {
+        "app.R"
+      } else {
+        "server.R + ui.R"
+      }
+      if (verbose) cli::cli_alert_success("App structure: {.file {entry}} found")
     } else {
       validate_python_app_structure(appdir)
       if (verbose) cli::cli_alert_success("App structure: {.file app.py} found")

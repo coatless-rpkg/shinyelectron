@@ -6,7 +6,7 @@
 \usage{
 enable_auto_updates(
   appdir,
-  provider = c("github", "s3", "generic"),
+  provider = "github",
   owner = NULL,
   repo = NULL,
   check_on_startup = TRUE,
@@ -18,7 +18,9 @@ enable_auto_updates(
 \arguments{
 \item{appdir}{Character path to app directory containing \verb{_shinyelectron.yml}}
 
-\item{provider}{Character update provider: \code{"github"} (default), \code{"s3"}, or \code{"generic"}}
+\item{provider}{Character update provider. Currently only \code{"github"} is
+supported; \code{"s3"} and \code{"generic"} are not yet wired into the build and
+will be added in a future release.}
 
 \item{owner}{Character GitHub username or organization (required for github provider)}
 

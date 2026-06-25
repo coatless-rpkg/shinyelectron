@@ -8,8 +8,7 @@ cache_clear(what = c("all", "r", "npm", "nodejs", "python"))
 }
 \arguments{
 \item{what}{Character string specifying what to clear. One of
-\code{"all"}, \code{"nodejs"}, \code{"r"}, \code{"python"}, or a
-specific cache subdirectory name.}
+\code{"all"}, \code{"r"}, \code{"npm"}, \code{"nodejs"}, or \code{"python"}.}
 }
 \value{
 Invisibly returns NULL.
