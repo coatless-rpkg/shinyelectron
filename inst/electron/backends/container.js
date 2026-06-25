@@ -11,15 +11,16 @@ class ContainerBackend extends EventEmitter {
     super();
     this.containerId = null;
     this.containerEngine = null;
-    this.dockerHost = null;
+    this.containerHost = null;
   }
 
   /**
-   * Resolve the Docker daemon socket or named pipe.
-   * Tries docker context, then platform-specific well-known locations.
-   * @returns {string|null} Docker host URI or null if not found.
+   * Resolve the container engine's daemon socket or named pipe.
+   * For Podman, uses the machine socket or its default connection; for Docker,
+   * tries the active context then platform-specific well-known locations.
+   * @returns {string|null} Engine host URI (or "podman-default") or null.
    */
-  resolveDockerHost() {
+  resolveContainerHost() {
     const engine = this.containerEngine || 'docker';
 
     // Podman resolves its machine/connection from ~/.config/containers, so it
@@ -90,18 +91,19 @@ class ContainerBackend extends EventEmitter {
   }
 
   /**
-   * Build an environment object that includes DOCKER_HOST if resolved.
+   * Build an environment object with the engine host set: CONTAINER_HOST for
+   * Podman, DOCKER_HOST for Docker (when a host was resolved).
    * @returns {object} Environment variables for child processes.
    */
-  getDockerEnv() {
+  getContainerEnv() {
     const env = { ...process.env };
     // "podman-default" is a sentinel meaning "reachable via Podman's own
     // default connection", so no host override is needed in that case.
-    if (this.dockerHost && this.dockerHost !== 'podman-default') {
+    if (this.containerHost && this.containerHost !== 'podman-default') {
       if (this.containerEngine === 'podman') {
-        env.CONTAINER_HOST = this.dockerHost;
+        env.CONTAINER_HOST = this.containerHost;
       } else {
-        env.DOCKER_HOST = this.dockerHost;
+        env.DOCKER_HOST = this.containerHost;
       }
     }
     return env;
@@ -119,7 +121,7 @@ class ContainerBackend extends EventEmitter {
 
     for (const engine of ['docker', 'podman']) {
       try {
-        execFileSync(engine, ['--version'], { stdio: 'ignore', env: this.getDockerEnv() });
+        execFileSync(engine, ['--version'], { stdio: 'ignore', env: this.getContainerEnv() });
         return engine;
       } catch {
         // Not found, try next
@@ -175,7 +177,7 @@ class ContainerBackend extends EventEmitter {
    * @param {object} config - Backend configuration.
    */
   async ensureImage(image, config) {
-    const env = this.getDockerEnv();
+    const env = this.getContainerEnv();
     const pullOnStart = config?.pull_on_start !== false; // default true
     const arch = process.arch === 'arm64' ? 'linux/arm64' : 'linux/amd64';
 
@@ -346,8 +348,8 @@ class ContainerBackend extends EventEmitter {
       throw err;
     }
 
-    this.dockerHost = this.resolveDockerHost();
-    if (!this.dockerHost) {
+    this.containerHost = this.resolveContainerHost();
+    if (!this.containerHost) {
       const isPodman = this.containerEngine === 'podman';
       const err = new Error(
         `Cannot connect to ${isPodman ? 'Podman' : 'Docker'}.\n\n` +
@@ -421,7 +423,7 @@ class ContainerBackend extends EventEmitter {
 
       const proc = spawn(this.containerEngine, args, {
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: this.getDockerEnv()
+        env: this.getContainerEnv()
       });
 
       let stdout = '';
@@ -451,7 +453,7 @@ class ContainerBackend extends EventEmitter {
         try {
           const portOut = execFileSync(
             this.containerEngine, ['port', this.containerId, `${containerPort}/tcp`],
-            { encoding: 'utf8', env: this.getDockerEnv() }
+            { encoding: 'utf8', env: this.getContainerEnv() }
           ).trim();
           const match = portOut.split('\n')[0].match(/:(\d+)\s*$/);
           hostPort = match ? parseInt(match[1], 10) : null;
@@ -468,7 +470,7 @@ class ContainerBackend extends EventEmitter {
         // Stream container logs while waiting for startup
         const logProc = spawn(this.containerEngine, ['logs', '-f', this.containerId], {
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: this.getDockerEnv()
+          env: this.getContainerEnv()
         });
         logProc.on('error', () => {}); // ignore EPIPE
         logProc.stdout.on('data', (data) => {
@@ -499,7 +501,7 @@ class ContainerBackend extends EventEmitter {
             logProc.kill();
             // Get container logs for debugging
             try {
-              const logs = execFileSync(this.containerEngine, ['logs', this.containerId], { encoding: 'utf8', env: this.getDockerEnv() });
+              const logs = execFileSync(this.containerEngine, ['logs', this.containerId], { encoding: 'utf8', env: this.getContainerEnv() });
               console.error(`Container logs:\n${logs}`);
             } catch { /* ignore */ }
 
@@ -534,14 +536,14 @@ class ContainerBackend extends EventEmitter {
       this.emit('status', { phase: 'stopping_server', message: `Stopping container...` });
       logDebug(`Stopping container ${this.containerId}...`);
       try {
-        execFileSync(this.containerEngine, ['stop', this.containerId], { stdio: 'ignore', timeout: 10000, env: this.getDockerEnv() });
+        execFileSync(this.containerEngine, ['stop', this.containerId], { stdio: 'ignore', timeout: 10000, env: this.getContainerEnv() });
       } catch (err) {
         console.warn(`Failed to stop container gracefully: ${err.message}`);
       }
 
       this.emit('status', { phase: 'cleanup', message: 'Removing container...' });
       try {
-        execFileSync(this.containerEngine, ['rm', '-f', this.containerId], { stdio: 'ignore', env: this.getDockerEnv() });
+        execFileSync(this.containerEngine, ['rm', '-f', this.containerId], { stdio: 'ignore', env: this.getContainerEnv() });
       } catch (err) {
         console.warn(`Failed to remove container: ${err.message}`);
       }

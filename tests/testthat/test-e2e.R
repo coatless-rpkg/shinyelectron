@@ -110,7 +110,7 @@ test_that("e2e: r-shiny container full build embeds Dockerfile", {
 
   # Verify container.js has socket resolution
   container_js <- readLines(file.path(electron_dir, "backends", "container.js"))
-  expect_true(any(grepl("resolveDockerHost", container_js)))
+  expect_true(any(grepl("resolveContainerHost", container_js)))
   expect_true(any(grepl("ensureImage", container_js)))
 })
 
