@@ -279,7 +279,10 @@ class NativePyBackend extends EventEmitter {
     }
 
     // For system/auto-download strategy, ensure a venv exists so we can
-    // install packages without PEP 668 "externally managed" errors
+    // install packages without PEP 668 "externally managed" errors.
+    // --system-site-packages exposes the host Python's packages (e.g. a
+    // system-installed shiny) so a "system" app works without re-declaring
+    // every framework dependency, while missing packages still install here.
     const isBundled = fs.existsSync(path.join(startBasePath, 'runtime', 'Python'));
     if (!isBundled) {
       const appSlugVenv = config?.app_slug || 'default';
@@ -293,7 +296,7 @@ class NativePyBackend extends EventEmitter {
         try {
           const { execFileSync } = require('child_process');
           fs.mkdirSync(venvDir, { recursive: true });
-          execFileSync(python, ['-m', 'venv', venvDir], { timeout: 60000, stdio: 'ignore' });
+          execFileSync(python, ['-m', 'venv', '--system-site-packages', venvDir], { timeout: 60000, stdio: 'ignore' });
           logDebug(`Created venv at ${venvDir}`);
           this.emit('status', { phase: 'checking_packages', message: 'Python environment ready' });
         } catch (err) {
