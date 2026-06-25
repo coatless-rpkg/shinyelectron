@@ -71,7 +71,7 @@ write_runtime_manifest <- function(app_dir, app_type, platform, arch, config,
   resolved_arch <- arch[1] %||% detect_current_arch()
 
   if (grepl("^r-", app_type)) {
-    version <- config$dependencies$r$version %||% r_latest_version()
+    version <- config$dependencies$r$version %||% r_portable_latest_version(resolved_platform)
     manifest <- generate_runtime_manifest(version = version,
                                           platform = resolved_platform,
                                           arch = resolved_arch)

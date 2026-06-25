@@ -19,6 +19,37 @@ r_latest_version <- function() {
   })
 }
 
+#' Get the latest R version available as a portable-r build
+#'
+#' The bundled and auto-download strategies download R from the portable-r
+#' release repos, which can lag behind the newest R release (so the latest R
+#' from [r_latest_version()] may have no portable build yet, yielding a 404).
+#' This returns the latest version that actually exists for the target
+#' platform, falling back to [r_latest_version()] if the release API cannot be
+#' reached.
+#'
+#' @param platform Character string. Target platform: "win", "mac", "linux".
+#' @return Character string. The latest available portable-r version.
+#' @keywords internal
+r_portable_latest_version <- function(platform = NULL) {
+  platform <- platform %||% detect_current_platform()
+  repo <- switch(platform,
+    "win" = "portable-r/portable-r-windows",
+    "mac" = "portable-r/portable-r-macos",
+    NULL
+  )
+  if (is.null(repo)) return(r_latest_version())
+
+  tryCatch({
+    url <- paste0("https://api.github.com/repos/", repo, "/releases/latest")
+    content <- readLines(url, warn = FALSE)
+    parsed <- jsonlite::fromJSON(paste(content, collapse = ""))
+    sub("^v", "", parsed$tag_name)
+  }, error = function(e) {
+    r_latest_version()
+  })
+}
+
 #' Construct download URL for portable R
 #'
 #' Generates the download URL for an R build from CRAN.
@@ -149,8 +180,8 @@ install_r <- function(version = NULL, platform = NULL, arch = NULL,
   arch <- arch %||% detect_current_arch()
 
   if (is.null(version)) {
-    if (verbose) cli::cli_alert_info("Querying latest R release...")
-    version <- r_latest_version()
+    if (verbose) cli::cli_alert_info("Querying latest available R release...")
+    version <- r_portable_latest_version(platform)
   }
 
   if (!grepl("^\\d+\\.\\d+\\.\\d+$", version)) {

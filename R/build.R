@@ -204,7 +204,7 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
           # on macOS with --vanilla can interact oddly with hardened-runtime
           # library validation.
           bundled_rscript <- r_executable(
-            version = r_version %||% r_latest_version(),
+            version = r_version %||% r_portable_latest_version(platform[1]),
             platform = platform[1],
             arch = arch[1]
           )
