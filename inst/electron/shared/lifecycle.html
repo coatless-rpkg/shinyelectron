@@ -404,12 +404,19 @@
             break;
 
           case 'shutting_down':
+            // The headline; later phases keep it and report their step below.
+            showState('shutdown');
+            document.getElementById('shutdown-message').textContent = data.message || 'Closing application...';
+            break;
           case 'stopping_server':
           case 'cleanup':
+          case 'app_exit':
+            // Keep the "Closing application..." headline and show each
+            // lifecycle step (stopping container, removing container, ...) as
+            // a breakdown line beneath it.
             showState('shutdown');
-            document.getElementById('shutdown-message').textContent = data.message || 'Closing...';
-            if (data.phase !== 'shutting_down') {
-              document.getElementById('shutdown-sub').textContent = data.message || '';
+            if (data.message) {
+              document.getElementById('shutdown-sub').textContent = data.message;
             }
             break;
         }

@@ -538,30 +538,41 @@ class ContainerBackend extends EventEmitter {
       const env = this.getContainerEnv();
       this.containerId = null; // mark stopped so a repeat stop() is a no-op
 
-      this.emit('status', { phase: 'stopping_server', message: `Stopping container...` });
+      const short = id.substring(0, 12);
+      this.emit('status', { phase: 'stopping_server', message: `Stopping container ${short}...` });
       logDebug(`Stopping container ${id}...`);
 
       // Stop and remove asynchronously and detached. `docker/podman stop` blocks
       // for the container's stop grace period (10s by default), and doing that
       // synchronously freezes the main/UI thread so the shutdown screen can't
       // render. Run it detached (and `-t 3` to shorten the grace) so the UI is
-      // free immediately; the child finishes even if the app quits first.
+      // free immediately; the child finishes even if the app quits first. Each
+      // stage emits a status so the shutdown screen can show the breakdown.
+      const done = (message) => this.emit('status', { phase: 'app_exit', message });
       try {
         const proc = spawn(engine, ['stop', '-t', '3', id], { stdio: 'ignore', env, detached: true });
-        proc.on('error', (err) => console.warn(`Failed to stop container: ${err.message}`));
+        proc.on('error', (err) => {
+          console.warn(`Failed to stop container: ${err.message}`);
+          done('Shutdown complete');
+        });
         proc.on('close', () => {
+          this.emit('status', { phase: 'cleanup', message: 'Removing container...' });
           try {
             const rm = spawn(engine, ['rm', '-f', id], { stdio: 'ignore', env, detached: true });
-            rm.on('error', () => {});
+            rm.on('error', () => done('Shutdown complete'));
+            rm.on('close', () => done('Container removed. Shutting down...'));
             rm.unref();
-          } catch { /* best effort */ }
+          } catch { done('Shutdown complete'); }
         });
         proc.unref();
       } catch (err) {
         console.warn(`Failed to stop container: ${err.message}`);
+        done('Shutdown complete');
       }
-
-      this.emit('status', { phase: 'app_exit' });
+    } else {
+      // Nothing to tear down, but still signal completion so the shutdown
+      // flow can proceed promptly.
+      this.emit('status', { phase: 'app_exit', message: 'Shutting down...' });
     }
   }
 }

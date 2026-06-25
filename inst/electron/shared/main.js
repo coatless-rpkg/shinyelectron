@@ -705,18 +705,33 @@ function createWindow() {
       if (choice === 0) {
         isShuttingDown = true;
         if (mainWindow && !mainWindow.isDestroyed()) {
-          // Send the shutdown status only once the lifecycle page has loaded
-          // and subscribed, otherwise the message races the renderer and is lost.
+          // Wait until the lifecycle page has loaded and subscribed, then show
+          // the headline and START the backend teardown there, so the backend's
+          // own status (stopping container, removing container, ...) reaches the
+          // renderer and is shown as a breakdown under "Closing application...".
           mainWindow.webContents.once('did-finish-load', () => {
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.webContents.send('lifecycle-status', {
                 phase: 'shutting_down', message: 'Closing application...'
               });
             }
+            if (currentBackend) {
+              // Quit shortly after the backend reports teardown is complete;
+              // the shutdown_timeout below is the hard fallback.
+              const onExit = (d) => {
+                if (d && d.phase === 'app_exit') {
+                  currentBackend.removeListener('status', onExit);
+                  setTimeout(() => app.quit(), 700);
+                }
+              };
+              currentBackend.on('status', onExit);
+              currentBackend.stop();
+            }
           });
           mainWindow.loadFile('lifecycle.html');
+        } else if (currentBackend) {
+          currentBackend.stop();
         }
-        if (currentBackend) currentBackend.stop();
         setTimeout(() => app.quit(), {{shutdown_timeout}});
       }
       return;
