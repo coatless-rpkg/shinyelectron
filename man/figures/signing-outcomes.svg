@@ -3,6 +3,8 @@
     <filter id="so-shadow">
       <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
     </filter>
+    <clipPath id="so-label-clip"><rect width="100" height="96" rx="8"/></clipPath>
+    <clipPath id="so-card-clip"><rect width="300" height="96" rx="8"/></clipPath>
   </defs>
 
   <!-- Section label -->
@@ -21,7 +23,7 @@
   <!-- macOS row -->
   <g transform="translate(20, 72)">
     <rect width="100" height="96" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#so-shadow)"/>
-    <rect width="3" height="96" rx="1.5" fill="#3b82f6"/>
+    <rect width="3" height="96" fill="#3b82f6" clip-path="url(#so-label-clip)"/>
     <text x="56" y="42" text-anchor="middle" font-size="13" font-weight="700" fill="#1e293b">macOS</text>
     <text x="56" y="62" text-anchor="middle" font-size="10" fill="#64748b">Gatekeeper</text>
     <text x="56" y="78" text-anchor="middle" font-size="10" fill="#64748b">enforced</text>
@@ -30,7 +32,7 @@
   <!-- macOS without signing -->
   <g transform="translate(140, 72)" filter="url(#so-shadow)">
     <rect width="300" height="96" rx="8" fill="#fff" stroke="#fecaca" stroke-width="1.5"/>
-    <rect width="300" height="3" rx="1.5" fill="#ef4444"/>
+    <rect width="300" height="3" fill="#ef4444" clip-path="url(#so-card-clip)"/>
     <circle cx="28" cy="46" r="14" fill="#fef2f2" stroke="#fecaca" stroke-width="1.5"/>
     <text x="28" y="51" text-anchor="middle" font-size="14" font-weight="700" fill="#ef4444">!</text>
     <text x="54" y="40" font-size="12" font-weight="700" fill="#991b1b">Blocked by Gatekeeper</text>
@@ -41,7 +43,7 @@
   <!-- macOS with signing -->
   <g transform="translate(560, 72)" filter="url(#so-shadow)">
     <rect width="300" height="96" rx="8" fill="#fff" stroke="#bbf7d0" stroke-width="1.5"/>
-    <rect width="300" height="3" rx="1.5" fill="#10b981"/>
+    <rect width="300" height="3" fill="#10b981" clip-path="url(#so-card-clip)"/>
     <circle cx="28" cy="46" r="14" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
     <path d="M 22 46 L 27 51 L 35 41" stroke="#10b981" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
     <text x="54" y="40" font-size="12" font-weight="700" fill="#166534">Opens cleanly</text>
@@ -52,7 +54,7 @@
   <!-- Windows row -->
   <g transform="translate(20, 188)">
     <rect width="100" height="96" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#so-shadow)"/>
-    <rect width="3" height="96" rx="1.5" fill="#8b5cf6"/>
+    <rect width="3" height="96" fill="#8b5cf6" clip-path="url(#so-label-clip)"/>
     <text x="56" y="42" text-anchor="middle" font-size="13" font-weight="700" fill="#1e293b">Windows</text>
     <text x="56" y="62" text-anchor="middle" font-size="10" fill="#64748b">SmartScreen</text>
     <text x="56" y="78" text-anchor="middle" font-size="10" fill="#64748b">enforced</text>
@@ -61,7 +63,7 @@
   <!-- Windows without signing -->
   <g transform="translate(140, 188)" filter="url(#so-shadow)">
     <rect width="300" height="96" rx="8" fill="#fff" stroke="#fecaca" stroke-width="1.5"/>
-    <rect width="300" height="3" rx="1.5" fill="#ef4444"/>
+    <rect width="300" height="3" fill="#ef4444" clip-path="url(#so-card-clip)"/>
     <circle cx="28" cy="46" r="14" fill="#fef2f2" stroke="#fecaca" stroke-width="1.5"/>
     <text x="28" y="51" text-anchor="middle" font-size="14" font-weight="700" fill="#ef4444">!</text>
     <text x="54" y="40" font-size="12" font-weight="700" fill="#991b1b">SmartScreen warning</text>
@@ -72,7 +74,7 @@
   <!-- Windows with signing -->
   <g transform="translate(560, 188)" filter="url(#so-shadow)">
     <rect width="300" height="96" rx="8" fill="#fff" stroke="#bbf7d0" stroke-width="1.5"/>
-    <rect width="300" height="3" rx="1.5" fill="#10b981"/>
+    <rect width="300" height="3" fill="#10b981" clip-path="url(#so-card-clip)"/>
     <circle cx="28" cy="46" r="14" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
     <path d="M 22 46 L 27 51 L 35 41" stroke="#10b981" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
     <text x="54" y="40" font-size="12" font-weight="700" fill="#166534">Opens cleanly</text>
@@ -83,7 +85,7 @@
   <!-- Linux row -->
   <g transform="translate(20, 304)">
     <rect width="100" height="96" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" filter="url(#so-shadow)"/>
-    <rect width="3" height="96" rx="1.5" fill="#10b981"/>
+    <rect width="3" height="96" fill="#10b981" clip-path="url(#so-label-clip)"/>
     <text x="56" y="42" text-anchor="middle" font-size="13" font-weight="700" fill="#1e293b">Linux</text>
     <text x="56" y="62" text-anchor="middle" font-size="10" fill="#64748b">no OS</text>
     <text x="56" y="78" text-anchor="middle" font-size="10" fill="#64748b">enforcement</text>
@@ -92,7 +94,7 @@
   <!-- Linux without signing -->
   <g transform="translate(140, 304)" filter="url(#so-shadow)">
     <rect width="300" height="96" rx="8" fill="#fff" stroke="#fed7aa" stroke-width="1.5"/>
-    <rect width="300" height="3" rx="1.5" fill="#f59e0b"/>
+    <rect width="300" height="3" fill="#f59e0b" clip-path="url(#so-card-clip)"/>
     <circle cx="28" cy="46" r="14" fill="#fffbeb" stroke="#fed7aa" stroke-width="1.5"/>
     <text x="28" y="51" text-anchor="middle" font-size="14" font-weight="700" fill="#f59e0b">?</text>
     <text x="54" y="40" font-size="12" font-weight="700" fill="#92400e">Opens, unverifiable</text>
@@ -103,7 +105,7 @@
   <!-- Linux with signing -->
   <g transform="translate(560, 304)" filter="url(#so-shadow)">
     <rect width="300" height="96" rx="8" fill="#fff" stroke="#bbf7d0" stroke-width="1.5"/>
-    <rect width="300" height="3" rx="1.5" fill="#10b981"/>
+    <rect width="300" height="3" fill="#10b981" clip-path="url(#so-card-clip)"/>
     <circle cx="28" cy="46" r="14" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
     <path d="M 22 46 L 27 51 L 35 41" stroke="#10b981" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
     <text x="54" y="40" font-size="12" font-weight="700" fill="#166534">Opens, verifiable</text>

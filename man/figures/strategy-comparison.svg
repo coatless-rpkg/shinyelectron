@@ -3,6 +3,7 @@
     <filter id="sc-shadow">
       <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
     </filter>
+    <clipPath id="sc-card-clip"><rect width="180" height="56" rx="8"/></clipPath>
   </defs>
 
   <!-- Column headers -->
@@ -24,7 +25,7 @@
     <!-- Row label card -->
     <g transform="translate(24,0)" filter="url(#sc-shadow)">
       <rect width="180" height="56" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-      <rect width="4" height="56" rx="2" fill="#3b82f6"/>
+      <rect width="4" height="56" fill="#3b82f6" clip-path="url(#sc-card-clip)"/>
       <text x="100" y="24" text-anchor="middle" font-size="13" font-weight="600" fill="#2563eb">shinylive</text>
       <text x="100" y="42" text-anchor="middle" font-size="10" fill="#94a3b8">WebR or Pyodide</text>
     </g>
@@ -68,7 +69,7 @@
   <g transform="translate(0,146)">
     <g transform="translate(24,0)" filter="url(#sc-shadow)">
       <rect width="180" height="56" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-      <rect width="4" height="56" rx="2" fill="#8b5cf6"/>
+      <rect width="4" height="56" fill="#8b5cf6" clip-path="url(#sc-card-clip)"/>
       <text x="100" y="24" text-anchor="middle" font-size="13" font-weight="600" fill="#6d28d9">bundled</text>
       <text x="100" y="42" text-anchor="middle" font-size="10" fill="#94a3b8">portable runtime inside</text>
     </g>
@@ -109,7 +110,7 @@
   <g transform="translate(0,214)">
     <g transform="translate(24,0)" filter="url(#sc-shadow)">
       <rect width="180" height="56" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-      <rect width="4" height="56" rx="2" fill="#10b981"/>
+      <rect width="4" height="56" fill="#10b981" clip-path="url(#sc-card-clip)"/>
       <text x="100" y="24" text-anchor="middle" font-size="13" font-weight="600" fill="#047857">auto-download</text>
       <text x="100" y="42" text-anchor="middle" font-size="10" fill="#94a3b8">fetch + cache runtime</text>
     </g>
@@ -150,7 +151,7 @@
   <g transform="translate(0,282)">
     <g transform="translate(24,0)" filter="url(#sc-shadow)">
       <rect width="180" height="56" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-      <rect width="4" height="56" rx="2" fill="#f59e0b"/>
+      <rect width="4" height="56" fill="#f59e0b" clip-path="url(#sc-card-clip)"/>
       <text x="100" y="24" text-anchor="middle" font-size="13" font-weight="600" fill="#b45309">system</text>
       <text x="100" y="42" text-anchor="middle" font-size="10" fill="#94a3b8">user's own install</text>
     </g>
@@ -191,7 +192,7 @@
   <g transform="translate(0,350)">
     <g transform="translate(24,0)" filter="url(#sc-shadow)">
       <rect width="180" height="56" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-      <rect width="4" height="56" rx="2" fill="#64748b"/>
+      <rect width="4" height="56" fill="#64748b" clip-path="url(#sc-card-clip)"/>
       <text x="100" y="24" text-anchor="middle" font-size="13" font-weight="600" fill="#334155">container</text>
       <text x="100" y="42" text-anchor="middle" font-size="10" fill="#94a3b8">Docker or Podman</text>
     </g>

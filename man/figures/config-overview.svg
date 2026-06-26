@@ -3,12 +3,14 @@
     <filter id="co-shadow">
       <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
     </filter>
+    <clipPath id="co-root-clip"><rect width="240" height="56" rx="10"/></clipPath>
+    <clipPath id="co-card-clip"><rect width="152" height="44" rx="8"/></clipPath>
   </defs>
 
   <!-- Root node: the config file -->
   <g transform="translate(320, 20)" filter="url(#co-shadow)">
     <rect width="240" height="56" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="240" height="4" rx="2" fill="#1e293b"/>
+    <rect width="240" height="4" fill="#1e293b" clip-path="url(#co-root-clip)"/>
     <circle cx="24" cy="32" r="5" fill="#64748b"/>
     <text x="40" y="36" font-size="13" font-weight="700" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">_shinyelectron.yml</text>
   </g>
@@ -27,31 +29,31 @@
   <!-- Category nodes -->
   <g transform="translate(20, 120)" filter="url(#co-shadow)">
     <rect width="152" height="44" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="152" height="3" rx="1.5" fill="#3b82f6"/>
+    <rect width="152" height="3" fill="#3b82f6" clip-path="url(#co-card-clip)"/>
     <text x="76" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">METADATA</text>
   </g>
 
   <g transform="translate(192, 120)" filter="url(#co-shadow)">
     <rect width="152" height="44" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="152" height="3" rx="1.5" fill="#8b5cf6"/>
+    <rect width="152" height="3" fill="#8b5cf6" clip-path="url(#co-card-clip)"/>
     <text x="76" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">BUILD TARGETS</text>
   </g>
 
   <g transform="translate(364, 120)" filter="url(#co-shadow)">
     <rect width="152" height="44" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="152" height="3" rx="1.5" fill="#0ea5e9"/>
+    <rect width="152" height="3" fill="#0ea5e9" clip-path="url(#co-card-clip)"/>
     <text x="76" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">RUNTIME</text>
   </g>
 
   <g transform="translate(536, 120)" filter="url(#co-shadow)">
     <rect width="152" height="44" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="152" height="3" rx="1.5" fill="#10b981"/>
+    <rect width="152" height="3" fill="#10b981" clip-path="url(#co-card-clip)"/>
     <text x="76" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">USER INTERFACE</text>
   </g>
 
   <g transform="translate(708, 120)" filter="url(#co-shadow)">
     <rect width="152" height="44" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="152" height="3" rx="1.5" fill="#f59e0b"/>
+    <rect width="152" height="3" fill="#f59e0b" clip-path="url(#co-card-clip)"/>
     <text x="76" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">MULTI-APP SUITE</text>
   </g>
 

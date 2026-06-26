@@ -6,6 +6,7 @@
     <marker id="lc-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
       <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
     </marker>
+    <clipPath id="lc-card-clip"><rect width="210" height="200" rx="8"/></clipPath>
   </defs>
 
   <!-- Column headers -->
@@ -16,10 +17,10 @@
   <!-- Card 1: Splash -->
   <g transform="translate(20,34)" filter="url(#lc-shadow)">
     <rect width="210" height="200" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="210" height="3" rx="1.5" fill="#f59e0b"/>
+    <rect width="210" height="3" fill="#f59e0b" clip-path="url(#lc-card-clip)"/>
 
     <!-- Window chrome -->
-    <rect x="0" y="3" width="210" height="14" fill="#f8fafc"/>
+    <rect x="0" y="3" width="210" height="14" fill="#f8fafc" clip-path="url(#lc-card-clip)"/>
     <circle cx="10" cy="13" r="2" fill="#f87171"/>
     <circle cx="17" cy="13" r="2" fill="#fbbf24"/>
     <circle cx="24" cy="13" r="2" fill="#34d399"/>
@@ -45,10 +46,10 @@
   <!-- Card 2: Preloader -->
   <g transform="translate(275,34)" filter="url(#lc-shadow)">
     <rect width="210" height="200" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="210" height="3" rx="1.5" fill="#3b82f6"/>
+    <rect width="210" height="3" fill="#3b82f6" clip-path="url(#lc-card-clip)"/>
 
     <!-- Window chrome -->
-    <rect x="0" y="3" width="210" height="14" fill="#f8fafc"/>
+    <rect x="0" y="3" width="210" height="14" fill="#f8fafc" clip-path="url(#lc-card-clip)"/>
     <circle cx="10" cy="13" r="2" fill="#f87171"/>
     <circle cx="17" cy="13" r="2" fill="#fbbf24"/>
     <circle cx="24" cy="13" r="2" fill="#34d399"/>
@@ -74,10 +75,10 @@
   <!-- Card 3: Shiny app -->
   <g transform="translate(530,34)" filter="url(#lc-shadow)">
     <rect width="210" height="200" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="210" height="3" rx="1.5" fill="#16a34a"/>
+    <rect width="210" height="3" fill="#16a34a" clip-path="url(#lc-card-clip)"/>
 
     <!-- Window chrome -->
-    <rect x="0" y="3" width="210" height="14" fill="#f8fafc"/>
+    <rect x="0" y="3" width="210" height="14" fill="#f8fafc" clip-path="url(#lc-card-clip)"/>
     <circle cx="10" cy="13" r="2" fill="#f87171"/>
     <circle cx="17" cy="13" r="2" fill="#fbbf24"/>
     <circle cx="24" cy="13" r="2" fill="#34d399"/>

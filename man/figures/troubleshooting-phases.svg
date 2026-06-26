@@ -3,6 +3,7 @@
     <filter id="ts-shadow">
       <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
     </filter>
+    <clipPath id="ts-card-clip"><rect width="210" height="300" rx="8"/></clipPath>
   </defs>
 
   <!-- Column headers -->
@@ -13,7 +14,7 @@
   <!-- ============ INSTALL ============ -->
   <g transform="translate(20,34)" filter="url(#ts-shadow)">
     <rect width="210" height="300" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="210" height="3" rx="1.5" fill="#f59e0b"/>
+    <rect width="210" height="3" fill="#f59e0b" clip-path="url(#ts-card-clip)"/>
 
     <text x="105" y="28" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">Before any build</text>
     <text x="105" y="44" text-anchor="middle" font-size="9" fill="#94a3b8">runtimes, packages, compilers</text>
@@ -51,7 +52,7 @@
   <!-- ============ BUILD ============ -->
   <g transform="translate(275,34)" filter="url(#ts-shadow)">
     <rect width="210" height="300" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="210" height="3" rx="1.5" fill="#3b82f6"/>
+    <rect width="210" height="3" fill="#3b82f6" clip-path="url(#ts-card-clip)"/>
 
     <text x="105" y="28" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">During export()</text>
     <text x="105" y="44" text-anchor="middle" font-size="9" fill="#94a3b8">npm install, electron-builder</text>
@@ -87,7 +88,7 @@
   <!-- ============ RUNTIME ============ -->
   <g transform="translate(530,34)" filter="url(#ts-shadow)">
     <rect width="210" height="300" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="210" height="3" rx="1.5" fill="#16a34a"/>
+    <rect width="210" height="3" fill="#16a34a" clip-path="url(#ts-card-clip)"/>
 
     <text x="105" y="28" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">After packaging</text>
     <text x="105" y="44" text-anchor="middle" font-size="9" fill="#94a3b8">when the app launches</text>

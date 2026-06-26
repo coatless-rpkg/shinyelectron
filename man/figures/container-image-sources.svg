@@ -3,6 +3,7 @@
     <filter id="ci-shadow">
       <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
     </filter>
+    <clipPath id="ci-card-clip"><rect width="260" height="170" rx="10"/></clipPath>
   </defs>
 
   <!-- Section title -->
@@ -11,7 +12,7 @@
   <!-- Card 1: Built-in R -->
   <g transform="translate(20, 50)" filter="url(#ci-shadow)">
     <rect width="260" height="170" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="260" height="3" rx="1.5" fill="#3b82f6"/>
+    <rect width="260" height="3" fill="#3b82f6" clip-path="url(#ci-card-clip)"/>
     <text x="16" y="26" font-size="13" font-weight="700" fill="#3b82f6" letter-spacing="0.5">BUILT-IN R</text>
     <text x="16" y="44" font-size="11" fill="#64748b">Generated when type: r-shiny</text>
     <line x1="16" y1="54" x2="244" y2="54" stroke="#f1f5f9" stroke-width="1"/>
@@ -29,7 +30,7 @@
   <!-- Card 2: Built-in Python -->
   <g transform="translate(310, 50)" filter="url(#ci-shadow)">
     <rect width="260" height="170" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="260" height="3" rx="1.5" fill="#10b981"/>
+    <rect width="260" height="3" fill="#10b981" clip-path="url(#ci-card-clip)"/>
     <text x="16" y="26" font-size="13" font-weight="700" fill="#10b981" letter-spacing="0.5">BUILT-IN PYTHON</text>
     <text x="16" y="44" font-size="11" fill="#64748b">Generated when type: py-shiny</text>
     <line x1="16" y1="54" x2="244" y2="54" stroke="#f1f5f9" stroke-width="1"/>
@@ -45,7 +46,7 @@
   <!-- Card 3: Registry pull -->
   <g transform="translate(600, 50)" filter="url(#ci-shadow)">
     <rect width="260" height="170" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="260" height="3" rx="1.5" fill="#f59e0b"/>
+    <rect width="260" height="3" fill="#f59e0b" clip-path="url(#ci-card-clip)"/>
     <text x="16" y="26" font-size="13" font-weight="700" fill="#f59e0b" letter-spacing="0.5">REGISTRY PULL</text>
     <text x="16" y="44" font-size="11" fill="#64748b">Any image you publish</text>
     <line x1="16" y1="54" x2="244" y2="54" stroke="#f1f5f9" stroke-width="1"/>
