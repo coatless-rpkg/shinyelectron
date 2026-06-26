@@ -127,8 +127,20 @@ test_that("check_auto_update_status reports disabled status", {
   )
 
   result <- check_auto_update_status(tmp)
-  # Should be NULL or disabled
-  expect_true(is.null(result) || !isTRUE(result$enabled))
+  expect_type(result, "list")
+  expect_false(result$enabled)
+})
+
+test_that("enable_auto_updates aborts for unsupported providers s3 and generic", {
+  tmp <- withr::local_tempdir()
+  expect_error(
+    enable_auto_updates(tmp, provider = "s3"),
+    "not yet supported"
+  )
+  expect_error(
+    enable_auto_updates(tmp, provider = "generic"),
+    "not yet supported"
+  )
 })
 
 test_that("enable_auto_updates preserves existing config values", {
