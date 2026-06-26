@@ -63,3 +63,9 @@ test_that("validate_r_available returns the resolved Rscript path", {
   mockery::stub(validate_r_available, "Sys.which", function(...) "/usr/local/bin/Rscript")
   expect_equal(validate_r_available(), "/usr/local/bin/Rscript")
 })
+
+test_that("assert_safe_to_overwrite refuses protected dirs", {
+  expect_error(assert_safe_to_overwrite("/"), "protected")
+  expect_error(assert_safe_to_overwrite(normalizePath("~", mustWork = FALSE)), "protected")
+  expect_true(assert_safe_to_overwrite(withr::local_tempdir()))
+})

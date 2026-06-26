@@ -1,3 +1,25 @@
+#' Refuse to overwrite a protected directory
+#'
+#' Aborts with an informative error when `dir` resolves to a well-known
+#' system path (`~`, `/`, `R.home()`) or a path whose absolute form is
+#' three characters or fewer (covers drive roots such as `C:\` on Windows).
+#'
+#' @param dir Character string. Path to check.
+#' @return Invisible `TRUE` when the path is safe.
+#' @keywords internal
+assert_safe_to_overwrite <- function(dir) {
+  abs_dir <- normalizePath(dir, mustWork = FALSE)
+  protected <- c(
+    normalizePath("~", mustWork = FALSE),
+    normalizePath("/", mustWork = FALSE),
+    normalizePath(R.home(), mustWork = FALSE)
+  )
+  if (abs_dir %in% protected || nchar(abs_dir) <= 3) {
+    cli::cli_abort("Refusing to overwrite protected directory: {.path {dir}}")
+  }
+  invisible(TRUE)
+}
+
 #' Detect current platform
 #'
 #' @return Character string representing current platform ("win", "mac", or "linux")

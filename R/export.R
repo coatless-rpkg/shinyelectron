@@ -215,16 +215,7 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
       ))
     } else {
       if (verbose) cli::cli_alert_warning("Overwriting existing directory: {.path {destdir}}")
-      # Safety check: refuse to overwrite critical system directories
-      abs_dest <- normalizePath(destdir, mustWork = FALSE)
-      protected <- c(
-        normalizePath("~", mustWork = FALSE),
-        normalizePath("/", mustWork = FALSE),
-        normalizePath(R.home(), mustWork = FALSE)
-      )
-      if (abs_dest %in% protected || nchar(abs_dest) <= 3) {
-        cli::cli_abort("Refusing to overwrite protected directory: {.path {destdir}}")
-      }
+      assert_safe_to_overwrite(destdir)
       unlink(destdir, recursive = TRUE)
     }
   }

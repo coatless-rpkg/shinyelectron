@@ -6,10 +6,13 @@
 #' @param app_dir Character string. Path to the converted Shiny/shinylive application.
 #' @param output_dir Character string. Path where the built Electron app will be saved.
 #' @param app_name Character string. Name of the application. If NULL, uses the base name of app_dir.
-#' @param app_type Character string. Language of the Shiny app: `"r-shiny"` or
-#'   `"py-shiny"`. The legacy values `"r-shinylive"` / `"py-shinylive"` are
-#'   accepted with a deprecation warning and translate to the canonical
-#'   language plus `runtime_strategy = "shinylive"`.
+#' @param app_type Character string. Language of the Shiny app: `"r-shiny"`
+#'   (default) or `"py-shiny"`. Unlike `export()`, this function does **not**
+#'   autodetect the language from source files -- the default `"r-shiny"` is
+#'   used when `app_type` is not supplied. Supply `"py-shiny"` explicitly for
+#'   Python Shiny applications. The legacy values `"r-shinylive"` /
+#'   `"py-shinylive"` are accepted with a deprecation warning and translate to
+#'   the canonical language plus `runtime_strategy = "shinylive"`.
 #' @param runtime_strategy Character string. Runtime strategy: `"shinylive"`,
 #'   `"bundled"`, `"system"`, `"auto-download"`, or `"container"`. Default
 #'   `"shinylive"`.
@@ -122,6 +125,7 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
       ))
     } else {
       if (verbose) cli::cli_alert_warning("Overwriting existing directory: {.path {output_dir}}")
+      assert_safe_to_overwrite(output_dir)
       unlink(output_dir, recursive = TRUE)
     }
   }

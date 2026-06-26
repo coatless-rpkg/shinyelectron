@@ -26,10 +26,13 @@ build_electron_app(
 
 \item{app_name}{Character string. Name of the application. If NULL, uses the base name of app_dir.}
 
-\item{app_type}{Character string. Language of the Shiny app: \code{"r-shiny"} or
-\code{"py-shiny"}. The legacy values \code{"r-shinylive"} / \code{"py-shinylive"} are
-accepted with a deprecation warning and translate to the canonical
-language plus \code{runtime_strategy = "shinylive"}.}
+\item{app_type}{Character string. Language of the Shiny app: \code{"r-shiny"}
+(default) or \code{"py-shiny"}. Unlike \code{export()}, this function does \strong{not}
+autodetect the language from source files -- the default \code{"r-shiny"} is
+used when \code{app_type} is not supplied. Supply \code{"py-shiny"} explicitly for
+Python Shiny applications. The legacy values \code{"r-shinylive"} /
+\code{"py-shinylive"} are accepted with a deprecation warning and translate to
+the canonical language plus \code{runtime_strategy = "shinylive"}.}
 
 \item{runtime_strategy}{Character string. Runtime strategy: \code{"shinylive"},
 \code{"bundled"}, \code{"system"}, \code{"auto-download"}, or \code{"container"}. Default
