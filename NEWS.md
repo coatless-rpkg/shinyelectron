@@ -91,9 +91,10 @@
   hosts by resolving to `%SystemRoot%\System32\tar.exe` (bsdtar) explicitly.
 * Fixed Python download URL: `python-build-standalone` ships `.tar.gz` on all
   platforms, not `.zip` on Windows.
-* Fixed bundled R package installation: packages are now installed into the
-  portable R's own library with a scrubbed environment (`--vanilla`,
-  `R_LIBS_USER=""`).
+* Fixed bundled R package installation: packages are installed into a sibling
+  `runtime/library` directory alongside the portable R, not into the portable
+  R's own library. This avoids macOS hardened-runtime segfaults that occurred
+  when installing unsigned CRAN binaries directly into the bundled R tree.
 * Added post-copy entrypoint validation to catch file layout issues at build
   time instead of inside a running Electron app.
 
