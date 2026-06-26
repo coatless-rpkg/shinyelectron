@@ -191,7 +191,13 @@ export_multi_app <- function(appdir, destdir, config,
 
   if (open_after) {
     if (verbose) cli::cli_alert_info("Opening output directory...")
-    utils::browseURL(destdir)
+    tryCatch(
+      utils::browseURL(destdir),
+      error = function(e) cli::cli_warn(c(
+        "Could not open the output directory (the build output was kept).",
+        "i" = conditionMessage(e)
+      ))
+    )
   }
 
   result
