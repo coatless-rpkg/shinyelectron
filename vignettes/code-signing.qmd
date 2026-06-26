@@ -144,11 +144,11 @@ export(
 
 ## Linux: optional GPG signing
 
-**Cost:** free. Uses a GPG key you already control.
+**Cost:** free (GPG key).
 
-**What you need:** a GPG key whose private half lives on the build machine. Generate one with `gpg --full-generate-key` if you do not have one, and publish the public key where your users can find it (your website, a keyserver, or your GitHub profile).
+**Status: not yet implemented.** The `gpg_sign: true` flag and `GPG_KEY` environment variable are reserved for a future release. Setting them today produces only a console warning; no detached signature is attached to the AppImage. Linux AppImages run without any OS-enforced signature check, so the absence of GPG signing has no effect on whether the app launches.
 
-**Wiring it up.**
+**Configuration (reserved for future use).**
 
 ```bash
 export GPG_KEY="your-gpg-key-id"
@@ -161,7 +161,7 @@ signing:
     gpg_sign: true
 ```
 
-**Without signing:** nothing visibly changes. AppImage files do not require a signature to run, so most users never notice. Sign if your audience includes security-minded users who want to verify authenticity with `gpg --verify` before installing.
+**Without signing:** nothing visibly changes. AppImage files do not require a signature to run, so users can open the app without any additional steps.
 
 ## Signing in CI
 
@@ -222,7 +222,7 @@ One canonical table for every variable the signing pipeline reads.
 | `APPLE_ID` | macOS | Apple ID email used for notarization |
 | `APPLE_APP_SPECIFIC_PASSWORD` | macOS | App-specific password from `appleid.apple.com` |
 | `APPLE_TEAM_ID` | macOS | 10-character Apple Developer Team ID |
-| `GPG_KEY` | Linux | GPG key ID for AppImage signing |
+| `GPG_KEY` | Linux | GPG key ID for AppImage signing (reserved; not yet implemented) |
 
 ## Next steps
 
