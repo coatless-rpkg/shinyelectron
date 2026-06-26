@@ -447,31 +447,3 @@ install_nodejs <- function(version = NULL, platform = NULL, arch = NULL,
 
   invisible(install_dir)
 }
-
-#' Remove Node.js installation
-#'
-#' @param version Character version to remove. If NULL, removes all versions.
-#' @param verbose Logical whether to show progress. Default TRUE.
-#' @return Invisible NULL
-#' @keywords internal
-nodejs_remove <- function(version = NULL, verbose = TRUE) {
-  if (is.null(version)) {
-    # Remove all
-    base_path <- nodejs_install_path()
-    if (fs::dir_exists(base_path)) {
-      fs::dir_delete(base_path)
-      if (verbose) cli::cli_alert_success("Removed all Node.js installations")
-    }
-  } else {
-    # Remove specific version (all platforms)
-    base_path <- nodejs_install_path()
-    version_path <- fs::path(base_path, paste0("v", version))
-
-    if (fs::dir_exists(version_path)) {
-      fs::dir_delete(version_path)
-      if (verbose) cli::cli_alert_success("Removed Node.js v{version}")
-    }
-  }
-
-  invisible(NULL)
-}

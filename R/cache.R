@@ -72,21 +72,6 @@ cache_r_path <- function(version, platform, arch) {
   fs::path(cache_dir(), "r", platform, arch, version)
 }
 
-#' Get path to npm packages cache
-#'
-#' Determines the path to the cache directory for npm packages used by shinyelectron.
-#'
-#' @return Character string. The path to the npm packages cache.
-#'
-#' @section Details:
-#' The npm packages are cached at `cache_dir()/npm`. This allows for reuse
-#' of downloaded npm dependencies across multiple builds.
-#'
-#' @keywords internal
-cache_npm_path <- function() {
-  fs::path(cache_dir(), "npm")
-}
-
 #' Show cached runtime information
 #'
 #' Lists all cached runtimes (R, Python, Node.js) with their versions,

@@ -18,12 +18,3 @@ resolve_backend_module <- function(app_type, runtime_strategy) {
     ))
   )
 }
-
-#' Check if a backend requires Express dependencies
-#'
-#' @param backend_module Character string. The backend module filename.
-#' @return Logical.
-#' @keywords internal
-backend_needs_express <- function(backend_module) {
-  backend_module == "shinylive.js"
-}
