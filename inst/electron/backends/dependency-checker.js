@@ -39,9 +39,12 @@ async function checkMissingR(packages, rscript, libPath) {
   if (libPath) {
     // Escape backslashes and double quotes in libPath to prevent R code injection
     const safeLibPath = libPath.replace(/\\/g, '/').replace(/"/g, '\\"');
-    rCode = `cat(jsonlite::toJSON(setdiff(c(${pkgList}), rownames(installed.packages(lib.loc="${safeLibPath}")))))`;
+    // Use base R only -- no jsonlite required -- so this works with a bare R
+    // (e.g. system strategy with minimal packages).  cat() prints one package
+    // name per line; JS splits on newlines to get the missing list.
+    rCode = `cat(setdiff(c(${pkgList}), rownames(installed.packages(lib.loc="${safeLibPath}"))), sep="\\n")`;
   } else {
-    rCode = `cat(jsonlite::toJSON(setdiff(c(${pkgList}), rownames(installed.packages()))))`;
+    rCode = `cat(setdiff(c(${pkgList}), rownames(installed.packages())), sep="\\n")`;
   }
 
   try {
@@ -50,8 +53,9 @@ async function checkMissingR(packages, rscript, libPath) {
       timeout: 30000,
       stdio: ['ignore', 'pipe', 'pipe']
     });
-    const parsed = JSON.parse(result.trim());
-    return Array.isArray(parsed) ? parsed : [];
+    // Split on newlines; filter empty strings produced by a trailing newline
+    const lines = result.trim().split(/\r?\n/).filter(l => l.length > 0);
+    return lines;
   } catch (err) {
     console.warn('Failed to check R packages:', err.message);
     return packages;
