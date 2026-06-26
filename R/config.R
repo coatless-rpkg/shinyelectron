@@ -123,16 +123,22 @@ merge_config_deep <- function(defaults, config) {
     return(defaults)
   }
 
+  # Only recurse into map-like (fully named) lists. Unnamed YAML sequences
+  # (repos, index_urls, package lists) and scalars must override the default
+  # wholesale; recursing into them would iterate an empty `names()` and
+  # silently return the default, discarding the user's value.
+  is_named_list <- function(x) {
+    is.list(x) && !is.null(names(x)) && all(nzchar(names(x)))
+  }
+
   result <- defaults
 
   for (name in names(config)) {
     if (name %in% names(defaults) &&
-        is.list(defaults[[name]]) &&
-        is.list(config[[name]])) {
-      # Recursively merge nested lists
+        is_named_list(defaults[[name]]) &&
+        is_named_list(config[[name]])) {
       result[[name]] <- merge_config_deep(defaults[[name]], config[[name]])
     } else {
-      # Override with config value
       result[[name]] <- config[[name]]
     }
   }
