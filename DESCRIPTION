@@ -8,10 +8,10 @@ Authors@R: c(
             comment = c(ORCID = "0000-0003-2826-8458")
            )
     )
-Description: Provides tools to export Shiny applications as standalone desktop
-    applications using Electron. This allows Shiny applications to run as native
-    desktop applications on Windows, Mac, and Linux without requiring users to
-    have R installed.
+Description: Provides tools to export R or Python Shiny applications as
+    standalone desktop applications using Electron. Applications run natively
+    on Windows, macOS, and Linux; depending on the runtime strategy chosen,
+    end users do not need R or Python installed on their machine.
 License: AGPL (>= 3)
 URL: https://r-pkg.thecoatlessprofessor.com/shinyelectron/, https://github.com/coatless-rpkg/shinyelectron
 BugReports: https://github.com/coatless-rpkg/shinyelectron/issues
