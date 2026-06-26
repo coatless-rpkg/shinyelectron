@@ -73,13 +73,15 @@ function isPortAvailable(port) {
 }
 
 /**
- * Find an available port starting from the given port.
- * @param {number} startPort - Port to start searching from.
- * @param {number} maxRetries - Maximum number of ports to try.
- * @param {function} onConflict - Optional callback: (attempted, next) => void
+ * Find an available port.
+ * Tries the requested port first; if taken, asks the OS for a random free
+ * port (port 0).  This avoids collisions when multiple shinyelectron apps
+ * run simultaneously without needing a manual retry loop.
+ * @param {number} startPort - Preferred port.
+ * @param {function} [onConflict] - Optional callback: (attempted, assigned) => void
  * @returns {Promise<number>} An available port.
  */
-async function findAvailablePort(startPort, maxRetries = 10, onConflict) {
+async function findAvailablePort(startPort, onConflict) {
   // First try the requested port
   if (await isPortAvailable(startPort)) return startPort;
   if (onConflict) onConflict(startPort, startPort + 1);

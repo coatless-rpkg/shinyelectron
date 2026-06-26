@@ -364,7 +364,6 @@ class NativeRBackend extends EventEmitter {
     // Find an available port, retrying on conflicts
     const actualPort = await findAvailablePort(
       port,
-      config?.port_retry_count || 10,
       (attempted, next) => {
         this.emit('status', { phase: 'port_conflict', message: `Port ${attempted} in use, trying ${next}...` });
       }

@@ -368,8 +368,8 @@ class NativePyBackend extends EventEmitter {
       }
     }
 
-    // Port retry: find an available port starting from the requested one
-    const actualPort = await findAvailablePort(port, config?.port_retry_count || 10, (attempted, next) => {
+    // Find an available port (prefers the requested port; falls back to OS-assigned)
+    const actualPort = await findAvailablePort(port, (attempted, next) => {
       logDebug(`Port ${attempted} is in use, trying ${next}...`);
       this.emit('status', { phase: 'port_conflict', message: `Port ${attempted} in use, trying ${next}...`, attempted, next });
     });
