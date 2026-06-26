@@ -53,21 +53,33 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
   }
 
   # --- Read config ---
-  config <- tryCatch({
-    cfg <- read_config(appdir)
-    if (verbose) {
-      if (!is.null(find_config(appdir))) {
-        cli::cli_alert_success("Config: {.file _shinyelectron.yml} valid")
-      } else {
-        cli::cli_alert_info("Config: no {.file _shinyelectron.yml} (using defaults)")
+  # read_config converts YAML parse errors into R warnings (via cli::cli_warn)
+  # rather than re-throwing them, so we need withCallingHandlers to capture
+  # those warnings in addition to the tryCatch for any unexpected hard errors.
+  config_parse_ok <- TRUE
+  config <- tryCatch(
+    withCallingHandlers({
+      cfg <- read_config(appdir)
+      if (verbose) {
+        if (config_parse_ok && !is.null(find_config(appdir))) {
+          cli::cli_alert_success("Config: {.file _shinyelectron.yml} valid")
+        } else if (is.null(find_config(appdir))) {
+          cli::cli_alert_info("Config: no {.file _shinyelectron.yml} (using defaults)")
+        }
       }
+      cfg
+    }, warning = function(w) {
+      config_parse_ok <<- FALSE
+      warnings <<- c(warnings, paste0("Config error: ", conditionMessage(w)))
+      if (verbose) cli::cli_alert_warning("Config: {conditionMessage(w)}")
+      invokeRestart("muffleWarning")
+    }),
+    error = function(e) {
+      warnings <<- c(warnings, paste0("Config error: ", e$message))
+      if (verbose) cli::cli_alert_warning("Config: {e$message}")
+      list()
     }
-    cfg
-  }, error = function(e) {
-    warnings <- c(warnings, paste0("Config error: ", e$message))
-    if (verbose) cli::cli_alert_warning("Config: {e$message}")
-    list()
-  })
+  )
 
   # Resolve parameters. Order: function arg > config > autodetect (type)
   # or default (strategy).

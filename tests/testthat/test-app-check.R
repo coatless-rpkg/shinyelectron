@@ -67,6 +67,14 @@ test_that("app_check detects dependencies", {
   expect_true(any(grepl("shiny|ggplot2", result$info)))
 })
 
+test_that("app_check surfaces a config parse error as a warning", {
+  appdir <- withr::local_tempdir()
+  writeLines("library(shiny); shinyApp(fluidPage(), function(i,o){})", file.path(appdir, "app.R"))
+  writeLines("build: : : not yaml", file.path(appdir, "_shinyelectron.yml"))
+  res <- app_check(appdir, verbose = FALSE)
+  expect_true(any(grepl("Config error", unlist(res$warnings))))
+})
+
 test_that("app_check returns correct structure", {
   tmpdir <- tempfile()
   dir.create(tmpdir)
