@@ -32,11 +32,11 @@ sitrep_shinyelectron()
 -------------------------------------------------------------------------------
 
 -- System Requirements Report -----------------------------------------------
-v Platform: darwin
+v Platform: mac
 v Architecture: arm64
 v Local Node.js (shinyelectron): v22.11.0
 v Active Node.js: v22.11.0 (local)
-v npm: v10.9.0
+v npm: v11.5.0
 v R: v4.4.2
 
 -- Python
@@ -66,7 +66,7 @@ v All required dependencies satisfied
 -------------------------------------------------------------------------------
 
 -- Build Tools Report -------------------------------------------------------
-i Checking build tools for platform: darwin
+i Checking build tools for platform: mac
 v Xcode Command Line Tools: Found
 v Build tools ready
 -------------------------------------------------------------------------------
@@ -136,13 +136,6 @@ Pick one:
    ```
 
 2. Install from <https://nodejs.org/>.
-
-3. Enable auto-install in `_shinyelectron.yml`.
-
-   ```yaml
-   nodejs:
-     auto_install: true
-   ```
 
 ### Node.js version too old
 
