@@ -201,3 +201,64 @@ test_that("process_templates creates launcher.html for multi-app", {
   expect_true("launcher.html" %in% pkg$build$files)
   expect_true("apps-manifest.json" %in% pkg$build$files)
 })
+
+# --- run_after failure must not delete a successful build (multi-app) ---
+
+test_that("export_multi_app keeps build output when run_after fails", {
+  skip_if_not_installed("mockery")
+
+  # Build a minimal multi-app fixture that passes validate_multi_app_config.
+  appdir <- withr::local_tempdir()
+  dir.create(file.path(appdir, "apps", "dash"), recursive = TRUE)
+  dir.create(file.path(appdir, "apps", "admin"), recursive = TRUE)
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "apps", "dash", "app.R"))
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "apps", "admin", "app.R"))
+
+  yaml::write_yaml(list(
+    app = list(name = "Test Suite", version = "1.0.0"),
+    build = list(type = "r-shiny", runtime_strategy = "system"),
+    apps = list(
+      list(id = "dash",  name = "Dashboard", path = "./apps/dash"),
+      list(id = "admin", name = "Admin",     path = "./apps/admin")
+    )
+  ), file.path(appdir, "_shinyelectron.yml"))
+
+  config <- read_config(appdir)
+  destdir <- withr::local_tempdir()
+
+  # Stub build_multi_app to avoid real npm/Electron work; simulate a
+  # successful build by creating the expected electron-app directory.
+  mockery::stub(export_multi_app, "build_multi_app", function(...) {
+    d <- file.path(destdir, "electron-app")
+    fs::dir_create(d)
+    d
+  })
+  # Stub run_electron_app to simulate a non-zero Electron exit.
+  mockery::stub(export_multi_app, "run_electron_app",
+                function(...) stop("electron exited 1"))
+
+  expect_warning(
+    export_multi_app(
+      appdir          = appdir,
+      destdir         = destdir,
+      config          = config,
+      app_name        = "Test Suite",
+      runtime_strategy = NULL,
+      sign            = FALSE,
+      platform        = NULL,
+      arch            = NULL,
+      icon            = NULL,
+      overwrite       = TRUE,
+      build           = TRUE,
+      run_after       = TRUE,
+      open_after      = FALSE,
+      verbose         = FALSE
+    ),
+    "exited with an error"
+  )
+
+  # The build directory must survive the failed run_electron_app call.
+  expect_true(fs::dir_exists(file.path(destdir, "electron-app")))
+})
