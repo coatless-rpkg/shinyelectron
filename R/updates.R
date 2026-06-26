@@ -233,7 +233,7 @@ check_auto_update_status <- function(appdir) {
 
   cli::cli_h2("Auto-Update Status")
 
-  if (is.null(config$updates) || !isTRUE(config$updates$enabled)) {
+  if (!isTRUE(config$updates$enabled)) {
     cli::cli_alert_warning("Auto-updates are {.strong disabled}")
     cli::cli_alert_info("Enable with: {.code shinyelectron::enable_auto_updates(appdir, owner = '...', repo = '...')}")
     return(invisible(config$updates))

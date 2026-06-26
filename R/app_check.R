@@ -165,15 +165,13 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
         if (verbose) cli::cli_alert_success("Python: available")
 
         # Check that Shiny for Python is installed
-        if (app_type == "py-shiny") {
-          tryCatch({
-            ver <- validate_python_shiny_installed()
-            if (verbose) cli::cli_alert_success("Python shiny: {ver}")
-          }, error = function(e) {
-            errors <<- c(errors, e$message)
-            if (verbose) cli::cli_alert_danger("Python shiny: {e$message}")
-          })
-        }
+        tryCatch({
+          ver <- validate_python_shiny_installed()
+          if (verbose) cli::cli_alert_success("Python shiny: {ver}")
+        }, error = function(e) {
+          errors <<- c(errors, e$message)
+          if (verbose) cli::cli_alert_danger("Python shiny: {e$message}")
+        })
       }, error = function(e) {
         errors <<- c(errors, e$message)
         if (verbose) cli::cli_alert_danger("Python: {e$message}")

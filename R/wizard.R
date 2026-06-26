@@ -168,9 +168,7 @@ wizard <- function(appdir = ".") {
     build = list(type = app_type, platforms = platforms)
   )
 
-  if (!is.null(runtime_strategy)) {
-    config$build$runtime_strategy <- runtime_strategy
-  }
+  config$build$runtime_strategy <- runtime_strategy
 
   config$window <- list(width = width, height = height)
   config$server <- list(port = port)

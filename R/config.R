@@ -37,8 +37,7 @@ default_config <- function() {
       linux = NULL
     ),
     nodejs = list(
-      version = NULL,
-      auto_install = FALSE
+      version = NULL
     ),
     dependencies = SHINYELECTRON_DEFAULTS$dependencies,
     container = SHINYELECTRON_DEFAULTS$container,
