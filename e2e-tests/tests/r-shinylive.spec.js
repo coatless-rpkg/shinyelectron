@@ -29,7 +29,8 @@ test.describe('R Shinylive', () => {
     electronDir = buildApp({
       appdir: APP_DIR,
       destdir: BUILD_DIR,
-      app_type: 'r-shinylive',
+      app_type: 'r-shiny',
+      runtime_strategy: 'shinylive',
     });
   });
 

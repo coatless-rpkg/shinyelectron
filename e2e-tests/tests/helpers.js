@@ -8,8 +8,9 @@ const fs = require('fs');
  * @param {object} options
  * @param {string} options.appdir - Path to the Shiny app directory.
  * @param {string} options.destdir - Path to the output directory.
- * @param {string} [options.app_type] - App type (default: 'r-shiny').
- * @param {string} [options.runtime_strategy] - Runtime strategy (default: 'system').
+ * @param {string} [options.app_type] - App type: 'r-shiny' or 'py-shiny' (default: 'r-shiny').
+ * @param {string} [options.runtime_strategy] - Runtime strategy: 'system', 'bundled',
+ *   'auto-download', 'container', or 'shinylive' (default: 'system').
  * @returns {string} Path to the electron-app directory.
  */
 function buildApp({ appdir, destdir, app_type = 'r-shiny', runtime_strategy }) {
@@ -18,11 +19,7 @@ function buildApp({ appdir, destdir, app_type = 'r-shiny', runtime_strategy }) {
     fs.rmSync(destdir, { recursive: true });
   }
 
-  // Shinylive types don't use runtime_strategy; native types default to 'system'
-  const isShinylive = app_type.endsWith('-shinylive');
-  const strategyArg = isShinylive
-    ? ''
-    : `runtime_strategy = "${runtime_strategy || 'system'}",`;
+  const strategyArg = `runtime_strategy = "${runtime_strategy || 'system'}",`;
 
   const rCode = `
     devtools::load_all("${path.resolve(__dirname, '..', '..')}");

@@ -33,7 +33,8 @@ app = App(app_ui, server)
     electronDir = buildApp({
       appdir: APP_DIR,
       destdir: BUILD_DIR,
-      app_type: 'py-shinylive',
+      app_type: 'py-shiny',
+      runtime_strategy: 'shinylive',
     });
   });
 
