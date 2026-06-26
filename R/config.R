@@ -315,7 +315,7 @@ validate_config <- function(config) {
     cli::cli_warn(c(
       "Invalid container engine in config: {.val {config$container$engine}}",
       "i" = "Valid engines: {.val {valid_engines}}",
-      "i" = "Falling back to {.val docker}"
+      "i" = "Falling back to the default engine ({.val {SHINYELECTRON_DEFAULTS$container$engine}})"
     ))
     config$container$engine <- NULL
   }
