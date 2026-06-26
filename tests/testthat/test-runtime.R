@@ -160,6 +160,37 @@ test_that("generate_python_runtime_manifest creates valid JSON", {
   expect_equal(parsed$arch, "arm64")
 })
 
+# --- install_nodejs: atomic extraction preserves prior install on failure ---
+
+test_that("install_nodejs preserves prior install when extraction fails", {
+  tmp <- withr::local_tempdir()
+  # Build a realistic install_dir path matching nodejs_install_path() layout.
+  install_dir <- file.path(tmp, "nodejs", "v22.0.0", "darwin-arm64")
+  dir.create(install_dir, recursive = TRUE)
+  # Sentinel file representing a working prior install.
+  writeLines("prior", file.path(install_dir, "node"))
+
+  # Stub platform/arch detection and path resolution to use tmp.
+  mockery::stub(install_nodejs, "detect_current_platform", function() "mac")
+  mockery::stub(install_nodejs, "detect_current_arch", function() "arm64")
+  mockery::stub(install_nodejs, "nodejs_install_path",
+                function(v, p, a) file.path(tmp, "nodejs", paste0("v", v), "darwin-arm64"))
+  mockery::stub(install_nodejs, "utils::download.file",
+                function(url, dest, ...) invisible(file.create(dest)))
+  mockery::stub(install_nodejs, "nodejs_download_checksums", function(v) character(0))
+  # Stub extraction to fail so we can confirm prior install is untouched.
+  mockery::stub(install_nodejs, "utils::untar",
+                function(...) stop("simulated extraction failure"))
+
+  expect_error(
+    install_nodejs(version = "22.0.0", force = TRUE, verbose = FALSE),
+    "simulated extraction failure"
+  )
+
+  # The sentinel from the prior install must still be present.
+  expect_true(file.exists(file.path(install_dir, "node")))
+})
+
 # --- download_and_extract_portable_tool: abort when executable missing ---
 
 test_that("download_and_extract_portable_tool aborts (not warns) when executable not found", {

@@ -375,36 +375,49 @@ install_nodejs <- function(version = NULL, platform = NULL, arch = NULL,
     if (verbose) cli::cli_alert_success("Checksum verified")
   }
 
-  # Extract archive
+  # Extract archive atomically: extract into a staging directory first, then
+  # swap into place only on success.  This preserves the prior install if a
+  # forced reinstall fails mid-extraction.
   if (verbose) cli::cli_alert_info("Extracting archive...")
 
-  # Ensure parent directory exists
-  fs::dir_create(dirname(install_dir), recurse = TRUE)
-
-  # Remove existing if force reinstall
-  if (fs::dir_exists(install_dir)) {
-    unlink(install_dir, recursive = TRUE)
-  }
+  staging_dir <- paste0(install_dir, ".staging-", Sys.getpid())
+  if (fs::dir_exists(staging_dir)) unlink(staging_dir, recursive = TRUE)
+  fs::dir_create(staging_dir, recurse = TRUE)
+  on.exit(unlink(staging_dir, recursive = TRUE), add = TRUE)
 
   if (platform == "win") {
-    utils::unzip(archive_path, exdir = dirname(install_dir))
-    # Find extracted directory name
+    tryCatch(
+      utils::unzip(archive_path, exdir = staging_dir),
+      error = function(e) cli::cli_abort(c(
+        "Failed to extract Node.js v{version}",
+        "x" = "Error: {e$message}"
+      ))
+    )
     extracted_name <- gsub("\\.zip$", "", filename)
-    extracted_path <- fs::path(dirname(install_dir), extracted_name)
-
-    if (fs::dir_exists(extracted_path)) {
-      fs::file_move(extracted_path, install_dir)
-    }
   } else {
-    utils::untar(archive_path, exdir = dirname(install_dir), tar = "internal")
-    # Find extracted directory name
+    tryCatch(
+      utils::untar(archive_path, exdir = staging_dir, tar = "internal"),
+      error = function(e) cli::cli_abort(c(
+        "Failed to extract Node.js v{version}",
+        "x" = "Error: {e$message}"
+      ))
+    )
     extracted_name <- gsub("\\.tar\\.gz$", "", filename)
-    extracted_path <- fs::path(dirname(install_dir), extracted_name)
-
-    if (fs::dir_exists(extracted_path)) {
-      fs::file_move(extracted_path, install_dir)
-    }
   }
+  extracted_path <- fs::path(staging_dir, extracted_name)
+
+  if (!fs::dir_exists(extracted_path)) {
+    cli::cli_abort(c(
+      "Failed to extract Node.js v{version}",
+      "x" = "Expected directory not found in archive",
+      "i" = "Expected: {.path {extracted_path}}"
+    ))
+  }
+
+  # Atomic swap: destroy the old install only after staging is ready.
+  fs::dir_create(dirname(install_dir), recurse = TRUE)
+  if (fs::dir_exists(install_dir)) unlink(install_dir, recursive = TRUE)
+  fs::file_move(extracted_path, install_dir)
 
   # Verify installation (against the target platform/arch, not the host)
   node_exe <- nodejs_executable(version, platform, arch)
