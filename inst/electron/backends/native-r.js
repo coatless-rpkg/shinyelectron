@@ -302,11 +302,11 @@ class NativeRBackend extends EventEmitter {
       const prefs = checker.readPreferences(appSlug);
       let libPath = checker.resolveLibPath(appSlug, config, prefs);
 
-      // Include bundled library if it exists
-      const bundledLibCheck = path.join(appBasePath, 'runtime', 'R', 'library');
-      const checkLibPath = fs.existsSync(bundledLibCheck) ? bundledLibCheck : libPath;
-
-      const missing = await checker.checkMissingR(manifest.packages, rscript, checkLibPath);
+      // Pass the user lib path directly.  The bundled-R branch (isBundled) is
+      // handled above by skipping this block entirely; when !isBundled the
+      // runtime/R tree does not exist so a bundledLibCheck would always be
+      // false -- that dead check has been removed.
+      const missing = await checker.checkMissingR(manifest.packages, rscript, libPath);
 
       if (missing.length > 0) {
         const promptBeforeInstall = config?.prompt_before_install ?? false;
