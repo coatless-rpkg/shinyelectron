@@ -10,12 +10,12 @@ check_auto_update_status(appdir)
 \item{appdir}{Character path to app directory}
 }
 \value{
-Invisibly returns the \code{updates} configuration list, with elements
-\code{enabled} (logical), \code{provider} (character or NULL),
-\code{check_on_startup}, \code{auto_download}, \code{auto_install}
-(logical), and, for the GitHub provider, \code{github} (a list with
-\code{owner}, \code{repo}, \code{private}). Returns NULL when no
-\code{updates} section is present.
+Invisibly returns the \code{updates} configuration list, which is always
+present because \code{read_config()} deep-merges defaults. Elements include
+\code{enabled} (logical, \code{FALSE} by default when auto-updates have never been
+enabled), \code{provider} (character), \code{check_on_startup}, \code{auto_download},
+\code{auto_install} (logical), and, for the GitHub provider, \code{github} (a list
+with \code{owner}, \code{repo}, \code{private}).
 }
 \description{
 Reports the current auto-update configuration status.

@@ -1,8 +1,8 @@
 #' Enable Auto-Updates
 #'
 #' Configures automatic update checking for your Electron application.
-#' Updates are distributed via GitHub Releases, S3 buckets, or generic
-#' HTTP servers.
+#' GitHub Releases is the only provider supported today. S3 and Generic HTTP
+#' providers are planned and will be added in a future release.
 #'
 #' @param appdir Character path to app directory containing `_shinyelectron.yml`
 #' @param provider Character update provider. Currently only `"github"` is
@@ -30,16 +30,20 @@
 #' - Requires `owner` and `repo` parameters
 #' - Private repos require `GH_TOKEN` environment variable
 #'
-#' **S3 Bucket**:
+#' **S3 Bucket** (planned, not yet supported):
 #' - For self-hosted updates behind a CDN
 #' - Configure bucket, region, and path in `_shinyelectron.yml`
 #' - Bucket must allow public reads or use CloudFront signed URLs
 #' - Required bucket structure: `/{path}/latest-mac.yml`, `latest-linux.yml`, `latest.yml`
+#' - Note: `enable_auto_updates()` currently rejects `"s3"` as a provider;
+#'   S3 support will be added in a future release.
 #'
-#' **Generic HTTP Server**:
+#' **Generic HTTP Server** (planned, not yet supported):
 #' - For any HTTP server hosting update files
 #' - Configure base URL in `_shinyelectron.yml`
 #' - Server must host `latest-mac.yml`, `latest-linux.yml`, `latest.yml` at the URL root
+#' - Note: `enable_auto_updates()` currently rejects `"generic"` as a provider;
+#'   Generic HTTP support will be added in a future release.
 #'
 #' ## Publishing Updates (GitHub Releases)
 #'
@@ -209,12 +213,12 @@ disable_auto_updates <- function(appdir, verbose = TRUE) {
 #'
 #' @param appdir Character path to app directory
 #'
-#' @return Invisibly returns the `updates` configuration list, with elements
-#'   `enabled` (logical), `provider` (character or NULL),
-#'   `check_on_startup`, `auto_download`, `auto_install`
-#'   (logical), and, for the GitHub provider, `github` (a list with
-#'   `owner`, `repo`, `private`). Returns NULL when no
-#'   `updates` section is present.
+#' @return Invisibly returns the `updates` configuration list, which is always
+#'   present because `read_config()` deep-merges defaults. Elements include
+#'   `enabled` (logical, `FALSE` by default when auto-updates have never been
+#'   enabled), `provider` (character), `check_on_startup`, `auto_download`,
+#'   `auto_install` (logical), and, for the GitHub provider, `github` (a list
+#'   with `owner`, `repo`, `private`).
 #'
 #' @examples
 #' \dontrun{

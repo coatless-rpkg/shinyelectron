@@ -39,8 +39,8 @@ Invisibly returns the path to the updated config file.
 }
 \description{
 Configures automatic update checking for your Electron application.
-Updates are distributed via GitHub Releases, S3 buckets, or generic
-HTTP servers.
+GitHub Releases is the only provider supported today. S3 and Generic HTTP
+providers are planned and will be added in a future release.
 }
 \details{
 Auto-updates require:
@@ -58,19 +58,23 @@ Auto-updates require:
 \item Private repos require \code{GH_TOKEN} environment variable
 }
 
-\strong{S3 Bucket}:
+\strong{S3 Bucket} (planned, not yet supported):
 \itemize{
 \item For self-hosted updates behind a CDN
 \item Configure bucket, region, and path in \verb{_shinyelectron.yml}
 \item Bucket must allow public reads or use CloudFront signed URLs
 \item Required bucket structure: \verb{/\{path\}/latest-mac.yml}, \code{latest-linux.yml}, \code{latest.yml}
+\item Note: \code{enable_auto_updates()} currently rejects \code{"s3"} as a provider;
+S3 support will be added in a future release.
 }
 
-\strong{Generic HTTP Server}:
+\strong{Generic HTTP Server} (planned, not yet supported):
 \itemize{
 \item For any HTTP server hosting update files
 \item Configure base URL in \verb{_shinyelectron.yml}
 \item Server must host \code{latest-mac.yml}, \code{latest-linux.yml}, \code{latest.yml} at the URL root
+\item Note: \code{enable_auto_updates()} currently rejects \code{"generic"} as a provider;
+Generic HTTP support will be added in a future release.
 }
 }
 
