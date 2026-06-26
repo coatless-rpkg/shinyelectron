@@ -100,6 +100,7 @@ function scheduleSaveWindowState() {
 }
 {{#tray_enabled}}
 let tray = null;
+let trayMenu = null;
 {{/tray_enabled}}
 
 {{#tray_enabled}}
@@ -118,7 +119,7 @@ function createTray() {
   tray = new Tray(trayIcon);
   tray.setToolTip('{{tray_tooltip}}');
 
-  const contextMenu = Menu.buildFromTemplate([
+  trayMenu = Menu.buildFromTemplate([
     {
       label: 'Status: Starting...',
       enabled: false,
@@ -144,7 +145,7 @@ function createTray() {
     }
   ]);
 
-  tray.setContextMenu(contextMenu);
+  tray.setContextMenu(trayMenu);
 
   tray.on('double-click', () => {
     if (mainWindow) {
@@ -530,6 +531,18 @@ function createWindow() {
       else if (data.phase === 'checking_packages') statusText = 'Checking packages...';
 
       tray.setToolTip('{{app_name}} - ' + statusText);
+      // Also update the Status menu item label so the context menu reflects
+      // the current state (guards against older Electron builds missing
+      // getMenuItemById by wrapping in try/catch).
+      try {
+        if (trayMenu) {
+          const statusItem = trayMenu.getMenuItemById('status');
+          if (statusItem) {
+            statusItem.label = 'Status: ' + statusText;
+            tray.setContextMenu(trayMenu);
+          }
+        }
+      } catch { /* menu update is best-effort */ }
     }
     {{/tray_enabled}}
   });
@@ -582,6 +595,28 @@ function createWindow() {
       }
       if (data.phase === 'server_ready') serverRunning = true;
       if (data.phase === 'stopping_server' || data.phase === 'error' || data.phase === 'server_crashed') serverRunning = false;
+      // Update tray status for multi-app mode (mirrors the single-app handler)
+      {{#tray_enabled}}
+      if (tray) {
+        var statusText = 'Starting...';
+        if (data.phase === 'server_ready') statusText = 'Running';
+        else if (data.phase === 'error' || data.phase === 'server_crashed') statusText = 'Error';
+        else if (data.phase === 'shutting_down') statusText = 'Shutting down...';
+        else if (data.phase === 'finding_runtime') statusText = 'Finding runtime...';
+        else if (data.phase === 'installing_packages') statusText = 'Installing packages...';
+        else if (data.phase === 'checking_packages') statusText = 'Checking packages...';
+        tray.setToolTip('{{app_name}} - ' + statusText);
+        try {
+          if (trayMenu) {
+            var statusItem = trayMenu.getMenuItemById('status');
+            if (statusItem) {
+              statusItem.label = 'Status: ' + statusText;
+              tray.setContextMenu(trayMenu);
+            }
+          }
+        } catch { /* menu update is best-effort */ }
+      }
+      {{/tray_enabled}}
     });
     // Defensive: never let an 'error' event with no listener crash the process.
     currentBackend.on('error', function(err) {
