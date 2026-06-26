@@ -298,6 +298,20 @@ validate_config <- function(config) {
     }
   }
 
+  # Validate container engine against the canonical set. An invalid value in
+  # the config file warns and falls back to the default rather than aborting
+  # the build later (mirrors the runtime_strategy check above).
+  valid_engines <- SHINYELECTRON_DEFAULTS$valid_container_engines
+  if (!is.null(config$container) && !is.null(config$container$engine) &&
+      !config$container$engine %in% valid_engines) {
+    cli::cli_warn(c(
+      "Invalid container engine in config: {.val {config$container$engine}}",
+      "i" = "Valid engines: {.val {valid_engines}}",
+      "i" = "Falling back to {.val docker}"
+    ))
+    config$container$engine <- NULL
+  }
+
   config
 }
 

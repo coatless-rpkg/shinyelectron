@@ -57,3 +57,27 @@ test_that("validate_container_available errors when no engine found", {
   mockery::stub(validate_container_available, "detect_container_engine", function(...) NULL)
   expect_error(validate_container_available(), "Docker.*Podman")
 })
+
+test_that("validate_config warns on invalid container.engine and resets to NULL", {
+  cfg <- list(container = list(engine = "nope"))
+  result <- expect_warning(
+    validate_config(cfg),
+    "engine"
+  )
+  expect_null(result$container$engine)
+})
+
+test_that("validate_config passes valid container engines unchanged", {
+  for (eng in c("docker", "podman")) {
+    cfg <- list(container = list(engine = eng))
+    result <- cfg
+    expect_no_warning(result <- validate_config(cfg))
+    expect_equal(result$container$engine, eng)
+  }
+})
+
+test_that("validate_config is unaffected when container section is absent", {
+  cfg <- list(build = list(type = "r-shiny"))
+  expect_no_warning(result <- validate_config(cfg))
+  expect_null(result$container)
+})
