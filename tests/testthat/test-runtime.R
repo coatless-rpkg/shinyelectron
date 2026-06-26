@@ -229,6 +229,129 @@ test_that("install_nodejs preserves prior install when node binary missing from 
 
 # --- download_and_extract_portable_tool: abort when executable missing ---
 
+# --- resolve_backend_module: correct backend module for each strategy/type ---
+
+test_that("resolve_backend_module returns shinylive.js for shinylive strategy", {
+  expect_equal(resolve_backend_module("r-shiny",  "shinylive"), "shinylive.js")
+  expect_equal(resolve_backend_module("py-shiny", "shinylive"), "shinylive.js")
+})
+
+test_that("resolve_backend_module returns native-r.js for r-* types with native strategies", {
+  expect_equal(resolve_backend_module("r-shiny", "system"),        "native-r.js")
+  expect_equal(resolve_backend_module("r-shiny", "bundled"),       "native-r.js")
+  expect_equal(resolve_backend_module("r-shiny", "auto-download"), "native-r.js")
+})
+
+test_that("resolve_backend_module returns native-py.js for py-* types with native strategies", {
+  expect_equal(resolve_backend_module("py-shiny", "system"),        "native-py.js")
+  expect_equal(resolve_backend_module("py-shiny", "bundled"),       "native-py.js")
+  expect_equal(resolve_backend_module("py-shiny", "auto-download"), "native-py.js")
+})
+
+test_that("resolve_backend_module returns container.js for container strategy", {
+  expect_equal(resolve_backend_module("r-shiny",  "container"), "container.js")
+  expect_equal(resolve_backend_module("py-shiny", "container"), "container.js")
+})
+
+test_that("resolve_backend_module aborts for unknown runtime strategy", {
+  expect_error(
+    resolve_backend_module("r-shiny", "unknown-strategy"),
+    "Unknown runtime strategy"
+  )
+})
+
+# --- build_electron_app: multi-platform abort guard ---
+
+test_that("build_electron_app aborts for bundled strategy with multiple platforms", {
+  tmp <- withr::local_tempdir()
+  out <- file.path(tmp, "out")
+  expect_error(
+    build_electron_app(tmp, out, app_name = "test", app_type = "r-shiny",
+                       runtime_strategy = "bundled",
+                       platform = c("mac", "win"), arch = "x64",
+                       verbose = FALSE),
+    "one platform and architecture"
+  )
+})
+
+test_that("build_electron_app aborts for bundled strategy with multiple architectures", {
+  tmp <- withr::local_tempdir()
+  out <- file.path(tmp, "out")
+  expect_error(
+    build_electron_app(tmp, out, app_name = "test", app_type = "r-shiny",
+                       runtime_strategy = "bundled",
+                       platform = "mac", arch = c("x64", "arm64"),
+                       verbose = FALSE),
+    "one platform and architecture"
+  )
+})
+
+test_that("build_electron_app aborts for auto-download strategy with multiple platforms", {
+  tmp <- withr::local_tempdir()
+  out <- file.path(tmp, "out")
+  expect_error(
+    build_electron_app(tmp, out, app_name = "test", app_type = "py-shiny",
+                       runtime_strategy = "auto-download",
+                       platform = c("mac", "win"), arch = "x64",
+                       verbose = FALSE),
+    "one platform and architecture"
+  )
+})
+
+test_that("build_electron_app does not abort for system strategy with multiple platforms", {
+  tmp <- withr::local_tempdir()
+  out <- file.path(tmp, "out")
+  mockery::stub(build_electron_app, "validate_node_npm", function(...) stop("PAST_GUARD"))
+  expect_error(
+    build_electron_app(tmp, out, app_name = "test", app_type = "r-shiny",
+                       runtime_strategy = "system",
+                       platform = c("mac", "win"), arch = "x64",
+                       verbose = FALSE),
+    "PAST_GUARD"
+  )
+})
+
+test_that("build_electron_app does not abort for container strategy with multiple platforms", {
+  tmp <- withr::local_tempdir()
+  out <- file.path(tmp, "out")
+  mockery::stub(build_electron_app, "validate_node_npm", function(...) stop("PAST_GUARD"))
+  expect_error(
+    build_electron_app(tmp, out, app_name = "test", app_type = "r-shiny",
+                       runtime_strategy = "container",
+                       platform = c("mac", "win"), arch = "x64",
+                       verbose = FALSE),
+    "PAST_GUARD"
+  )
+})
+
+test_that("build_electron_app does not abort for shinylive strategy with multiple platforms", {
+  tmp <- withr::local_tempdir()
+  out <- file.path(tmp, "out")
+  mockery::stub(build_electron_app, "validate_node_npm", function(...) stop("PAST_GUARD"))
+  expect_error(
+    build_electron_app(tmp, out, app_name = "test", app_type = "r-shiny",
+                       runtime_strategy = "shinylive",
+                       platform = c("mac", "win"), arch = "x64",
+                       verbose = FALSE),
+    "PAST_GUARD"
+  )
+})
+
+test_that("build_electron_app does not abort for bundled with single platform and arch", {
+  tmp <- withr::local_tempdir()
+  out <- file.path(tmp, "out")
+  mockery::stub(build_electron_app, "validate_node_npm", function(...) stop("PAST_GUARD"))
+  expect_error(
+    build_electron_app(tmp, out, app_name = "test", app_type = "r-shiny",
+                       runtime_strategy = "bundled",
+                       platform = "mac", arch = "arm64",
+                       verbose = FALSE),
+    "PAST_GUARD"
+  )
+})
+
+# --- download_and_extract_portable_tool: abort when executable missing ---
+
 test_that("download_and_extract_portable_tool aborts (not warns) when executable not found", {
   tmp <- withr::local_tempdir()
   install_path <- file.path(tmp, "install")
