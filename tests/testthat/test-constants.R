@@ -40,13 +40,3 @@ test_that("SHINYELECTRON_DEFAULTS contains logging defaults", {
   expect_null(SHINYELECTRON_DEFAULTS$logging$log_dir)
   expect_equal(SHINYELECTRON_DEFAULTS$logging$log_level, "info")
 })
-
-test_that("get_default retrieves existing keys", {
-  expect_equal(get_default("window_width"), 1200L)
-  expect_equal(get_default("server_port"), 3838L)
-})
-
-test_that("get_default returns fallback for missing keys", {
-  expect_null(get_default("nonexistent_key"))
-  expect_equal(get_default("nonexistent_key", "fallback"), "fallback")
-})

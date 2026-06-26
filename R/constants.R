@@ -198,19 +198,3 @@ SHINYELECTRON_DEFAULTS <- list(
     one_click = TRUE
   )
 )
-
-#' Get a default value
-#'
-#' Retrieves a default value from SHINYELECTRON_DEFAULTS.
-#'
-#' @param key Character name of the default to retrieve
-#' @param default Value to return if key not found
-#' @return The default value
-#' @keywords internal
-get_default <- function(key, default = NULL) {
-  if (key %in% names(SHINYELECTRON_DEFAULTS)) {
-    SHINYELECTRON_DEFAULTS[[key]]
-  } else {
-    default
-  }
-}

@@ -22,18 +22,6 @@ test_that("validate_python_app_structure checks for app.py", {
   expect_silent(validate_python_app_structure(tmpdir))
 })
 
-test_that("infer_runtime_strategy falls back to shinylive when unset", {
-  expect_equal(infer_runtime_strategy(NULL), "shinylive")
-  expect_equal(infer_runtime_strategy(NULL, "r-shiny"), "shinylive")
-  expect_equal(infer_runtime_strategy(NULL, "py-shiny"), "shinylive")
-})
-
-test_that("infer_runtime_strategy passes through an explicit strategy", {
-  expect_equal(infer_runtime_strategy("system"), "system")
-  expect_equal(infer_runtime_strategy("bundled"), "bundled")
-  expect_equal(infer_runtime_strategy("container"), "container")
-})
-
 test_that("validate_r_available succeeds when Rscript is found", {
   # R CMD check's R_check_bin/Rscript shim does not always round-trip cleanly
   # through processx, causing this test to fail in the sandbox even though

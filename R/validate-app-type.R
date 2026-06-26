@@ -28,20 +28,6 @@ validate_runtime_strategy <- function(strategy) {
   invisible(TRUE)
 }
 
-#' Infer the default runtime strategy
-#'
-#' Returns the passed strategy, or falls back to the package default
-#' (`"shinylive"`) when unset. The `app_type` argument is accepted for
-#' backwards compatibility and ignored.
-#'
-#' @param strategy Character string or NULL. Explicit strategy, or NULL.
-#' @param app_type Ignored. Retained for signature compatibility.
-#' @return Character string. Either the explicit strategy or `"shinylive"`.
-#' @keywords internal
-infer_runtime_strategy <- function(strategy, app_type = NULL) {
-  strategy %||% "shinylive"
-}
-
 #' Normalize app_type and runtime_strategy arguments
 #'
 #' Translates legacy app_type values (`r-shinylive`, `py-shinylive`) to the
