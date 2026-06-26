@@ -344,3 +344,32 @@ test_that("e2e: Python dependencies detected from requirements.txt", {
   deps <- detect_py_dependencies(d)
   expect_true(all(c("pandas", "shiny", "numpy") %in% deps))
 })
+
+# --- run_after failure must not delete a successful build ---
+
+test_that("export keeps build output when run_after fails", {
+  skip_if_not_installed("mockery")
+  appdir <- withr::local_tempdir()
+  writeLines("library(shiny); shinyApp(fluidPage(), function(input, output){})",
+             file.path(appdir, "app.R"))
+  destdir <- withr::local_tempdir()
+
+  # Stub the build entrypoints to avoid real shinylive/npm work, and make
+  # run_electron_app throw to simulate a non-zero Electron exit.
+  mockery::stub(export, "convert_app_to_shinylive",
+                function(...) file.path(destdir, "shinylive-app"))
+  mockery::stub(export, "build_electron_app", function(...) {
+    d <- file.path(destdir, "electron-app")
+    fs::dir_create(d)
+    d
+  })
+  mockery::stub(export, "run_electron_app",
+                function(...) stop("electron exited 1"))
+
+  expect_warning(
+    export(appdir, destdir, run_after = TRUE, build = TRUE,
+           overwrite = TRUE, verbose = FALSE),
+    "exited with an error"
+  )
+  expect_true(fs::dir_exists(file.path(destdir, "electron-app")))
+})

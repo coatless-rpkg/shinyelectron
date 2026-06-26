@@ -54,7 +54,7 @@ export_multi_app <- function(appdir, destdir, config,
 
   result <- list()
 
-  tryCatch({
+  result <- tryCatch({
     # Step 1: Process each app
     apps_dir <- fs::path(destdir, "apps")
     fs::dir_create(apps_dir)
@@ -167,29 +167,7 @@ export_multi_app <- function(appdir, destdir, config,
       result$electron_app <- built_app_dir
     }
 
-    # Step 3: Run application in development mode if requested
-    if (run_after && build) {
-      if (verbose) cli::cli_alert_info("Starting application in development mode...")
-
-      run_electron_app(
-        app_dir = result$electron_app,
-        verbose = verbose
-      )
-    }
-
-    # Step 4: Open output directory if requested
-    if (open_after) {
-      if (verbose) cli::cli_alert_info("Opening output directory...")
-      utils::browseURL(destdir)
-    }
-
-    if (verbose) {
-      cli::cli_alert_success("Successfully exported multi-app suite!")
-      cli::cli_alert_info("Output: {.path {destdir}}")
-    }
-
-    return(result)
-
+    result
   }, error = function(e) {
     if (isTRUE(created_destdir) && fs::dir_exists(destdir)) {
       unlink(destdir, recursive = TRUE)
@@ -199,6 +177,33 @@ export_multi_app <- function(appdir, destdir, config,
       "x" = "Error: {e$message}"
     ), parent = e)
   })
+
+  # The build output is committed past this point. Post-build actions must
+  # never delete it, so they run OUTSIDE the cleanup tryCatch above.
+  if (verbose) {
+    cli::cli_alert_success("Successfully exported multi-app suite!")
+    cli::cli_alert_info("Output: {.path {destdir}}")
+  }
+
+  # Run in dev mode if requested. A non-zero Electron exit must not destroy the
+  # successful build, so failures warn rather than abort.
+  if (run_after && build) {
+    if (verbose) cli::cli_alert_info("Starting application in development mode...")
+    tryCatch(
+      run_electron_app(app_dir = result$electron_app, verbose = verbose),
+      error = function(e) cli::cli_warn(c(
+        "The application exited with an error (the build output was kept).",
+        "i" = conditionMessage(e)
+      ))
+    )
+  }
+
+  if (open_after) {
+    if (verbose) cli::cli_alert_info("Opening output directory...")
+    utils::browseURL(destdir)
+  }
+
+  result
 }
 
 #' Build multi-app Electron application
