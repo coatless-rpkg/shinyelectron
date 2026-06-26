@@ -99,7 +99,14 @@ enable_auto_updates <- function(appdir,
                                  verbose = TRUE) {
   # Validate inputs
   validate_directory_exists(appdir, "Application directory")
-  provider <- match.arg(provider)
+  supported_providers <- c("github")
+  if (!provider %in% supported_providers) {
+    cli::cli_abort(c(
+      "Provider {.val {provider}} is not yet supported.",
+      "i" = "S3 and generic HTTP providers are planned but not yet implemented.",
+      "i" = 'Use {.code provider = "github"} instead.'
+    ))
+  }
 
   # Validate provider-specific requirements
   if (provider == "github") {
