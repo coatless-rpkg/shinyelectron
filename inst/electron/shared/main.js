@@ -605,7 +605,7 @@ function createWindow() {
         else if (data.phase === 'finding_runtime') statusText = 'Finding runtime...';
         else if (data.phase === 'installing_packages') statusText = 'Installing packages...';
         else if (data.phase === 'checking_packages') statusText = 'Checking packages...';
-        tray.setToolTip('{{app_name}} - ' + statusText);
+        tray.setToolTip((selectedApp.name || '{{app_name}}') + ' - ' + statusText);
         try {
           if (trayMenu) {
             var statusItem = trayMenu.getMenuItemById('status');
