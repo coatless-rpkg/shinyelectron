@@ -405,8 +405,9 @@ server:
 nodejs:
   # Version to install (null = latest LTS)
   version: null
-  # Set to true to auto-install Node.js if not found
-  auto_install: false
+  # auto_install is planned but not yet active; a missing Node.js aborts the build.
+  # When ready, set auto_install: true to let export() install Node.js automatically.
+  # auto_install: false
 
 # Dependency configuration
 # Controls how R/Python package dependencies are handled
