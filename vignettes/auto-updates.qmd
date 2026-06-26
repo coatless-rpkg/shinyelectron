@@ -21,13 +21,13 @@ Auto-updates ship by publishing a signed artifact and a matching `latest.yml` to
 
 ## Pick a publish host
 
-Three backends are supported. Pick the one that matches how you already ship software.
+GitHub Releases is the only provider currently supported. S3 and Generic HTTP are planned for a future release and are not yet wired into the build.
 
-| Provider | Best for | Requirements |
-|----------|----------|--------------|
-| GitHub Releases | Open source projects | Public or private GitHub repo |
-| S3 | Enterprise deployments | AWS S3 bucket |
-| Generic HTTP | Custom infrastructure | Any HTTP server |
+| Provider | Status | Best for | Requirements |
+|----------|--------|----------|--------------|
+| GitHub Releases | Supported | Open source projects | Public or private GitHub repo |
+| S3 | Planned | Enterprise deployments | AWS S3 bucket |
+| Generic HTTP | Planned | Custom infrastructure | Any HTTP server |
 
 ## Quick start
 
@@ -84,10 +84,13 @@ export("path/to/app", destdir = "build")
 1. Go to your repo on GitHub.
 2. Click Releases, then Create a new release.
 3. Create a tag such as `v1.0.0`.
-4. Upload the built installers:
+4. Upload the built installers and update manifests:
    - `MyApp-1.0.0.dmg` (macOS)
    - `MyApp-Setup-1.0.0.exe` (Windows)
    - `MyApp-1.0.0.AppImage` (Linux)
+   - `latest-mac.yml` (macOS update manifest)
+   - `latest.yml` (Windows update manifest)
+   - `latest-linux.yml` (Linux update manifest)
 5. Publish the release.
 
 ::: {.callout-note}
@@ -173,6 +176,10 @@ set GH_TOKEN=ghp_xxxxxxxxxxxx
 
 ## S3
 
+::: {.callout-important}
+S3 is planned but not yet supported. `enable_auto_updates()` currently accepts only `"github"` as the provider, and S3 configuration in `_shinyelectron.yml` is not consumed by the build. This section documents the intended design for when S3 support is added.
+:::
+
 Point at a bucket for enterprise distribution.
 
 ```yaml
@@ -206,6 +213,10 @@ export AWS_SECRET_ACCESS_KEY=xxx
 ```
 
 ## Generic HTTP
+
+::: {.callout-important}
+Generic HTTP is planned but not yet supported. `enable_auto_updates()` currently accepts only `"github"` as the provider, and generic HTTP configuration in `_shinyelectron.yml` is not consumed by the build. This section documents the intended design for when Generic HTTP support is added.
+:::
 
 Anything that can serve static files works.
 
