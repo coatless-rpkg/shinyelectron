@@ -618,13 +618,13 @@ function createWindow() {
     } else if (actionType === 'quit') {
       app.quit();
     } else if (actionType === 'install') {
-      backend.emit('install-packages', {
+      (currentBackend || backend).emit('install-packages', {
         libPath: action.libPath || 'system'
       });
     } else if (actionType === 'skip_install') {
-      backend.emit('skip-install');
+      (currentBackend || backend).emit('skip-install');
     } else if (actionType === 'select_runtime') {
-      backend.emit('runtime-selected', { runtimePath: action.runtimePath });
+      (currentBackend || backend).emit('runtime-selected', { runtimePath: action.runtimePath });
     } else if (actionType === 'select_app') {
       lastSelectedAppId = action.appId;
       startSelectedApp(action.appId);
