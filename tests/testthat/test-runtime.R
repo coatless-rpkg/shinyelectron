@@ -191,6 +191,42 @@ test_that("install_nodejs preserves prior install when extraction fails", {
   expect_true(file.exists(file.path(install_dir, "node")))
 })
 
+test_that("install_nodejs preserves prior install when node binary missing from archive", {
+  # RED before fix: verify-after-swap meant the prior install was already
+  # destroyed when the abort fired.
+  # GREEN after fix: verify-before-swap keeps the prior install intact.
+  tmp <- withr::local_tempdir()
+  install_dir <- file.path(tmp, "nodejs", "v22.0.0", "darwin-arm64")
+  dir.create(install_dir, recursive = TRUE)
+  # Sentinel file representing a working prior install.
+  writeLines("prior", file.path(install_dir, "sentinel"))
+
+  mockery::stub(install_nodejs, "detect_current_platform", function() "mac")
+  mockery::stub(install_nodejs, "detect_current_arch", function() "arm64")
+  mockery::stub(install_nodejs, "nodejs_install_path",
+                function(v, p, a) file.path(tmp, "nodejs", paste0("v", v), "darwin-arm64"))
+  mockery::stub(install_nodejs, "utils::download.file",
+                function(url, dest, ...) invisible(file.create(dest)))
+  mockery::stub(install_nodejs, "nodejs_download_checksums", function(v) character(0))
+  # Extraction creates the top-level dir (correct structure) but omits bin/node,
+  # simulating a structurally-valid but incomplete archive.
+  mockery::stub(install_nodejs, "utils::untar", function(tarfile, exdir, ...) {
+    extracted <- file.path(exdir, "node-v22.0.0-darwin-arm64")
+    dir.create(file.path(extracted, "bin"), recursive = TRUE)
+    # node binary intentionally absent
+    invisible(NULL)
+  })
+
+  expect_error(
+    install_nodejs(version = "22.0.0", force = TRUE, verbose = FALSE),
+    "Node.js executable not found"
+  )
+
+  # The prior install directory and its sentinel must still be present.
+  expect_true(dir.exists(install_dir))
+  expect_true(file.exists(file.path(install_dir, "sentinel")))
+})
+
 # --- download_and_extract_portable_tool: abort when executable missing ---
 
 test_that("download_and_extract_portable_tool aborts (not warns) when executable not found", {

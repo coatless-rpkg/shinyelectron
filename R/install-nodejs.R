@@ -414,20 +414,28 @@ install_nodejs <- function(version = NULL, platform = NULL, arch = NULL,
     ))
   }
 
-  # Atomic swap: destroy the old install only after staging is ready.
-  fs::dir_create(dirname(install_dir), recurse = TRUE)
-  if (fs::dir_exists(install_dir)) unlink(install_dir, recursive = TRUE)
-  fs::file_move(extracted_path, install_dir)
-
-  # Verify installation (against the target platform/arch, not the host)
-  node_exe <- nodejs_executable(version, platform, arch)
-  if (is.null(node_exe) || !fs::file_exists(node_exe)) {
+  # Verify the node executable is present inside the STAGING directory BEFORE
+  # the destructive swap.  A structurally-valid but incomplete archive
+  # (correct top-level dir name, missing the binary) would otherwise replace a
+  # working prior install before the abort fires.  on.exit() still removes the
+  # staging dir on this abort path.
+  staged_node_exe <- if (platform == "win") {
+    fs::path(extracted_path, "node.exe")
+  } else {
+    fs::path(extracted_path, "bin", "node")
+  }
+  if (!fs::file_exists(staged_node_exe)) {
     cli::cli_abort(c(
       "Installation failed",
       "x" = "Node.js executable not found after extraction",
       "i" = "Expected at: {.path {install_dir}}"
     ))
   }
+
+  # Atomic swap: destroy the old install only after staging is verified.
+  fs::dir_create(dirname(install_dir), recurse = TRUE)
+  if (fs::dir_exists(install_dir)) unlink(install_dir, recursive = TRUE)
+  fs::file_move(extracted_path, install_dir)
 
   if (verbose) {
     cli::cli_alert_success("Node.js v{version} installed successfully")
