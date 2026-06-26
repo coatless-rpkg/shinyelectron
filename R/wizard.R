@@ -63,6 +63,15 @@ wizard <- function(appdir = ".") {
   if (!nzchar(platform_input)) platform_input <- "mac"
   platforms <- trimws(strsplit(platform_input, ",")[[1]])
 
+  valid_platforms <- SHINYELECTRON_DEFAULTS$valid_platforms
+  invalid_platforms <- platforms[!platforms %in% valid_platforms]
+  if (length(invalid_platforms) > 0) {
+    cli::cli_abort(c(
+      "Invalid platform token(s): {.val {invalid_platforms}}",
+      "i" = "Valid platforms: {.val {valid_platforms}}"
+    ))
+  }
+
   # Numeric prompt helper: re-prompt on invalid input and fall back to the
   # default on an empty answer (also covers non-interactive sessions, where
   # readline() returns ""). Returns an integer so the config never stores NA.
@@ -127,21 +136,13 @@ wizard <- function(appdir = ".") {
     cli::cli_h2("Auto-Updates")
     updates_input <- readline("Enable auto-updates? [y/N]: ")
     if (tolower(updates_input) %in% c("y", "yes")) {
-      cat("  Update providers:\n")
-      cat("    1. GitHub Releases (recommended for open source)\n")
-      cat("    2. S3 bucket\n")
-      cat("    3. Generic HTTP server\n")
-      provider_choice <- readline("  Choose provider [1]: ")
-      provider <- switch(provider_choice,
-        "2" = "s3", "3" = "generic", "github"
-      )
+      # Only GitHub Releases is supported; S3 and generic HTTP are planned.
+      provider <- "github"
       updates_config <- list(enabled = TRUE, provider = provider)
-      if (provider == "github") {
-        owner <- readline("  GitHub owner/org: ")
-        repo <- readline("  GitHub repo name: ")
-        if (nzchar(owner) && nzchar(repo)) {
-          updates_config$github <- list(owner = owner, repo = repo)
-        }
+      owner <- readline("  GitHub owner/org: ")
+      repo <- readline("  GitHub repo name: ")
+      if (nzchar(owner) && nzchar(repo)) {
+        updates_config$github <- list(owner = owner, repo = repo)
       }
     }
   }
