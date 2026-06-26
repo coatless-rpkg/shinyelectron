@@ -13,20 +13,14 @@ class ShinyliveBackend extends EventEmitter {
     // Note: do NOT removeAllListeners() here; it would wipe the main process's
     // 'status'/'error' subscribers. This backend registers no one-shot
     // internal listeners, so there is nothing to clear.
-    const { isOnline, logDebug } = require('./utils');
+    const { logDebug } = require('./utils');
 
+    // shinylive::export() bundles the WebR/Pyodide runtime and the app's
+    // package wasm into the app, so it runs fully offline. We intentionally do
+    // NOT probe the network here: a bundled app must launch without internet.
+    // (Only packages that export() could not bundle would be fetched by
+    // WebR/Pyodide at runtime, which they surface inside the app themselves.)
     this.emit('status', { phase: 'starting_server', message: 'Starting server...' });
-
-    // Shinylive apps need to download WebR/Pyodide on first load (~30MB)
-    // Warn if offline so users aren't stuck on a blank page
-    const online = await isOnline();
-    if (!online) {
-      this.emit('status', {
-        phase: 'error',
-        message: 'No internet connection detected.\n\nShinylive apps need to download WebAssembly resources on first load. Please connect to the internet and try again.'
-      });
-      throw new Error('No internet connection -- shinylive requires network access for first load');
-    }
 
     return new Promise((resolve, reject) => {
       const app = express();
