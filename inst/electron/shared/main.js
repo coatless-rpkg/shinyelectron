@@ -11,7 +11,7 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const backend = require('./backends/{{backend_module}}');
@@ -426,12 +426,37 @@ function setupAutoUpdater() {
 {{/updates_enabled}}
 
 function createWindow() {
-  // Restore saved window state or use defaults
+  // Restore saved window state or use defaults.
+  // Only apply saved x/y when the saved bounds are visible on at least one
+  // currently connected display; a disconnected monitor would otherwise hide
+  // the window off-screen with no way for the user to recover it.
   const savedState = loadWindowState();
   const windowWidth = (savedState && savedState.bounds) ? savedState.bounds.width : {{window_width}};
   const windowHeight = (savedState && savedState.bounds) ? savedState.bounds.height : {{window_height}};
-  const windowX = (savedState && savedState.bounds) ? savedState.bounds.x : undefined;
-  const windowY = (savedState && savedState.bounds) ? savedState.bounds.y : undefined;
+
+  let windowX = undefined;
+  let windowY = undefined;
+  if (savedState && savedState.bounds) {
+    const { x, y, width, height } = savedState.bounds;
+    try {
+      const displays = screen.getAllDisplays();
+      const visible = displays.some(d => {
+        const wa = d.workArea;
+        // Intersection test: both rectangles must overlap by at least 1px
+        return x < wa.x + wa.width && x + width > wa.x &&
+               y < wa.y + wa.height && y + height > wa.y;
+      });
+      if (visible) {
+        windowX = x;
+        windowY = y;
+      }
+      // If not visible on any display, leave windowX/windowY undefined so
+      // Electron centers the window on the primary display.
+    } catch {
+      // screen API unavailable (should not happen after app.whenReady);
+      // fall back to centered window.
+    }
+  }
 
   // Create the browser window
   mainWindow = new BrowserWindow({
