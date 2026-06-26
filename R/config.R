@@ -220,18 +220,26 @@ validate_config <- function(config) {
   default_width <- SHINYELECTRON_DEFAULTS$window_width
   default_height <- SHINYELECTRON_DEFAULTS$window_height
 
-  if (!is.null(config$window$width) && (!is.numeric(config$window$width) || config$window$width < 100)) {
+  if (!is.null(config$window$width) && (
+      !is.numeric(config$window$width) ||
+      length(config$window$width) != 1 ||
+      config$window$width < 100
+  )) {
     cli::cli_warn(c(
       "Invalid {.field window.width} in config: {.val {config$window$width}}",
-      "i" = "Must be a number >= 100; using default: {.val {default_width}}",
+      "i" = "Must be a single number >= 100; using default: {.val {default_width}}",
       "i" = "Edit {.field window.width} in {.file _shinyelectron.yml}"
     ))
     config$window$width <- default_width
   }
-  if (!is.null(config$window$height) && (!is.numeric(config$window$height) || config$window$height < 100)) {
+  if (!is.null(config$window$height) && (
+      !is.numeric(config$window$height) ||
+      length(config$window$height) != 1 ||
+      config$window$height < 100
+  )) {
     cli::cli_warn(c(
       "Invalid {.field window.height} in config: {.val {config$window$height}}",
-      "i" = "Must be a number >= 100; using default: {.val {default_height}}",
+      "i" = "Must be a single number >= 100; using default: {.val {default_height}}",
       "i" = "Edit {.field window.height} in {.file _shinyelectron.yml}"
     ))
     config$window$height <- default_height
@@ -240,10 +248,11 @@ validate_config <- function(config) {
   # Validate port using centralized default
   default_port <- SHINYELECTRON_DEFAULTS$server_port
   if (!is.null(config$server$port)) {
-    if (!is.numeric(config$server$port) || config$server$port < 1 || config$server$port > 65535) {
+    if (!is.numeric(config$server$port) || length(config$server$port) != 1 ||
+        config$server$port < 1 || config$server$port > 65535) {
       cli::cli_warn(c(
         "Invalid {.field server.port} in config: {.val {config$server$port}}",
-        "i" = "Must be an integer between 1 and 65535; using default: {.val {default_port}}",
+        "i" = "Must be a single integer between 1 and 65535; using default: {.val {default_port}}",
         "i" = "Edit {.field server.port} in {.file _shinyelectron.yml}"
       ))
       config$server$port <- default_port
@@ -355,8 +364,10 @@ init_config <- function(appdir, app_name = NULL, overwrite = FALSE, verbose = TR
     app_name <- basename(appdir)
   }
 
-  # Sanitize app name for YAML
-  app_name_safe <- gsub('"', '\\"', app_name)
+  # Escape app_name for a YAML double-quoted scalar.
+  # Backslashes must be escaped first (\\ -> \\\\), then double-quotes (" -> \").
+  app_name_safe <- gsub("\\", "\\\\", app_name, fixed = TRUE)
+  app_name_safe <- gsub('"', '\\"', app_name_safe, fixed = TRUE)
 
   # Template content with all configuration sections
   template <- '# shinyelectron configuration file

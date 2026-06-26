@@ -41,3 +41,20 @@ test_that("read_brand_yml warns on malformed file", {
   expect_warning(result <- read_brand_yml(tmpdir))
   expect_null(result)
 })
+
+# 4D-3: init_config app_name escaping round-trip
+test_that("init_config round-trips an app_name containing a double quote", {
+  tmp <- withr::local_tempdir()
+  name_with_quote <- 'My "Special" App'
+  init_config(tmp, app_name = name_with_quote, verbose = FALSE)
+  result <- read_config(tmp)
+  expect_equal(result$app$name, name_with_quote)
+})
+
+test_that("init_config round-trips an app_name containing a backslash", {
+  tmp <- withr::local_tempdir()
+  name_with_backslash <- "App\\Name"
+  init_config(tmp, app_name = name_with_backslash, verbose = FALSE)
+  result <- read_config(tmp)
+  expect_equal(result$app$name, name_with_backslash)
+})
