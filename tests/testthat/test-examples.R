@@ -3,42 +3,32 @@
 # --- available_examples ---
 
 test_that("available_examples returns a data frame invisibly", {
-  result <- suppressMessages(withCallingHandlers(
-    available_examples(),
-    message = function(m) invokeRestart("muffleMessage")
-  ))
+  result <- NULL
+  capture.output(suppressMessages({ result <- available_examples() }), type = "output")
   expect_s3_class(result, "data.frame")
 })
 
 test_that("available_examples data frame has required columns", {
-  result <- suppressMessages(withCallingHandlers(
-    available_examples(),
-    message = function(m) invokeRestart("muffleMessage")
-  ))
+  result <- NULL
+  capture.output(suppressMessages({ result <- available_examples() }), type = "output")
   expect_true(all(c("name", "language", "type", "description") %in% names(result)))
 })
 
 test_that("available_examples includes the three bundled examples", {
-  result <- suppressMessages(withCallingHandlers(
-    available_examples(),
-    message = function(m) invokeRestart("muffleMessage")
-  ))
+  result <- NULL
+  capture.output(suppressMessages({ result <- available_examples() }), type = "output")
   expect_setequal(result$name, c("r", "python", "suite"))
 })
 
 test_that("available_examples language column is 'r' or 'python' only", {
-  result <- suppressMessages(withCallingHandlers(
-    available_examples(),
-    message = function(m) invokeRestart("muffleMessage")
-  ))
+  result <- NULL
+  capture.output(suppressMessages({ result <- available_examples() }), type = "output")
   expect_true(all(result$language %in% c("r", "python")))
 })
 
 test_that("available_examples type column maps r -> r-shiny and python -> py-shiny", {
-  result <- suppressMessages(withCallingHandlers(
-    available_examples(),
-    message = function(m) invokeRestart("muffleMessage")
-  ))
+  result <- NULL
+  capture.output(suppressMessages({ result <- available_examples() }), type = "output")
   r_row <- result[result$name == "r", ]
   py_row <- result[result$name == "python", ]
   expect_equal(r_row$type, "r-shiny")
@@ -46,10 +36,8 @@ test_that("available_examples type column maps r -> r-shiny and python -> py-shi
 })
 
 test_that("available_examples description column contains non-empty strings", {
-  result <- suppressMessages(withCallingHandlers(
-    available_examples(),
-    message = function(m) invokeRestart("muffleMessage")
-  ))
+  result <- NULL
+  capture.output(suppressMessages({ result <- available_examples() }), type = "output")
   expect_true(all(nzchar(result$description)))
 })
 

@@ -80,7 +80,10 @@ test_that("wizard aborts for an invalid platform token", {
     idx <<- idx + 1L
     if (idx <= length(responses)) responses[[idx]] else ""
   })
-  expect_error(wizard(tmp), "Invalid platform")
+  expect_error(
+    capture.output(suppressMessages(wizard(tmp)), type = "output"),
+    "Invalid platform"
+  )
 })
 
 # 4D-2: enable_auto_updates rejects unsupported providers with a clear message

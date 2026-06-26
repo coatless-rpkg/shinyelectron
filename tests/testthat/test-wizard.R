@@ -188,3 +188,33 @@ test_that("wizard accepts multiple valid platform tokens", {
   expect_true("mac" %in% unlist(config$build$platforms))
   expect_true("win" %in% unlist(config$build$platforms))
 })
+
+# ---------------------------------------------------------------------------
+# Advanced path: auto-updates with github provider
+# ---------------------------------------------------------------------------
+
+test_that("wizard advanced path records github as the update provider", {
+  # Prompt order:
+  #   1  name           -> "" (default)
+  #   2  version        -> "" (default)
+  #   3  language       -> "" (default: r-shiny)
+  #   4  strategy       -> "" (default: shinylive)
+  #   5  platforms      -> "" (default: mac)
+  #   6  width          -> "" (default)
+  #   7  height         -> "" (default)
+  #   8  port           -> "" (default)
+  #   9  advanced?      -> "y"
+  #  10  sign?          -> "" (no)
+  #  11  tray?          -> "" (no)
+  #  12  updates?       -> "y"
+  #  13  GitHub owner   -> "myowner"
+  #  14  GitHub repo    -> "myrepo"
+  # (deps block skipped because runtime_strategy == "shinylive")
+  tmp <- withr::local_tempdir()
+  run_wizard_quiet(tmp, c("", "", "", "", "", "", "", "",
+                           "y", "", "", "y", "myowner", "myrepo"))
+
+  config <- yaml::read_yaml(file.path(tmp, "_shinyelectron.yml"))
+  expect_equal(config$updates$provider, "github")
+  expect_true(isTRUE(config$updates$enabled))
+})
