@@ -68,15 +68,13 @@ convert_shiny_to_shinylive <- function(appdir, output_dir, overwrite = FALSE, ve
   tryCatch({
     if (verbose) cli::cli_progress_update(id = pb, set = 1)
     temp_app_dir <- tempfile("shinyelectron-app-")
+    on.exit(unlink(temp_app_dir, recursive = TRUE), add = TRUE)
     copy_dir_contents(appdir, temp_app_dir)
 
     if (verbose) cli::cli_progress_update(id = pb, set = 2)
     shinylive::export(appdir = temp_app_dir, destdir = output_dir, overwrite = TRUE, quiet = TRUE)
 
     if (verbose) cli::cli_progress_update(id = pb, set = 3)
-    if (fs::dir_exists(temp_app_dir)) {
-      unlink(temp_app_dir, recursive = TRUE)
-    }
 
     if (verbose) cli::cli_progress_update(id = pb, set = 4)
     validate_shinylive_output(output_dir)
