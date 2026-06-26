@@ -13,12 +13,13 @@ or \code{"nodejs"}.}
 \item{version}{Character string. Version to remove (e.g., \code{"4.5.3"},
 \code{"3.12.10"}, \code{"v22.11.0"}).}
 
-\item{platform}{Character string. Platform (e.g., \code{"win"},
-\code{"mac"}, \code{"linux"}). For Node.js, use the combined
-platform-arch format shown by \code{\link[=cache_info]{cache_info()}}.}
+\item{platform}{Character string. Platform (\code{"win"}, \code{"mac"},
+or \code{"linux"}). Required for all runtimes including Node.js.
+Use the same canonical names that \code{\link[=cache_info]{cache_info()}} reports in the
+\code{platform} column (e.g. \code{"mac"}, not \code{"darwin"}).}
 
-\item{arch}{Character string. Architecture (\code{"x64"} or
-\code{"arm64"}). Ignored for Node.js (embedded in platform).}
+\item{arch}{Character string. Architecture (\code{"x64"} or \code{"arm64"}).
+Required for all runtimes including Node.js.}
 }
 \value{
 Invisibly returns TRUE if removed, FALSE if not found.
@@ -34,6 +35,9 @@ cache_remove("r", "4.4.0", "mac", "arm64")
 
 # Remove a cached Python version
 cache_remove("python", "3.12.10", "win", "x64")
+
+# Remove one platform/arch slot of a Node.js version
+cache_remove("nodejs", "v22.11.0", "mac", "arm64")
 }
 
 }

@@ -236,11 +236,12 @@ format_dir_size <- function(path) {
 #'   or `"nodejs"`.
 #' @param version Character string. Version to remove (e.g., `"4.5.3"`,
 #'   `"3.12.10"`, `"v22.11.0"`).
-#' @param platform Character string. Platform (e.g., `"win"`,
-#'   `"mac"`, `"linux"`). For Node.js, use the combined
-#'   platform-arch format shown by [cache_info()].
-#' @param arch Character string. Architecture (`"x64"` or
-#'   `"arm64"`). Ignored for Node.js (embedded in platform).
+#' @param platform Character string. Platform (`"win"`, `"mac"`,
+#'   or `"linux"`). Required for all runtimes including Node.js.
+#'   Use the same canonical names that [cache_info()] reports in the
+#'   `platform` column (e.g. `"mac"`, not `"darwin"`).
+#' @param arch Character string. Architecture (`"x64"` or `"arm64"`).
+#'   Required for all runtimes including Node.js.
 #'
 #' @return Invisibly returns TRUE if removed, FALSE if not found.
 #'
@@ -251,6 +252,9 @@ format_dir_size <- function(path) {
 #'
 #' # Remove a cached Python version
 #' cache_remove("python", "3.12.10", "win", "x64")
+#'
+#' # Remove one platform/arch slot of a Node.js version
+#' cache_remove("nodejs", "v22.11.0", "mac", "arm64")
 #' }
 #'
 #' @seealso [cache_info()] to list cached versions, [cache_clear()] to
@@ -265,17 +269,20 @@ cache_remove <- function(runtime, version, platform = NULL, arch = NULL) {
     return(invisible(FALSE))
   }
 
+  if (is.null(platform) || is.null(arch)) {
+    cli::cli_abort(c(
+      "Both {.arg platform} and {.arg arch} are required to remove {.val {runtime}}",
+      "i" = "Example: {.code cache_remove(\"{runtime}\", \"{version}\", \"mac\", \"arm64\")}",
+      "i" = "Run {.code cache_info()} to list available versions"
+    ))
+  }
+
   if (runtime == "nodejs") {
-    # nodejs: nodejs/{version}/{platform}-{arch}/
-    target <- fs::path(dir, "nodejs", version)
+    # nodejs cache dirs use Node's platform tokens (darwin, win, linux).
+    # Map the canonical package names that cache_info() reports back to them.
+    node_platform <- switch(platform, "mac" = "darwin", "win" = "win", platform)
+    target <- fs::path(dir, "nodejs", version, paste0(node_platform, "-", arch))
   } else {
-    if (is.null(platform) || is.null(arch)) {
-      cli::cli_abort(c(
-        "Both {.arg platform} and {.arg arch} are required to remove {.val {runtime}}",
-        "i" = "Example: {.code cache_remove(\"{runtime}\", \"{version}\", \"mac\", \"arm64\")}",
-        "i" = "Run {.code cache_info()} to list available versions"
-      ))
-    }
     target <- fs::path(dir, runtime, platform, arch, version)
   }
 

@@ -51,6 +51,30 @@ test_that("cache_remove requires platform and arch for r/python", {
   expect_error(cache_remove("r", "4.5.3"), "platform")
 })
 
+test_that("cache_remove deletes only the targeted nodejs platform/arch slot", {
+  root <- tempfile("cache-")
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  # Two platform slots for the same version.
+  keep <- file.path(root, "nodejs", "v22.11.0", "win-x64")
+  drop <- file.path(root, "nodejs", "v22.11.0", "darwin-arm64")
+  dir.create(keep, recursive = TRUE)
+  dir.create(drop, recursive = TRUE)
+  mockery::stub(cache_remove, "cache_dir", function(...) root)
+
+  # "mac" in the canonical name maps to "darwin" in the cache path.
+  expect_true(cache_remove("nodejs", "v22.11.0", "mac", "arm64"))
+  expect_false(dir.exists(drop))   # darwin-arm64 slot removed
+  expect_true(dir.exists(keep))    # win-x64 slot preserved
+})
+
+test_that("cache_remove requires platform and arch for nodejs", {
+  root <- tempfile("cache-")
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  dir.create(root)
+  mockery::stub(cache_remove, "cache_dir", function(...) root)
+  expect_error(cache_remove("nodejs", "v22.11.0"), "platform")
+})
+
 test_that("cache_clear removes only the targeted runtime subtree", {
   root <- tempfile("cache-")
   on.exit(unlink(root, recursive = TRUE), add = TRUE)
