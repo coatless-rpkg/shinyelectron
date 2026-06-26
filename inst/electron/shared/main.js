@@ -19,7 +19,7 @@ const backend = require('./backends/{{backend_module}}');
 // File logging -- writes to configured log directory or app userData
 const LOG_LEVEL = '{{log_level}}';
 const LOG_LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
-const LOG_THRESHOLD = LOG_LEVELS[LOG_LEVEL] || 1;
+const LOG_THRESHOLD = LOG_LEVEL in LOG_LEVELS ? LOG_LEVELS[LOG_LEVEL] : 1;
 
 const logDir = '{{log_dir}}' || path.join(app.getPath('userData'), 'logs');
 let logStream = null;
