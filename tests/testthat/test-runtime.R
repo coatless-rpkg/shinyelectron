@@ -159,3 +159,35 @@ test_that("generate_python_runtime_manifest creates valid JSON", {
   expect_equal(parsed$platform, "mac")
   expect_equal(parsed$arch, "arm64")
 })
+
+# --- download_and_extract_portable_tool: abort when executable missing ---
+
+test_that("download_and_extract_portable_tool aborts (not warns) when executable not found", {
+  tmp <- withr::local_tempdir()
+  install_path <- file.path(tmp, "install")
+
+  # Stub network download to write an empty file (the real content is not needed).
+  mockery::stub(
+    download_and_extract_portable_tool, "utils::download.file",
+    function(url, destfile, ...) invisible(file.create(destfile))
+  )
+  # Stub extraction: silently create some content in the staging dir so
+  # fs::file_move(staging, install_path) succeeds normally.
+  mockery::stub(
+    download_and_extract_portable_tool, "utils::untar",
+    function(tarfile, exdir, ...) dir.create(file.path(exdir, "content"))
+  )
+
+  # executable_finder returns NULL -> should abort, not merely warn.
+  expect_error(
+    download_and_extract_portable_tool(
+      label = "TestTool",
+      version = "1.0.0",
+      install_path = install_path,
+      download_url = "https://example.com/tool-1.0.0.tar.gz",
+      executable_finder = function() NULL,
+      verbose = FALSE
+    ),
+    class = "rlang_error"
+  )
+})

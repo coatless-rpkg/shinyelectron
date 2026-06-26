@@ -114,8 +114,9 @@ download_and_extract_portable_tool <- function(label, version, install_path,
 
   exe <- executable_finder()
   if (is.null(exe)) {
-    cli::cli_warn(c(
+    cli::cli_abort(c(
       "{label} {version} was extracted but the expected executable was not found",
+      "x" = "The archive may be corrupted or the download URL may be wrong.",
       "i" = "Installation path: {.path {install_path}}"
     ))
   } else if (verbose) {
