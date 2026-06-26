@@ -144,7 +144,7 @@ export(
 
 ## Linux: optional GPG signing
 
-**Cost:** free (GPG key).
+**Cost:** none today; free (GPG key) when implemented.
 
 **Status: not yet implemented.** The `gpg_sign: true` flag and `GPG_KEY` environment variable are reserved for a future release. Setting them has no effect today: no signature is produced, and a console warning is emitted if `GPG_KEY` is not set. Linux AppImages run without any OS-enforced signature check, so the absence of GPG signing has no effect on whether the app launches.
 
