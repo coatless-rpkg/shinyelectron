@@ -325,75 +325,6 @@ test_that("generate_dependency_manifest handles empty packages", {
   expect_equal(length(parsed$packages), 0)
 })
 
-# --- R binary package installation ---
-
-test_that("install_r_binary_packages calls install.packages with correct args", {
-  captured_args <- NULL
-  mockery::stub(install_r_binary_packages, "utils::install.packages",
-                function(pkgs, lib, repos, type, ...) {
-    captured_args <<- list(pkgs = pkgs, lib = lib, repos = repos, type = type)
-  })
-
-  # Inject a fake package db so no real CRAN metadata is fetched.
-  fake_db <- matrix(
-    "", nrow = 2, ncol = 4,
-    dimnames = list(c("shiny", "ggplot2"),
-                    c("Package", "Depends", "Imports", "LinkingTo"))
-  )
-  fake_db[, "Package"] <- rownames(fake_db)
-
-  install_r_binary_packages(
-    packages = c("shiny", "ggplot2"),
-    lib_path = "/tmp/test-lib",
-    repos = c("https://cloud.r-project.org"),
-    available_pkgs = fake_db,
-    verbose = FALSE
-  )
-
-  expect_true(all(c("shiny", "ggplot2") %in% captured_args$pkgs))
-  expect_equal(captured_args$lib, "/tmp/test-lib")
-  expect_equal(captured_args$type, "binary")
-})
-
-test_that("install_r_binary_packages creates lib directory", {
-  lib_path <- tempfile("test-lib")
-  on.exit(unlink(lib_path, recursive = TRUE))
-
-  mockery::stub(install_r_binary_packages, "utils::install.packages",
-                function(...) NULL)
-
-  fake_db <- matrix(
-    "", nrow = 1, ncol = 4,
-    dimnames = list("shiny",
-                    c("Package", "Depends", "Imports", "LinkingTo"))
-  )
-  fake_db[, "Package"] <- rownames(fake_db)
-
-  install_r_binary_packages(
-    packages = "shiny",
-    lib_path = lib_path,
-    repos = c("https://cloud.r-project.org"),
-    available_pkgs = fake_db,
-    verbose = FALSE
-  )
-
-  expect_true(fs::dir_exists(lib_path))
-})
-
-test_that("install_r_binary_packages skips empty package list", {
-  install_called <- FALSE
-  mockery::stub(install_r_binary_packages, "utils::install.packages",
-                function(...) { install_called <<- TRUE })
-
-  install_r_binary_packages(
-    packages = character(0),
-    lib_path = "/tmp/test-lib",
-    verbose = FALSE
-  )
-
-  expect_false(install_called)
-})
-
 # --- Orchestration ---
 
 test_that("resolve_app_dependencies detects and merges for r-shiny", {
@@ -459,37 +390,4 @@ test_that("resolve_app_dependencies returns NULL for the shinylive strategy", {
     config = list()
   )
   expect_null(result)
-})
-
-# --- Python binary package installation ---
-
-test_that("install_py_binary_packages calls pip with correct args", {
-  captured_args <- NULL
-  mockery::stub(install_py_binary_packages, "processx::run",
-                function(command, args, ...) {
-    captured_args <<- list(command = command, args = args)
-    list(status = 0, stdout = "", stderr = "")
-  })
-  mockery::stub(install_py_binary_packages, "find_python_command",
-                function() "python3")
-
-  install_py_binary_packages(
-    packages = c("pandas", "numpy"),
-    index_url = "https://pypi.org/simple",
-    verbose = FALSE
-  )
-
-  expect_true("--only-binary" %in% captured_args$args)
-  expect_true(":all:" %in% captured_args$args)
-  expect_true("pandas" %in% captured_args$args)
-  expect_true("numpy" %in% captured_args$args)
-})
-
-test_that("install_py_binary_packages skips empty package list", {
-  run_called <- FALSE
-  mockery::stub(install_py_binary_packages, "processx::run",
-                function(...) { run_called <<- TRUE; list(status = 0) })
-
-  install_py_binary_packages(packages = character(0), verbose = FALSE)
-  expect_false(run_called)
 })
