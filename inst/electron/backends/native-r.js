@@ -435,7 +435,9 @@ class NativeRBackend extends EventEmitter {
 
       this.rProcess.on('error', (err) => {
         this.rProcess = null;
-        settle(reject, new Error(`Failed to start Rscript: ${err.message}\n\nIs R installed and Rscript on your PATH?`));
+        const error = new Error(`Failed to start Rscript: ${err.message}\n\nIs R installed and Rscript on your PATH?`);
+        this.emit('status', { phase: 'error', message: error.message, detail: { stderr } });
+        settle(reject, error);
       });
 
       this.rProcess.on('close', (code) => {
