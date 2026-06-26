@@ -186,7 +186,6 @@ SHINYELECTRON_DEFAULTS <- list(
     show_phase_details = TRUE,
     error_show_logs = TRUE,
     shutdown_timeout = 10000L,
-    port_retry_count = 10L,
     custom_splash_html = NULL,
     custom_error_html = NULL,
     prompt_before_install = FALSE,

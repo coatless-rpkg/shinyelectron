@@ -3,7 +3,6 @@ test_that("SHINYELECTRON_DEFAULTS contains lifecycle defaults", {
   expect_true(SHINYELECTRON_DEFAULTS$lifecycle$show_phase_details)
   expect_true(SHINYELECTRON_DEFAULTS$lifecycle$error_show_logs)
   expect_equal(SHINYELECTRON_DEFAULTS$lifecycle$shutdown_timeout, 10000L)
-  expect_equal(SHINYELECTRON_DEFAULTS$lifecycle$port_retry_count, 10L)
   expect_null(SHINYELECTRON_DEFAULTS$lifecycle$custom_splash_html)
   expect_null(SHINYELECTRON_DEFAULTS$lifecycle$custom_error_html)
 })

@@ -33,8 +33,6 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     runtime_strategy = runtime_strategy,
     app_type = app_type,
     app_slug = app_slug,
-    port_retry_count = config$lifecycle$port_retry_count %||%
-      SHINYELECTRON_DEFAULTS$lifecycle$port_retry_count,
     prompt_before_install = config$lifecycle$prompt_before_install %||%
       SHINYELECTRON_DEFAULTS$lifecycle$prompt_before_install,
     prompt_runtime_version = config$lifecycle$prompt_runtime_version %||%
@@ -77,8 +75,6 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     # Lifecycle
     shutdown_timeout = config$lifecycle$shutdown_timeout %||%
       SHINYELECTRON_DEFAULTS$lifecycle$shutdown_timeout,
-    port_retry_count = config$lifecycle$port_retry_count %||%
-      SHINYELECTRON_DEFAULTS$lifecycle$port_retry_count,
 
     # System tray
     tray_enabled = config$tray$enabled %||% SHINYELECTRON_DEFAULTS$tray$enabled,

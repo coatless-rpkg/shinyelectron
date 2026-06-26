@@ -525,7 +525,6 @@ nodejs:
 #   show_phase_details: true
 #   error_show_logs: true
 #   shutdown_timeout: 10000
-#   port_retry_count: 10
 #   custom_splash_html: null
 #   custom_error_html: null
 #   prompt_before_install: false  # true = ask before installing packages
@@ -675,8 +674,7 @@ show_config <- function(appdir = ".") {
   cli::cli_bullets(c(
     "*" = "Prompt before install: {.val {isTRUE(lifecycle$prompt_before_install)}}",
     "*" = "Prompt runtime version: {.val {isTRUE(lifecycle$prompt_runtime_version)}}",
-    "*" = "Custom splash: {.val {!is.null(lifecycle$custom_splash_html)}}",
-    "*" = "Port retry count: {.val {lifecycle$port_retry_count %||% 10}}"
+    "*" = "Custom splash: {.val {!is.null(lifecycle$custom_splash_html)}}"
   ))
 
   invisible(config)
