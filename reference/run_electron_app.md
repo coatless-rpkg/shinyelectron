@@ -36,7 +36,11 @@ run_electron_app(app_dir, port = 3000, open_devtools = TRUE, verbose = TRUE)
 
 ## Value
 
-Invisibly returns the process object for the running application.
+Invisibly returns the completed
+[`processx::run()`](http://processx.r-lib.org/reference/run.md) result
+list (with `status`, `stdout`, and `stderr`) after Electron exits, or
+`NULL` if the run is interrupted. Note that this call blocks until the
+Electron window is closed.
 
 ## Details
 

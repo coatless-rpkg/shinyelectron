@@ -58,12 +58,12 @@ macOS, Windows, and Linux. macOS and Windows block or warn on unsigned
 builds, while Linux has no OS-level enforcement but benefits from an
 optional GPG signature.
 
-|                  | macOS                       | Windows                       | Linux      |
-|------------------|-----------------------------|-------------------------------|------------|
-| **Required?**    | Strongly recommended        | Strongly recommended          | Optional   |
-| **Cost**         | \$99/year (Apple Developer) | \$200 to \$700/year (CA cert) | Free (GPG) |
-| **Certificate**  | Developer ID Application    | OV or EV code signing         | GPG key    |
-| **Notarization** | Yes (macOS 10.15+)          | N/A                           | N/A        |
+|  | macOS | Windows | Linux |
+|----|----|----|----|
+| **Required?** | Strongly recommended | Strongly recommended | Optional |
+| **Cost** | \$99/year (Apple Developer) | \$200 to \$700/year (CA cert) | Free (GPG) |
+| **Certificate** | Developer ID Application | OV or EV code signing | GPG key |
+| **Notarization** | Yes (macOS 10.15+) | N/A | N/A |
 
 ## Turning signing on
 
@@ -72,6 +72,7 @@ Pass `sign = TRUE` to
 and electron-builder does the rest:
 
 ``` r
+
 export(
   appdir = "my-app",
   destdir = "build",
@@ -108,6 +109,7 @@ Before you kick off a full build, verify your setup with
 [`app_check()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_check.md):
 
 ``` r
+
 app_check("my-app", sign = TRUE)
 ```
 
@@ -187,6 +189,7 @@ export CSC_KEY_PASSWORD="your-certificate-password"
 Then:
 
 ``` r
+
 export(
   appdir = "my-app",
   destdir = "build",
@@ -280,25 +283,25 @@ A working rhythm:
     call or through `signing: sign: true` in `_shinyelectron.yml`.
 4.  Move signing into CI so human laptops never touch the keys.
 
-|                         | Development                    | Production                                |
-|-------------------------|--------------------------------|-------------------------------------------|
-| **`sign`**              | `FALSE` (default)              | `TRUE`                                    |
-| **Credentials needed?** | No                             | Yes                                       |
-| **Build speed**         | Fast                           | Slower: notarization takes 1 to 5 minutes |
-| **OS warnings?**        | Yes (use `xattr -cr` on macOS) | No                                        |
+|  | Development | Production |
+|----|----|----|
+| **`sign`** | `FALSE` (default) | `TRUE` |
+| **Credentials needed?** | No | Yes |
+| **Build speed** | Fast | Slower: notarization takes 1 to 5 minutes |
+| **OS warnings?** | Yes (use `xattr -cr` on macOS) | No |
 
 ## Environment variables reference
 
 One canonical table for every variable the signing pipeline reads.
 
-| Variable                      | Platform       | Purpose                                                          |
-|-------------------------------|----------------|------------------------------------------------------------------|
-| `CSC_LINK`                    | macOS, Windows | Path to `.p12` or `.pfx` certificate (or base64-encoded content) |
-| `CSC_KEY_PASSWORD`            | macOS, Windows | Password for the `.p12` or `.pfx` file                           |
-| `APPLE_ID`                    | macOS          | Apple ID email used for notarization                             |
-| `APPLE_APP_SPECIFIC_PASSWORD` | macOS          | App-specific password from `appleid.apple.com`                   |
-| `APPLE_TEAM_ID`               | macOS          | 10-character Apple Developer Team ID                             |
-| `GPG_KEY`                     | Linux          | GPG key ID for AppImage signing                                  |
+| Variable | Platform | Purpose |
+|----|----|----|
+| `CSC_LINK` | macOS, Windows | Path to `.p12` or `.pfx` certificate (or base64-encoded content) |
+| `CSC_KEY_PASSWORD` | macOS, Windows | Password for the `.p12` or `.pfx` file |
+| `APPLE_ID` | macOS | Apple ID email used for notarization |
+| `APPLE_APP_SPECIFIC_PASSWORD` | macOS | App-specific password from `appleid.apple.com` |
+| `APPLE_TEAM_ID` | macOS | 10-character Apple Developer Team ID |
+| `GPG_KEY` | Linux | GPG key ID for AppImage signing |
 
 ## Next steps
 

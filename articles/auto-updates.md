@@ -31,6 +31,7 @@ Point the app at a GitHub repo and re-export. Everything else follows
 from configuration.
 
 ``` r
+
 enable_auto_updates(
   "path/to/app",
   provider = "github",
@@ -44,6 +45,7 @@ writes the settings to `_shinyelectron.yml`. Verify them at any time
 with:
 
 ``` r
+
 check_auto_update_status("path/to/app")
 ```
 
@@ -58,6 +60,7 @@ Tell the app where to look, and choose whether it prompts the user
 before downloading.
 
 ``` r
+
 enable_auto_updates(
   "path/to/app",
   provider = "github",
@@ -73,6 +76,7 @@ enable_auto_updates(
 Build as usual.
 
 ``` r
+
 export("path/to/app", destdir = "build")
 ```
 
@@ -269,6 +273,7 @@ export CSC_KEY_PASSWORD=your-password
 ## Turning updates off
 
 ``` r
+
 disable_auto_updates("path/to/app")
 ```
 

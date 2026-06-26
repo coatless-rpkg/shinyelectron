@@ -156,6 +156,7 @@ The built-in R Dockerfile is based on
 pre-compiled R packages via apt. It supports amd64 and arm64.
 
 ``` r
+
 export(
   appdir = "path/to/my-r-app",
   destdir = "path/to/output",
@@ -174,11 +175,32 @@ The exact Dockerfile that ships with the package, read live from
 # Supports both amd64 and arm64 (Apple Silicon)
 FROM rocker/r2u:24.04
 
-# Install R packages as system packages — pre-compiled, no source compilation
-# This works on both amd64 and arm64
+# Install Shiny and its runtime dependencies as pre-built system packages.
+# r-cran-shiny's apt Depends can lag shiny's actual R imports on bleeding-edge
+# r2u, so the transitive deps (R6, httpuv, later, ...) are listed explicitly
+# to guarantee shiny can load. Works on both amd64 and arm64.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     r-cran-shiny \
     r-cran-jsonlite \
+    r-cran-r6 \
+    r-cran-httpuv \
+    r-cran-later \
+    r-cran-promises \
+    r-cran-htmltools \
+    r-cran-fastmap \
+    r-cran-rlang \
+    r-cran-mime \
+    r-cran-fontawesome \
+    r-cran-bslib \
+    r-cran-cachem \
+    r-cran-commonmark \
+    r-cran-glue \
+    r-cran-crayon \
+    r-cran-lifecycle \
+    r-cran-digest \
+    r-cran-sass \
+    r-cran-jquerylib \
+    r-cran-memoise \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -215,6 +237,7 @@ The built-in Python Dockerfile uses `python:3.12-slim` with `shiny`
 pre-installed via pip.
 
 ``` r
+
 export(
   appdir = "path/to/my-py-app",
   destdir = "path/to/output",
@@ -346,6 +369,7 @@ container:
 Check what shinyelectron sees on this machine:
 
 ``` r
+
 sitrep_electron_system()
 ```
 

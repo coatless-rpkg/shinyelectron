@@ -83,14 +83,14 @@ webPreferences: {
 
 Each setting, in one line:
 
-| Setting              | Value   | What it stops                                                                           |
-|----------------------|---------|-----------------------------------------------------------------------------------------|
-| `nodeIntegration`    | `false` | Renderer cannot call [`require()`](https://rdrr.io/r/base/library.html) or any Node API |
-| `contextIsolation`   | `true`  | Page scripts cannot reach into the preload’s scope                                      |
-| `sandbox`            | `true`  | Renderer runs inside the Chromium OS sandbox                                            |
-| `enableRemoteModule` | `false` | Disables the deprecated `remote` module entirely                                        |
-| `webSecurity`        | `true`  | Same-origin policy stays on                                                             |
-| `partition`          | per-app | Each shinyelectron app gets its own session storage                                     |
+| Setting | Value | What it stops |
+|----|----|----|
+| `nodeIntegration` | `false` | Renderer cannot call [`require()`](https://rdrr.io/r/base/library.html) or any Node API |
+| `contextIsolation` | `true` | Page scripts cannot reach into the preload’s scope |
+| `sandbox` | `true` | Renderer runs inside the Chromium OS sandbox |
+| `enableRemoteModule` | `false` | Disables the deprecated `remote` module entirely |
+| `webSecurity` | `true` | Same-origin policy stays on |
+| `partition` | per-app | Each shinyelectron app gets its own session storage |
 
 **The preload script is the only bridge.** It exposes a short list of
 named IPC methods (`lifecycle.onStatus`, `lifecycle.retry`,
@@ -154,6 +154,7 @@ as a character vector, so the program and each argument reach the OS as
 separate strings:
 
 ``` r
+
 # Don't: paste() builds one string that the shell then parses
 system(paste("convert", input$file, "out.png"))
 
@@ -300,15 +301,15 @@ re-enable any of them by editing the generated files. Do not.
 
 ## Summary
 
-| Layer                | Owned by      | What to do                                                  |
-|----------------------|---------------|-------------------------------------------------------------|
-| Electron shell       | shinyelectron | Defaults are safe; do not edit them                         |
-| Cross-origin headers | shinyelectron | Set automatically for Shinylive                             |
-| Shiny app code       | You           | Validate inputs, parameterize commands, avoid shell strings |
-| Filesystem use       | You           | Least privilege; the code you remove cannot be exploited    |
-| Credentials          | You           | Never bundle; use env vars or the OS keychain               |
-| Container image      | You           | Override `USER`, mount minimum, keep engine patched         |
-| Code signing         | You           | Sign release builds; HTTPS for update manifests             |
+| Layer | Owned by | What to do |
+|----|----|----|
+| Electron shell | shinyelectron | Defaults are safe; do not edit them |
+| Cross-origin headers | shinyelectron | Set automatically for Shinylive |
+| Shiny app code | You | Validate inputs, parameterize commands, avoid shell strings |
+| Filesystem use | You | Least privilege; the code you remove cannot be exploited |
+| Credentials | You | Never bundle; use env vars or the OS keychain |
+| Container image | You | Override `USER`, mount minimum, keep engine patched |
+| Code signing | You | Sign release builds; HTTPS for update manifests |
 
 Further reading: the [Electron Security
 documentation](https://www.electronjs.org/docs/latest/tutorial/security).

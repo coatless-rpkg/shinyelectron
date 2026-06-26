@@ -13,8 +13,8 @@ cache_clear(what = c("all", "r", "npm", "nodejs", "python"))
 
 - what:
 
-  Character string specifying what to clear. One of `"all"`, `"nodejs"`,
-  `"r"`, `"python"`, or a specific cache subdirectory name.
+  Character string specifying what to clear. One of `"all"`, `"r"`,
+  `"npm"`, `"nodejs"`, or `"python"`.
 
 ## Value
 

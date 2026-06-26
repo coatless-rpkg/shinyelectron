@@ -1,7 +1,7 @@
 # Run a command safely and return the result
 
 Wraps processx::run with consistent error handling. Returns a list with
-status, stdout, and stderr. Never throws — failures are indicated by a
+status, stdout, and stderr. Never throws; failures are indicated by a
 non-zero status.
 
 ## Usage

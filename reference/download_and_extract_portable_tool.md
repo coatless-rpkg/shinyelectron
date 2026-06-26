@@ -19,6 +19,7 @@ download_and_extract_portable_tool(
   executable_finder,
   force = FALSE,
   is_installed = FALSE,
+  expected_sha256 = NULL,
   verbose = TRUE
 )
 ```
@@ -54,6 +55,11 @@ download_and_extract_portable_tool(
 - is_installed:
 
   Logical. Whether the runtime is already present.
+
+- expected_sha256:
+
+  Character or NULL. Expected SHA-256 of the archive. When supplied, the
+  download is verified before extraction.
 
 - verbose:
 

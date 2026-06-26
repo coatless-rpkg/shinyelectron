@@ -126,15 +126,15 @@ apps:
 
 ### Fields in an `apps` entry
 
-| Field              | Required | Description                                                         |
-|--------------------|----------|---------------------------------------------------------------------|
-| `id`               | Yes      | Unique identifier (used in file paths and the apps manifest)        |
-| `name`             | Yes      | Display name shown on the launcher card                             |
-| `path`             | Yes      | Relative path from the suite root to the app directory              |
-| `description`      | No       | Short text shown below the name on the launcher card                |
-| `type`             | No       | Override the default `build.type` for this specific app             |
-| `runtime_strategy` | No       | Override the default `build.runtime_strategy` for this specific app |
-| `icon`             | No       | Path to an icon image displayed on the launcher card                |
+| Field | Required | Description |
+|----|----|----|
+| `id` | Yes | Unique identifier (used in file paths and the apps manifest) |
+| `name` | Yes | Display name shown on the launcher card |
+| `path` | Yes | Relative path from the suite root to the app directory |
+| `description` | No | Short text shown below the name on the launcher card |
+| `type` | No | Override the default `build.type` for this specific app |
+| `runtime_strategy` | No | Override the default `build.runtime_strategy` for this specific app |
+| `icon` | No | Path to an icon image displayed on the launcher card |
 
 Every app inherits `build.type` and `build.runtime_strategy` unless it
 overrides them. Suites can mix languages (some `r-shiny`, some
@@ -250,6 +250,7 @@ reads the config, sees an `apps` array with two or more entries, and
 switches to suite mode. No extra flags.
 
 ``` r
+
 library(shinyelectron)
 
 # Export the bundled R demo suite
@@ -305,6 +306,7 @@ From scratch:
     on the suite directory.
 
 ``` r
+
 # Minimal example: create suite structure, then export
 export(appdir = "my-suite", destdir = "my-suite-output")
 ```

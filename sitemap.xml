@@ -110,6 +110,7 @@
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/r_install_path.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/r_is_installed.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/r_latest_version.html</loc></url>
+<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/r_portable_latest_version.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/read_brand_yml.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/read_config.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/render_shared_templates.html</loc></url>
@@ -121,7 +122,6 @@
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/restore_environment.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/run_command_safe.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/run_electron_app.html</loc></url>
-<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/select_container_image.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/set_dev_environment.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/setup_electron_project.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/show_config.html</loc></url>

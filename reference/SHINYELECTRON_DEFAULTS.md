@@ -41,6 +41,14 @@ A named list with the following elements:
 
   Valid CPU architectures
 
+- valid_runtime_strategies:
+
+  Valid runtime strategies
+
+- valid_container_engines:
+
+  Valid container engines
+
 - splash:
 
   Default splash screen settings
@@ -60,6 +68,26 @@ A named list with the following elements:
 - preloader:
 
   Default preloader settings
+
+- container:
+
+  Default container strategy settings
+
+- dependencies:
+
+  Default dependency detection and runtime settings
+
+- logging:
+
+  Default logging settings
+
+- signing:
+
+  Default code-signing settings
+
+- lifecycle:
+
+  Default lifecycle and prompt settings
 
 - installer:
 

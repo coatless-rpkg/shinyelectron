@@ -57,11 +57,13 @@ to remove a specific version.
 ## Examples
 
 ``` r
-# Query without creating
+# Query the cache path without creating it
 cache_dir(create = FALSE)
 #> [1] "/home/runner/.cache/shinyelectron/assets"
 
-# Get or create
+# Get or create the cache directory (writes to the user cache dir)
+# \donttest{
 cache_dir()
 #> [1] "/home/runner/.cache/shinyelectron/assets"
+# }
 ```

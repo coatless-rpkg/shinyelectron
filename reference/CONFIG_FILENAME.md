@@ -7,7 +7,3 @@ Configuration file name
 ``` r
 CONFIG_FILENAME
 ```
-
-## Format
-
-An object of class `character` of length 1.

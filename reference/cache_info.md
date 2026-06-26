@@ -33,7 +33,7 @@ for the cache location.
 ## Examples
 
 ``` r
-# Programmatic access (safe to run — just inspects the cache dir)
+# Programmatic access (safe to run -- just inspects the cache dir)
 df <- cache_info(quiet = TRUE)
 nrow(df)  # number of cached runtimes
 #> [1] 0

@@ -17,6 +17,7 @@ converted and packaged into a standalone desktop application.
 shinyelectron is not on CRAN yet. Install it from GitHub with pak.
 
 ``` r
+
 install.packages("pak")
 pak::pak("coatless-rpkg/shinyelectron")
 ```
@@ -26,6 +27,7 @@ pak::pak("coatless-rpkg/shinyelectron")
 Diagnose before you build. It saves hours later.
 
 ``` r
+
 library(shinyelectron)
 sitrep_shinyelectron()
 ```
@@ -36,6 +38,7 @@ platform build tools. If Node.js is missing, install it locally without
 admin rights.
 
 ``` r
+
 install_nodejs()
 ```
 
@@ -45,12 +48,13 @@ Ship a bundled example before touching your own app. It confirms the
 toolchain works.
 
 ``` r
+
 # List available demos
 available_examples()
 
 # Export the R single-app demo to your Desktop
 export(
-  appdir = example_app("r-single"),
+  appdir = example_app("r"),
   destdir = "~/Desktop/my-first-app",
   run_after = TRUE
 )
@@ -72,6 +76,7 @@ detects the app language from the files in `appdir`, so you usually only
 need to point at the directory.
 
 ``` r
+
 # R (language autodetected from app.R, shinylive is the default strategy)
 export(
   appdir = "path/to/my-app",       # directory containing app.R
@@ -94,6 +99,7 @@ or Python process behind the Electron window by picking a non-shinylive
 `runtime_strategy`.
 
 ``` r
+
 # R Shiny with auto-download (downloads R on first launch)
 export(
   appdir = "path/to/my-app",
@@ -136,13 +142,13 @@ only the strategy.
 `runtime_strategy` decides how your code actually runs. All five
 strategies work with both `r-shiny` and `py-shiny`.
 
-| Strategy        | Behavior                                     | App Size        | First Launch         | Best For                                                |
-|-----------------|----------------------------------------------|-----------------|----------------------|---------------------------------------------------------|
-| `shinylive`     | Compiles app to WebAssembly, runs in-browser | Medium          | Instant, offline     | Simple apps whose deps run in WebR or Pyodide (default) |
-| `auto-download` | Downloads R/Python on first launch           | Small           | Needs internet       | Public distribution, smaller download                   |
-| `bundled`       | Ships R/Python inside the app                | Large (~200MB+) | Instant, offline     | Public distribution, offline first run                  |
-| `system`        | Uses R/Python already installed              | Smallest        | Requires pre-install | Internal tools for users who already have R or Python   |
-| `container`     | Runs inside Docker/Podman                    | Small           | Needs Docker         | Complex system dependencies, reproducibility            |
+| Strategy | Behavior | App Size | First Launch | Best For |
+|----|----|----|----|----|
+| `shinylive` | Compiles app to WebAssembly, runs in-browser | Medium | Instant, offline | Simple apps whose deps run in WebR or Pyodide (default) |
+| `auto-download` | Downloads R/Python on first launch | Small | Needs internet | Public distribution, smaller download |
+| `bundled` | Ships R/Python inside the app | Large (~200MB+) | Instant, offline | Public distribution, offline first run |
+| `system` | Uses R/Python already installed | Smallest | Requires pre-install | Internal tools for users who already have R or Python |
+| `container` | Runs inside Docker/Podman | Small | Needs Docker | Complex system dependencies, reproducibility |
 
 See [Runtime
 Strategies](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/runtime-strategies.md)
@@ -183,6 +189,7 @@ Pass vectors to `platform` and `arch` to produce several targets in one
 call.
 
 ``` r
+
 export(
   appdir = "my-app",
   destdir = "my-electron-app",
@@ -217,6 +224,7 @@ Point `icon` at a single file. Each platform wants its own format:
 `.icns` for macOS, `.ico` for Windows, `.png` for Linux.
 
 ``` r
+
 export(
   appdir = "my-app",
   destdir = "my-electron-app",
@@ -230,6 +238,7 @@ Once your build options are settled, move them out of the function call
 and into `_shinyelectron.yml` alongside your app.
 
 ``` r
+
 init_config("my-app")
 ```
 
@@ -248,6 +257,7 @@ build:
 picks it up automatically.
 
 ``` r
+
 export(appdir = "my-app", destdir = "output")
 ```
 
@@ -274,14 +284,14 @@ for every option.
 
 ## Function cheat sheet
 
-| Function                                                                                                           | Purpose                                 |
-|--------------------------------------------------------------------------------------------------------------------|-----------------------------------------|
-| [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)                             | Convert and build Shiny app to Electron |
-| [`app_check()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_check.md)                       | Pre-flight validation without building  |
-| [`wizard()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/wizard.md)                             | Interactive config generator            |
-| [`sitrep_shinyelectron()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_shinyelectron.md) | Full system diagnostics                 |
-| [`install_nodejs()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.md)             | Install Node.js locally                 |
-| [`available_examples()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/available_examples.md)     | List bundled demo apps                  |
-| [`example_app()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/example_app.md)                   | Get path to a demo app                  |
-| [`run_electron_app()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/run_electron_app.md)         | Launch a built Electron app             |
-| [`cache_clear()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_clear.md)                   | Clear cached runtimes and assets        |
+| Function | Purpose |
+|----|----|
+| [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md) | Convert and build Shiny app to Electron |
+| [`app_check()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_check.md) | Pre-flight validation without building |
+| [`wizard()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/wizard.md) | Interactive config generator |
+| [`sitrep_shinyelectron()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_shinyelectron.md) | Full system diagnostics |
+| [`install_nodejs()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.md) | Install Node.js locally |
+| [`available_examples()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/available_examples.md) | List bundled demo apps |
+| [`example_app()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/example_app.md) | Get path to a demo app |
+| [`run_electron_app()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/run_electron_app.md) | Launch a built Electron app |
+| [`cache_clear()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_clear.md) | Clear cached runtimes and assets |

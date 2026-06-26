@@ -10,8 +10,9 @@ available_examples()
 
 ## Value
 
-A data frame with columns: `name` (character ID), `language` (R or
-Python), `type` (app type), and `description` (human-readable summary).
+A data frame with columns: `name` (character ID), `language` (`"r"` or
+`"python"`), `type` (app type, `"r-shiny"` or `"py-shiny"`), and
+`description` (human-readable summary).
 
 ## Examples
 

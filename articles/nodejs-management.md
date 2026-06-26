@@ -15,12 +15,12 @@ that works too. shinyelectron uses whichever copy it can find.
 A local install lives in your user cache rather than under `/usr/local`
 or `C:\Program Files`. Four things follow from that.
 
-| Benefit             | What it means                                                       |
-|---------------------|---------------------------------------------------------------------|
-| **No admin rights** | No `sudo` or Administrator prompts during install                   |
-| **Isolation**       | Stays out of the way of any system Node.js or other projects        |
-| **Pinnability**     | Lock to a specific version when reproducibility matters             |
-| **Portability**     | Works on locked-down machines where a system install is not allowed |
+| Benefit | What it means |
+|----|----|
+| **No admin rights** | No `sudo` or Administrator prompts during install |
+| **Isolation** | Stays out of the way of any system Node.js or other projects |
+| **Pinnability** | Lock to a specific version when reproducibility matters |
+| **Portability** | Works on locked-down machines where a system install is not allowed |
 
 The minimum supported version is **Node.js 22.0.0** because Electron 41
 requires it. shinyelectron’s installer always defaults to the latest
@@ -33,6 +33,7 @@ fetches the latest LTS build from nodejs.org, verifies the checksum, and
 unpacks it into the cache.
 
 ``` r
+
 install_nodejs()
 ```
 
@@ -52,6 +53,7 @@ install_nodejs()
 Two arguments worth knowing:
 
 ``` r
+
 # Pin a specific version for reproducible builds
 install_nodejs(version = "22.11.0")
 
@@ -63,6 +65,7 @@ You can install several versions side by side; they sit in separate
 directories in the cache.
 
 ``` r
+
 install_nodejs(version = "22.11.0")
 install_nodejs(version = "20.18.0")
 ```
@@ -91,6 +94,7 @@ Node.js resolution: local cache first, then system PATH, then error.
 shows what it finds:
 
 ``` r
+
 sitrep_electron_system()
 ```
 
@@ -196,6 +200,7 @@ transit.
 Remove every Node.js install shinyelectron has downloaded:
 
 ``` r
+
 cache_clear("nodejs")
 ```
 
@@ -205,6 +210,7 @@ Remove everything shinyelectron has cached (Node.js, R/Python runtimes,
 npm modules):
 
 ``` r
+
 cache_clear("all")
 ```
 
@@ -213,14 +219,14 @@ want to test a fresh download from scratch.
 
 ## Local versus system
 
-| Aspect              | Local (shinyelectron)                                                                                  | System                                  |
-|---------------------|--------------------------------------------------------------------------------------------------------|-----------------------------------------|
-| Installs with       | [`install_nodejs()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.md) | OS package manager or nodejs.org        |
-| Lives under         | [`cache_dir()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_dir.md)           | `/usr/local`, `C:\Program Files\nodejs` |
-| Admin rights        | No                                                                                                     | Usually yes                             |
-| Updates             | [`install_nodejs()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.md) | OS package manager                      |
-| Multiple versions   | Yes                                                                                                    | Usually one                             |
-| Affects other tools | No                                                                                                     | Yes                                     |
+| Aspect | Local (shinyelectron) | System |
+|----|----|----|
+| Installs with | [`install_nodejs()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.md) | OS package manager or nodejs.org |
+| Lives under | [`cache_dir()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_dir.md) | `/usr/local`, `C:\Program Files\nodejs` |
+| Admin rights | No | Usually yes |
+| Updates | [`install_nodejs()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.md) | OS package manager |
+| Multiple versions | Yes | Usually one |
+| Affects other tools | No | Yes |
 
 Prefer the local install for most work. It is isolated, reproducible,
 and cannot be broken by an OS update. The system install makes sense
@@ -247,6 +253,7 @@ unreachable, retry later.
 Force a re-download:
 
 ``` r
+
 install_nodejs(force = TRUE)
 ```
 
@@ -264,6 +271,7 @@ The cached install is the wrong build for your machine. Clear and
 reinstall:
 
 ``` r
+
 sitrep_electron_system()
 cache_clear("nodejs")
 install_nodejs()
@@ -280,6 +288,7 @@ verify with
 [`sitrep_electron_system()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_electron_system.md):
 
 ``` r
+
 cache_clear("nodejs")
 install_nodejs()
 sitrep_electron_system()

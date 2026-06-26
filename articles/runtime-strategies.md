@@ -62,15 +62,15 @@ strategies on the dimensions that usually drive the final call: how much
 you ship, what the first launch costs, and what the end user needs on
 their machine.
 
-|                           | Shinylive              | System                | Bundled                      | Auto-download                | Container                   |
-|---------------------------|------------------------|-----------------------|------------------------------|------------------------------|-----------------------------|
-| **App size**              | 50 to 100 MB           | ~5 MB                 | 150 to 300 MB                | ~5 MB                        | ~5 MB                       |
-| **First launch**          | Fast                   | Fast                  | Fast                         | Slow (downloads runtime)     | Medium (pulls image)        |
-| **Offline support**       | Full                   | Full                  | Full                         | First launch needs internet  | First launch needs internet |
-| **User requirements**     | None                   | R or Python installed | None                         | Internet on first run        | Docker or Podman            |
-| **Dependency isolation**  | WebR/Pyodide sandbox   | None                  | Full                         | Full                         | Full                        |
-| **Package compatibility** | Limited (WebR/Pyodide) | Complete              | Complete                     | Complete                     | Complete                    |
-| **Linux support**         | Yes                    | Yes                   | No (use system or container) | No (use system or container) | Yes                         |
+|  | Shinylive | System | Bundled | Auto-download | Container |
+|----|----|----|----|----|----|
+| **App size** | 50 to 100 MB | ~5 MB | 150 to 300 MB | ~5 MB | ~5 MB |
+| **First launch** | Fast | Fast | Fast | Slow (downloads runtime) | Medium (pulls image) |
+| **Offline support** | Full | Full | Full | First launch needs internet | First launch needs internet |
+| **User requirements** | None | R or Python installed | None | Internet on first run | Docker or Podman |
+| **Dependency isolation** | WebR/Pyodide sandbox | None | Full | Full | Full |
+| **Package compatibility** | Limited (WebR/Pyodide) | Complete | Complete | Complete | Complete |
+| **Linux support** | Yes | Yes | No (use system or container) | No (use system or container) | Yes |
 
 ## Shinylive strategy
 
@@ -95,6 +95,7 @@ the browser window with no server process.
 strategy picks it automatically.
 
 ``` r
+
 # Language autodetected from files in appdir; shinylive is the default strategy
 export(
   appdir = "my-app",
@@ -160,6 +161,7 @@ python3 on PATH at launch (failing with a clear message if missing), and
 spawns the user’s own runtime to serve Shiny over localhost.
 
 ``` r
+
 export(
   appdir = "my-app",
   destdir = "output",
@@ -215,6 +217,7 @@ spawning the bundled Rscript or python3 from the packaged resources
 directory.
 
 ``` r
+
 export(
   appdir = "my-app",
   destdir = "output",
@@ -272,6 +275,7 @@ downloads a portable runtime, and installs packages, then later launches
 spawn the cached runtime shared across shinyelectron apps.
 
 ``` r
+
 export(
   appdir = "my-app",
   destdir = "output",
@@ -334,6 +338,7 @@ the containerized Shiny app over a mapped localhost port and stops the
 container when the window closes.
 
 ``` r
+
 export(
   appdir = "my-app",
   destdir = "output",

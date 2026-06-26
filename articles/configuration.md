@@ -28,6 +28,7 @@ to the runtime and the optional multi-app launcher.
 Compare a fully specified call:
 
 ``` r
+
 export(
   appdir = "my-app",
   destdir = "output",
@@ -43,6 +44,7 @@ export(
 With the same build driven by config:
 
 ``` r
+
 export(appdir = "my-app", destdir = "output")
 ```
 
@@ -65,6 +67,7 @@ Generate a starter template with
 [`init_config()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/init_config.md):
 
 ``` r
+
 init_config("path/to/my-app")
 ```
 
@@ -139,8 +142,10 @@ container:                   # Used when runtime_strategy is "container"
   image: null                # Container image (null = auto-select)
   tag: "latest"
   pull_on_start: true        # Pull latest image on app start
-  volumes: []                # Additional volume mounts
-  env: []                    # Additional environment variables
+  volumes:                   # Host-to-container volume map (not a list)
+    "/data": "/app/data"
+  env:                       # Environment variable map (not a list)
+    SHINY_LOG_LEVEL: "debug"
 
 # Multi-app suite (2+ apps packaged in one Electron shell)
 # apps:
@@ -178,34 +183,34 @@ container:                   # Used when runtime_strategy is "container"
 
 Application metadata.
 
-| Key       | Type   | Default        | Description                                   |
-|-----------|--------|----------------|-----------------------------------------------|
-| `name`    | string | Directory name | Display name shown in window title and system |
-| `version` | string | `"1.0.0"`      | Version number for the built application      |
+| Key | Type | Default | Description |
+|----|----|----|----|
+| `name` | string | Directory name | Display name shown in window title and system |
+| `version` | string | `"1.0.0"` | Version number for the built application |
 
 ### `build`
 
 The build process and its targets.
 
-| Key                | Type   | Default          | Description                                                                       |
-|--------------------|--------|------------------|-----------------------------------------------------------------------------------|
-| `type`             | string | autodetect       | Application language (see below). Autodetected from files in `appdir` if omitted. |
-| `runtime_strategy` | string | `"shinylive"`    | How the app’s runtime reaches the user (see below)                                |
-| `platforms`        | list   | Current platform | Target operating systems: `mac`, `win`, `linux`                                   |
-| `architectures`    | list   | Current arch     | Target CPU architectures: `x64`, `arm64`                                          |
+| Key | Type | Default | Description |
+|----|----|----|----|
+| `type` | string | autodetect | Application language (see below). Autodetected from files in `appdir` if omitted. |
+| `runtime_strategy` | string | `"shinylive"` | How the app’s runtime reaches the user (see below) |
+| `platforms` | list | Current platform | Target operating systems: `mac`, `win`, `linux` |
+| `architectures` | list | Current arch | Target CPU architectures: `x64`, `arm64` |
 
 **Valid `type` values:** `r-shiny` (an `app.R` or `ui.R`/`server.R`
 Shiny app) or `py-shiny` (an `app.py` Shiny for Python app).
 
 **Valid `runtime_strategy` values:**
 
-| Strategy        | Description                                                               |
-|-----------------|---------------------------------------------------------------------------|
-| `shinylive`     | Compiles to WebAssembly and runs in-browser via WebR or Pyodide (default) |
-| `auto-download` | Downloads R or Python on first launch, caches for reuse                   |
-| `bundled`       | Embeds a portable R or Python runtime inside the app at build time        |
-| `system`        | Uses R or Python already installed on the end user’s machine              |
-| `container`     | Runs the app inside a Docker or Podman container                          |
+| Strategy | Description |
+|----|----|
+| `shinylive` | Compiles to WebAssembly and runs in-browser via WebR or Pyodide (default) |
+| `auto-download` | Downloads R or Python on first launch, caches for reuse |
+| `bundled` | Embeds a portable R or Python runtime inside the app at build time |
+| `system` | Uses R or Python already installed on the end user’s machine |
+| `container` | Runs the app inside a Docker or Podman container |
 
 All five strategies work with both `r-shiny` and `py-shiny`. See the
 [Runtime
@@ -274,10 +279,10 @@ Development server settings.
 
 Node.js installation behavior.
 
-| Key            | Type    | Default | Description                                      |
-|----------------|---------|---------|--------------------------------------------------|
-| `version`      | string  | `null`  | Node.js version to install (`null` = latest LTS) |
-| `auto_install` | boolean | `false` | Auto-install Node.js if not found                |
+| Key | Type | Default | Description |
+|----|----|----|----|
+| `version` | string | `null` | Node.js version to install (`null` = latest LTS) |
+| `auto_install` | boolean | `false` | Auto-install Node.js if not found |
 
 Auto-install is off by default. Set `auto_install: true` explicitly to
 let
@@ -289,31 +294,31 @@ install Node.js for you when it is missing.
 Pins R for the `bundled` and `auto-download` runtime strategies. Ignored
 otherwise.
 
-| Key       | Type   | Default | Description                                                |
-|-----------|--------|---------|------------------------------------------------------------|
-| `version` | string | `null`  | R version (e.g. `"4.4.1"`); `null` uses the latest release |
+| Key | Type | Default | Description |
+|----|----|----|----|
+| `version` | string | `null` | R version (e.g. `"4.4.1"`); `null` uses the latest release |
 
 ### `python`
 
 Pins Python for the `bundled` and `auto-download` runtime strategies.
 Ignored otherwise.
 
-| Key       | Type   | Default | Description                                                       |
-|-----------|--------|---------|-------------------------------------------------------------------|
-| `version` | string | `null`  | Python version (e.g. `"3.12.10"`); `null` resolves to `"3.12.10"` |
+| Key | Type | Default | Description |
+|----|----|----|----|
+| `version` | string | `null` | Python version (e.g. `"3.12.10"`); `null` resolves to `"3.12.10"` |
 
 ### `container`
 
 Used when `runtime_strategy` is `"container"`. Ignored otherwise.
 
-| Key             | Type    | Default    | Description                                                     |
-|-----------------|---------|------------|-----------------------------------------------------------------|
-| `engine`        | string  | `"docker"` | Container engine: `"docker"` or `"podman"`                      |
-| `image`         | string  | `null`     | Container image name (`null` = auto-select based on `app.type`) |
-| `tag`           | string  | `"latest"` | Image tag                                                       |
-| `pull_on_start` | boolean | `true`     | Pull the latest image when the app starts                       |
-| `volumes`       | list    | `[]`       | Additional volume mounts                                        |
-| `env`           | list    | `[]`       | Additional environment variables                                |
+| Key | Type | Default | Description |
+|----|----|----|----|
+| `engine` | string | `"docker"` | Container engine: `"docker"` or `"podman"` |
+| `image` | string | `null` | Container image name (`null` = auto-select based on `app.type`) |
+| `tag` | string | `"latest"` | Image tag |
+| `pull_on_start` | boolean | `true` | Pull the latest image when the app starts |
+| `volumes` | map | [`{}`](https://rdrr.io/r/base/Paren.html) | Host-to-container volume mounts (`host: container`) |
+| `env` | map | [`{}`](https://rdrr.io/r/base/Paren.html) | Environment variables (`KEY: value`) |
 
 **Example:**
 
@@ -324,9 +329,9 @@ container:
   tag: "4.4.1"
   pull_on_start: true
   volumes:
-    - "/data:/app/data:ro"
+    "/data": "/app/data"
   env:
-    - "SHINY_LOG_LEVEL=DEBUG"
+    SHINY_LOG_LEVEL: "DEBUG"
 ```
 
 ### `apps`
@@ -336,15 +341,15 @@ Electron shell with a launcher screen. At least two entries are
 required. Any entry can override `build.type` or
 `build.runtime_strategy`, which is how mixed-strategy suites work.
 
-| Key                | Type   | Required | Description                                                   |
-|--------------------|--------|----------|---------------------------------------------------------------|
-| `id`               | string | yes      | Unique identifier (URL-safe)                                  |
-| `name`             | string | yes      | Display name in the launcher                                  |
-| `path`             | string | yes      | Relative path to the app directory                            |
-| `type`             | string | no       | App type override (default: `build.type`)                     |
-| `runtime_strategy` | string | no       | Runtime strategy override (default: `build.runtime_strategy`) |
-| `description`      | string | no       | Short description shown in the launcher                       |
-| `icon`             | string | no       | Per-app icon path                                             |
+| Key | Type | Required | Description |
+|----|----|----|----|
+| `id` | string | yes | Unique identifier (URL-safe) |
+| `name` | string | yes | Display name in the launcher |
+| `path` | string | yes | Relative path to the app directory |
+| `type` | string | no | App type override (default: `build.type`) |
+| `runtime_strategy` | string | no | Runtime strategy override (default: `build.runtime_strategy`) |
+| `description` | string | no | Short description shown in the launcher |
+| `icon` | string | no | Per-app icon path |
 
 **Example:**
 

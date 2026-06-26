@@ -9,6 +9,7 @@ export_multi_app(
   appdir,
   destdir,
   config,
+  app_name = NULL,
   runtime_strategy = NULL,
   sign = FALSE,
   platform = NULL,

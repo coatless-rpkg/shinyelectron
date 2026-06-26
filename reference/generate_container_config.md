@@ -1,31 +1,24 @@
-# Generate container configuration JSON
+# Build the container backend configuration
 
-Creates the backend config JSON that container.js reads at runtime.
+Produces the container-specific settings that are merged into
+`backend_config` (see
+[`generate_template_variables()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/generate_template_variables.md))
+and consumed by `inst/electron/backends/container.js` at runtime. The
+configured engine is passed through as-is; image selection and engine
+auto-detection happen on the end user's machine in `container.js`.
 
 ## Usage
 
 ``` r
-generate_container_config(app_type, engine, config, app_slug = NULL)
+generate_container_config(config)
 ```
 
 ## Arguments
-
-- app_type:
-
-  Character string. The app type.
-
-- engine:
-
-  Character string. Container engine.
 
 - config:
 
   List. Full app configuration.
 
-- app_slug:
-
-  Character string. Slugified app name.
-
 ## Value
 
-Character string. JSON content.
+Named list of container settings.

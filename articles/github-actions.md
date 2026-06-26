@@ -22,12 +22,12 @@ all.
 Doing this by hand is slow and hard to reproduce. CI fixes four specific
 things at once:
 
-| Problem                                      | What CI gives you                                           |
-|----------------------------------------------|-------------------------------------------------------------|
-| You need macOS, Windows, and Linux hardware  | Hosted runners for each                                     |
-| Local builds drift with your laptop’s state  | Fresh, versioned environments every run                     |
-| Uploading binaries to a Release page by hand | Artifacts and releases produced by a workflow step          |
-| Platform-specific regressions slip through   | The matrix runs in parallel and surfaces them on every push |
+| Problem | What CI gives you |
+|----|----|
+| You need macOS, Windows, and Linux hardware | Hosted runners for each |
+| Local builds drift with your laptop’s state | Fresh, versioned environments every run |
+| Uploading binaries to a Release page by hand | Artifacts and releases produced by a workflow step |
+| Platform-specific regressions slip through | The matrix runs in parallel and surfaces them on every push |
 
 ## Before you start
 
@@ -55,6 +55,7 @@ shinyelectron ships a ready-to-run workflow at
 `inst/templates/github-actions-build.yml`. Copy it into your repo:
 
 ``` r
+
 template <- system.file(
   "templates", "github-actions-build.yml",
   package = "shinyelectron"

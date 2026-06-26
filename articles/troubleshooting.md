@@ -33,6 +33,7 @@ functions and the common errors users hit there.
 When you hit a problem, run the full diagnostic first.
 
 ``` r
+
 sitrep_shinyelectron()
 ```
 
@@ -90,12 +91,12 @@ past.
 
 Once you know which subsystem is unhappy, run its check directly.
 
-| Function                                                                                                                           | What it checks                                                                                                          |
-|------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|
-| [`sitrep_electron_system()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_electron_system.md)             | Node.js, npm, platform, R, Python (plus the `shinylive` and `shiny` Python packages), container engine, cached runtimes |
-| [`sitrep_electron_dependencies()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_electron_dependencies.md) | Required and optional R packages                                                                                        |
-| [`sitrep_electron_build_tools()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_electron_build_tools.md)   | Platform-specific build tools                                                                                           |
-| [`sitrep_electron_project()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_electron_project.md)           | Electron project structure                                                                                              |
+| Function | What it checks |
+|----|----|
+| [`sitrep_electron_system()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_electron_system.md) | Node.js, npm, platform, R, Python (plus the `shinylive` and `shiny` Python packages), container engine, cached runtimes |
+| [`sitrep_electron_dependencies()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_electron_dependencies.md) | Required and optional R packages |
+| [`sitrep_electron_build_tools()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_electron_build_tools.md) | Platform-specific build tools |
+| [`sitrep_electron_project()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_electron_project.md) | Electron project structure |
 
 > **Local versus system Node.js**
 >
@@ -111,6 +112,7 @@ when you want to automate checks (CI, custom dashboards, pre-flight
 scripts):
 
 ``` r
+
 results <- sitrep_shinyelectron(verbose = FALSE)
 
 # Surface system issues
@@ -143,6 +145,7 @@ Pick one:
 1.  Install locally with shinyelectron (recommended).
 
     ``` r
+
     install_nodejs()
     ```
 
@@ -166,6 +169,7 @@ Electron version needs.
 Install a newer local copy:
 
 ``` r
+
 # Latest LTS (currently 22.x)
 install_nodejs()
 
@@ -181,6 +185,7 @@ npm ships with Node.js. If Node is installed but npm is gone, the
 install is broken; reinstall it.
 
 ``` r
+
 install_nodejs(force = TRUE)
 ```
 
@@ -191,12 +196,14 @@ install_nodejs(force = TRUE)
 Install whichever package is missing:
 
 ``` r
+
 install.packages("shinylive")
 ```
 
 Multiple at once:
 
 ``` r
+
 install.packages(c("shinylive", "cli", "fs"))
 ```
 
@@ -253,6 +260,7 @@ sudo dnf groupinstall "Development Tools"
 4.  Verify it is reachable from R:
 
     ``` r
+
     Sys.which("python3")
     # On Windows, Sys.which("python") is also checked
     ```
@@ -345,6 +353,7 @@ You pointed the diagnostic at the wrong directory. Point it at the
 Electron sub-project:
 
 ``` r
+
 sitrep_electron_project("my-export/electron-app")
 ```
 
@@ -355,6 +364,7 @@ sitrep_electron_project("my-export/electron-app")
 Install the project’s dependencies:
 
 ``` r
+
 setwd("my-export/electron-app")
 system("npm install")
 ```
@@ -544,6 +554,7 @@ cache directory; a stale or partial download in there is a common silent
 failure.
 
 ``` r
+
 # Clear everything
 cache_clear("all")
 
@@ -555,6 +566,7 @@ cache_clear("npm")
 Reinstall Node.js after a clear:
 
 ``` r
+
 install_nodejs()
 ```
 
@@ -588,12 +600,12 @@ Earlier releases treated shinylive as an app type. `app_type` accepted
 `r-shinylive` and `py-shinylive` alongside `r-shiny` and `py-shiny`.
 That is gone. shinylive is now a runtime strategy.
 
-| Old API                     | New API                                                   |
-|-----------------------------|-----------------------------------------------------------|
-| `app_type = "r-shinylive"`  | `app_type = "r-shiny"`, `runtime_strategy = "shinylive"`  |
+| Old API | New API |
+|----|----|
+| `app_type = "r-shinylive"` | `app_type = "r-shiny"`, `runtime_strategy = "shinylive"` |
 | `app_type = "py-shinylive"` | `app_type = "py-shiny"`, `runtime_strategy = "shinylive"` |
-| `app_type = "r-shiny"`      | `app_type = "r-shiny"` (pick any `runtime_strategy`)      |
-| `app_type = "py-shiny"`     | `app_type = "py-shiny"` (pick any `runtime_strategy`)     |
+| `app_type = "r-shiny"` | `app_type = "r-shiny"` (pick any `runtime_strategy`) |
+| `app_type = "py-shiny"` | `app_type = "py-shiny"` (pick any `runtime_strategy`) |
 
 `app_type` is now optional. shinyelectron autodetects `r-shiny` or
 `py-shiny` from the files in `appdir`, and `runtime_strategy` defaults
@@ -623,6 +635,7 @@ If every diagnostic is green but something still breaks:
 When you file an issue, include the output of:
 
 ``` r
+
 sitrep_shinyelectron()
 ```
 

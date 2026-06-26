@@ -9,7 +9,7 @@ servers.
 ``` r
 enable_auto_updates(
   appdir,
-  provider = c("github", "s3", "generic"),
+  provider = "github",
   owner = NULL,
   repo = NULL,
   check_on_startup = TRUE,
@@ -27,8 +27,9 @@ enable_auto_updates(
 
 - provider:
 
-  Character update provider: `"github"` (default), `"s3"`, or
-  `"generic"`
+  Character update provider. Currently only `"github"` is supported;
+  `"s3"` and `"generic"` are not yet wired into the build and will be
+  added in a future release.
 
 - owner:
 

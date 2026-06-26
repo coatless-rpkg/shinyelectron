@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Export Shiny Applications as Desktop Applications using Electron • shinyelectron</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Export Shiny Applications as Desktop Applications using Electron">
 <meta name="description" content="Provides tools to export Shiny applications as standalone desktop applications using Electron. This allows Shiny applications to run as native desktop applications on Windows, Mac, and Linux without requiring users to have R installed.">
@@ -76,7 +76,7 @@
 </h1></div>
 <!-- badges: start -->
 
-<p>Turn any Shiny app — R or Python — into a standalone desktop application that runs on macOS, Windows, and Linux. No web server, no browser tab, no deployment infrastructure. Just an <code>.app</code>, <code>.exe</code>, or AppImage your users double-click to open.</p>
+<p>Turn any Shiny app (R or Python) into a standalone desktop application that runs on macOS, Windows, and Linux. No web server, no browser tab, no deployment infrastructure. Just an <code>.app</code>, <code>.exe</code>, or AppImage your users double-click to open.</p>
 <p><img src="reference/figures/pipeline-overview.svg"></p>
 <blockquote>
 <p>[!IMPORTANT]</p>
@@ -100,7 +100,7 @@
 <span></span>
 <span><span class="co"># Try a bundled demo</span></span>
 <span><span class="fu"><a href="reference/export.html">export</a></span><span class="op">(</span></span>
-<span>  appdir  <span class="op">=</span> <span class="fu"><a href="reference/example_app.html">example_app</a></span><span class="op">(</span><span class="st">"r-single"</span><span class="op">)</span>,</span>
+<span>  appdir  <span class="op">=</span> <span class="fu"><a href="reference/example_app.html">example_app</a></span><span class="op">(</span><span class="st">"r"</span><span class="op">)</span>,</span>
 <span>  destdir <span class="op">=</span> <span class="st">"~/Desktop/my-first-app"</span>,</span>
 <span>  run_after <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -127,7 +127,7 @@
 <col width="20%">
 <col width="20%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th>Strategy</th>
 <th>What Ships</th>
 <th>First Launch</th>
@@ -135,35 +135,35 @@
 <th>Best For</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>shinylive</code></td>
 <td>Electron + WASM bundle</td>
 <td>Instant, offline</td>
 <td>Nothing</td>
 <td>Simple apps; deps that run in WebR or Pyodide (default)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>bundled</code></td>
 <td>Electron + R/Python runtime</td>
 <td>Instant, offline</td>
 <td>Nothing</td>
 <td>Offline distribution; predictable runtime</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>auto-download</code></td>
 <td>Electron + downloader</td>
 <td>Needs internet</td>
 <td>Nothing</td>
 <td>Public distribution; smaller download</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>system</code></td>
 <td>Electron only</td>
 <td>Finds R/Python on PATH</td>
 <td>R or Python pre-installed</td>
 <td>Internal tools for users who already have R or Python</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>container</code></td>
 <td>Electron + container config</td>
 <td>Needs Docker</td>
@@ -186,26 +186,26 @@
 <li>
 <strong>R</strong> (&gt;= 4.4.0)</li>
 <li>
-<strong>Node.js</strong> (&gt;= 22.0.0) — run <code><a href="reference/install_nodejs.html">install_nodejs()</a></code> to install locally without admin rights</li>
+<strong>Node.js</strong> (&gt;= 22.0.0): run <code><a href="reference/install_nodejs.html">install_nodejs()</a></code> to install locally without admin rights</li>
 <li>
-<strong>npm</strong> (&gt;= 11.5.0) — included with Node.js</li>
+<strong>npm</strong> (&gt;= 11.5.0): included with Node.js</li>
 </ul>
 <p>Platform build tools:</p>
 <table class="table">
-<thead><tr class="header">
+<thead><tr>
 <th>Platform</th>
 <th>Requirement</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td>macOS</td>
 <td>Xcode Command Line Tools</td>
 </tr>
-<tr class="even">
+<tr>
 <td>Windows</td>
 <td>Visual Studio Build Tools</td>
 </tr>
-<tr class="odd">
+<tr>
 <td>Linux</td>
 <td>
 <code>build-essential</code> (gcc, make)</td>
@@ -222,17 +222,17 @@
 </h2>
 <ul>
 <li>
-<a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/getting-started.html">Getting Started</a> — step-by-step tutorial</li>
+<a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/getting-started.html">Getting Started</a>: step-by-step tutorial</li>
 <li>
-<a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/configuration.html">Configuration Guide</a> — <code>_shinyelectron.yml</code> reference</li>
+<a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/configuration.html">Configuration Guide</a>: <code>_shinyelectron.yml</code> reference</li>
 <li>
-<a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/runtime-strategies.html">Runtime Strategies</a> — bundled vs system vs auto-download vs container</li>
+<a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/runtime-strategies.html">Runtime Strategies</a>: bundled vs system vs auto-download vs container</li>
 <li>
-<a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/multi-app-suites.html">Multi-App Suites</a> — bundle multiple apps in one shell</li>
+<a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/multi-app-suites.html">Multi-App Suites</a>: bundle multiple apps in one shell</li>
 <li>
-<a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/code-signing.html">Code Signing</a> — macOS GateKeeper and Windows SmartScreen</li>
+<a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/code-signing.html">Code Signing</a>: macOS GateKeeper and Windows SmartScreen</li>
 <li>
-<a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/troubleshooting.html">Troubleshooting</a> — common issues and fixes</li>
+<a href="https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/troubleshooting.html">Troubleshooting</a>: common issues and fixes</li>
 </ul>
 </div>
 <div class="section level2">
@@ -244,13 +244,13 @@
 </h3>
 <ul>
 <li>
-<a href="https://chasemc.github.io/electricShine/" class="external-link">electricShine</a> — R package that streamlines distributable Shiny Electron apps via its <code>electrify()</code> function; automates Windows builds.</li>
+<a href="https://chasemc.github.io/electricShine/" class="external-link">electricShine</a>: R package that streamlines distributable Shiny Electron apps via its <code>electrify()</code> function; automates Windows builds.</li>
 <li>
-<a href="https://github.com/COVAIL/photon" class="external-link">Photon</a> — RStudio add-in that leverages Electron to build standalone Shiny apps for macOS and Windows by cloning an R-specific <a href="https://github.com/COVAIL/electron-quick-start" class="external-link"><code>electron-quick-start</code></a> repository and including portable R versions.</li>
+<a href="https://github.com/COVAIL/photon" class="external-link">Photon</a>: RStudio add-in that leverages Electron to build standalone Shiny apps for macOS and Windows by cloning an R-specific <a href="https://github.com/COVAIL/electron-quick-start" class="external-link"><code>electron-quick-start</code></a> repository and including portable R versions.</li>
 <li>
-<a href="https://github.com/ficonsulting/RInno" class="external-link">RInno</a> — standalone R application builder with Electron on Windows.</li>
+<a href="https://github.com/ficonsulting/RInno" class="external-link">RInno</a>: standalone R application builder with Electron on Windows.</li>
 <li>
-<a href="https://github.com/wleepang/DesktopDeployR" class="external-link">DesktopDeployR</a> — alternative framework for deploying self-contained R-based applications with a portable R environment and private package library.</li>
+<a href="https://github.com/wleepang/DesktopDeployR" class="external-link">DesktopDeployR</a>: alternative framework for deploying self-contained R-based applications with a portable R environment and private package library.</li>
 </ul>
 </div>
 <div class="section level3">
@@ -258,11 +258,11 @@
 </h3>
 <ul>
 <li>
-<strong>UseR! 2018</strong> — <a href="https://www.youtube.com/watch?v=ARrbbviGvjc" class="external-link">Shiny meets Electron</a> by @ksasso demonstrating how to convert Shiny apps into standalone desktop apps.</li>
+<strong>UseR! 2018</strong>: <a href="https://www.youtube.com/watch?v=ARrbbviGvjc" class="external-link">Shiny meets Electron</a> by @ksasso demonstrating how to convert Shiny apps into standalone desktop apps.</li>
 <li>
-<strong>Developer tutorials</strong> — step-by-step guides from <a href="https://github.com/lawalter/r-shiny-electron-app" class="external-link">@lawalter</a> and <a href="https://github.com/dirkschumacher/r-shiny-electron" class="external-link">@dirkschumacher</a> on practical integration.</li>
+<strong>Developer tutorials</strong>: step-by-step guides from <a href="https://github.com/lawalter/r-shiny-electron-app" class="external-link">@lawalter</a> and <a href="https://github.com/dirkschumacher/r-shiny-electron" class="external-link">@dirkschumacher</a> on practical integration.</li>
 <li>
-<strong>Zarathu Corporation templates</strong> — cross-platform deployment templates for <a href="https://github.com/zarathucorp/shiny-electron-template-m1" class="external-link">macOS ARM</a> and <a href="https://github.com/zarathucorp/shiny-electron-template-windows" class="external-link">Windows</a>, summarized in this <a href="https://www.r-bloggers.com/2023/03/creating-standalone-apps-from-shiny-with-electron-2023-macos-m1/" class="external-link">R-bloggers post</a>.</li>
+<strong>Zarathu Corporation templates</strong>: cross-platform deployment templates for <a href="https://github.com/zarathucorp/shiny-electron-template-m1" class="external-link">macOS ARM</a> and <a href="https://github.com/zarathucorp/shiny-electron-template-windows" class="external-link">Windows</a>, summarized in this <a href="https://www.r-bloggers.com/2023/03/creating-standalone-apps-from-shiny-with-electron-2023-macos-m1/" class="external-link">R-bloggers post</a>.</li>
 </ul>
 </div>
 <div class="section level3">
@@ -270,17 +270,17 @@
 </h3>
 <ul>
 <li>
-<a href="https://electronjs.org/docs/latest/tutorial/application-distribution" class="external-link">Electron</a> — the desktop framework.</li>
+<a href="https://electronjs.org/docs/latest/tutorial/application-distribution" class="external-link">Electron</a>: the desktop framework.</li>
 <li>
-<a href="https://www.electron.build/" class="external-link">electron-builder</a> — the packaging pipeline that produces platform installers.</li>
+<a href="https://www.electron.build/" class="external-link">electron-builder</a>: the packaging pipeline that produces platform installers.</li>
 <li>
-<a href="https://github.com/posit-dev/r-shinylive" class="external-link">shinylive</a> (Posit) and <a href="https://docs.r-wasm.org/webr/" class="external-link">WebR</a> — R in WebAssembly, enabling browser-only Shiny apps.</li>
+<a href="https://github.com/posit-dev/r-shinylive" class="external-link">shinylive</a> (Posit) and <a href="https://docs.r-wasm.org/webr/" class="external-link">WebR</a>: R in WebAssembly, enabling browser-only Shiny apps.</li>
 <li>
-<a href="https://github.com/posit-dev/py-shinylive" class="external-link">py-shinylive</a> and <a href="https://pyodide.org/" class="external-link">Pyodide</a> — the Python equivalents.</li>
+<a href="https://github.com/posit-dev/py-shinylive" class="external-link">py-shinylive</a> and <a href="https://pyodide.org/" class="external-link">Pyodide</a>: the Python equivalents.</li>
 <li>
-<a href="https://github.com/portable-r" class="external-link">portable-r</a> — standalone R binaries used by the <code>bundled</code> and <code>auto-download</code> strategies.</li>
+<a href="https://github.com/portable-r" class="external-link">portable-r</a>: standalone R binaries used by the <code>bundled</code> and <code>auto-download</code> strategies.</li>
 <li>
-<a href="https://github.com/astral-sh/python-build-standalone" class="external-link">python-build-standalone</a> — standalone Python builds used by the Python strategies.</li>
+<a href="https://github.com/astral-sh/python-build-standalone" class="external-link">python-build-standalone</a>: standalone Python builds used by the Python strategies.</li>
 </ul>
 </div>
 </div>
@@ -298,12 +298,12 @@
 <li><a href="https://github.com/COVAIL/photon" class="external-link"><code>Photon</code> (RStudio Add-in)</a></li>
 <li><a href="https://github.com/COVAIL/electron-quick-start" class="external-link"><code>COVAIL</code> electron-quick-start</a></li>
 <li><a href="https://github.com/wleepang/DesktopDeployR" class="external-link"><code>DesktopDeployR</code> (framework)</a></li>
-<li><a href="https://github.com/ksasso/Electron_ShinyApp_Deployment" class="external-link">Electron ShinyApp Deployment — @ksasso</a></li>
-<li><a href="https://github.com/lawalter/r-shiny-electron-app" class="external-link">How to Make an R Shiny Electron App — @lawalter</a></li>
-<li><a href="https://github.com/dirkschumacher/r-shiny-electron" class="external-link">R Shiny and Electron — @dirkschumacher</a></li>
+<li><a href="https://github.com/ksasso/Electron_ShinyApp_Deployment" class="external-link">Electron ShinyApp Deployment by @ksasso</a></li>
+<li><a href="https://github.com/lawalter/r-shiny-electron-app" class="external-link">How to Make an R Shiny Electron App by @lawalter</a></li>
+<li><a href="https://github.com/dirkschumacher/r-shiny-electron" class="external-link">R Shiny and Electron by @dirkschumacher</a></li>
 <li><a href="https://github.com/zarathucorp/shiny-electron-template-m1" class="external-link">Creating Standalone Shiny Apps with Electron on macOS M1</a></li>
-<li><a href="https://github.com/zarathucorp/shiny-electron-template-windows" class="external-link">Creating Standalone Shiny Apps with Electron on Windows — @jhk0530</a></li>
-<li><a href="https://www.r-bloggers.com/2023/03/creating-standalone-apps-from-shiny-with-electron-2023-macos-m1/" class="external-link">Creating Standalone Apps from Shiny with Electron (R-bloggers) — @jhk0530</a></li>
+<li><a href="https://github.com/zarathucorp/shiny-electron-template-windows" class="external-link">Creating Standalone Shiny Apps with Electron on Windows by @jhk0530</a></li>
+<li><a href="https://www.r-bloggers.com/2023/03/creating-standalone-apps-from-shiny-with-electron-2023-macos-m1/" class="external-link">Creating Standalone Apps from Shiny with Electron (R-bloggers) by @jhk0530</a></li>
 <li>
 <a href="https://www.youtube.com/watch?v=ARrbbviGvjc" class="external-link">Shiny meets Electron (UseR! 2018 talk)</a> (<a href="https://github.com/ksasso/useR_electron_meet_shiny/" class="external-link">slides and code</a>)</li>
 <li><a href="https://electronjs.org/docs/latest/tutorial/application-distribution" class="external-link">Electron documentation</a></li>

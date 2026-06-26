@@ -42,13 +42,13 @@ while the runtime is coming up, then the loaded Shiny app. Below the
 main flow, three smaller cards label the optional automatic states the
 runtime may insert.
 
-| Phase                   | Shown when                                 | What you control                      |
-|-------------------------|--------------------------------------------|---------------------------------------|
-| Splash                  | The app is starting up                     | Logo image, loading text, text colour |
-| Preloader               | The runtime is downloading or starting     | Headline message                      |
-| Dependency confirmation | Missing R or Python packages were found    | (automatic UI)                        |
-| Runtime picker          | Several R or Python runtimes are installed | (automatic UI)                        |
-| Error                   | Anything failed during startup             | (automatic UI with Retry / Quit)      |
+| Phase | Shown when | What you control |
+|----|----|----|
+| Splash | The app is starting up | Logo image, loading text, text colour |
+| Preloader | The runtime is downloading or starting | Headline message |
+| Dependency confirmation | Missing R or Python packages were found | (automatic UI) |
+| Runtime picker | Several R or Python runtimes are installed | (automatic UI) |
+| Error | Anything failed during startup | (automatic UI with Retry / Quit) |
 
 ### Splash
 
@@ -80,14 +80,14 @@ splash:
   background: "#1a1a2e"
 ```
 
-| Option       | Description                                                                                    | Default                            |
-|--------------|------------------------------------------------------------------------------------------------|------------------------------------|
-| `enabled`    | Show the splash state at all; if `false`, the lifecycle window opens directly to the preloader | `true`                             |
-| `duration`   | Minimum display time in milliseconds before transitioning out of the splash                    | `1500`                             |
-| `text`       | Loading text shown under the logo                                                              | `"Loading..."`                     |
-| `text_color` | Colour of the loading text (hex or CSS colour)                                                 | `"#333333"`                        |
-| `image`      | Path to a PNG logo, relative to the app directory; rendered at up to 128 px square             | none                               |
-| `background` | Background colour of the lifecycle window during the splash phase (hex or CSS colour)          | `null` (inherit from `_brand.yml`) |
+| Option | Description | Default |
+|----|----|----|
+| `enabled` | Show the splash state at all; if `false`, the lifecycle window opens directly to the preloader | `true` |
+| `duration` | Minimum display time in milliseconds before transitioning out of the splash | `1500` |
+| `text` | Loading text shown under the logo | `"Loading..."` |
+| `text_color` | Colour of the loading text (hex or CSS colour) | `"#333333"` |
+| `image` | Path to a PNG logo, relative to the app directory; rendered at up to 128 px square | none |
+| `background` | Background colour of the lifecycle window during the splash phase (hex or CSS colour) | `null` (inherit from `_brand.yml`) |
 
 If you set `splash.background`, that wins. Otherwise the window inherits
 its background colour from
@@ -119,11 +119,11 @@ preloader:
   background: "#0f172a"
 ```
 
-| Option       | Description                                          | Default                            |
-|--------------|------------------------------------------------------|------------------------------------|
-| `message`    | Headline shown above the phase detail                | `"Loading application..."`         |
-| `style`      | Loading indicator: `"spinner"`, `"bar"`, or `"dots"` | `"spinner"`                        |
-| `background` | Background colour during the preloader phase         | `null` (inherit from `_brand.yml`) |
+| Option | Description | Default |
+|----|----|----|
+| `message` | Headline shown above the phase detail | `"Loading application..."` |
+| `style` | Loading indicator: `"spinner"`, `"bar"`, or `"dots"` | `"spinner"` |
+| `background` | Background colour during the preloader phase | `null` (inherit from `_brand.yml`) |
 
 The three styles render differently above the progress bar:
 
@@ -203,13 +203,13 @@ tray:
   icon: "tray-icon.png"    # Custom tray icon (optional)
 ```
 
-| Option             | Description                                        | Default  |
-|--------------------|----------------------------------------------------|----------|
-| `enabled`          | Turn on the tray icon                              | `false`  |
-| `minimize_to_tray` | Minimize button hides the window to the tray       | `true`   |
-| `close_to_tray`    | Close button hides to the tray instead of quitting | `false`  |
-| `tooltip`          | Text shown when the user hovers the icon           | App name |
-| `icon`             | Path to a custom tray icon                         | App icon |
+| Option | Description | Default |
+|----|----|----|
+| `enabled` | Turn on the tray icon | `false` |
+| `minimize_to_tray` | Minimize button hides the window to the tray | `true` |
+| `close_to_tray` | Close button hides to the tray instead of quitting | `false` |
+| `tooltip` | Text shown when the user hovers the icon | App name |
+| `icon` | Path to a custom tray icon | App icon |
 
 ### What the buttons do
 
@@ -283,12 +283,12 @@ menu:
   help_url: "https://docs.example.com"
 ```
 
-| Option           | Description                                              | Default     |
-|------------------|----------------------------------------------------------|-------------|
-| `enabled`        | Build a native application menu                          | `true`      |
-| `template`       | `"default"` (full menu) or `"minimal"` (essentials only) | `"default"` |
-| `show_dev_tools` | Add a DevTools toggle to the View menu                   | `false`     |
-| `help_url`       | URL opened by Help → Documentation                       | none        |
+| Option | Description | Default |
+|----|----|----|
+| `enabled` | Build a native application menu | `true` |
+| `template` | `"default"` (full menu) or `"minimal"` (essentials only) | `"default"` |
+| `show_dev_tools` | Add a DevTools toggle to the View menu | `false` |
+| `help_url` | URL opened by Help → Documentation | none |
 
 ### What each template ships
 
@@ -392,27 +392,31 @@ menu:
 
 That gives you a dark branded splash that lingers for two seconds, a
 spinner during runtime startup, a tray icon that holds onto the app when
-the user closes the window, and a clean three-menu bar with a Help →
+the user closes the window, and a clean three-menu bar with a Help \>
 Documentation entry pointing at your docs. Every other key uses its
 default.
 
 ## Editing config from R
 
-`_shinyelectron.yml` is just a YAML file. When you want to set things
-from R, read it with
-[`read_config()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/read_config.md)
-(which validates as it loads, so bad values warn and fall back to
-defaults), mutate the list, and write it back:
+`_shinyelectron.yml` is just a YAML file. To edit it from R, read it
+with
+[`yaml::read_yaml()`](https://yaml.r-lib.org/reference/read_yaml.html),
+mutate the list, and write it back:
 
 ``` r
-config <- read_config("path/to/app")
+
+config_path <- file.path("path/to/app", "_shinyelectron.yml")
+config <- yaml::read_yaml(config_path)
 
 config$tray$enabled <- TRUE
 config$tray$close_to_tray <- TRUE
 config$splash$text <- "Loading dashboard..."
 
-yaml::write_yaml(config, file.path("path/to/app", "_shinyelectron.yml"))
+yaml::write_yaml(config, config_path)
 ```
+
+To inspect the effective configuration (your file deep-merged with the
+defaults and validated), call the exported `show_config("path/to/app")`.
 
 Useful for project setup scripts, CI templating, or any case where you
 want the configuration to live alongside the code that depends on it.

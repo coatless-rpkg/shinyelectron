@@ -5,7 +5,7 @@ Get path to local Node.js executable
 ## Usage
 
 ``` r
-nodejs_executable(version = NULL)
+nodejs_executable(version = NULL, platform = NULL, arch = NULL)
 ```
 
 ## Arguments
@@ -13,6 +13,14 @@ nodejs_executable(version = NULL)
 - version:
 
   Character Node.js version (NULL = latest installed)
+
+- platform:
+
+  Character target platform (NULL = current)
+
+- arch:
+
+  Character target architecture (NULL = current)
 
 ## Value
 

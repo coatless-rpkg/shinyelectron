@@ -71,6 +71,9 @@ Named list suitable for Whisker rendering.
 
 ## Details
 
-Every variable here corresponds to a `{{...}}` placeholder in
-`inst/electron/shared/main.js`, `lifecycle.html`, `preload.js`, or
-`launcher.html`. Adding a new placeholder requires adding it here.
+Most variables here correspond to a `{{...}}` placeholder in
+`inst/electron/shared/main.js`, `lifecycle.html`, or `launcher.html`.
+The list is a superset: some entries are serialized into
+`backend_config_json` (and consumed by the backend modules rather than a
+template) or are reserved for future placeholders. Adding a new
+placeholder requires adding it here.
