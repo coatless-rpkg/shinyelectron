@@ -30,7 +30,6 @@ Imports:
 Suggests:
     testthat (>= 3.0.0),
     mockery,
-    pak,
     quarto,
     renv (>= 1.0.0),
     shinylive (>= 0.3.0),

@@ -400,9 +400,9 @@ test_that("e2e: r-shiny container Dockerfile encodes pinned R version, sysreqs, 
     )
   )
 
-  # Avoid pak / network calls; libfoo-dev still comes from config escape hatch
+  # Avoid network sysreqs calls; libfoo-dev still comes from config escape hatch
   local_mocked_bindings(
-    pak_sysreqs_apt = function(...) character(0),
+    query_sysreqs = function(...) character(0),
     .package = "shinyelectron"
   )
 

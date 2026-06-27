@@ -297,7 +297,7 @@ The support toolchain (`electron-builder`, `electron-updater`, `electron-log`) i
 
 A list of apt package names baked into the container image at build time. Used only when `runtime_strategy` is `"container"`.
 
-For R apps, shinyelectron already calls `pak::pkg_sysreqs()` to auto-detect system libraries required by your R packages (for example, `libgdal-dev` for `sf`) and bakes them in automatically. `system_packages` is the escape hatch for anything not covered by that auto-detection.
+For R apps, shinyelectron already queries the Posit Package Manager system-requirements service to auto-detect system libraries required by your R packages (for example, `libgdal-dev` for `sf`) and bakes them in automatically. `system_packages` is the escape hatch for anything not covered by that auto-detection.
 
 For Python apps, auto-detection is not performed. `system_packages` is the only way to add system-level libraries to the image.
 

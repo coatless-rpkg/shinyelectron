@@ -127,7 +127,7 @@ docker build --build-arg R_VERSION=4.5.1 -t myapp:4.5.1 dockerfiles/
 
 shinyelectron rewrites the `ARG R_VERSION` default to the resolved version when it copies the Dockerfile into the build, so the baked image tag and the `FROM` line stay in sync.
 
-The image's `ENTRYPOINT` is the bundled `entrypoint.sh`. It honors `PORT` and `HOST` env vars (defaulting to `3838` / `0.0.0.0`) and launches the app via `Rscript`. R package dependencies are baked into the image at build time via `install.packages()` using the P3M binary repository. System libraries (detected automatically via `pak::pkg_sysreqs()`) are also installed as apt packages at build time.
+The image's `ENTRYPOINT` is the bundled `entrypoint.sh`. It honors `PORT` and `HOST` env vars (defaulting to `3838` / `0.0.0.0`) and launches the app via `Rscript`. R package dependencies are baked into the image at build time via `install.packages()` using the P3M binary repository. System libraries (detected automatically via the Posit Package Manager system-requirements service) are also installed as apt packages at build time.
 
 ```{r}
 #| echo: false
@@ -186,9 +186,9 @@ cat(c("```bash",
 
 When `runtime_strategy` is `"container"`, shinyelectron bakes both R/Python packages and their system dependencies into the image at build time. This means the container starts fast (no compile-or-install step at launch) and works offline after the first build.
 
-**For R apps**, shinyelectron calls `pak::pkg_sysreqs()` to automatically detect the apt packages that your R packages need (for example, `libgdal-dev` for `sf`, `libcurl4-openssl-dev` for `curl`). Those are added to the Dockerfile as an `apt-get install` layer alongside the `install.packages()` call. Use `dependencies.system_packages` in `_shinyelectron.yml` to add anything the auto-detection misses.
+**For R apps**, shinyelectron queries the Posit Package Manager system-requirements service to automatically detect the apt packages that your R packages need (for example, `libgdal-dev` for `sf`, `libcurl4-openssl-dev` for `curl`). Those are added to the Dockerfile as an `apt-get install` layer alongside the `install.packages()` call. Use `dependencies.system_packages` in `_shinyelectron.yml` to add anything the auto-detection misses.
 
-**For Python apps**, `pak` is not available, so auto-detection is skipped. Use `dependencies.system_packages` to list any C-level build dependencies your Python packages need.
+**For Python apps**, system-requirement auto-detection is not performed. Use `dependencies.system_packages` to list any C-level build dependencies your Python packages need.
 
 Both paths emit a Dockerfile layer like:
 

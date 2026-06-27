@@ -172,7 +172,7 @@ test_that("bake_dockerfile_dependencies bakes sysreqs + install.packages for R (
 
   mockery::stub(
     bake_dockerfile_dependencies,
-    "pak_sysreqs_apt",
+    "query_sysreqs",
     function(...) "libxml2-dev"
   )
 
@@ -188,4 +188,26 @@ test_that("bake_dockerfile_dependencies bakes sysreqs + install.packages for R (
   # R package install line uses install.packages, not r-cran-*
   expect_true(any(grepl("install\\.packages", df_content)))
   expect_false(any(grepl("r-cran-", df_content)))
+})
+
+test_that("query_sysreqs parses the Posit sysreqs API response into apt packages", {
+  skip_if_not_installed("mockery")
+  fixture <- paste0(
+    '{"requirements":[',
+    '{"name":"fs","requirements":{"packages":["cmake","libuv1-dev"]}},',
+    '{"name":"curl","requirements":{"packages":["libcurl4-openssl-dev","libssl-dev"]}}',
+    ']}'
+  )
+  mockery::stub(query_sysreqs, "utils::download.file", function(url, destfile, ...) {
+    writeLines(fixture, destfile)
+    0L
+  })
+  res <- query_sysreqs(c("fs", "curl"))
+  expect_setequal(res, c("cmake", "libuv1-dev", "libcurl4-openssl-dev", "libssl-dev"))
+})
+
+test_that("query_sysreqs returns character(0) when the lookup fails", {
+  skip_if_not_installed("mockery")
+  mockery::stub(query_sysreqs, "utils::download.file", function(...) stop("network down"))
+  expect_equal(query_sysreqs("fs"), character(0))
 })

@@ -178,21 +178,9 @@ copy_and_bake_dockerfiles <- function(output_dir, app_type, config = NULL, verbo
   if (verbose) cli::cli_alert_success("Copied Dockerfile for container strategy")
 }
 
-#' Resolve apt system package names for a set of R packages via pak
-#'
-#' Returns a character vector of apt package names required by `pkgs` on
-#' Ubuntu 24.04, or `character(0)` when pak is not available.
-#' @keywords internal
-pak_sysreqs_apt <- function(pkgs) {
-  if (!requireNamespace("pak", quietly = TRUE)) return(character(0))
-  result <- pak::pkg_sysreqs(pkgs, sysreqs_platform = "ubuntu-24.04")
-  sys <- unique(unlist(result$packages$system_packages))
-  if (is.null(sys)) character(0) else sys
-}
-
 #' Append app-specific package installs to the Dockerfile
 #'
-#' Bakes system dependencies (via `pak::pkg_sysreqs` and
+#' Bakes system dependencies (via the Posit Package Manager sysreqs API and
 #' `config$dependencies$system_packages`) and R/Python package installs into
 #' the image at build time so container launch does not have to
 #' compile/install packages on the user's machine.
@@ -212,8 +200,9 @@ bake_dockerfile_dependencies <- function(output_dir, dockerfile_dest, config = N
   dockerfile_lines <- readLines(dockerfile_path)
 
   if (deps$language == "r") {
-    # Gather system deps: pak sysreqs + config escape hatch
-    sys <- pak_sysreqs_apt(c("shiny", pkgs))
+    # Gather system deps: Posit sysreqs API (ubuntu 24.04, matching the
+    # rocker/r-ver base) + the config escape hatch.
+    sys <- query_sysreqs(c("shiny", pkgs), "ubuntu", "24.04")
     sys <- unique(c(sys, config$dependencies$system_packages))
 
     if (length(sys) > 0) {
@@ -237,7 +226,7 @@ bake_dockerfile_dependencies <- function(output_dir, dockerfile_dest, config = N
     dockerfile_lines <- c(dockerfile_lines, "", "# App-specific R packages", r_line)
 
   } else if (deps$language == "python") {
-    # No pak sysreqs for Python; honour the config escape hatch
+    # No system-requirements auto-detection for Python; honour the config escape hatch
     sys <- unique(c(character(0), config$dependencies$system_packages))
 
     if (length(sys) > 0) {

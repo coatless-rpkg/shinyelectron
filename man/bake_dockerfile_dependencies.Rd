@@ -7,7 +7,7 @@
 bake_dockerfile_dependencies(output_dir, dockerfile_dest, config = NULL)
 }
 \description{
-Bakes system dependencies (via \code{pak::pkg_sysreqs} and
+Bakes system dependencies (via the Posit Package Manager sysreqs API and
 \code{config$dependencies$system_packages}) and R/Python package installs into
 the image at build time so container launch does not have to
 compile/install packages on the user's machine.

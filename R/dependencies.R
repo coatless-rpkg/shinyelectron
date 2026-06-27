@@ -1,3 +1,48 @@
+#' Query Linux system package names for a set of R packages
+#'
+#' Resolves the distribution system packages required by `pkgs` and their
+#' recursive dependencies using the Posit Package Manager system-requirements
+#' service. Returns `character(0)` on any failure so callers degrade gracefully
+#' (a user can still name packages via `dependencies.system_packages`).
+#'
+#' Queried over HTTP directly rather than through `pak::pkg_sysreqs()`, whose
+#' resolver returns an empty mapping in common configurations even when the
+#' underlying data is available.
+#'
+#' @param pkgs Character vector of R package names.
+#' @param distribution Linux distribution, e.g. `"ubuntu"` or `"redhat"`.
+#' @param release Distribution release, e.g. `"24.04"` or `"9"`.
+#' @return Character vector of system package names (sorted, de-duplicated).
+#' @keywords internal
+query_sysreqs <- function(pkgs, distribution = "ubuntu", release = "24.04") {
+  pkgs <- unique(pkgs[nzchar(pkgs)])
+  if (length(pkgs) == 0) return(character(0))
+
+  url <- paste0(
+    "https://packagemanager.posit.co/__api__/repos/cran/sysreqs",
+    "?all=false&distribution=", distribution, "&release=", release,
+    paste0("&pkgname=", utils::URLencode(pkgs, reserved = TRUE), collapse = "")
+  )
+
+  tmp <- tempfile(fileext = ".json")
+  on.exit(unlink(tmp), add = TRUE)
+  ok <- tryCatch(
+    identical(utils::download.file(url, tmp, quiet = TRUE, mode = "wb"), 0L),
+    error = function(e) FALSE
+  )
+  if (!ok) return(character(0))
+
+  parsed <- tryCatch(
+    jsonlite::fromJSON(tmp, simplifyVector = FALSE),
+    error = function(e) NULL
+  )
+  reqs <- parsed$requirements
+  if (is.null(reqs)) return(character(0))
+
+  sys <- unlist(lapply(reqs, function(r) r$requirements$packages))
+  sort(unique(sys[nzchar(sys)]))
+}
+
 #' Generate a dependency manifest file
 #'
 #' Creates a JSON manifest describing the packages an app needs.
@@ -26,29 +71,15 @@ generate_dependency_manifest <- function(packages, language,
       SHINYELECTRON_DEFAULTS$dependencies$python$index_urls
   }
 
-  # Look up Linux system dependencies at build time (optional, requires pak).
-  # pkg_sysreqs() reports for a single platform per call, so query Debian/Ubuntu
-  # and Fedora separately and read the actual `system_packages` list column.
+  # Look up Linux system dependencies at build time. The service reports one
+  # distribution per call, so query Debian/Ubuntu and Fedora/RedHat separately.
   # as.list() forces JSON array shape so the JS consumer can iterate even when
   # a distro has exactly one system package.
   if (language == "r" && length(packages) > 0) {
-    if (requireNamespace("pak", quietly = TRUE)) {
-      sysreqs_for <- function(sysreqs_platform) {
-        tryCatch({
-          sr <- pak::pkg_sysreqs(packages, sysreqs_platform = sysreqs_platform)
-          if (!is.null(sr) && !is.null(sr$packages) &&
-              !is.null(sr$packages$system_packages)) {
-            sort(unique(unlist(sr$packages$system_packages)))
-          } else {
-            character(0)
-          }
-        }, error = function(e) character(0))
-      }
-      manifest$system_deps <- list(
-        debian = as.list(sysreqs_for("ubuntu")),
-        fedora = as.list(sysreqs_for("fedora"))
-      )
-    }
+    manifest$system_deps <- list(
+      debian = as.list(query_sysreqs(packages, "ubuntu", "24.04")),
+      fedora = as.list(query_sysreqs(packages, "redhat", "9"))
+    )
   }
 
   jsonlite::toJSON(manifest, pretty = TRUE, auto_unbox = TRUE)
