@@ -71,7 +71,7 @@
         <rect width="3" height="76" fill="#8b5cf6" clip-path="url(#ca-image-clip)"/>
         <text x="14" y="22" font-size="11" font-weight="700" fill="#7c3aed" letter-spacing="0.5">IMAGE</text>
         <text x="14" y="44" font-size="12" font-weight="600" fill="#1e293b">OS base + R or Python + Shiny</text>
-        <text x="14" y="62" font-size="11" fill="#475569">From rocker/r2u, python:3.12-slim, your Dockerfile, or a registry.</text>
+        <text x="14" y="62" font-size="11" fill="#475569">From rocker/r-ver, python:3.14-slim, your Dockerfile, or a registry.</text>
       </g>
 
       <!-- /app bind mount layer -->
