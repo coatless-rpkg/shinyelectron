@@ -46,11 +46,16 @@ test_that("generate_container_config returns container backend settings", {
 })
 
 test_that("generate_container_config falls back to defaults", {
-  result <- generate_container_config(config = list())
-  expect_equal(result$container_engine, "docker")
-  expect_null(result$container_image)
-  expect_equal(result$container_tag, "latest")
-  expect_true(result$pull_on_start)
+  # Without app_type the tag defaults to "latest" (no runtime to resolve)
+  result_no_type <- generate_container_config(config = list())
+  expect_equal(result_no_type$container_engine, "docker")
+  expect_null(result_no_type$container_image)
+  expect_true(result_no_type$pull_on_start)
+  expect_equal(result_no_type$container_tag, "latest")
+
+  # With app_type the default (NULL) tag resolves to the pinned runtime version
+  result_with_type <- generate_container_config(config = list(), app_type = "r-shiny")
+  expect_equal(result_with_type$container_tag, SHINYELECTRON_DEFAULTS$runtime_versions$r)
 })
 
 test_that("validate_container_available errors when no engine found", {
@@ -120,4 +125,25 @@ test_that("generate_container_config does not override tag when BYO image is set
     app_type = "r-shiny"
   )
   expect_equal(result$container_tag, "latest")
+})
+
+# Regression tests: verify that a merged default config (where container$tag is
+# NULL) routes through the runtime version resolver, not back to "latest".
+test_that("container image tag encodes the resolved runtime version for a merged config", {
+  cfg <- default_config()
+  cfg$dependencies$r$version <- "4.5.1"
+  cc <- generate_container_config(cfg, "r-shiny")
+  expect_equal(cc$container_tag, "4.5.1")
+})
+
+test_that("a default merged config tags with the R pin, not 'latest'", {
+  cfg <- default_config()
+  cc <- generate_container_config(cfg, "r-shiny")
+  expect_equal(cc$container_tag, SHINYELECTRON_DEFAULTS$runtime_versions$r)
+})
+
+test_that("BYO container.image keeps the latest/explicit tag, not the runtime version", {
+  cfg <- default_config()
+  cfg$container$image <- "myrepo/myimg"
+  expect_equal(generate_container_config(cfg, "r-shiny")$container_tag, "latest")
 })

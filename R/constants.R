@@ -140,7 +140,7 @@ SHINYELECTRON_DEFAULTS <- list(
   container = list(
     engine = "docker",
     image = NULL,
-    tag = "latest",
+    tag = NULL,
     pull_on_start = TRUE,
     volumes = list(),
     env = list()

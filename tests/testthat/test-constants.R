@@ -18,7 +18,7 @@ test_that("SHINYELECTRON_DEFAULTS contains container defaults", {
   expect_true("container" %in% names(SHINYELECTRON_DEFAULTS))
   expect_equal(SHINYELECTRON_DEFAULTS$container$engine, "docker")
   expect_null(SHINYELECTRON_DEFAULTS$container$image)
-  expect_equal(SHINYELECTRON_DEFAULTS$container$tag, "latest")
+  expect_null(SHINYELECTRON_DEFAULTS$container$tag)
   expect_true(SHINYELECTRON_DEFAULTS$container$pull_on_start)
 })
 
