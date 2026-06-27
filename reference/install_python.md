@@ -7,7 +7,7 @@ python-build-standalone.
 
 ``` r
 install_python(
-  version = "3.12.10",
+  version = NULL,
   platform = NULL,
   arch = NULL,
   force = FALSE,
@@ -19,7 +19,9 @@ install_python(
 
 - version:
 
-  Character string. Python version to install.
+  Character string. Python version to install (e.g., `"3.14.6"`). If
+  NULL, the maintained pin in
+  `SHINYELECTRON_DEFAULTS$runtime_versions$python$version` is used.
 
 - platform:
 

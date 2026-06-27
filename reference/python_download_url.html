@@ -62,12 +62,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">python_download_url</span><span class="op">(</span></span>
-<span>  <span class="va">version</span>,</span>
-<span>  platform <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  arch <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  release_date <span class="op">=</span> <span class="st">"20250409"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">python_download_url</span><span class="op">(</span><span class="va">version</span>, platform <span class="op">=</span> <span class="cn">NULL</span>, arch <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">release_date</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -75,7 +70,7 @@
 
 
 <dl><dt id="arg-version">version<a class="anchor" aria-label="anchor" href="#arg-version"></a></dt>
-<dd><p>Character string. Python version (e.g., "3.12.10").</p></dd>
+<dd><p>Character string. Python version (e.g., "3.14.6").</p></dd>
 
 
 <dt id="arg-platform">platform<a class="anchor" aria-label="anchor" href="#arg-platform"></a></dt>
@@ -84,6 +79,12 @@
 
 <dt id="arg-arch">arch<a class="anchor" aria-label="anchor" href="#arg-arch"></a></dt>
 <dd><p>Character string. Target architecture.</p></dd>
+
+
+<dt id="arg-release-date">release_date<a class="anchor" aria-label="anchor" href="#arg-release-date"></a></dt>
+<dd><p>Character string. python-build-standalone release tag
+(YYYYMMDD). Required; must match a release tag on
+<a href="https://github.com/astral-sh/python-build-standalone/releases" class="external-link">https://github.com/astral-sh/python-build-standalone/releases</a>.</p></dd>
 
 </dl></div>
     <div class="section level2">

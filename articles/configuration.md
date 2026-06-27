@@ -11,12 +11,13 @@ arranged in two rows describe the main sections: app (display name and
 version), build (language, runtime strategy, target platforms and
 architectures), window (Electron window size), server (local Shiny
 port), icon (app icon, one PNG fanned out per OS), nodejs (build
-toolchain version), dependencies (r and python version pins for bundled
-and auto-download strategies), and container (Docker or Podman engine
-and image for the container strategy). A wider card underneath describes
-apps, the optional multi-app suite, where each entry may override the
-suite-level type or runtime_strategy so shinylive apps can coexist with
-bundled or system apps in the same
+toolchain version), dependencies (r and python version pins for the
+bundled, auto-download, and container strategies; not used by shinylive
+or system), and container (Docker or Podman engine and image for the
+container strategy). A wider card underneath describes apps, the
+optional multi-app suite, where each entry may override the suite-level
+type or runtime_strategy so shinylive apps can coexist with bundled or
+system apps in the same
 build.](../reference/figures/config-overview.svg)
 
 Every `_shinyelectron.yml` section at a glance: nine knobs that shape a
@@ -109,11 +110,17 @@ build:
     - x64
     - arm64
 
-dependencies:
+dependencies:               # Runtime version pins and system packages
   r:
-    version: null            # R version for bundled/auto-download (null = latest release)
+    version: null           # null = maintained pin; "latest" = live query; "4.6.1" = exact
   python:
-    version: null            # Python version for bundled/auto-download (null = "3.12.10")
+    version: null           # null = maintained pin; "latest" = live query; "3.12.0" = exact
+  electron:
+    version: null           # null = maintained pin; "latest" = live query from npm; "41.0.0" = exact
+  # system_packages: extra apt packages baked into the container image
+  # system_packages:
+  #   - libgdal-dev
+  #   - libpq-dev
 
 window:
   width: 1200                # Default window width (pixels)
@@ -136,8 +143,8 @@ nodejs:
 
 container:                   # Used when runtime_strategy is "container"
   engine: "docker"           # "docker" or "podman"
-  image: null                # Container image (null = auto-select)
-  tag: "latest"
+  image: null                # Container image (null = use bundled Dockerfile)
+  tag: null                  # null = resolved runtime version; "latest" for BYO image
   pull_on_start: true        # Pull latest image on app start
   volumes:                   # Host-to-container volume map (not a list)
     "/data": "/app/data"
@@ -288,23 +295,80 @@ Node.js installation behavior.
 > or install Node.js manually. Do not rely on `auto_install: true`
 > having any effect.
 
-### `dependencies.r`
+### `dependencies`
 
-Pins R for the `bundled` and `auto-download` runtime strategies. Nested
-under `dependencies:`. Ignored otherwise.
+Controls runtime version pins and (for the container strategy)
+system-level apt packages.
+
+#### Version keys
+
+Each runtime has a `version` key under its own sub-section. Three values
+are accepted:
+
+| Value | Effect |
+|----|----|
+| `null` or omitted | Uses the maintained latest pin shipped with shinyelectron |
+| `"latest"` | Queries the upstream source at build time for the newest available version |
+| A version string such as `"4.6.1"` | Uses that exact version for the build |
+
+The maintained pins are updated with each shinyelectron release. Using
+`null` is recommended for most projects: you get a version known to
+work, and you can pin explicitly when you need a specific release.
 
 | Key | Type | Default | Description |
 |----|----|----|----|
-| `version` | string | `null` | R version (e.g. `"4.4.1"`); `null` uses the latest release |
+| `r.version` | string | `null` | R version for `bundled`, `auto-download`, and `container` strategies |
+| `python.version` | string | `null` | Python version for `bundled`, `auto-download`, and `container` strategies |
+| `electron.version` | string | `null` | Electron (Chromium/Node) runtime version bundled in the desktop app; written as `^<version>` in `package.json` |
 
-### `dependencies.python`
+The support toolchain (`electron-builder`, `electron-updater`,
+`electron-log`) is pinned internally by shinyelectron and is not
+user-configurable via `_shinyelectron.yml`. Node.js is the build
+toolchain taken from the system PATH and is not bundled in the app; it
+is managed via the `nodejs` section below.
 
-Pins Python for the `bundled` and `auto-download` runtime strategies.
-Nested under `dependencies:`. Ignored otherwise.
+`r.version` and `python.version` apply only to the `bundled`,
+`auto-download`, and `container` strategies. They have no effect under
+`shinylive`, where the R or Python runtime is the WebR or Pyodide
+version shipped by the `shinylive` package (set upstream, not
+configurable here), or under `system`, where the app runs against the
+end user’s installed R or Python.
+
+#### `system_packages`
+
+A list of apt package names baked into the container image at build
+time. Used only when `runtime_strategy` is `"container"`.
+
+For R apps, shinyelectron already queries the Posit Package Manager
+system-requirements service to auto-detect system libraries required by
+your R packages (for example, `libgdal-dev` for `sf`) and bakes them in
+automatically. `system_packages` is the escape hatch for anything not
+covered by that auto-detection.
+
+For Python apps, auto-detection is not performed. `system_packages` is
+the only way to add system-level libraries to the image.
 
 | Key | Type | Default | Description |
 |----|----|----|----|
-| `version` | string | `null` | Python version (e.g. `"3.12.10"`); `null` resolves to `"3.12.10"` |
+| `system_packages` | list of strings | `null` | Extra apt packages baked into the container image (container strategy only) |
+
+**Example:**
+
+``` yaml
+dependencies:
+  r:
+    version: "4.6.1"        # pin to an exact R release
+  python:
+    version: null           # use maintained pin
+  electron:
+    version: "latest"       # resolve newest Electron from npm at build time
+  system_packages:
+    - libgdal-dev
+    - libpq-dev
+```
+
+`system_packages` has no effect for `shinylive`, `bundled`,
+`auto-download`, or `system` strategies.
 
 ### `container`
 
@@ -314,7 +378,7 @@ Used when `runtime_strategy` is `"container"`. Ignored otherwise.
 |----|----|----|----|
 | `engine` | string | `"docker"` | Container engine: `"docker"` or `"podman"` |
 | `image` | string | `null` | Container image name (`null` = auto-select based on `app.type`) |
-| `tag` | string | `"latest"` | Image tag |
+| `tag` | string | `null` | Image tag. For the bundled Dockerfile (`image: null`), defaults to the resolved runtime version (e.g. `"4.6.1"` for R). For a BYO `image`, defaults to `"latest"`. |
 | `pull_on_start` | boolean | `true` | Pull the latest image when the app starts |
 | `volumes` | map | [`{}`](https://rdrr.io/r/base/Paren.html) | Host-to-container volume mounts (`host: container`) |
 | `env` | map | [`{}`](https://rdrr.io/r/base/Paren.html) | Environment variables (`KEY: value`) |

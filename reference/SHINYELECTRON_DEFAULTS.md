@@ -92,3 +92,21 @@ A named list with the following elements:
 - installer:
 
   Default installer branding settings
+
+- runtime_versions:
+
+  Maintained "latest known" runtime version pins (r, python, electron)
+
+- electron_toolchain:
+
+  Pinned versions for electron-builder, electron-updater, electron-log
+  (not config-settable)
+
+- dependencies\$electron:
+
+  Default Electron dependency settings; `version` is NULL (use pin) or a
+  version string
+
+- dependencies\$system_packages:
+
+  Default system package list (NULL)

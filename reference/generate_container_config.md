@@ -10,7 +10,7 @@ auto-detection happen on the end user's machine in `container.js`.
 ## Usage
 
 ``` r
-generate_container_config(config)
+generate_container_config(config, app_type = NULL)
 ```
 
 ## Arguments
@@ -18,6 +18,13 @@ generate_container_config(config)
 - config:
 
   List. Full app configuration.
+
+- app_type:
+
+  Character or NULL. Application type (e.g. `"r-shiny"`, `"py-shiny"`).
+  Used to resolve the runtime version for `container_tag` when no BYO
+  image is configured. When NULL and no tag is configured, falls back to
+  `"latest"`.
 
 ## Value
 

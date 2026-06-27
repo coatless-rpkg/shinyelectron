@@ -13,8 +13,8 @@ folder icon, the path path/to/my-app/, and a list of files (app.R,
 server.R, ui.R, dependencies.json). On the right, a sky-blue Container
 Engine card labeled Docker or Podman wraps a Container Instance card
 containing two layers: an Image layer with a purple stripe describing OS
-base plus R or Python plus Shiny sourced from rocker/r2u,
-python:3.12-slim, your Dockerfile, or a registry; and a /app bind mount
+base plus R or Python plus Shiny sourced from rocker/r-ver,
+python:3.14-slim, your Dockerfile, or a registry; and a /app bind mount
 layer with an amber stripe describing your app code mounted from disk,
 with edits visible inside the container live, and noting that extra
 volumes such as /data and /models attach the same way. Two arrows
@@ -135,15 +135,16 @@ third is for when you need more than the built-ins offer.
 
 ![Three-card horizontal layout under the title Where the image comes
 from. Card one, blue, Built-in R, generated when type is r-shiny,
-configured with type r-shiny and image null, uses rocker/r2u:24.04 as
-base, and installs dependencies as r-cran-\* apt packages baked into the
-image at build. Card two, green, Built-in Python, generated when type is
-py-shiny, configured with type py-shiny and image null, uses
-python:3.12-slim as base, and pip-installs dependencies at first launch
-via the entrypoint script. Card three, amber, Registry pull, any image
-you publish, configured with image set to a reference like
-ghcr.io/org/app and a tag, base is whatever you built, dependencies are
-already inside the image, and shinyelectron does no Dockerfile
+configured with type r-shiny and image null, uses rocker/r-ver as base,
+and installs dependencies as P3M binary packages plus apt system
+requirements baked into the image at build. Card two, green, Built-in
+Python, generated when type is py-shiny, configured with type py-shiny
+and image null, uses python:3.14-slim as base, and pip-installs
+dependencies at first launch via the entrypoint script. Card three,
+amber, Registry pull, any image you publish, configured with image set
+to a reference like ghcr.io/org/app and a tag, base is whatever you
+built, dependencies are already inside the image, and shinyelectron does
+no Dockerfile
 generation.](../reference/figures/container-image-sources.svg)
 
 Three ways an image is sourced for a containerized shinyelectron app.
@@ -153,8 +154,18 @@ dependencies install.
 ### Built-in R image
 
 The built-in R Dockerfile is based on
-[`rocker/r2u:24.04`](https://github.com/rocker-org/r2u), which serves
-pre-compiled R packages via apt. It supports amd64 and arm64.
+[`rocker/r-ver`](https://github.com/rocker-org/rocker-versioned2),
+tagged to the resolved R version (for example, `rocker/r-ver:4.6.1`).
+This image pre-wires the [Posit Public Package
+Manager](https://packagemanager.posit.co/) binary repository, so
+[`install.packages()`](https://rdrr.io/r/utils/install.packages.html)
+retrieves pre-compiled binaries without needing a C compiler in the
+image.
+
+The base image tag tracks `dependencies.r.version` from
+`_shinyelectron.yml`. Leave it `null` to use the maintained pin; set it
+to `"4.6.1"` (or any version string) to pin exactly; set it to
+`"latest"` to query the upstream source at build time.
 
 ``` r
 
@@ -171,45 +182,17 @@ The exact Dockerfile that ships with the package, read live from
 `inst/dockerfiles/r-shiny/Dockerfile`:
 
 ``` dockerfile
-# Minimal R + Shiny image for shinyelectron container strategy
-# Uses rocker/r2u which provides pre-built binary R packages via apt
-# Supports both amd64 and arm64 (Apple Silicon)
-FROM rocker/r2u:24.04
+# R + Shiny image for the shinyelectron container strategy.
+# rocker/r-ver pins an exact R version and pre-wires P3M binaries, so
+# install.packages() pulls precompiled binaries. System libraries those
+# binaries need are baked in by the build (via the Posit Package Manager
+# system-requirements API).
+ARG R_VERSION=latest
+FROM rocker/r-ver:${R_VERSION}
 
-# Keep apt non-interactive. apt-get update can pull a newer r-base-core than the
-# one baked into the base image, and its Rprofile.site conffile would otherwise
-# trigger an interactive dpkg prompt that aborts a cold build (no TTY). Keep the
-# image's existing conffiles (rocker customizes Rprofile.site for r2u).
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Shiny and its runtime dependencies as pre-built system packages.
-# r-cran-shiny's apt Depends can lag shiny's actual R imports on bleeding-edge
-# r2u, so the transitive deps (R6, httpuv, later, ...) are listed explicitly
-# to guarantee shiny can load. Works on both amd64 and arm64.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    -o Dpkg::Options::=--force-confold \
-    r-cran-shiny \
-    r-cran-jsonlite \
-    r-cran-r6 \
-    r-cran-httpuv \
-    r-cran-later \
-    r-cran-promises \
-    r-cran-htmltools \
-    r-cran-fastmap \
-    r-cran-rlang \
-    r-cran-mime \
-    r-cran-fontawesome \
-    r-cran-bslib \
-    r-cran-cachem \
-    r-cran-commonmark \
-    r-cran-glue \
-    r-cran-crayon \
-    r-cran-lifecycle \
-    r-cran-digest \
-    r-cran-sass \
-    r-cran-jquerylib \
-    r-cran-memoise \
-    && rm -rf /var/lib/apt/lists/*
+RUN R -e "install.packages('shiny')"
 
 WORKDIR /app
 
@@ -221,12 +204,25 @@ EXPOSE 3838
 ENTRYPOINT ["/entrypoint.sh"]
 ```
 
+The Dockerfile exposes `ARG R_VERSION` so you can override the R version
+at build time without editing the file:
+
+``` sh
+docker build --build-arg R_VERSION=4.5.1 -t myapp:4.5.1 dockerfiles/
+```
+
+shinyelectron rewrites the `ARG R_VERSION` default to the resolved
+version when it copies the Dockerfile into the build, so the baked image
+tag and the `FROM` line stay in sync.
+
 The image’s `ENTRYPOINT` is the bundled `entrypoint.sh`. It honors
 `PORT` and `HOST` env vars (defaulting to `3838` / `0.0.0.0`) and
-launches the app with the apt-installed R libraries on
-[`.libPaths()`](https://rdrr.io/r/base/libPaths.html). R package
-dependencies are baked into the image at build time as `r-cran-*` apt
-packages, not installed by the entrypoint.
+launches the app via `Rscript`. R package dependencies are baked into
+the image at build time via
+[`install.packages()`](https://rdrr.io/r/utils/install.packages.html)
+using the P3M binary repository. System libraries (detected
+automatically via the Posit Package Manager system-requirements service)
+are also installed as apt packages at build time.
 
 ``` bash
 #!/bin/bash
@@ -241,8 +237,20 @@ exec Rscript --vanilla -e ".libPaths(c('/usr/local/lib/R/site-library', '/usr/li
 
 ### Built-in Python image
 
-The built-in Python Dockerfile uses `python:3.12-slim` with `shiny`
-pre-installed via pip.
+The built-in Python Dockerfile uses `python:<major.minor>-slim` (for
+example, `python:3.14-slim`), tagged to the major.minor portion of the
+resolved Python version. The base image tracks
+`dependencies.python.version` from `_shinyelectron.yml`.
+
+The Dockerfile exposes `ARG PY_VERSION` so you can build with a
+different Python minor version:
+
+``` sh
+docker build --build-arg PY_VERSION=3.12 -t myapp:3.12 dockerfiles/
+```
+
+shinyelectron rewrites the `ARG PY_VERSION` default to the configured
+major.minor value when it copies the Dockerfile into the build.
 
 ``` r
 
@@ -258,8 +266,11 @@ export(
 Read live from `inst/dockerfiles/py-shiny/Dockerfile`:
 
 ``` dockerfile
-# Minimal Python + Shiny image for shinyelectron container strategy
-FROM python:3.14-slim
+# Python + Shiny image for the shinyelectron container strategy.
+ARG PY_VERSION=3.14
+FROM python:${PY_VERSION}-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN pip install --no-cache-dir shiny
 
@@ -303,6 +314,46 @@ echo "Starting Shiny app on $HOST:$PORT..."
 exec python3 -m shiny run --port "$PORT" --host "$HOST" --app-dir /app --no-dev-mode app:app
 ```
 
+### System dependency baking
+
+When `runtime_strategy` is `"container"`, shinyelectron bakes both
+R/Python packages and their system dependencies into the image at build
+time. This means the container starts fast (no compile-or-install step
+at launch) and works offline after the first build.
+
+**For R apps**, shinyelectron queries the Posit Package Manager
+system-requirements service to automatically detect the apt packages
+that your R packages need (for example, `libgdal-dev` for `sf`,
+`libcurl4-openssl-dev` for `curl`). Those are added to the Dockerfile as
+an `apt-get install` layer alongside the
+[`install.packages()`](https://rdrr.io/r/utils/install.packages.html)
+call. Use `dependencies.system_packages` in `_shinyelectron.yml` to add
+anything the auto-detection misses.
+
+**For Python apps**, system-requirement auto-detection is not performed.
+Use `dependencies.system_packages` to list any C-level build
+dependencies your Python packages need.
+
+Both paths emit a Dockerfile layer like:
+
+``` dockerfile
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgdal-dev libproj-dev \
+    && rm -rf /var/lib/apt/lists/*
+```
+
+Configure additional system packages in `_shinyelectron.yml`:
+
+``` yaml
+dependencies:
+  r:
+    version: null
+  system_packages:
+    - libgdal-dev
+    - libproj-dev
+    - libpq-dev
+```
+
 ### Registry image
 
 For dependencies that go beyond what the built-ins offer (heavy system
@@ -321,12 +372,20 @@ Any OCI registry works: GHCR, Docker Hub, ECR, or an internal registry
 the user’s machine can reach. shinyelectron skips Dockerfile generation
 entirely and just pulls + runs.
 
-Your published image has three obligations:
+Your published image has four obligations:
 
-1.  **Listen on the `PORT` env variable** (default 3838).
-2.  **Use `/app` as the working directory.** That is where the app is
-    bind-mounted.
-3.  **Honor `PORT` and `HOST`** for the server bind address.
+1.  **Mount point at `/app`.** shinyelectron bind-mounts the app
+    directory to `/app`. Set `WORKDIR /app` in your Dockerfile and read
+    app files from there.
+2.  **Serve on `$HOST:$PORT`.** shinyelectron sets `PORT` (default
+    `3838`) and `HOST` (default `0.0.0.0`). Your server command must
+    honor both env vars.
+3.  **Expose the port.** Add `EXPOSE 3838` to the Dockerfile so the
+    container engine maps the port correctly.
+4.  **Pass-through config.** Any `container.env` entries in
+    `_shinyelectron.yml` are forwarded as `-e` flags to `docker run`;
+    any `container.volumes` entries are forwarded as `-v` flags. Your
+    image receives them automatically and does not need to bake them in.
 
 A reference R image with spatial libraries:
 

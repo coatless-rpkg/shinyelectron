@@ -178,6 +178,12 @@ export(
     spawns `Rscript` or `python3` as a child process.
 3.  That child starts the Shiny server. Electron connects to it.
 
+Before spawning, the backend checks the resolved runtime version. The
+system strategy requires R 4.4.0 or newer for R apps, or Python 3.9 or
+newer for Python apps. If the user’s runtime is older, the app stops at
+launch with a clear message naming the version found and the version
+required, instead of failing later with an opaque error.
+
 ### Tradeoffs
 
 System gives you the smallest possible build: the Electron shell, your

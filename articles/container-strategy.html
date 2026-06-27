@@ -89,7 +89,7 @@
 
     <p>A container holds your app, its runtime, and every system library it needs. Electron is the window onto that container. The user installs Docker or Podman; you ship an image.</p>
 <div class="quarto-figure quarto-figure-center">
-<figure><p><img src="../reference/figures/container-anatomy.svg" style="width:100.0%" alt="Diagram showing the runtime layout of a shinyelectron container app on the user's machine. A dashed outer frame labeled USER'S MACHINE encloses three components. On the left, an Electron app card with traffic-light window controls and a viewport that says WebView pointing to http://localhost:3838. Below it, an App files on disk card showing a folder icon, the path path/to/my-app/, and a list of files (app.R, server.R, ui.R, dependencies.json). On the right, a sky-blue Container Engine card labeled Docker or Podman wraps a Container Instance card containing two layers: an Image layer with a purple stripe describing OS base plus R or Python plus Shiny sourced from rocker/r2u, python:3.12-slim, your Dockerfile, or a registry; and a /app bind mount layer with an amber stripe describing your app code mounted from disk, with edits visible inside the container live, and noting that extra volumes such as /data and /models attach the same way. Two arrows connect the host components to the container: an HTTP arrow labeled localhost:3838 from the Electron card to the Image layer, and a bind mount arrow from the App files card to the /app layer."></p>
+<figure><p><img src="../reference/figures/container-anatomy.svg" style="width:100.0%" alt="Diagram showing the runtime layout of a shinyelectron container app on the user's machine. A dashed outer frame labeled USER'S MACHINE encloses three components. On the left, an Electron app card with traffic-light window controls and a viewport that says WebView pointing to http://localhost:3838. Below it, an App files on disk card showing a folder icon, the path path/to/my-app/, and a list of files (app.R, server.R, ui.R, dependencies.json). On the right, a sky-blue Container Engine card labeled Docker or Podman wraps a Container Instance card containing two layers: an Image layer with a purple stripe describing OS base plus R or Python plus Shiny sourced from rocker/r-ver, python:3.14-slim, your Dockerfile, or a registry; and a /app bind mount layer with an amber stripe describing your app code mounted from disk, with edits visible inside the container live, and noting that extra volumes such as /data and /models attach the same way. Two arrows connect the host components to the container: an HTTP arrow labeled localhost:3838 from the Electron card to the Image layer, and a bind mount arrow from the App files card to the /app layer."></p>
 <figcaption>Anatomy of a containerized shinyelectron app on the user’s machine. Electron talks to a Shiny server inside a container over <code>http://localhost:3838</code>, and your app code on disk is bind-mounted into the container at <code>/app</code> so the running container reads your files live.</figcaption></figure>
 </div>
 <section class="level2"><h2 id="when-to-reach-for-a-container">When to reach for a container<a class="anchor" aria-label="anchor" href="#when-to-reach-for-a-container"></a>
@@ -163,12 +163,13 @@
 </h2>
 <p>There are three paths. The first two are generated automatically; the third is for when you need more than the built-ins offer.</p>
 <div class="quarto-figure quarto-figure-center">
-<figure><p><img src="../reference/figures/container-image-sources.svg" style="width:100.0%" alt="Three-card horizontal layout under the title Where the image comes from. Card one, blue, Built-in R, generated when type is r-shiny, configured with type r-shiny and image null, uses rocker/r2u:24.04 as base, and installs dependencies as r-cran-* apt packages baked into the image at build. Card two, green, Built-in Python, generated when type is py-shiny, configured with type py-shiny and image null, uses python:3.12-slim as base, and pip-installs dependencies at first launch via the entrypoint script. Card three, amber, Registry pull, any image you publish, configured with image set to a reference like ghcr.io/org/app and a tag, base is whatever you built, dependencies are already inside the image, and shinyelectron does no Dockerfile generation."></p>
+<figure><p><img src="../reference/figures/container-image-sources.svg" style="width:100.0%" alt="Three-card horizontal layout under the title Where the image comes from. Card one, blue, Built-in R, generated when type is r-shiny, configured with type r-shiny and image null, uses rocker/r-ver as base, and installs dependencies as P3M binary packages plus apt system requirements baked into the image at build. Card two, green, Built-in Python, generated when type is py-shiny, configured with type py-shiny and image null, uses python:3.14-slim as base, and pip-installs dependencies at first launch via the entrypoint script. Card three, amber, Registry pull, any image you publish, configured with image set to a reference like ghcr.io/org/app and a tag, base is whatever you built, dependencies are already inside the image, and shinyelectron does no Dockerfile generation."></p>
 <figcaption>Three ways an image is sourced for a containerized shinyelectron app. Each card shows the configuration, the base image, and when extra dependencies install.</figcaption></figure>
 </div>
 <section class="level3"><h3 id="built-in-r-image">Built-in R image<a class="anchor" aria-label="anchor" href="#built-in-r-image"></a>
 </h3>
-<p>The built-in R Dockerfile is based on <a href="https://github.com/rocker-org/r2u" class="external-link"><code>rocker/r2u:24.04</code></a>, which serves pre-compiled R packages via apt. It supports amd64 and arm64.</p>
+<p>The built-in R Dockerfile is based on <a href="https://github.com/rocker-org/rocker-versioned2" class="external-link"><code>rocker/r-ver</code></a>, tagged to the resolved R version (for example, <code>rocker/r-ver:4.6.1</code>). This image pre-wires the <a href="https://packagemanager.posit.co/" class="external-link">Posit Public Package Manager</a> binary repository, so <code><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages()</a></code> retrieves pre-compiled binaries without needing a C compiler in the image.</p>
+<p>The base image tag tracks <code>dependencies.r.version</code> from <code>_shinyelectron.yml</code>. Leave it <code>null</code> to use the maintained pin; set it to <code>"4.6.1"</code> (or any version string) to pin exactly; set it to <code>"latest"</code> to query the upstream source at build time.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"path/to/my-r-app"</span>,</span>
@@ -178,67 +179,45 @@
 <span>  runtime_strategy <span class="op">=</span> <span class="st">"container"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>The exact Dockerfile that ships with the package, read live from <code>inst/dockerfiles/r-shiny/Dockerfile</code>:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Minimal R + Shiny image for shinyelectron container strategy</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Uses rocker/r2u which provides pre-built binary R packages via apt</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Supports both amd64 and arm64 (Apple Silicon)</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> rocker/r2u:24.04</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep apt non-interactive. apt-get update can pull a newer r-base-core than the</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># one baked into the base image, and its Rprofile.site conffile would otherwise</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># trigger an interactive dpkg prompt that aborts a cold build (no TTY). Keep the</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co"># image's existing conffiles (rocker customizes Rprofile.site for r2u).</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="kw">ENV</span> DEBIAN_FRONTEND=noninteractive</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Install Shiny and its runtime dependencies as pre-built system packages.</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co"># r-cran-shiny's apt Depends can lag shiny's actual R imports on bleeding-edge</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co"># r2u, so the transitive deps (R6, httpuv, later, ...) are listed explicitly</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co"># to guarantee shiny can load. Works on both amd64 and arm64.</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">apt-get</span> update <span class="kw">&amp;&amp;</span> <span class="ex">apt-get</span> install <span class="at">-y</span> <span class="at">--no-install-recommends</span> <span class="dt">\</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">-o</span> Dpkg::Options::=--force-confold <span class="dt">\</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    r-cran-shiny <span class="dt">\</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    r-cran-jsonlite <span class="dt">\</span></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    r-cran-r6 <span class="dt">\</span></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    r-cran-httpuv <span class="dt">\</span></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    r-cran-later <span class="dt">\</span></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    r-cran-promises <span class="dt">\</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    r-cran-htmltools <span class="dt">\</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    r-cran-fastmap <span class="dt">\</span></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    r-cran-rlang <span class="dt">\</span></span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    r-cran-mime <span class="dt">\</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    r-cran-fontawesome <span class="dt">\</span></span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    r-cran-bslib <span class="dt">\</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    r-cran-cachem <span class="dt">\</span></span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    r-cran-commonmark <span class="dt">\</span></span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    r-cran-glue <span class="dt">\</span></span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    r-cran-crayon <span class="dt">\</span></span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    r-cran-lifecycle <span class="dt">\</span></span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    r-cran-digest <span class="dt">\</span></span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    r-cran-sass <span class="dt">\</span></span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    r-cran-jquerylib <span class="dt">\</span></span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    r-cran-memoise <span class="dt">\</span></span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&amp;&amp;</span> <span class="fu">rm</span> <span class="at">-rf</span> /var/lib/apt/lists/<span class="pp">*</span></span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="kw">WORKDIR</span> /app</span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> entrypoint.sh /entrypoint.sh</span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">chmod</span> +x /entrypoint.sh</span>
-<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a><span class="kw">EXPOSE</span> 3838</span>
-<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="kw">ENTRYPOINT</span> [<span class="st">"/entrypoint.sh"</span>]</span></code></pre></div>
-<p>The image’s <code>ENTRYPOINT</code> is the bundled <code>entrypoint.sh</code>. It honors <code>PORT</code> and <code>HOST</code> env vars (defaulting to <code>3838</code> / <code>0.0.0.0</code>) and launches the app with the apt-installed R libraries on <code><a href="https://rdrr.io/r/base/libPaths.html" class="external-link">.libPaths()</a></code>. R package dependencies are baked into the image at build time as <code>r-cran-*</code> apt packages, not installed by the entrypoint.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="at">-e</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="va">PORT</span><span class="op">=</span><span class="va">${PORT</span><span class="op">:-</span>3838<span class="va">}</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="va">HOST</span><span class="op">=</span><span class="va">${HOST</span><span class="op">:-</span>0.0.0.0<span class="va">}</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Starting Shiny app on </span><span class="va">$HOST</span><span class="st">:</span><span class="va">$PORT</span><span class="st">..."</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="bu">exec</span> Rscript <span class="at">--vanilla</span> <span class="at">-e</span> <span class="st">".libPaths(c('/usr/local/lib/R/site-library', '/usr/lib/R/site-library', '/usr/lib/R/library')); shiny::runApp('/app', port = </span><span class="va">${PORT}</span><span class="st">, host = '</span><span class="va">${HOST}</span><span class="st">', launch.browser = FALSE)"</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># R + Shiny image for the shinyelectron container strategy.</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># rocker/r-ver pins an exact R version and pre-wires P3M binaries, so</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># install.packages() pulls precompiled binaries. System libraries those</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># binaries need are baked in by the build (via the Posit Package Manager</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># system-requirements API).</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="kw">ARG</span> R_VERSION=latest</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> rocker/r-ver:${R_VERSION}</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="kw">ENV</span> DEBIAN_FRONTEND=noninteractive</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">R</span> <span class="at">-e</span> <span class="st">"install.packages('shiny')"</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="kw">WORKDIR</span> /app</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> entrypoint.sh /entrypoint.sh</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">chmod</span> +x /entrypoint.sh</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="kw">EXPOSE</span> 3838</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="kw">ENTRYPOINT</span> [<span class="st">"/entrypoint.sh"</span>]</span></code></pre></div>
+<p>The Dockerfile exposes <code>ARG R_VERSION</code> so you can override the R version at build time without editing the file:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> build <span class="at">--build-arg</span> R_VERSION=4.5.1 <span class="at">-t</span> myapp:4.5.1 dockerfiles/</span></code></pre></div>
+<p>shinyelectron rewrites the <code>ARG R_VERSION</code> default to the resolved version when it copies the Dockerfile into the build, so the baked image tag and the <code>FROM</code> line stay in sync.</p>
+<p>The image’s <code>ENTRYPOINT</code> is the bundled <code>entrypoint.sh</code>. It honors <code>PORT</code> and <code>HOST</code> env vars (defaulting to <code>3838</code> / <code>0.0.0.0</code>) and launches the app via <code>Rscript</code>. R package dependencies are baked into the image at build time via <code><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages()</a></code> using the P3M binary repository. System libraries (detected automatically via the Posit Package Manager system-requirements service) are also installed as apt packages at build time.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="at">-e</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="va">PORT</span><span class="op">=</span><span class="va">${PORT</span><span class="op">:-</span>3838<span class="va">}</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="va">HOST</span><span class="op">=</span><span class="va">${HOST</span><span class="op">:-</span>0.0.0.0<span class="va">}</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Starting Shiny app on </span><span class="va">$HOST</span><span class="st">:</span><span class="va">$PORT</span><span class="st">..."</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="bu">exec</span> Rscript <span class="at">--vanilla</span> <span class="at">-e</span> <span class="st">".libPaths(c('/usr/local/lib/R/site-library', '/usr/lib/R/site-library', '/usr/lib/R/library')); shiny::runApp('/app', port = </span><span class="va">${PORT}</span><span class="st">, host = '</span><span class="va">${HOST}</span><span class="st">', launch.browser = FALSE)"</span></span></code></pre></div>
 </section><section class="level3"><h3 id="built-in-python-image">Built-in Python image<a class="anchor" aria-label="anchor" href="#built-in-python-image"></a>
 </h3>
-<p>The built-in Python Dockerfile uses <code>python:3.12-slim</code> with <code>shiny</code> pre-installed via pip.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<p>The built-in Python Dockerfile uses <code>python:&lt;major.minor&gt;-slim</code> (for example, <code>python:3.14-slim</code>), tagged to the major.minor portion of the resolved Python version. The base image tracks <code>dependencies.python.version</code> from <code>_shinyelectron.yml</code>.</p>
+<p>The Dockerfile exposes <code>ARG PY_VERSION</code> so you can build with a different Python minor version:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> build <span class="at">--build-arg</span> PY_VERSION=3.12 <span class="at">-t</span> myapp:3.12 dockerfiles/</span></code></pre></div>
+<p>shinyelectron rewrites the <code>ARG PY_VERSION</code> default to the configured major.minor value when it copies the Dockerfile into the build.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"path/to/my-py-app"</span>,</span>
 <span>  destdir <span class="op">=</span> <span class="st">"path/to/output"</span>,</span>
@@ -247,92 +226,114 @@
 <span>  runtime_strategy <span class="op">=</span> <span class="st">"container"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Read live from <code>inst/dockerfiles/py-shiny/Dockerfile</code>:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Minimal Python + Shiny image for shinyelectron container strategy</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> python:3.14-slim</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">pip</span> install <span class="at">--no-cache-dir</span> shiny</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="kw">WORKDIR</span> /app</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> entrypoint.sh /entrypoint.sh</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">chmod</span> +x /entrypoint.sh</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="kw">EXPOSE</span> 3838</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="kw">ENTRYPOINT</span> [<span class="st">"/entrypoint.sh"</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Python + Shiny image for the shinyelectron container strategy.</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">ARG</span> PY_VERSION=3.14</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> python:${PY_VERSION}-slim</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="kw">ENV</span> DEBIAN_FRONTEND=noninteractive</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">pip</span> install <span class="at">--no-cache-dir</span> shiny</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="kw">WORKDIR</span> /app</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> entrypoint.sh /entrypoint.sh</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">chmod</span> +x /entrypoint.sh</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="kw">EXPOSE</span> 3838</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="kw">ENTRYPOINT</span> [<span class="st">"/entrypoint.sh"</span>]</span></code></pre></div>
 <p>The <code>ENTRYPOINT</code> is <code>entrypoint.sh</code>. Unlike the R image, it installs Python packages listed in <code>/app/dependencies.json</code> at startup using <code>pip --only-binary :all:</code>, then launches the Shiny server:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="at">-e</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="va">PORT</span><span class="op">=</span><span class="va">${PORT</span><span class="op">:-</span>3838<span class="va">}</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="va">HOST</span><span class="op">=</span><span class="va">${HOST</span><span class="op">:-</span>0.0.0.0<span class="va">}</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Install dependencies from manifest if present</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">-f</span> /app/dependencies.json <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">"Installing Python package dependencies..."</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="ex">python3</span> <span class="at">-c</span> <span class="st">"</span></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="st">import json</span></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="st">with open('/app/dependencies.json') as f:</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="st">    deps = json.load(f)</span></span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="st">if deps.get('packages'):</span></span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="st">    import subprocess</span></span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="st">    pkgs = deps['packages']</span></span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="st">    index = deps.get('index_urls', ['https://pypi.org/simple'])[0]</span></span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="st">    subprocess.run(['pip', 'install', '--only-binary', ':all:', '-i', index] + pkgs, check=True)</span></span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="st">"</span></span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Starting Shiny app on </span><span class="va">$HOST</span><span class="st">:</span><span class="va">$PORT</span><span class="st">..."</span></span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="bu">exec</span> python3 <span class="at">-m</span> shiny run <span class="at">--port</span> <span class="st">"</span><span class="va">$PORT</span><span class="st">"</span> <span class="at">--host</span> <span class="st">"</span><span class="va">$HOST</span><span class="st">"</span> <span class="at">--app-dir</span> /app <span class="at">--no-dev-mode</span> app:app</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="at">-e</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="va">PORT</span><span class="op">=</span><span class="va">${PORT</span><span class="op">:-</span>3838<span class="va">}</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="va">HOST</span><span class="op">=</span><span class="va">${HOST</span><span class="op">:-</span>0.0.0.0<span class="va">}</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Install dependencies from manifest if present</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">-f</span> /app/dependencies.json <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">"Installing Python package dependencies..."</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="ex">python3</span> <span class="at">-c</span> <span class="st">"</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="st">import json</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="st">with open('/app/dependencies.json') as f:</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="st">    deps = json.load(f)</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="st">if deps.get('packages'):</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="st">    import subprocess</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="st">    pkgs = deps['packages']</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="st">    index = deps.get('index_urls', ['https://pypi.org/simple'])[0]</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="st">    subprocess.run(['pip', 'install', '--only-binary', ':all:', '-i', index] + pkgs, check=True)</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="st">"</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">"Starting Shiny app on </span><span class="va">$HOST</span><span class="st">:</span><span class="va">$PORT</span><span class="st">..."</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a><span class="bu">exec</span> python3 <span class="at">-m</span> shiny run <span class="at">--port</span> <span class="st">"</span><span class="va">$PORT</span><span class="st">"</span> <span class="at">--host</span> <span class="st">"</span><span class="va">$HOST</span><span class="st">"</span> <span class="at">--app-dir</span> /app <span class="at">--no-dev-mode</span> app:app</span></code></pre></div>
+</section><section class="level3"><h3 id="system-dependency-baking">System dependency baking<a class="anchor" aria-label="anchor" href="#system-dependency-baking"></a>
+</h3>
+<p>When <code>runtime_strategy</code> is <code>"container"</code>, shinyelectron bakes both R/Python packages and their system dependencies into the image at build time. This means the container starts fast (no compile-or-install step at launch) and works offline after the first build.</p>
+<p><strong>For R apps</strong>, shinyelectron queries the Posit Package Manager system-requirements service to automatically detect the apt packages that your R packages need (for example, <code>libgdal-dev</code> for <code>sf</code>, <code>libcurl4-openssl-dev</code> for <code>curl</code>). Those are added to the Dockerfile as an <code>apt-get install</code> layer alongside the <code><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages()</a></code> call. Use <code>dependencies.system_packages</code> in <code>_shinyelectron.yml</code> to add anything the auto-detection misses.</p>
+<p><strong>For Python apps</strong>, system-requirement auto-detection is not performed. Use <code>dependencies.system_packages</code> to list any C-level build dependencies your Python packages need.</p>
+<p>Both paths emit a Dockerfile layer like:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">apt-get</span> update <span class="kw">&amp;&amp;</span> <span class="ex">apt-get</span> install <span class="at">-y</span> <span class="at">--no-install-recommends</span> <span class="dt">\</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    libgdal-dev libproj-dev <span class="dt">\</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&amp;&amp;</span> <span class="fu">rm</span> <span class="at">-rf</span> /var/lib/apt/lists/<span class="pp">*</span></span></code></pre></div>
+<p>Configure additional system packages in <code>_shinyelectron.yml</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dependencies</span><span class="kw">:</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">r</span><span class="kw">:</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">system_packages</span><span class="kw">:</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> libgdal-dev</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> libproj-dev</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> libpq-dev</span></span></code></pre></div>
 </section><section class="level3"><h3 id="registry-image">Registry image<a class="anchor" aria-label="anchor" href="#registry-image"></a>
 </h3>
 <p>For dependencies that go beyond what the built-ins offer (heavy system libraries like GDAL or PROJ, custom Python ML stacks, database drivers), build your own image, publish it to a registry, and point shinyelectron at the reference:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">container</span><span class="kw">:</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">image</span><span class="kw">:</span><span class="at"> </span><span class="st">"ghcr.io/myorg/myapp"</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">tag</span><span class="kw">:</span><span class="at"> </span><span class="st">"v1.2.0"</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">pull_on_start</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">container</span><span class="kw">:</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">image</span><span class="kw">:</span><span class="at"> </span><span class="st">"ghcr.io/myorg/myapp"</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">tag</span><span class="kw">:</span><span class="at"> </span><span class="st">"v1.2.0"</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">pull_on_start</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
 <p>Any OCI registry works: GHCR, Docker Hub, ECR, or an internal registry the user’s machine can reach. shinyelectron skips Dockerfile generation entirely and just pulls + runs.</p>
-<p>Your published image has three obligations:</p>
+<p>Your published image has four obligations:</p>
 <ol type="1">
 <li>
-<strong>Listen on the <code>PORT</code> env variable</strong> (default 3838).</li>
+<strong>Mount point at <code>/app</code>.</strong> shinyelectron bind-mounts the app directory to <code>/app</code>. Set <code>WORKDIR /app</code> in your Dockerfile and read app files from there.</li>
 <li>
-<strong>Use <code>/app</code> as the working directory.</strong> That is where the app is bind-mounted.</li>
+<strong>Serve on <code>$HOST:$PORT</code>.</strong> shinyelectron sets <code>PORT</code> (default <code>3838</code>) and <code>HOST</code> (default <code>0.0.0.0</code>). Your server command must honor both env vars.</li>
 <li>
-<strong>Honor <code>PORT</code> and <code>HOST</code></strong> for the server bind address.</li>
+<strong>Expose the port.</strong> Add <code>EXPOSE 3838</code> to the Dockerfile so the container engine maps the port correctly.</li>
+<li>
+<strong>Pass-through config.</strong> Any <code>container.env</code> entries in <code>_shinyelectron.yml</code> are forwarded as <code>-e</code> flags to <code>docker run</code>; any <code>container.volumes</code> entries are forwarded as <code>-v</code> flags. Your image receives them automatically and does not need to bake them in.</li>
 </ol>
 <p>A reference R image with spatial libraries:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> rocker/r2u:24.04</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">apt-get</span> update <span class="kw">&amp;&amp;</span> <span class="ex">apt-get</span> install <span class="at">-y</span> <span class="at">--no-install-recommends</span> <span class="dt">\</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    r-cran-shiny r-cran-sf r-cran-terra libgdal-dev libproj-dev <span class="dt">\</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&amp;&amp;</span> <span class="fu">rm</span> <span class="at">-rf</span> /var/lib/apt/lists/<span class="pp">*</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="kw">WORKDIR</span> /app</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="kw">EXPOSE</span> 3838</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="kw">CMD</span> [<span class="st">"Rscript"</span>, <span class="st">"--vanilla"</span>, <span class="st">"-e"</span>, <span class="op">\</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>     <span class="st">"shiny::runApp('/app', port=as.integer(Sys.getenv('PORT',3838)), host=Sys.getenv('HOST','0.0.0.0'), launch.browser=FALSE)"</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> rocker/r2u:24.04</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">apt-get</span> update <span class="kw">&amp;&amp;</span> <span class="ex">apt-get</span> install <span class="at">-y</span> <span class="at">--no-install-recommends</span> <span class="dt">\</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    r-cran-shiny r-cran-sf r-cran-terra libgdal-dev libproj-dev <span class="dt">\</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&amp;&amp;</span> <span class="fu">rm</span> <span class="at">-rf</span> /var/lib/apt/lists/<span class="pp">*</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="kw">WORKDIR</span> /app</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="kw">EXPOSE</span> 3838</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="kw">CMD</span> [<span class="st">"Rscript"</span>, <span class="st">"--vanilla"</span>, <span class="st">"-e"</span>, <span class="op">\</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>     <span class="st">"shiny::runApp('/app', port=as.integer(Sys.getenv('PORT',3838)), host=Sys.getenv('HOST','0.0.0.0'), launch.browser=FALSE)"</span>]</span></code></pre></div>
 <p>A reference Python image with ML dependencies:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> python:3.12-slim</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">pip</span> install <span class="at">--no-cache-dir</span> shiny pandas scikit-learn</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">WORKDIR</span> /app</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="kw">EXPOSE</span> 3838</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="kw">CMD</span> [<span class="st">"python3"</span>, <span class="st">"-m"</span>, <span class="st">"shiny"</span>, <span class="st">"run"</span>, <span class="st">"--port"</span>, <span class="st">"3838"</span>, <span class="op">\</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>     <span class="st">"--host"</span>, <span class="st">"0.0.0.0"</span>, <span class="st">"--app-dir"</span>, <span class="st">"/app"</span>, <span class="st">"--no-dev-mode"</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> python:3.12-slim</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">pip</span> install <span class="at">--no-cache-dir</span> shiny pandas scikit-learn</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="kw">WORKDIR</span> /app</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="kw">EXPOSE</span> 3838</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="kw">CMD</span> [<span class="st">"python3"</span>, <span class="st">"-m"</span>, <span class="st">"shiny"</span>, <span class="st">"run"</span>, <span class="st">"--port"</span>, <span class="st">"3838"</span>, <span class="op">\</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>     <span class="st">"--host"</span>, <span class="st">"0.0.0.0"</span>, <span class="st">"--app-dir"</span>, <span class="st">"/app"</span>, <span class="st">"--no-dev-mode"</span>]</span></code></pre></div>
 <p>Build, push to your registry, and reference it from <code>_shinyelectron.yml</code>. The user’s machine pulls on first launch and caches afterward.</p>
 </section></section><section class="level2"><h2 id="passing-volumes-and-env-vars">Passing volumes and env vars<a class="anchor" aria-label="anchor" href="#passing-volumes-and-env-vars"></a>
 </h2>
 <p>Extra mounts and variables from the config are forwarded as <code>-v</code> and <code>-e</code> flags to <code>docker run</code>.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">container</span><span class="kw">:</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">engine</span><span class="kw">:</span><span class="at"> </span><span class="st">"docker"</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">volumes</span><span class="kw">:</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">"/path/to/data"</span><span class="kw">:</span><span class="at"> </span><span class="st">"/data"</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">"/path/to/models"</span><span class="kw">:</span><span class="at"> </span><span class="st">"/models"</span></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">env</span><span class="kw">:</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">SHINY_LOG_LEVEL</span><span class="kw">:</span><span class="at"> </span><span class="st">"debug"</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">DATABASE_URL</span><span class="kw">:</span><span class="at"> </span><span class="st">"postgresql://localhost:5432/mydb"</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">container</span><span class="kw">:</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">engine</span><span class="kw">:</span><span class="at"> </span><span class="st">"docker"</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">volumes</span><span class="kw">:</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">"/path/to/data"</span><span class="kw">:</span><span class="at"> </span><span class="st">"/data"</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">"/path/to/models"</span><span class="kw">:</span><span class="at"> </span><span class="st">"/models"</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">env</span><span class="kw">:</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">SHINY_LOG_LEVEL</span><span class="kw">:</span><span class="at"> </span><span class="st">"debug"</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">DATABASE_URL</span><span class="kw">:</span><span class="at"> </span><span class="st">"postgresql://localhost:5432/mydb"</span></span></code></pre></div>
 </section><section class="level2"><h2 id="verifying-the-engine">Verifying the engine<a class="anchor" aria-label="anchor" href="#verifying-the-engine"></a>
 </h2>
 <p>Check what shinyelectron sees on this machine:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep_electron_system.html">sitrep_electron_system</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>The report names the container engine installed on this machine (Docker or Podman) and where the binary was found. It checks only whether the engine binary is on PATH; it does not probe the daemon socket, so a stopped daemon is not detected. Use <code><a href="../reference/validate_container_available.html">validate_container_available()</a></code> or attempt a build to confirm the daemon is running.</p>
 </section><section class="level2"><h2 id="limitations">Limitations<a class="anchor" aria-label="anchor" href="#limitations"></a>

@@ -62,7 +62,12 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">generate_python_runtime_manifest</span><span class="op">(</span><span class="va">version</span>, platform <span class="op">=</span> <span class="cn">NULL</span>, arch <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">generate_python_runtime_manifest</span><span class="op">(</span></span>
+<span>  <span class="va">version</span>,</span>
+<span>  platform <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  arch <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  release_date <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -79,6 +84,11 @@
 
 <dt id="arg-arch">arch<a class="anchor" aria-label="anchor" href="#arg-arch"></a></dt>
 <dd><p>Character string. Target architecture.</p></dd>
+
+
+<dt id="arg-release-date">release_date<a class="anchor" aria-label="anchor" href="#arg-release-date"></a></dt>
+<dd><p>Character string. python-build-standalone release tag
+(YYYYMMDD). If NULL, resolved automatically via <code><a href="resolve_python_pbs.html">resolve_python_pbs()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

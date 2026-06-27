@@ -19,7 +19,7 @@ cache_remove(runtime, version, platform = NULL, arch = NULL)
 
 - version:
 
-  Character string. Version to remove (e.g., `"4.5.3"`, `"3.12.10"`,
+  Character string. Version to remove (e.g., `"4.5.3"`, `"3.14.6"`,
   `"v22.11.0"`).
 
 - platform:
@@ -53,7 +53,7 @@ if (FALSE) { # \dontrun{
 cache_remove("r", "4.4.0", "mac", "arm64")
 
 # Remove a cached Python version
-cache_remove("python", "3.12.10", "win", "x64")
+cache_remove("python", "3.14.6", "win", "x64")
 
 # Remove one platform/arch slot of a Node.js version
 cache_remove("nodejs", "v22.11.0", "mac", "arm64")
