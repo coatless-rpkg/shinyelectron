@@ -8,7 +8,7 @@ python_resolve_pbs(version = "latest")
 }
 \arguments{
 \item{version}{Character string. A concrete Python version such as
-\code{"3.12.10"}, or \code{"latest"} for the newest available build.}
+\code{"3.14.6"}, or \code{"latest"} for the newest available build.}
 }
 \value{
 Named list with elements \code{version} (character) and \code{release}

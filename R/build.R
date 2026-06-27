@@ -154,7 +154,7 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
     if (runtime_strategy == "bundled" && grepl("^r-", app_type)) {
       if (verbose) cli::cli_alert_info("Embedding R runtime for bundled strategy...")
 
-      r_version <- config$dependencies$r$version
+      r_version <- resolve_runtime_version("r", config)
       r_path <- install_r(
         version = r_version,
         platform = platform[1],
@@ -313,7 +313,7 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
     if (runtime_strategy == "bundled" && grepl("^py-", app_type)) {
       if (verbose) cli::cli_alert_info("Embedding Python runtime for bundled strategy...")
 
-      py_version <- config$dependencies$python$version %||% "3.12.10"
+      py_version <- resolve_runtime_version("python", config)
       py_path <- install_python(
         version = py_version,
         platform = platform[1],

@@ -11,7 +11,7 @@ cache_remove(runtime, version, platform = NULL, arch = NULL)
 or \code{"nodejs"}.}
 
 \item{version}{Character string. Version to remove (e.g., \code{"4.5.3"},
-\code{"3.12.10"}, \code{"v22.11.0"}).}
+\code{"3.14.6"}, \code{"v22.11.0"}).}
 
 \item{platform}{Character string. Platform (\code{"win"}, \code{"mac"},
 or \code{"linux"}). Required for all runtimes including Node.js.
@@ -34,7 +34,7 @@ entire cache. Use \code{\link[=cache_info]{cache_info()}} to see what's availabl
 cache_remove("r", "4.4.0", "mac", "arm64")
 
 # Remove a cached Python version
-cache_remove("python", "3.12.10", "win", "x64")
+cache_remove("python", "3.14.6", "win", "x64")
 
 # Remove one platform/arch slot of a Node.js version
 cache_remove("nodejs", "v22.11.0", "mac", "arm64")

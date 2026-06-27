@@ -22,8 +22,8 @@
 #' |   |-- win/x64/4.5.3/
 #' |   |-- mac/arm64/4.5.3/
 #' |-- python/
-#' |   |-- win/x64/3.12.10/
-#' |   |-- mac/arm64/3.12.10/
+#' |   |-- win/x64/3.14.6/
+#' |   |-- mac/arm64/3.14.6/
 #' |-- nodejs/
 #' |   |-- v22.11.0/darwin-arm64/
 #' |   |-- v22.11.0/win-x64/
@@ -220,7 +220,7 @@ format_dir_size <- function(path) {
 #' @param runtime Character string. One of `"r"`, `"python"`,
 #'   or `"nodejs"`.
 #' @param version Character string. Version to remove (e.g., `"4.5.3"`,
-#'   `"3.12.10"`, `"v22.11.0"`).
+#'   `"3.14.6"`, `"v22.11.0"`).
 #' @param platform Character string. Platform (`"win"`, `"mac"`,
 #'   or `"linux"`). Required for all runtimes including Node.js.
 #'   Use the same canonical names that [cache_info()] reports in the
@@ -236,7 +236,7 @@ format_dir_size <- function(path) {
 #' cache_remove("r", "4.4.0", "mac", "arm64")
 #'
 #' # Remove a cached Python version
-#' cache_remove("python", "3.12.10", "win", "x64")
+#' cache_remove("python", "3.14.6", "win", "x64")
 #'
 #' # Remove one platform/arch slot of a Node.js version
 #' cache_remove("nodejs", "v22.11.0", "mac", "arm64")

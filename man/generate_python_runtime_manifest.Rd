@@ -4,7 +4,12 @@
 \alias{generate_python_runtime_manifest}
 \title{Generate a Python runtime manifest for auto-download}
 \usage{
-generate_python_runtime_manifest(version, platform = NULL, arch = NULL)
+generate_python_runtime_manifest(
+  version,
+  platform = NULL,
+  arch = NULL,
+  release_date = NULL
+)
 }
 \arguments{
 \item{version}{Character string. Python version.}
@@ -12,6 +17,9 @@ generate_python_runtime_manifest(version, platform = NULL, arch = NULL)
 \item{platform}{Character string. Target platform.}
 
 \item{arch}{Character string. Target architecture.}
+
+\item{release_date}{Character string. python-build-standalone release tag
+(YYYYMMDD). If NULL, resolved automatically via \code{python_resolve_pbs()}.}
 }
 \value{
 Character string. JSON content.

@@ -71,16 +71,18 @@ write_runtime_manifest <- function(app_dir, app_type, platform, arch, config,
   resolved_arch <- arch[1] %||% detect_current_arch()
 
   if (grepl("^r-", app_type)) {
-    version <- config$dependencies$r$version %||% r_portable_latest_version(resolved_platform)
+    version <- resolve_runtime_version("r", config)
     manifest <- generate_runtime_manifest(version = version,
                                           platform = resolved_platform,
                                           arch = resolved_arch)
     if (verbose) cli::cli_alert_info("Runtime manifest written for R {version}")
   } else {
-    version <- config$dependencies$python$version %||% "3.12.10"
+    version <- resolve_runtime_version("python", config)
+    pbs <- python_resolve_pbs(version)
     manifest <- generate_python_runtime_manifest(version = version,
                                                  platform = resolved_platform,
-                                                 arch = resolved_arch)
+                                                 arch = resolved_arch,
+                                                 release_date = pbs$release)
     if (verbose) cli::cli_alert_info("Runtime manifest written for Python {version}")
   }
 

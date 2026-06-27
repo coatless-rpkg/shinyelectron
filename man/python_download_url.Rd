@@ -12,7 +12,7 @@ python_download_url(
 )
 }
 \arguments{
-\item{version}{Character string. Python version (e.g., "3.12.10").}
+\item{version}{Character string. Python version (e.g., "3.14.6").}
 
 \item{platform}{Character string. Target platform.}
 

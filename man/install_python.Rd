@@ -5,7 +5,7 @@
 \title{Install a portable Python distribution}
 \usage{
 install_python(
-  version = "3.12.10",
+  version = NULL,
   platform = NULL,
   arch = NULL,
   force = FALSE,
@@ -13,7 +13,9 @@ install_python(
 )
 }
 \arguments{
-\item{version}{Character string. Python version to install.}
+\item{version}{Character string. Python version to install (e.g.,
+\code{"3.14.6"}). If NULL, the maintained pin in
+\code{SHINYELECTRON_DEFAULTS$runtime_versions$python$version} is used.}
 
 \item{platform}{Character string. Target platform.}
 

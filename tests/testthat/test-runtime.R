@@ -151,6 +151,10 @@ test_that("install_python validates version format", {
 })
 
 test_that("generate_python_runtime_manifest creates valid JSON", {
+  skip_if_not_installed("mockery")
+  mockery::stub(generate_python_runtime_manifest, "python_resolve_pbs", function(v) {
+    list(version = v, release = "20250101")
+  })
   manifest <- generate_python_runtime_manifest("3.12.0", "mac", "arm64")
   parsed <- jsonlite::fromJSON(manifest, simplifyVector = FALSE)
   expect_equal(parsed$language, "python")

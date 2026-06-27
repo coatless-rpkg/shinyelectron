@@ -41,7 +41,7 @@ pbs_list_releases <- function() {
 #' can stub that function.
 #'
 #' @param version Character string. A concrete Python version such as
-#'   `"3.12.10"`, or `"latest"` for the newest available build.
+#'   `"3.14.6"`, or `"latest"` for the newest available build.
 #' @return Named list with elements `version` (character) and `release`
 #'   (character YYYYMMDD tag).
 #' @keywords internal
@@ -95,7 +95,7 @@ python_resolve_pbs <- function(version = "latest") {
 #'
 #' Uses python-build-standalone releases for portable Python builds.
 #'
-#' @param version Character string. Python version (e.g., "3.12.10").
+#' @param version Character string. Python version (e.g., "3.14.6").
 #' @param platform Character string. Target platform.
 #' @param arch Character string. Target architecture.
 #' @return Character string. Download URL.
@@ -180,7 +180,9 @@ python_executable <- function(version, platform = NULL, arch = NULL) {
 #'
 #' Downloads and caches a portable Python build from python-build-standalone.
 #'
-#' @param version Character string. Python version to install.
+#' @param version Character string. Python version to install (e.g.,
+#'   `"3.14.6"`). If NULL, the maintained pin in
+#'   `SHINYELECTRON_DEFAULTS$runtime_versions$python$version` is used.
 #' @param platform Character string. Target platform.
 #' @param arch Character string. Target architecture.
 #' @param force Logical. Whether to reinstall if already cached.
@@ -200,10 +202,12 @@ python_executable <- function(version, platform = NULL, arch = NULL) {
 #' }
 #'
 #' @export
-install_python <- function(version = "3.12.10", platform = NULL, arch = NULL,
+install_python <- function(version = NULL, platform = NULL, arch = NULL,
                            force = FALSE, verbose = TRUE) {
   platform <- platform %||% detect_current_platform()
   arch <- arch %||% detect_current_arch()
+
+  if (is.null(version)) version <- SHINYELECTRON_DEFAULTS$runtime_versions$python$version
 
   if (!grepl("^\\d+\\.\\d+\\.\\d+$", version)) {
     cli::cli_abort(c(
@@ -211,6 +215,8 @@ install_python <- function(version = "3.12.10", platform = NULL, arch = NULL,
       "i" = "Expected format: major.minor.patch (e.g., 3.12.0)"
     ))
   }
+
+  pbs <- python_resolve_pbs(version)
 
   if (verbose) {
     cli::cli_alert_info("Platform: {platform}, Architecture: {arch}")
@@ -220,7 +226,7 @@ install_python <- function(version = "3.12.10", platform = NULL, arch = NULL,
     label = "Python",
     version = version,
     install_path = python_install_path(version, platform, arch),
-    download_url = python_download_url(version, platform, arch),
+    download_url = python_download_url(version, platform, arch, release_date = pbs$release),
     executable_finder = function() python_executable(version, platform, arch),
     force = force,
     is_installed = python_is_installed(version, platform, arch),
@@ -233,17 +239,22 @@ install_python <- function(version = "3.12.10", platform = NULL, arch = NULL,
 #' @param version Character string. Python version.
 #' @param platform Character string. Target platform.
 #' @param arch Character string. Target architecture.
+#' @param release_date Character string. python-build-standalone release tag
+#'   (YYYYMMDD). If NULL, resolved automatically via `python_resolve_pbs()`.
 #' @return Character string. JSON content.
 #' @keywords internal
-generate_python_runtime_manifest <- function(version, platform = NULL, arch = NULL) {
+generate_python_runtime_manifest <- function(version, platform = NULL, arch = NULL,
+                                             release_date = NULL) {
   platform <- platform %||% detect_current_platform()
   arch <- arch %||% detect_current_arch()
+
+  if (is.null(release_date)) release_date <- python_resolve_pbs(version)$release
 
   manifest <- list(
     schema_version = MANIFEST_SCHEMA_VERSION,
     language = "python",
     version = version,
-    download_url = python_download_url(version, platform, arch),
+    download_url = python_download_url(version, platform, arch, release_date = release_date),
     install_path = paste0("~/.shinyelectron/runtimes/Python-", version),
     platform = platform,
     arch = arch

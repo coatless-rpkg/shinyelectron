@@ -75,3 +75,35 @@ test_that("export passes system strategy for py-shiny", {
 
   expect_equal(captured_strategy, "system")
 })
+
+test_that("write_runtime_manifest uses pin version and release when python config is unset", {
+  skip_if_not_installed("mockery")
+
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+
+  config <- list(dependencies = list())
+
+  captured_version <- NULL
+  captured_release <- NULL
+
+  # Avoid network: return the pin's release for any version string
+  mockery::stub(write_runtime_manifest, "python_resolve_pbs", function(version) {
+    list(version = version, release = SHINYELECTRON_DEFAULTS$runtime_versions$python$release)
+  })
+
+  # Capture what generate_python_runtime_manifest receives
+  mockery::stub(write_runtime_manifest, "generate_python_runtime_manifest",
+    function(version, platform = NULL, arch = NULL, release_date = NULL) {
+      captured_version <<- version
+      captured_release <<- release_date
+      '{"schema_version":"1.0"}'
+    }
+  )
+
+  write_runtime_manifest(tmpdir, "py-shiny", "mac", "arm64", config, verbose = FALSE)
+
+  expect_equal(captured_version, SHINYELECTRON_DEFAULTS$runtime_versions$python$version)
+  expect_equal(captured_release, SHINYELECTRON_DEFAULTS$runtime_versions$python$release)
+})

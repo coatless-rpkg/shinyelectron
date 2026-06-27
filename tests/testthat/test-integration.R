@@ -150,6 +150,11 @@ test_that("e2e: py-shiny auto-download writes Python runtime manifest", {
   on.exit(unlink(c(d, o), TRUE))
   writeLines("from shiny import App, ui\napp=App(ui.page_fluid(),None)", file.path(d, "app.py"))
   writeLines("shiny", file.path(d, "requirements.txt"))
+  # Avoid network access: return pin release for any version
+  local_mocked_bindings(
+    python_resolve_pbs = function(v) list(version = v, release = "20250101"),
+    .package = "shinyelectron"
+  )
   r <- export(d, o, app_type = "py-shiny", runtime_strategy = "auto-download",
               sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
   manifest_path <- fs::path(o, "shiny-app", "runtime-manifest.json")
