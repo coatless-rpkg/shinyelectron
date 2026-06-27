@@ -6,7 +6,7 @@ const path = require('path');
 const os = require('os');
 const {
   waitForServer, findAvailablePort, killProcessTree,
-  sortCandidatesByVersion, reportRuntimeCandidates, logDebug
+  sortCandidatesByVersion, reportRuntimeCandidates, meetsMinimumVersion, logDebug
 } = require('./utils');
 
 class NativePyBackend extends EventEmitter {
@@ -276,6 +276,35 @@ class NativePyBackend extends EventEmitter {
         python = selectedPath;
         this.emit('status', { phase: 'runtime_found', message: `Selected Python: ${python}` });
       }
+    }
+
+    // Verify the resolved Python meets the minimum version Shiny for Python
+    // needs (3.9). The venv created below inherits this interpreter's version,
+    // so check the base interpreter first. A too-old system Python otherwise
+    // fails later with an opaque import error. Bundled and downloaded runtimes
+    // are controlled by shinyelectron and always pass.
+    const PY_MIN_VERSION = '3.9.0';
+    try {
+      const { execFileSync } = require('child_process');
+      const pyVersionOut = execFileSync(
+        python,
+        ['-c', "import sys; print('.'.join(map(str, sys.version_info[:3])))"],
+        { encoding: 'utf8' }
+      );
+      const pyVersion = (String(pyVersionOut).match(/\d+\.\d+(?:\.\d+)?/) || [])[0];
+      if (pyVersion && !meetsMinimumVersion(pyVersion, PY_MIN_VERSION)) {
+        this.emit('status', {
+          phase: 'error',
+          message: `This app requires Python ${PY_MIN_VERSION} or newer, but the Python found on your system is ${pyVersion}.\n\nPlease update Python from https://www.python.org and try again.`,
+          detail: { found: pyVersion, required: PY_MIN_VERSION }
+        });
+        throw new Error(`Python ${pyVersion} is below the required ${PY_MIN_VERSION}`);
+      }
+    } catch (err) {
+      if (err && /below the required/.test(err.message)) throw err;
+      // Could not determine the Python version (probe failed); log and continue
+      // rather than block launch on an inconclusive check.
+      logDebug(`Could not determine Python version for the minimum-version check: ${err.message}`);
     }
 
     // For system/auto-download strategy, ensure a venv exists so we can

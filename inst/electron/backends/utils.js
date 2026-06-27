@@ -187,6 +187,34 @@ function reportRuntimeCandidates(emitter, label, candidates) {
   }
 }
 
+/**
+ * Compare two dotted numeric version strings (e.g. "4.6.0", "3.14").
+ * Missing trailing components are treated as 0.
+ * @param {string} a
+ * @param {string} b
+ * @returns {number} 1 if a > b, -1 if a < b, 0 if equal.
+ */
+function compareVersions(a, b) {
+  const pa = String(a).split('.').map(Number);
+  const pb = String(b).split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const diff = (pa[i] || 0) - (pb[i] || 0);
+    if (diff !== 0) return diff > 0 ? 1 : -1;
+  }
+  return 0;
+}
+
+/**
+ * Return true if `version` is greater than or equal to `minimum`.
+ * Both are dotted numeric version strings.
+ * @param {string} version
+ * @param {string} minimum
+ * @returns {boolean}
+ */
+function meetsMinimumVersion(version, minimum) {
+  return compareVersions(version, minimum) >= 0;
+}
+
 // Current manifest schema version. Bump in lockstep with
 // R/constants.R::MANIFEST_SCHEMA_VERSION. Older apps built against an
 // older R version may ship older manifests -- we warn rather than crash.
@@ -219,6 +247,8 @@ module.exports = {
   killProcessTree,
   sortCandidatesByVersion,
   reportRuntimeCandidates,
+  compareVersions,
+  meetsMinimumVersion,
   MANIFEST_SCHEMA_VERSION,
   checkManifestSchema,
   logDebug

@@ -6,7 +6,7 @@ const path = require('path');
 const os = require('os');
 const {
   waitForServer, findAvailablePort, killProcessTree,
-  sortCandidatesByVersion, reportRuntimeCandidates, logDebug
+  sortCandidatesByVersion, reportRuntimeCandidates, meetsMinimumVersion, logDebug
 } = require('./utils');
 
 class NativeRBackend extends EventEmitter {
@@ -288,6 +288,34 @@ class NativeRBackend extends EventEmitter {
         rscript = selectedPath;
         this.emit('status', { phase: 'runtime_found', message: `Selected R: ${rscript}` });
       }
+    }
+
+    // Verify the resolved R meets the minimum version Shiny needs. A too-old
+    // system R otherwise fails later with a cryptic package or runApp error;
+    // this surfaces a clear, actionable message instead. Bundled and
+    // downloaded runtimes are controlled by shinyelectron and always pass.
+    const R_MIN_VERSION = '4.4.0';
+    try {
+      const { execFileSync } = require('child_process');
+      const rVersionOut = execFileSync(
+        rscript,
+        ['-e', "cat(paste(R.version$major, R.version$minor, sep = '.'))"],
+        { encoding: 'utf8' }
+      );
+      const rVersion = (String(rVersionOut).match(/\d+\.\d+(?:\.\d+)?/) || [])[0];
+      if (rVersion && !meetsMinimumVersion(rVersion, R_MIN_VERSION)) {
+        this.emit('status', {
+          phase: 'error',
+          message: `This app requires R ${R_MIN_VERSION} or newer, but the R found on your system is ${rVersion}.\n\nPlease update R from https://www.r-project.org and try again.`,
+          detail: { found: rVersion, required: R_MIN_VERSION }
+        });
+        throw new Error(`R ${rVersion} is below the required ${R_MIN_VERSION}`);
+      }
+    } catch (err) {
+      if (err && /below the required/.test(err.message)) throw err;
+      // Could not determine the R version (probe failed); log and continue
+      // rather than block launch on an inconclusive check.
+      logDebug(`Could not determine R version for the minimum-version check: ${err.message}`);
     }
 
     // Check and install dependencies (skip for bundled -- packages are baked in at build time)
