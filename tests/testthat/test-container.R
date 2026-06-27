@@ -147,3 +147,45 @@ test_that("BYO container.image keeps the latest/explicit tag, not the runtime ve
   cfg$container$image <- "myrepo/myimg"
   expect_equal(generate_container_config(cfg, "r-shiny")$container_tag, "latest")
 })
+
+test_that("bake_dockerfile_dependencies bakes sysreqs + install.packages for R (no r-cran-*)", {
+  out <- withr::local_tempdir()
+
+  # Set up app dependencies manifest
+  app_dir <- fs::path(out, "src", "app")
+  fs::dir_create(app_dir, recurse = TRUE)
+  jsonlite::write_json(
+    list(language = "r", packages = list("shiny", "ggplot2")),
+    fs::path(app_dir, "dependencies.json"),
+    auto_unbox = TRUE
+  )
+
+  # Set up a minimal Dockerfile to bake into
+  dockerfile_dir <- fs::path(out, "dockerfiles")
+  fs::dir_create(dockerfile_dir)
+  writeLines(
+    c("FROM rocker/r-ver:4.6.0", "", "EXPOSE 3838"),
+    fs::path(dockerfile_dir, "Dockerfile")
+  )
+
+  cfg <- list(dependencies = list(system_packages = c("libfoo-dev")))
+
+  mockery::stub(
+    bake_dockerfile_dependencies,
+    "pak_sysreqs_apt",
+    function(...) "libxml2-dev"
+  )
+
+  bake_dockerfile_dependencies(out, dockerfile_dir, config = cfg)
+
+  df_content <- readLines(fs::path(dockerfile_dir, "Dockerfile"))
+
+  # System-deps RUN line must appear with --force-confold and both packages
+  expect_true(any(grepl("--force-confold", df_content)))
+  expect_true(any(grepl("libxml2-dev", df_content)))
+  expect_true(any(grepl("libfoo-dev", df_content)))
+
+  # R package install line uses install.packages, not r-cran-*
+  expect_true(any(grepl("install\\.packages", df_content)))
+  expect_false(any(grepl("r-cran-", df_content)))
+})

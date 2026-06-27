@@ -173,17 +173,34 @@ copy_and_bake_dockerfiles <- function(output_dir, app_type, config = NULL, verbo
   }
   writeLines(df_lines, dockerfile_path)
 
-  bake_dockerfile_dependencies(output_dir, dockerfile_dest)
+  bake_dockerfile_dependencies(output_dir, dockerfile_dest, config = config)
 
   if (verbose) cli::cli_alert_success("Copied Dockerfile for container strategy")
 }
 
+#' Resolve apt system package names for a set of R packages via pak
+#'
+#' Returns a character vector of apt package names required by `pkgs` on
+#' Ubuntu 24.04, or `character(0)` when pak is not available.
+#' @keywords internal
+pak_sysreqs_apt <- function(pkgs) {
+  if (!requireNamespace("pak", quietly = TRUE)) return(character(0))
+  result <- pak::pkg_sysreqs(pkgs, sysreqs_platform = "ubuntu-24.04")
+  sys <- unique(unlist(result$packages$system_packages))
+  if (is.null(sys)) character(0) else sys
+}
+
 #' Append app-specific package installs to the Dockerfile
 #'
-#' Bakes the dependencies into the image at build time so container
-#' launch doesn't have to compile/install packages on the user's machine.
+#' Bakes system dependencies (via `pak::pkg_sysreqs` and
+#' `config$dependencies$system_packages`) and R/Python package installs into
+#' the image at build time so container launch does not have to
+#' compile/install packages on the user's machine.
+#'
+#' For R apps the base image is `rocker/r-ver`, which pre-wires P3M
+#' binaries; packages are therefore installed via `install.packages()`.
 #' @keywords internal
-bake_dockerfile_dependencies <- function(output_dir, dockerfile_dest) {
+bake_dockerfile_dependencies <- function(output_dir, dockerfile_dest, config = NULL) {
   dep_manifest <- fs::path(output_dir, "src", "app", "dependencies.json")
   if (!fs::file_exists(dep_manifest)) return(invisible(NULL))
 
@@ -195,17 +212,46 @@ bake_dockerfile_dependencies <- function(output_dir, dockerfile_dest) {
   dockerfile_lines <- readLines(dockerfile_path)
 
   if (deps$language == "r") {
-    # Try apt packages first (r-cran-*), fall back to install.packages
-    apt_pkgs <- paste0("r-cran-", tolower(pkgs))
-    apt_line <- paste0(
-      "RUN apt-get update && apt-get install -y --no-install-recommends ",
-      paste(apt_pkgs, collapse = " "),
-      " || R -e \"install.packages(c(",
+    # Gather system deps: pak sysreqs + config escape hatch
+    sys <- pak_sysreqs_apt(c("shiny", pkgs))
+    sys <- unique(c(sys, config$dependencies$system_packages))
+
+    if (length(sys) > 0) {
+      sys_line <- paste0(
+        "RUN apt-get update && apt-get install -y --no-install-recommends ",
+        "-o Dpkg::Options::=--force-confold ",
+        paste(sys, collapse = " "),
+        " && rm -rf /var/lib/apt/lists/*"
+      )
+      dockerfile_lines <- c(
+        dockerfile_lines, "", "# System libraries for R packages", sys_line
+      )
+    }
+
+    # rocker/r-ver + P3M binaries: install via install.packages()
+    r_line <- paste0(
+      "RUN R -e \"install.packages(c(",
       paste0("'", pkgs, "'", collapse = ", "),
-      "))\" && rm -rf /var/lib/apt/lists/*"
+      "))\""
     )
-    dockerfile_lines <- c(dockerfile_lines, "", "# App-specific R packages", apt_line)
+    dockerfile_lines <- c(dockerfile_lines, "", "# App-specific R packages", r_line)
+
   } else if (deps$language == "python") {
+    # No pak sysreqs for Python; honour the config escape hatch
+    sys <- unique(c(character(0), config$dependencies$system_packages))
+
+    if (length(sys) > 0) {
+      sys_line <- paste0(
+        "RUN apt-get update && apt-get install -y --no-install-recommends ",
+        "-o Dpkg::Options::=--force-confold ",
+        paste(sys, collapse = " "),
+        " && rm -rf /var/lib/apt/lists/*"
+      )
+      dockerfile_lines <- c(
+        dockerfile_lines, "", "# System libraries for Python packages", sys_line
+      )
+    }
+
     pip_line <- paste0("RUN pip install --no-cache-dir ", paste(pkgs, collapse = " "))
     dockerfile_lines <- c(dockerfile_lines, "", "# App-specific Python packages", pip_line)
   }
