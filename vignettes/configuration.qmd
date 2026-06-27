@@ -17,7 +17,7 @@ library(shinyelectron)
 
 A `_shinyelectron.yml` file keeps your build settings next to your app. `export()` reads it automatically, so the function call stays short and the details live in version control where the rest of the project already does.
 
-![Every `_shinyelectron.yml` section at a glance: nine knobs that shape a different part of the build, from app metadata and target platforms down to the runtime and the optional multi-app launcher.](../man/figures/config-overview.svg){fig-alt="Overview of the _shinyelectron.yml configuration file. A title bar at the top reads _shinyelectron.yml. Below it, eight labeled cards arranged in two rows describe the main sections: app (display name and version), build (language, runtime strategy, target platforms and architectures), window (Electron window size), server (local Shiny port), icon (app icon, one PNG fanned out per OS), nodejs (build toolchain version), dependencies (r and python version pins for bundled and auto-download strategies), and container (Docker or Podman engine and image for the container strategy). A wider card underneath describes apps, the optional multi-app suite, where each entry may override the suite-level type or runtime_strategy so shinylive apps can coexist with bundled or system apps in the same build." width="100%"}
+![Every `_shinyelectron.yml` section at a glance: nine knobs that shape a different part of the build, from app metadata and target platforms down to the runtime and the optional multi-app launcher.](../man/figures/config-overview.svg){fig-alt="Overview of the _shinyelectron.yml configuration file. A title bar at the top reads _shinyelectron.yml. Below it, eight labeled cards arranged in two rows describe the main sections: app (display name and version), build (language, runtime strategy, target platforms and architectures), window (Electron window size), server (local Shiny port), icon (app icon, one PNG fanned out per OS), nodejs (build toolchain version), dependencies (r and python version pins for the bundled, auto-download, and container strategies; not used by shinylive or system), and container (Docker or Podman engine and image for the container strategy). A wider card underneath describes apps, the optional multi-app suite, where each entry may override the suite-level type or runtime_strategy so shinylive apps can coexist with bundled or system apps in the same build." width="100%"}
 
 ## Why use one
 
@@ -290,6 +290,8 @@ The maintained pins are updated with each shinyelectron release. Using `null` is
 | `electron.version` | string | `null` | Electron (Chromium/Node) runtime version bundled in the desktop app; written as `^<version>` in `package.json` |
 
 The support toolchain (`electron-builder`, `electron-updater`, `electron-log`) is pinned internally by shinyelectron and is not user-configurable via `_shinyelectron.yml`. Node.js is the build toolchain taken from the system PATH and is not bundled in the app; it is managed via the `nodejs` section below.
+
+`r.version` and `python.version` apply only to the `bundled`, `auto-download`, and `container` strategies. They have no effect under `shinylive`, where the R or Python runtime is the WebR or Pyodide version shipped by the `shinylive` package (set upstream, not configurable here), or under `system`, where the app runs against the end user's installed R or Python.
 
 #### `system_packages`
 
