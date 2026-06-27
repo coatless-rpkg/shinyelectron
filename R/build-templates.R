@@ -38,7 +38,7 @@ process_templates <- function(output_dir, app_name, app_type,
   copy_backend_modules(output_dir, backend_module, is_multi_app)
 
   if (runtime_strategy == "container") {
-    copy_and_bake_dockerfiles(output_dir, app_type, verbose = verbose)
+    copy_and_bake_dockerfiles(output_dir, app_type, config = config, verbose = verbose)
   }
 
   writeLines(
@@ -136,8 +136,15 @@ copy_backend_modules <- function(output_dir, backend_module, is_multi_app) {
 }
 
 #' Copy the Dockerfile for the container strategy and bake in app dependencies
+#'
+#' @param output_dir Character. Destination build directory.
+#' @param app_type Character. Application type (e.g. `"r-shiny"`, `"py-shiny"`).
+#' @param config List of configuration values from the config file, or NULL.
+#'   Used to resolve the runtime version that is baked into the `ARG` default
+#'   line of the copied Dockerfile.
+#' @param verbose Logical. Whether to show progress messages.
 #' @keywords internal
-copy_and_bake_dockerfiles <- function(output_dir, app_type, verbose = TRUE) {
+copy_and_bake_dockerfiles <- function(output_dir, app_type, config = NULL, verbose = TRUE) {
   dockerfile_name <- if (grepl("^r-", app_type)) "r-shiny" else "py-shiny"
   dockerfile_src <- system.file("dockerfiles", dockerfile_name, package = "shinyelectron")
 
@@ -151,6 +158,20 @@ copy_and_bake_dockerfiles <- function(output_dir, app_type, verbose = TRUE) {
   for (f in list.files(dockerfile_src, full.names = TRUE)) {
     fs::file_copy(f, fs::path(dockerfile_dest, basename(f)), overwrite = TRUE)
   }
+
+  # Rewrite the ARG default to the resolved runtime version so the baked
+  # image tag encodes the version and avoids cache collisions.
+  dockerfile_path <- fs::path(dockerfile_dest, "Dockerfile")
+  df_lines <- readLines(dockerfile_path)
+  if (grepl("^r-", app_type)) {
+    ver <- resolve_runtime_version("r", config %||% list())
+    df_lines <- sub("^(ARG R_VERSION=).*", paste0("\\1", ver), df_lines)
+  } else {
+    ver <- resolve_runtime_version("python", config %||% list())
+    minor <- sub("^(\\d+\\.\\d+).*", "\\1", ver)
+    df_lines <- sub("^(ARG PY_VERSION=).*", paste0("\\1", minor), df_lines)
+  }
+  writeLines(df_lines, dockerfile_path)
 
   bake_dockerfile_dependencies(output_dir, dockerfile_dest)
 

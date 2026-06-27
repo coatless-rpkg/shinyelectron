@@ -4,10 +4,15 @@
 \alias{generate_container_config}
 \title{Build the container backend configuration}
 \usage{
-generate_container_config(config)
+generate_container_config(config, app_type = NULL)
 }
 \arguments{
 \item{config}{List. Full app configuration.}
+
+\item{app_type}{Character or NULL. Application type (e.g. \code{"r-shiny"},
+\code{"py-shiny"}). Used to resolve the runtime version for \code{container_tag}
+when no BYO image is configured. When NULL and no tag is configured,
+falls back to \code{"latest"}.}
 }
 \value{
 Named list of container settings.

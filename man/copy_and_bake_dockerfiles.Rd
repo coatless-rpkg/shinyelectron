@@ -4,7 +4,18 @@
 \alias{copy_and_bake_dockerfiles}
 \title{Copy the Dockerfile for the container strategy and bake in app dependencies}
 \usage{
-copy_and_bake_dockerfiles(output_dir, app_type, verbose = TRUE)
+copy_and_bake_dockerfiles(output_dir, app_type, config = NULL, verbose = TRUE)
+}
+\arguments{
+\item{output_dir}{Character. Destination build directory.}
+
+\item{app_type}{Character. Application type (e.g. \code{"r-shiny"}, \code{"py-shiny"}).}
+
+\item{config}{List of configuration values from the config file, or NULL.
+Used to resolve the runtime version that is baked into the \code{ARG} default
+line of the copied Dockerfile.}
+
+\item{verbose}{Logical. Whether to show progress messages.}
 }
 \description{
 Copy the Dockerfile for the container strategy and bake in app dependencies

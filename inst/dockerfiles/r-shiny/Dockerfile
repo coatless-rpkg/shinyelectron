@@ -1,42 +1,13 @@
-# Minimal R + Shiny image for shinyelectron container strategy
-# Uses rocker/r2u which provides pre-built binary R packages via apt
-# Supports both amd64 and arm64 (Apple Silicon)
-FROM rocker/r2u:24.04
+# R + Shiny image for the shinyelectron container strategy.
+# rocker/r-ver pins an exact R version and pre-wires P3M binaries, so
+# install.packages() pulls precompiled binaries. System libraries those
+# binaries need are baked in by the build (pak::pkg_sysreqs).
+ARG R_VERSION=latest
+FROM rocker/r-ver:${R_VERSION}
 
-# Keep apt non-interactive. apt-get update can pull a newer r-base-core than the
-# one baked into the base image, and its Rprofile.site conffile would otherwise
-# trigger an interactive dpkg prompt that aborts a cold build (no TTY). Keep the
-# image's existing conffiles (rocker customizes Rprofile.site for r2u).
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Shiny and its runtime dependencies as pre-built system packages.
-# r-cran-shiny's apt Depends can lag shiny's actual R imports on bleeding-edge
-# r2u, so the transitive deps (R6, httpuv, later, ...) are listed explicitly
-# to guarantee shiny can load. Works on both amd64 and arm64.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    -o Dpkg::Options::=--force-confold \
-    r-cran-shiny \
-    r-cran-jsonlite \
-    r-cran-r6 \
-    r-cran-httpuv \
-    r-cran-later \
-    r-cran-promises \
-    r-cran-htmltools \
-    r-cran-fastmap \
-    r-cran-rlang \
-    r-cran-mime \
-    r-cran-fontawesome \
-    r-cran-bslib \
-    r-cran-cachem \
-    r-cran-commonmark \
-    r-cran-glue \
-    r-cran-crayon \
-    r-cran-lifecycle \
-    r-cran-digest \
-    r-cran-sass \
-    r-cran-jquerylib \
-    r-cran-memoise \
-    && rm -rf /var/lib/apt/lists/*
+RUN R -e "install.packages('shiny')"
 
 WORKDIR /app
 

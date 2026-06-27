@@ -1,5 +1,8 @@
-# Minimal Python + Shiny image for shinyelectron container strategy
-FROM python:3.14-slim
+# Python + Shiny image for the shinyelectron container strategy.
+ARG PY_VERSION=3.14
+FROM python:${PY_VERSION}-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN pip install --no-cache-dir shiny
 

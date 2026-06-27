@@ -81,3 +81,43 @@ test_that("validate_config is unaffected when container section is absent", {
   expect_no_warning(result <- validate_config(cfg))
   expect_null(result$container)
 })
+
+test_that("copy_and_bake_dockerfiles bakes R_VERSION into r-shiny Dockerfile", {
+  out <- withr::local_tempdir()
+  copy_and_bake_dockerfiles(out, "r-shiny",
+    config = list(dependencies = list(r = list(version = "4.5.1"))),
+    verbose = FALSE)
+  df_content <- readLines(fs::path(out, "dockerfiles", "Dockerfile"))
+  expect_true(any(grepl("^ARG R_VERSION=4\\.5\\.1$", df_content)))
+})
+
+test_that("copy_and_bake_dockerfiles bakes PY_VERSION (major.minor) into py-shiny Dockerfile", {
+  out <- withr::local_tempdir()
+  copy_and_bake_dockerfiles(out, "py-shiny",
+    config = list(dependencies = list(python = list(version = "3.13.2"))),
+    verbose = FALSE)
+  df_content <- readLines(fs::path(out, "dockerfiles", "Dockerfile"))
+  expect_true(any(grepl("^ARG PY_VERSION=3\\.13$", df_content)))
+})
+
+test_that("generate_container_config uses runtime version as container_tag when no BYO image", {
+  result <- generate_container_config(
+    config = list(
+      container = list(),
+      dependencies = list(r = list(version = "4.5.1"))
+    ),
+    app_type = "r-shiny"
+  )
+  expect_equal(result$container_tag, "4.5.1")
+})
+
+test_that("generate_container_config does not override tag when BYO image is set", {
+  result <- generate_container_config(
+    config = list(
+      container = list(image = "myregistry/myimage"),
+      dependencies = list(r = list(version = "4.5.1"))
+    ),
+    app_type = "r-shiny"
+  )
+  expect_equal(result$container_tag, "latest")
+})

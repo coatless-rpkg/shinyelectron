@@ -43,7 +43,7 @@ generate_template_variables <- function(app_name, app_slug, app_type,
   # inlined backend config (see inst/electron/backends/container.js); fold
   # them in here so `_shinyelectron.yml` container settings reach runtime.
   if (identical(runtime_strategy, "container")) {
-    backend_config <- c(backend_config, generate_container_config(config))
+    backend_config <- c(backend_config, generate_container_config(config, app_type = app_type))
   }
 
   # Drop NULL entries: jsonlite serializes a NULL element as an empty object
