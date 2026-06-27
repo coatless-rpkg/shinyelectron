@@ -23,7 +23,7 @@ test_that("electron_latest_version returns a version string from the registry", 
   fake_tf <- tempfile(fileext = ".json")
   withr::defer(unlink(fake_tf))
   writeLines(fake_json, fake_tf)
-  mockery::stub(electron_latest_version, "download.file", function(url, dest, ...) {
+  mockery::stub(electron_latest_version, "utils::download.file", function(url, dest, ...) {
     file.copy(fake_tf, dest)
     invisible(0L)
   })

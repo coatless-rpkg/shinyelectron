@@ -43,7 +43,7 @@ electron_latest_version <- function() {
   tmp <- tempfile(fileext = ".json")
   on.exit(unlink(tmp), add = TRUE)
   status <- tryCatch(
-    download.file(url, tmp, quiet = TRUE),
+    utils::download.file(url, tmp, quiet = TRUE),
     error = function(e) {
       cli::cli_abort(c(
         "Failed to fetch latest Electron version from npm registry",

@@ -13,20 +13,31 @@ pbs_list_releases <- function() {
   tmp <- tempfile(fileext = ".json")
   on.exit(unlink(tmp), add = TRUE)
 
-  ok <- tryCatch({
-    utils::download.file(url, tmp, mode = "wb", quiet = TRUE)
-    TRUE
-  }, error = function(e) {
+  status <- tryCatch(
+    utils::download.file(url, tmp, mode = "wb", quiet = TRUE),
+    error = function(e) {
+      cli::cli_abort(c(
+        "Could not reach the python-build-standalone release API.",
+        "x" = "{e$message}",
+        "i" = "Check your internet connection.",
+        "i" = paste0(
+          "Or pin a version in your config matching the maintained default: ",
+          "{.val {SHINYELECTRON_DEFAULTS$runtime_versions$python$version}}."
+        )
+      ))
+    }
+  )
+  if (!identical(status, 0L)) {
     cli::cli_abort(c(
       "Could not reach the python-build-standalone release API.",
-      "x" = "{e$message}",
+      "x" = "HTTP request returned status {status}",
       "i" = "Check your internet connection.",
       "i" = paste0(
         "Or pin a version in your config matching the maintained default: ",
         "{.val {SHINYELECTRON_DEFAULTS$runtime_versions$python$version}}."
       )
     ))
-  })
+  }
 
   jsonlite::fromJSON(tmp, simplifyVector = FALSE)
 }
