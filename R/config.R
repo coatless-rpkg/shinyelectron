@@ -320,9 +320,9 @@ validate_config <- function(config) {
     config$container$engine <- NULL
   }
 
-  # Validate dependencies version strings: r, python, node.
+  # Validate dependencies version strings: r, python, electron.
   # Each must be a single character string (e.g. "4.5.1" or "latest") or NULL.
-  for (rt in c("r", "python", "node")) {
+  for (rt in c("r", "python", "electron")) {
     ver <- config$dependencies[[rt]]$version
     if (!is.null(ver) && (!is.character(ver) || length(ver) != 1L)) {
       cli::cli_warn(c(

@@ -7,7 +7,7 @@
 resolve_runtime_version(runtime, config)
 }
 \arguments{
-\item{runtime}{One of \code{"r"}, \code{"python"}, \code{"node"}.}
+\item{runtime}{One of \code{"r"}, \code{"python"}, \code{"electron"}.}
 
 \item{config}{Full app configuration list.}
 }

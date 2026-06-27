@@ -31,8 +31,9 @@ MANIFEST_SCHEMA_VERSION <- "1"
 #'   \item{signing}{Default code-signing settings}
 #'   \item{lifecycle}{Default lifecycle and prompt settings}
 #'   \item{installer}{Default installer branding settings}
-#'   \item{runtime_versions}{Maintained "latest known" runtime version pins (r, python, node)}
-#'   \item{dependencies$node}{Default Node.js dependency settings}
+#'   \item{runtime_versions}{Maintained "latest known" runtime version pins (r, python, electron)}
+#'   \item{electron_toolchain}{Pinned versions for electron-builder, electron-updater, electron-log (not config-settable)}
+#'   \item{dependencies$electron}{Default Electron dependency settings; \code{version} is NULL (use pin) or a version string}
 #'   \item{dependencies$system_packages}{Default system package list (NULL)}
 #' }
 #' @keywords internal
@@ -161,17 +162,25 @@ SHINYELECTRON_DEFAULTS <- list(
       packages = list(),
       index_urls = list("https://pypi.org/simple")
     ),
-    node = list(version = NULL),
+    electron = list(version = NULL),
     system_packages = NULL
   ),
 
   # Maintained "latest known" runtime pins. SINGLE SOURCE OF TRUTH.
   # To bump: set these to the values returned by r_portable_latest_version(),
-  # python_resolve_pbs("latest"), and nodejs_latest_lts(), then rebuild.
+  # python_resolve_pbs("latest"), and electron_latest_version(), then rebuild.
   runtime_versions = list(
-    r      = "4.6.1",
-    python = list(version = "3.14.6", release = "20260623"),
-    node   = "24.18.0"
+    r        = "4.6.1",
+    python   = list(version = "3.14.6", release = "20260623"),
+    electron = "41.0.0"
+  ),
+
+  # Pinned versions for the Electron support toolchain. These are NOT
+  # config-settable; bump here when upgrading the build toolchain.
+  electron_toolchain = list(
+    builder = "26.8.0",   # electron-builder (current "^26.8.0")
+    updater = "6.8.0",    # electron-updater (current "^6.8.0")
+    log     = "5.4.0"     # electron-log    (current "^5.4.0")
   ),
 
   # Logging defaults

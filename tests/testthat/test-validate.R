@@ -120,13 +120,13 @@ test_that("validate_config warns clearly for a length-2 server port", {
 
 # --- validate_config: dependencies version-string checks ---
 
-test_that("validate_config warns and drops non-character node version", {
-  cfg <- list(dependencies = list(node = list(version = 123)))
+test_that("validate_config warns and drops non-character electron version", {
+  cfg <- list(dependencies = list(electron = list(version = 123)))
   expect_warning(
     out <- validate_config(cfg),
-    regexp = "dependencies.node.version"
+    regexp = "dependencies.electron.version"
   )
-  expect_null(out$dependencies$node$version)
+  expect_null(out$dependencies$electron$version)
 })
 
 test_that("validate_config warns and drops non-character r version", {
@@ -149,14 +149,14 @@ test_that("validate_config warns and drops length > 1 python version", {
 
 test_that("validate_config accepts valid single-string version values", {
   cfg <- list(dependencies = list(
-    r      = list(version = "4.5.1"),
-    python = list(version = "3.12.0"),
-    node   = list(version = "latest")
+    r        = list(version = "4.5.1"),
+    python   = list(version = "3.12.0"),
+    electron = list(version = "latest")
   ))
   expect_no_warning(out <- validate_config(cfg))
   expect_equal(out$dependencies$r$version, "4.5.1")
   expect_equal(out$dependencies$python$version, "3.12.0")
-  expect_equal(out$dependencies$node$version, "latest")
+  expect_equal(out$dependencies$electron$version, "latest")
 })
 
 # --- validate_config: dependencies system_packages checks ---
