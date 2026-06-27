@@ -78,7 +78,7 @@ write_runtime_manifest <- function(app_dir, app_type, platform, arch, config,
     if (verbose) cli::cli_alert_info("Runtime manifest written for R {version}")
   } else {
     version <- resolve_runtime_version("python", config)
-    pbs <- python_resolve_pbs(version)
+    pbs <- resolve_python_pbs(version)
     manifest <- generate_python_runtime_manifest(version = version,
                                                  platform = resolved_platform,
                                                  arch = resolved_arch,

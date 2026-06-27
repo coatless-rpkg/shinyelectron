@@ -103,19 +103,19 @@ test_that("generate_runtime_manifest uses current platform when NULL", {
 # --- Python runtime functions ---
 
 test_that("python_download_url constructs correct URL for macOS", {
-  url <- python_download_url("3.12.0", "mac", "arm64")
+  url <- python_download_url("3.12.0", "mac", "arm64", release_date = "20251007")
   expect_true(grepl("3.12.0", url))
   expect_true(grepl("aarch64", url) || grepl("arm64", url))
 })
 
 test_that("python_download_url constructs correct URL for Windows", {
-  url <- python_download_url("3.12.0", "win", "x64")
+  url <- python_download_url("3.12.0", "win", "x64", release_date = "20251007")
   expect_true(grepl("3.12.0", url))
   expect_true(grepl("x86_64", url) || grepl("x64", url))
 })
 
 test_that("python_download_url constructs correct URL for Linux", {
-  url <- python_download_url("3.12.0", "linux", "x64")
+  url <- python_download_url("3.12.0", "linux", "x64", release_date = "20251007")
   expect_true(grepl("3.12.0", url))
   expect_true(grepl("x86_64", url))
 })
@@ -152,7 +152,7 @@ test_that("install_python validates version format", {
 
 test_that("generate_python_runtime_manifest creates valid JSON", {
   skip_if_not_installed("mockery")
-  mockery::stub(generate_python_runtime_manifest, "python_resolve_pbs", function(v) {
+  mockery::stub(generate_python_runtime_manifest, "resolve_python_pbs", function(v) {
     list(version = v, release = "20250101")
   })
   manifest <- generate_python_runtime_manifest("3.12.0", "mac", "arm64")

@@ -91,6 +91,24 @@ python_resolve_pbs <- function(version = "latest") {
   }
 }
 
+#' Resolve a Python version to its python-build-standalone release (offline-first)
+#'
+#' Uses the offline default pin when the version matches it (no network), and
+#' only queries the registry for a custom or "latest" version.
+#'
+#' @param version Character string. A concrete Python version such as
+#'   `"3.14.6"`, or `"latest"` for the newest available build.
+#' @return Named list with elements `version` (character) and `release`
+#'   (character YYYYMMDD tag).
+#' @keywords internal
+resolve_python_pbs <- function(version) {
+  pin <- SHINYELECTRON_DEFAULTS$runtime_versions$python
+  if (identical(version, pin$version)) {
+    return(list(version = pin$version, release = pin$release))
+  }
+  python_resolve_pbs(version)
+}
+
 #' Construct download URL for portable Python
 #'
 #' Uses python-build-standalone releases for portable Python builds.
@@ -98,10 +116,13 @@ python_resolve_pbs <- function(version = "latest") {
 #' @param version Character string. Python version (e.g., "3.14.6").
 #' @param platform Character string. Target platform.
 #' @param arch Character string. Target architecture.
+#' @param release_date Character string. python-build-standalone release tag
+#'   (YYYYMMDD). Required; must match a release tag on
+#'   \url{https://github.com/astral-sh/python-build-standalone/releases}.
 #' @return Character string. Download URL.
 #' @keywords internal
 python_download_url <- function(version, platform = NULL, arch = NULL,
-                                release_date = "20250409") {
+                                release_date) {
   # release_date must match an astral-sh/python-build-standalone release tag
   # Check https://github.com/astral-sh/python-build-standalone/releases for latest
   platform <- platform %||% detect_current_platform()
@@ -216,7 +237,7 @@ install_python <- function(version = NULL, platform = NULL, arch = NULL,
     ))
   }
 
-  pbs <- python_resolve_pbs(version)
+  pbs <- resolve_python_pbs(version)
 
   if (verbose) {
     cli::cli_alert_info("Platform: {platform}, Architecture: {arch}")
@@ -240,7 +261,7 @@ install_python <- function(version = NULL, platform = NULL, arch = NULL,
 #' @param platform Character string. Target platform.
 #' @param arch Character string. Target architecture.
 #' @param release_date Character string. python-build-standalone release tag
-#'   (YYYYMMDD). If NULL, resolved automatically via `python_resolve_pbs()`.
+#'   (YYYYMMDD). If NULL, resolved automatically via `resolve_python_pbs()`.
 #' @return Character string. JSON content.
 #' @keywords internal
 generate_python_runtime_manifest <- function(version, platform = NULL, arch = NULL,
@@ -248,7 +269,7 @@ generate_python_runtime_manifest <- function(version, platform = NULL, arch = NU
   platform <- platform %||% detect_current_platform()
   arch <- arch %||% detect_current_arch()
 
-  if (is.null(release_date)) release_date <- python_resolve_pbs(version)$release
+  if (is.null(release_date)) release_date <- resolve_python_pbs(version)$release
 
   manifest <- list(
     schema_version = MANIFEST_SCHEMA_VERSION,

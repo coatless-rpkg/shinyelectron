@@ -19,7 +19,7 @@ generate_python_runtime_manifest(
 \item{arch}{Character string. Target architecture.}
 
 \item{release_date}{Character string. python-build-standalone release tag
-(YYYYMMDD). If NULL, resolved automatically via \code{python_resolve_pbs()}.}
+(YYYYMMDD). If NULL, resolved automatically via \code{resolve_python_pbs()}.}
 }
 \value{
 Character string. JSON content.

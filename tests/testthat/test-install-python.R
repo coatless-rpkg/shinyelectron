@@ -60,3 +60,23 @@ test_that("python_resolve_pbs aborts when latest has no assets", {
   mockery::stub(python_resolve_pbs, "pbs_list_releases", function() fake)
   expect_error(python_resolve_pbs("latest"), class = "rlang_error")
 })
+
+# --- resolve_python_pbs offline-default tests ---
+
+test_that("the default Python pin resolves its release offline (no network)", {
+  skip_if_not_installed("mockery")
+  pin <- SHINYELECTRON_DEFAULTS$runtime_versions$python
+  mockery::stub(resolve_python_pbs, "python_resolve_pbs",
+                function(...) stop("network must not be called for the default pin"))
+  res <- resolve_python_pbs(pin$version)
+  expect_equal(res$release, pin$release)
+  expect_equal(res$version, pin$version)
+})
+
+test_that("a custom Python version goes through python_resolve_pbs", {
+  skip_if_not_installed("mockery")
+  mockery::stub(resolve_python_pbs, "python_resolve_pbs",
+                function(version) list(version = version, release = "29990101"))
+  res <- resolve_python_pbs("3.13.2")
+  expect_equal(res$release, "29990101")
+})

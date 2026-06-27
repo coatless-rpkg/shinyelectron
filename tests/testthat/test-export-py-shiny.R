@@ -88,10 +88,9 @@ test_that("write_runtime_manifest uses pin version and release when python confi
   captured_version <- NULL
   captured_release <- NULL
 
-  # Avoid network: return the pin's release for any version string
-  mockery::stub(write_runtime_manifest, "python_resolve_pbs", function(version) {
-    list(version = version, release = SHINYELECTRON_DEFAULTS$runtime_versions$python$release)
-  })
+  # The default pin matches the offline short-circuit in resolve_python_pbs;
+  # no network stub needed. Stub only generate_python_runtime_manifest to
+  # capture what version and release_date are forwarded.
 
   # Capture what generate_python_runtime_manifest receives
   mockery::stub(write_runtime_manifest, "generate_python_runtime_manifest",
