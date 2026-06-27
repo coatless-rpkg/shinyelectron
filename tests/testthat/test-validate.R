@@ -117,3 +117,61 @@ test_that("validate_config warns clearly for a length-2 server port", {
   expect_warning(validated <- validate_config(cfg), "server.port")
   expect_equal(validated$server$port, SHINYELECTRON_DEFAULTS$server_port)
 })
+
+# --- validate_config: dependencies version-string checks ---
+
+test_that("validate_config warns and drops non-character node version", {
+  cfg <- list(dependencies = list(node = list(version = 123)))
+  expect_warning(
+    out <- validate_config(cfg),
+    regexp = "dependencies.node.version"
+  )
+  expect_null(out$dependencies$node$version)
+})
+
+test_that("validate_config warns and drops non-character r version", {
+  cfg <- list(dependencies = list(r = list(version = TRUE)))
+  expect_warning(
+    out <- validate_config(cfg),
+    regexp = "dependencies.r.version"
+  )
+  expect_null(out$dependencies$r$version)
+})
+
+test_that("validate_config warns and drops length > 1 python version", {
+  cfg <- list(dependencies = list(python = list(version = c("3.11.0", "3.12.0"))))
+  expect_warning(
+    out <- validate_config(cfg),
+    regexp = "dependencies.python.version"
+  )
+  expect_null(out$dependencies$python$version)
+})
+
+test_that("validate_config accepts valid single-string version values", {
+  cfg <- list(dependencies = list(
+    r      = list(version = "4.5.1"),
+    python = list(version = "3.12.0"),
+    node   = list(version = "latest")
+  ))
+  expect_no_warning(out <- validate_config(cfg))
+  expect_equal(out$dependencies$r$version, "4.5.1")
+  expect_equal(out$dependencies$python$version, "3.12.0")
+  expect_equal(out$dependencies$node$version, "latest")
+})
+
+# --- validate_config: dependencies system_packages checks ---
+
+test_that("validate_config warns and drops list-shaped system_packages", {
+  cfg <- list(dependencies = list(system_packages = list("a", "b")))
+  expect_warning(
+    out <- validate_config(cfg),
+    regexp = "dependencies.system_packages"
+  )
+  expect_null(out$dependencies$system_packages)
+})
+
+test_that("validate_config accepts a character vector for system_packages", {
+  cfg <- list(dependencies = list(system_packages = c("libfoo-dev", "libbar-dev")))
+  expect_no_warning(out <- validate_config(cfg))
+  expect_equal(out$dependencies$system_packages, c("libfoo-dev", "libbar-dev"))
+})

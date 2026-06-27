@@ -320,6 +320,31 @@ validate_config <- function(config) {
     config$container$engine <- NULL
   }
 
+  # Validate dependencies version strings: r, python, node.
+  # Each must be a single character string (e.g. "4.5.1" or "latest") or NULL.
+  for (rt in c("r", "python", "node")) {
+    ver <- config$dependencies[[rt]]$version
+    if (!is.null(ver) && (!is.character(ver) || length(ver) != 1L)) {
+      cli::cli_warn(c(
+        "Invalid {.field dependencies.{rt}.version} in config: {.val {ver}}",
+        "i" = "Must be a single character string (e.g. {.val \"4.5.1\"}) or {.val \"latest\"}",
+        "i" = "Dropping to {.val NULL}"
+      ))
+      config$dependencies[[rt]]$version <- NULL
+    }
+  }
+
+  # Validate dependencies$system_packages: must be a character vector or NULL.
+  sp <- config$dependencies$system_packages
+  if (!is.null(sp) && !is.character(sp)) {
+    cli::cli_warn(c(
+      "Invalid {.field dependencies.system_packages} in config",
+      "i" = "Must be a character vector of package names (e.g. {.val c(\"libfoo-dev\")})",
+      "i" = "Dropping to {.val NULL}"
+    ))
+    config$dependencies$system_packages <- NULL
+  }
+
   config
 }
 
@@ -420,21 +445,30 @@ nodejs:
   # auto_install: false
 
 # Dependency configuration
-# Controls how R/Python package dependencies are handled
+# Controls how R/Python/Node.js package dependencies are handled
 # dependencies:
 #   auto_detect: true        # Automatically detect dependencies
 #   extra_packages: []       # Additional packages to include
 #   r:
-#     version: null          # null = latest R; pin to embed a specific version
+#     # null = the maintained latest pin; "latest" = always newest; "4.5.1" = exact pin
+#     version: null
 #     packages: []           # Extra R packages
 #     repos:
 #       - "https://cloud.r-project.org"
 #     lib_path: null         # null = R default, "app-local", or custom path
 #   python:
-#     version: null          # null = default Python; pin a specific version
+#     # null = the maintained latest pin; "latest" = always newest; "3.12.0" = exact pin
+#     version: null
 #     packages: []           # Extra Python packages
 #     index_urls:
 #       - "https://pypi.org/simple"
+#   node:
+#     # null = the maintained latest pin; "latest" = always newest; "22.0.0" = exact pin
+#     version: null
+#   # system_packages: list of apt package names (container strategy only)
+#   # system_packages:
+#   #   - libssl-dev
+#   #   - libcurl4-openssl-dev
 
 # Container configuration (used when runtime_strategy is "container")
 # container:
