@@ -31,6 +31,9 @@ MANIFEST_SCHEMA_VERSION <- "1"
 #'   \item{signing}{Default code-signing settings}
 #'   \item{lifecycle}{Default lifecycle and prompt settings}
 #'   \item{installer}{Default installer branding settings}
+#'   \item{runtime_versions}{Maintained "latest known" runtime version pins (r, python, node)}
+#'   \item{dependencies$node}{Default Node.js dependency settings}
+#'   \item{dependencies$system_packages}{Default system package list (NULL)}
 #' }
 #' @keywords internal
 SHINYELECTRON_DEFAULTS <- list(
@@ -157,7 +160,18 @@ SHINYELECTRON_DEFAULTS <- list(
       version = NULL,   # NULL = default Python; pin to embed a specific version
       packages = list(),
       index_urls = list("https://pypi.org/simple")
-    )
+    ),
+    node = list(version = NULL),
+    system_packages = NULL
+  ),
+
+  # Maintained "latest known" runtime pins. SINGLE SOURCE OF TRUTH.
+  # To bump: set these to the values returned by r_portable_latest_version(),
+  # python_resolve_pbs("latest"), and nodejs_latest_lts(), then rebuild.
+  runtime_versions = list(
+    r      = "4.6.1",
+    python = list(version = "3.14.6", release = "20260623"),
+    node   = "24.18.0"
   ),
 
   # Logging defaults

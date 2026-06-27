@@ -26,6 +26,9 @@ A named list with the following elements:
 \item{signing}{Default code-signing settings}
 \item{lifecycle}{Default lifecycle and prompt settings}
 \item{installer}{Default installer branding settings}
+\item{runtime_versions}{Maintained "latest known" runtime version pins (r, python, node)}
+\item{dependencies$node}{Default Node.js dependency settings}
+\item{dependencies$system_packages}{Default system package list (NULL)}
 }
 }
 \usage{
