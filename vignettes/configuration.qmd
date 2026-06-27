@@ -106,8 +106,8 @@ dependencies:               # Runtime version pins and system packages
     version: null           # null = maintained pin; "latest" = live query; "4.6.1" = exact
   python:
     version: null           # null = maintained pin; "latest" = live query; "3.12.0" = exact
-  node:
-    version: null           # null = maintained pin; "latest" = live query; "22.0.0" = exact
+  electron:
+    version: null           # null = maintained pin; "latest" = live query from npm; "41.0.0" = exact
   # system_packages: extra apt packages baked into the container image
   # system_packages:
   #   - libgdal-dev
@@ -287,7 +287,9 @@ The maintained pins are updated with each shinyelectron release. Using `null` is
 |-----|------|---------|-------------|
 | `r.version` | string | `null` | R version for `bundled`, `auto-download`, and `container` strategies |
 | `python.version` | string | `null` | Python version for `bundled`, `auto-download`, and `container` strategies |
-| `node.version` | string | `null` | Node.js version for the build toolchain |
+| `electron.version` | string | `null` | Electron (Chromium/Node) runtime version bundled in the desktop app; written as `^<version>` in `package.json` |
+
+The support toolchain (`electron-builder`, `electron-updater`, `electron-log`) is pinned internally by shinyelectron and is not user-configurable via `_shinyelectron.yml`. Node.js is the build toolchain taken from the system PATH and is not bundled in the app; it is managed via the `nodejs` section below.
 
 #### `system_packages`
 
@@ -309,8 +311,8 @@ dependencies:
     version: "4.6.1"        # pin to an exact R release
   python:
     version: null           # use maintained pin
-  node:
-    version: "latest"       # resolve live LTS at build time
+  electron:
+    version: "latest"       # resolve newest Electron from npm at build time
   system_packages:
     - libgdal-dev
     - libpq-dev
