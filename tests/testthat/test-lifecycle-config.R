@@ -60,7 +60,7 @@ test_that("init_config round-trips an app_name containing a backslash", {
 
 # --- init_config template documents new dependency keys ---
 
-test_that("init_config template documents r/python/node version and system_packages", {
+test_that("init_config template documents r/python/electron version and system_packages", {
   tmpdir <- tempfile()
   dir.create(tmpdir)
   on.exit(unlink(tmpdir, recursive = TRUE))
@@ -69,10 +69,10 @@ test_that("init_config template documents r/python/node version and system_packa
   config_path <- file.path(tmpdir, "_shinyelectron.yml")
   template_text <- paste(readLines(config_path), collapse = "\n")
 
-  # r, python, node version keys should be documented
+  # r, python, electron version keys should be documented
   expect_match(template_text, "r:", fixed = TRUE)
   expect_match(template_text, "python:", fixed = TRUE)
-  expect_match(template_text, "node:", fixed = TRUE)
+  expect_match(template_text, "electron:", fixed = TRUE)
   expect_match(template_text, "version:", fixed = TRUE)
   # system_packages should be documented
   expect_match(template_text, "system_packages", fixed = TRUE)

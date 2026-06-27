@@ -445,7 +445,7 @@ nodejs:
   # auto_install: false
 
 # Dependency configuration
-# Controls how R/Python/Node.js package dependencies are handled
+# Controls R and Python package dependencies, the bundled Electron version, and container system packages.
 # dependencies:
 #   auto_detect: true        # Automatically detect dependencies
 #   extra_packages: []       # Additional packages to include
@@ -462,8 +462,9 @@ nodejs:
 #     packages: []           # Extra Python packages
 #     index_urls:
 #       - "https://pypi.org/simple"
-#   node:
-#     # null = the maintained latest pin; "latest" = always newest; "22.0.0" = exact pin
+#   electron:
+#     # null = maintained pin; "latest" = newest; "41.0.0" = exact. Sets the
+#     # Electron runtime bundled in the desktop app.
 #     version: null
 #   # system_packages: list of apt package names (container strategy only)
 #   # system_packages:

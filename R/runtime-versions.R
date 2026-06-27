@@ -42,7 +42,7 @@ electron_latest_version <- function() {
   url <- "https://registry.npmjs.org/electron/latest"
   tmp <- tempfile(fileext = ".json")
   on.exit(unlink(tmp), add = TRUE)
-  tryCatch(
+  status <- tryCatch(
     download.file(url, tmp, quiet = TRUE),
     error = function(e) {
       cli::cli_abort(c(
@@ -52,6 +52,13 @@ electron_latest_version <- function() {
       ))
     }
   )
+  if (!identical(status, 0L)) {
+    cli::cli_abort(c(
+      "Failed to fetch latest Electron version from npm registry",
+      "x" = "HTTP request returned status {status}",
+      "i" = "Check your internet connection or set {.field dependencies$electron$version} to a specific version"
+    ))
+  }
   meta <- jsonlite::fromJSON(tmp)
   as.character(meta$version)
 }
