@@ -3,11 +3,18 @@
 # Supports both amd64 and arm64 (Apple Silicon)
 FROM rocker/r2u:24.04
 
+# Keep apt non-interactive. apt-get update can pull a newer r-base-core than the
+# one baked into the base image, and its Rprofile.site conffile would otherwise
+# trigger an interactive dpkg prompt that aborts a cold build (no TTY). Keep the
+# image's existing conffiles (rocker customizes Rprofile.site for r2u).
+ENV DEBIAN_FRONTEND=noninteractive
+
 # Install Shiny and its runtime dependencies as pre-built system packages.
 # r-cran-shiny's apt Depends can lag shiny's actual R imports on bleeding-edge
 # r2u, so the transitive deps (R6, httpuv, later, ...) are listed explicitly
 # to guarantee shiny can load. Works on both amd64 and arm64.
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    -o Dpkg::Options::=--force-confold \
     r-cran-shiny \
     r-cran-jsonlite \
     r-cran-r6 \

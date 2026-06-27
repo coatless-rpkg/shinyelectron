@@ -1,7 +1,12 @@
 # R + Python Shiny image for shinyelectron container strategy
 FROM rocker/r-base:latest
 
+# Keep apt non-interactive so a conffile prompt from an updated base package
+# cannot stall a cold build (no TTY); keep the image's existing conffiles.
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    -o Dpkg::Options::=--force-confold \
     python3 python3-pip python3-venv \
     libcurl4-openssl-dev \
     libssl-dev \
