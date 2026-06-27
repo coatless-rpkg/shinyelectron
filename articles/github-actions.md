@@ -1,16 +1,16 @@
 # Building with GitHub Actions
 
 A desktop installer has to be built on the OS it targets: a `.dmg` on
-macOS, an `.exe` on Windows, an `.AppImage` on Linux, and once again per
-architecture. That is six builds for full coverage, and most teams do
-not have all six machines on a desk. GitHub Actions rents them by the
-minute, runs them in parallel, and hands back the installers as
-artifacts. One push, six builds, no hardware juggling.
+macOS, an `.exe` on Windows, and an `.AppImage` on Linux. That is four
+builds for full coverage, and most teams do not have all four machines
+on a desk. GitHub Actions rents them by the minute, runs them in
+parallel, and hands back the installers as artifacts. One push, four
+builds, no hardware juggling.
 
-![A git push node on the left fans out to six runner rows (macos-latest,
-macos-15-intel, windows-latest, windows-11-arm, ubuntu-latest,
-ubuntu-24.04-arm), each producing a platform-specific installer, which
-fan back in to a Release job on the right that runs only on tag
+![A git push node on the left fans out to four runner rows
+(macos-latest, macos-15-intel, windows-latest, ubuntu-latest), each
+producing a platform-specific installer, which fan back in to a Release
+job on the right that runs only on tag
 pushes.](../reference/figures/ci-build-matrix.svg)
 
 The build matrix: one push fans out across platform runners, each
@@ -95,17 +95,15 @@ deviate.
 
 ### What the matrix builds
 
-The matrix spreads installers across six runners. Each runner starts
+The matrix spreads installers across four runners. Each runner starts
 from a clean image:
 
-| Runner             | Platform | Architecture          | Output      |
-|--------------------|----------|-----------------------|-------------|
-| `macos-latest`     | macOS    | arm64 (Apple Silicon) | `.dmg`      |
-| `macos-15-intel`   | macOS    | x64 (Intel)           | `.dmg`      |
-| `windows-latest`   | Windows  | x64                   | `.exe`      |
-| `windows-11-arm`   | Windows  | arm64                 | `.exe`      |
-| `ubuntu-latest`    | Ubuntu   | x64                   | `.AppImage` |
-| `ubuntu-24.04-arm` | Ubuntu   | arm64                 | `.AppImage` |
+| Runner           | Platform | Architecture          | Output      |
+|------------------|----------|-----------------------|-------------|
+| `macos-latest`   | macOS    | arm64 (Apple Silicon) | `.dmg`      |
+| `macos-15-intel` | macOS    | x64 (Intel)           | `.dmg`      |
+| `windows-latest` | Windows  | x64                   | `.exe`      |
+| `ubuntu-latest`  | Ubuntu   | x64                   | `.AppImage` |
 
 CPU and RAM allocations come from GitHub’s hosted-runner specs, which
 evolve over time; check [the GitHub-hosted runners

@@ -1,8 +1,8 @@
 # Enable Auto-Updates
 
 Configures automatic update checking for your Electron application.
-Updates are distributed via GitHub Releases, S3 buckets, or generic HTTP
-servers.
+GitHub Releases is the only provider supported today. S3 and Generic
+HTTP providers are planned and will be added in a future release.
 
 ## Usage
 
@@ -81,7 +81,7 @@ Auto-updates require:
 
 - Private repos require `GH_TOKEN` environment variable
 
-**S3 Bucket**:
+**S3 Bucket** (planned, not yet supported):
 
 - For self-hosted updates behind a CDN
 
@@ -92,7 +92,10 @@ Auto-updates require:
 - Required bucket structure: `/{path}/latest-mac.yml`,
   `latest-linux.yml`, `latest.yml`
 
-**Generic HTTP Server**:
+- Note: `enable_auto_updates()` currently rejects `"s3"` as a provider;
+  S3 support will be added in a future release.
+
+**Generic HTTP Server** (planned, not yet supported):
 
 - For any HTTP server hosting update files
 
@@ -100,6 +103,9 @@ Auto-updates require:
 
 - Server must host `latest-mac.yml`, `latest-linux.yml`, `latest.yml` at
   the URL root
+
+- Note: `enable_auto_updates()` currently rejects `"generic"` as a
+  provider; Generic HTTP support will be added in a future release.
 
 ### Publishing Updates (GitHub Releases)
 

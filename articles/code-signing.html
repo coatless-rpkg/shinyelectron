@@ -105,8 +105,8 @@
 </ul>
 <p>The concrete outcomes differ per platform:</p>
 <div class="quarto-figure quarto-figure-center">
-<figure><p><img src="../reference/figures/signing-outcomes.svg" style="width:100.0%" alt="Three-row comparison table showing what happens on launch without and with signing on each platform. macOS row: without signing the app is blocked by Gatekeeper with an error message that the app can't be opened because Apple cannot check it for malicious software; with signing the app opens cleanly after Apple verifies the Developer ID and notarization ticket. Windows row: without signing SmartScreen warns that Windows protected your PC and prevented the unrecognized app from starting; with signing the app opens cleanly, with EV certificates trusted immediately and OV certificates building reputation over weeks. Linux row: without signing the app opens without any OS warning but users cannot verify the artifact; with signing the GPG signature allows security-minded users to verify authenticity manually."></p>
-<figcaption>Side-by-side comparison of launch behaviour with and without signing on macOS, Windows, and Linux. macOS and Windows block or warn on unsigned builds, while Linux has no OS-level enforcement but benefits from an optional GPG signature.</figcaption></figure>
+<figure><p><img src="../reference/figures/signing-outcomes.svg" style="width:100.0%" alt="Three-row comparison table showing what happens on launch without and with signing on each platform. macOS row: without signing the app is blocked by Gatekeeper with an error message that the app can't be opened because Apple cannot check it for malicious software; with signing the app opens cleanly after Apple verifies the Developer ID and notarization ticket. Windows row: without signing SmartScreen warns that Windows protected your PC and prevented the unrecognized app from starting; with signing the app opens cleanly, with EV certificates trusted immediately and OV certificates building reputation over weeks. Linux row: without signing the app opens without any OS warning; GPG signing is planned but not yet implemented, so no signature is produced today."></p>
+<figcaption>Side-by-side comparison of launch behaviour with and without signing on macOS, Windows, and Linux. macOS and Windows block or warn on unsigned builds, while Linux has no OS-level enforcement and GPG signing is not yet implemented in shinyelectron.</figcaption></figure>
 </div>
 <table class="table caption-top">
 <colgroup>
@@ -132,13 +132,13 @@
 <td><strong>Cost</strong></td>
 <td>$99/year (Apple Developer)</td>
 <td>$200 to $700/year (CA cert)</td>
-<td>Free (GPG)</td>
+<td>None (planned)</td>
 </tr>
 <tr class="odd">
 <td><strong>Certificate</strong></td>
 <td>Developer ID Application</td>
 <td>OV or EV code signing</td>
-<td>GPG key</td>
+<td>Not yet supported</td>
 </tr>
 <tr class="even">
 <td><strong>Notarization</strong></td>
@@ -222,15 +222,15 @@
 <p><strong>Without signing:</strong> unsigned Windows installers trigger SmartScreen on every download. There is no workaround short of signing the build.</p>
 </section><section class="level2"><h2 id="linux-optional-gpg-signing">Linux: optional GPG signing<a class="anchor" aria-label="anchor" href="#linux-optional-gpg-signing"></a>
 </h2>
-<p><strong>Cost:</strong> free. Uses a GPG key you already control.</p>
-<p><strong>What you need:</strong> a GPG key whose private half lives on the build machine. Generate one with <code>gpg --full-generate-key</code> if you do not have one, and publish the public key where your users can find it (your website, a keyserver, or your GitHub profile).</p>
-<p><strong>Wiring it up.</strong></p>
+<p><strong>Cost:</strong> none today; free (GPG key) when implemented.</p>
+<p><strong>Status: not yet implemented.</strong> The <code>gpg_sign: true</code> flag and <code>GPG_KEY</code> environment variable are reserved for a future release. Setting them has no effect today: no signature is produced, and a console warning is emitted if <code>GPG_KEY</code> is not set. Linux AppImages run without any OS-enforced signature check, so the absence of GPG signing has no effect on whether the app launches.</p>
+<p><strong>Configuration (reserved for future use).</strong></p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">GPG_KEY</span><span class="op">=</span><span class="st">"your-gpg-key-id"</span></span></code></pre></div>
 <div class="sourceCode" id="cb9"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">signing</span><span class="kw">:</span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">linux</span><span class="kw">:</span></span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">gpg_sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
-<p><strong>Without signing:</strong> nothing visibly changes. AppImage files do not require a signature to run, so most users never notice. Sign if your audience includes security-minded users who want to verify authenticity with <code>gpg --verify</code> before installing.</p>
+<p><strong>Without signing:</strong> nothing visibly changes. AppImage files do not require a signature to run, so users can open the app without any additional steps.</p>
 </section><section class="level2"><h2 id="signing-in-ci">Signing in CI<a class="anchor" aria-label="anchor" href="#signing-in-ci"></a>
 </h2>
 <p>CI is where signing usually lives in the long run: no human holds the keys on a laptop, and every tagged release is signed automatically. Store credentials as GitHub Actions secrets (<strong>Settings → Secrets and variables → Actions</strong>) and reference them from your workflow:</p>
@@ -342,7 +342,7 @@
 <tr class="even">
 <td><code>GPG_KEY</code></td>
 <td>Linux</td>
-<td>GPG key ID for AppImage signing</td>
+<td>GPG key ID for AppImage signing (reserved; not yet implemented)</td>
 </tr>
 </tbody>
 </table></section><section class="level2"><h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>

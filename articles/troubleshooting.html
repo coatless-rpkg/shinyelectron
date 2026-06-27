@@ -103,11 +103,11 @@
 -------------------------------------------------------------------------------
 
 -- System Requirements Report -----------------------------------------------
-v Platform: darwin
+v Platform: mac
 v Architecture: arm64
 v Local Node.js (shinyelectron): v22.11.0
 v Active Node.js: v22.11.0 (local)
-v npm: v10.9.0
+v npm: v11.5.0
 v R: v4.4.2
 
 -- Python
@@ -137,7 +137,7 @@ v All required dependencies satisfied
 -------------------------------------------------------------------------------
 
 -- Build Tools Report -------------------------------------------------------
-i Checking build tools for platform: darwin
+i Checking build tools for platform: mac
 v Xcode Command Line Tools: Found
 v Build tools ready
 -------------------------------------------------------------------------------
@@ -217,18 +217,13 @@ v All systems ready! You should be able to build Electron apps successfully</cod
 </div>
 </li>
 <li><p>Install from <a href="https://nodejs.org/" class="external-link uri">https://nodejs.org/</a>.</p></li>
-<li>
-<p>Enable auto-install in <code>_shinyelectron.yml</code>.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
-</li>
 </ol></section><section class="level3"><h3 id="node-js-version-too-old">Node.js version too old<a class="anchor" aria-label="anchor" href="#node-js-version-too-old"></a>
 </h3>
 <pre><code>! Node.js: v18.20.0 (version 22+ required)</code></pre>
 <p>shinyelectron requires Node.js 22.0.0 or newer because Electron 41 requires it. Older LTS lines (18.x, 20.x) miss features the bundled Electron version needs.</p>
 <p>Install a newer local copy:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Latest LTS (currently 22.x)</span></span>
 <span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
@@ -240,7 +235,7 @@ v All systems ready! You should be able to build Electron apps successfully</cod
 <pre><code>x npm: Not found</code></pre>
 <p>npm ships with Node.js. If Node is installed but npm is gone, the install is broken; reinstall it.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 </section><section class="level3"><h3 id="missing-r-packages">Missing R packages<a class="anchor" aria-label="anchor" href="#missing-r-packages"></a>
@@ -248,19 +243,19 @@ v All systems ready! You should be able to build Electron apps successfully</cod
 <pre><code>x shinylive: Not installed</code></pre>
 <p>Install whichever package is missing:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"shinylive"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>Multiple at once:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"shinylive"</span>, <span class="st">"cli"</span>, <span class="st">"fs"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 </section><section class="level3"><h3 id="xcode-command-line-tools-missing-macos">Xcode Command Line Tools missing (macOS)<a class="anchor" aria-label="anchor" href="#xcode-command-line-tools-missing-macos"></a>
 </h3>
 <pre><code>! Xcode Command Line Tools: Not found</code></pre>
 <p>In Terminal:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">xcode-select</span> <span class="at">--install</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ex">xcode-select</span> <span class="at">--install</span></span></code></pre></div>
 </section><section class="level3"><h3 id="visual-studio-build-tools-missing-windows">Visual Studio Build Tools missing (Windows)<a class="anchor" aria-label="anchor" href="#visual-studio-build-tools-missing-windows"></a>
 </h3>
 <pre><code>! Visual Studio Build Tools: Not found</code></pre>
@@ -272,10 +267,10 @@ v All systems ready! You should be able to build Electron apps successfully</cod
 </h3>
 <pre><code>! Build tools: Incomplete</code></pre>
 <p>Ubuntu and Debian:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get update</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get install build-essential</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get update</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get install build-essential</span></code></pre></div>
 <p>Fedora and RHEL:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> dnf groupinstall <span class="st">"Development Tools"</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> dnf groupinstall <span class="st">"Development Tools"</span></span></code></pre></div>
 </section><section class="level3"><h3 id="python-not-found">Python not found<a class="anchor" aria-label="anchor" href="#python-not-found"></a>
 </h3>
 <pre><code>i Python: not found (needed for py-shiny apps)</code></pre>
@@ -286,7 +281,7 @@ v All systems ready! You should be able to build Electron apps successfully</cod
 <li>
 <p>Verify it is reachable from R:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.which.html" class="external-link">Sys.which</a></span><span class="op">(</span><span class="st">"python3"</span><span class="op">)</span></span>
 <span><span class="co"># On Windows, Sys.which("python") is also checked</span></span></code></pre></div>
 </div>
@@ -300,26 +295,26 @@ v All systems ready! You should be able to build Electron apps successfully</cod
 <ol type="1">
 <li>
 <p>Reinstall to recreate the script.</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">--upgrade</span> <span class="at">--force-reinstall</span> shinylive</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">--upgrade</span> <span class="at">--force-reinstall</span> shinylive</span></code></pre></div>
 </li>
 <li>
 <p>On <strong>Windows</strong>, pip installs scripts in <code>%APPDATA%\Python\Python3XX\Scripts</code>. Add that directory to <code>PATH</code>:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find where pip installed the script</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>python <span class="op">-</span>c <span class="st">"import sysconfig; print(sysconfig.get_path('scripts'))"</span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Add it to your user PATH</span></span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="va">$scriptsDir</span> <span class="op">=</span> python <span class="op">-</span>c <span class="st">"import sysconfig; print(sysconfig.get_path('scripts'))"</span></span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="op">[</span>Environment<span class="op">]::</span>SetEnvironmentVariable<span class="op">(</span><span class="st">'Path'</span><span class="op">,</span> <span class="st">"</span><span class="va">$env</span><span class="op">:</span><span class="va">Path</span><span class="st">;</span><span class="va">$scriptsDir</span><span class="st">"</span><span class="op">,</span> <span class="st">'User'</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find where pip installed the script</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>python <span class="op">-</span>c <span class="st">"import sysconfig; print(sysconfig.get_path('scripts'))"</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Add it to your user PATH</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="va">$scriptsDir</span> <span class="op">=</span> python <span class="op">-</span>c <span class="st">"import sysconfig; print(sysconfig.get_path('scripts'))"</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="op">[</span>Environment<span class="op">]::</span>SetEnvironmentVariable<span class="op">(</span><span class="st">'Path'</span><span class="op">,</span> <span class="st">"</span><span class="va">$env</span><span class="op">:</span><span class="va">Path</span><span class="st">;</span><span class="va">$scriptsDir</span><span class="st">"</span><span class="op">,</span> <span class="st">'User'</span><span class="op">)</span></span></code></pre></div>
 <p>Restart your R session.</p>
 </li>
 <li>
 <p>Verify:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="ex">shinylive</span> <span class="at">--version</span></span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="ex">shinylive</span> <span class="at">--version</span></span></code></pre></div>
 </li>
 </ol></section><section class="level3"><h3 id="python-shiny-package-not-installed">Python <code>shiny</code> package not installed<a class="anchor" aria-label="anchor" href="#python-shiny-package-not-installed"></a>
 </h3>
 <pre><code>i Python shiny: not usable</code></pre>
-<div class="sourceCode" id="cb27"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install shiny</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install shiny</span></code></pre></div>
 <p>You need this for <code>py-shiny</code> apps under any non-shinylive strategy (<code>system</code>, <code>bundled</code>, <code>auto-download</code>, <code>container</code>). The <code>shinylive</code> strategy uses the <code>shinylive</code> Python package instead.</p>
 </section><section class="level3"><h3 id="docker-or-podman-not-found">Docker or Podman not found<a class="anchor" aria-label="anchor" href="#docker-or-podman-not-found"></a>
 </h3>
@@ -332,9 +327,9 @@ v All systems ready! You should be able to build Electron apps successfully</cod
 </li>
 </ul>
 <p>Confirm the engine is running:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> info</span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> info</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> info</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> info</span></code></pre></div>
 <div>
 <blockquote>
 <p><strong>Docker on Parallels and other nested virtualization</strong></p>
@@ -351,7 +346,7 @@ v All systems ready! You should be able to build Electron apps successfully</cod
 <pre><code>x package.json: Not found</code></pre>
 <p>You pointed the diagnostic at the wrong directory. Point it at the Electron sub-project:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep_electron_project.html">sitrep_electron_project</a></span><span class="op">(</span><span class="st">"my-export/electron-app"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </section><section class="level3"><h3 id="node_modules-not-found">
@@ -360,26 +355,26 @@ v All systems ready! You should be able to build Electron apps successfully</cod
 <pre><code>i node_modules: Not found (run 'npm install')</code></pre>
 <p>Install the project’s dependencies:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="st">"my-export/electron-app"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/system.html" class="external-link">system</a></span><span class="op">(</span><span class="st">"npm install"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>Or from a terminal:</p>
-<div class="sourceCode" id="cb34"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> my-export/electron-app</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install</span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> my-export/electron-app</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install</span></code></pre></div>
 </section><section class="level3"><h3 id="container-image-pull-failure">Container image pull failure<a class="anchor" aria-label="anchor" href="#container-image-pull-failure"></a>
 </h3>
 <pre><code>Error: ... manifest unknown ... or image not found</code></pre>
 <ol type="1">
 <li>
 <p>Check the image name in <code>_shinyelectron.yml</code>.</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">container</span><span class="kw">:</span></span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">image</span><span class="kw">:</span><span class="at"> </span><span class="st">"shinyelectron/r-shiny"</span></span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">tag</span><span class="kw">:</span><span class="at"> </span><span class="st">"latest"</span></span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">container</span><span class="kw">:</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">image</span><span class="kw">:</span><span class="at"> </span><span class="st">"shinyelectron/r-shiny"</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">tag</span><span class="kw">:</span><span class="at"> </span><span class="st">"latest"</span></span></code></pre></div>
 </li>
 <li>
 <p>Pull the image manually to rule out a network or auth problem.</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> pull shinyelectron/r-shiny:latest</span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> pull shinyelectron/r-shiny:latest</span></code></pre></div>
 </li>
 <li><p>For private registries, run <code>docker login</code> first.</p></li>
 </ol></section><section class="level3"><h3 id="container-port-conflict">Container port conflict<a class="anchor" aria-label="anchor" href="#container-port-conflict"></a>
@@ -389,13 +384,13 @@ v All systems ready! You should be able to build Electron apps successfully</cod
 <ol type="1">
 <li>
 <p>Move to a different port in <code>_shinyelectron.yml</code>.</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">server</span><span class="kw">:</span></span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">port</span><span class="kw">:</span><span class="at"> </span><span class="dv">3839</span></span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">server</span><span class="kw">:</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">port</span><span class="kw">:</span><span class="at"> </span><span class="dv">3839</span></span></code></pre></div>
 </li>
 <li>
 <p>Or stop the offending container.</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> ps                     <span class="co"># find the running container</span></span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> stop <span class="op">&lt;</span>container-id<span class="op">&gt;</span>    <span class="co"># stop it</span></span></code></pre></div>
+<div class="sourceCode" id="cb39"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> ps                     <span class="co"># find the running container</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> stop <span class="op">&lt;</span>container-id<span class="op">&gt;</span>    <span class="co"># stop it</span></span></code></pre></div>
 </li>
 </ol></section><section class="level3"><h3 id="gnu-tar-versus-bsdtar-on-windows">GNU <code>tar</code> versus <code>bsdtar</code> on Windows<a class="anchor" aria-label="anchor" href="#gnu-tar-versus-bsdtar-on-windows"></a>
 </h3>
@@ -403,7 +398,7 @@ v All systems ready! You should be able to build Electron apps successfully</cod
 <pre><code>Cannot connect to C: resolve failed</code></pre>
 <p>Git for Windows puts GNU <code>tar</code> on the <code>PATH</code>. GNU <code>tar</code> reads <code>C:\...</code> as a remote host spec (<code>host:path</code>), not a drive letter. The runtime downloader needs Windows 10’s bundled bsdtar at <code>%SystemRoot%\System32\tar.exe</code>, which understands drive letters.</p>
 <p>shinyelectron already handles this: the JavaScript downloader resolves the full path to <code>System32\tar.exe</code>, and the R-side extraction uses R’s internal tar. If you still hit the error, check what is actually on <code>PATH</code>:</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="ex">where</span> tar</span></code></pre></div>
+<div class="sourceCode" id="cb41"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="ex">where</span> tar</span></code></pre></div>
 <p>The first hit should be <code>C:\Windows\System32\tar.exe</code>, not <code>C:\Program Files\Git\usr\bin\tar.exe</code>.</p>
 </section><section class="level3"><h3 id="ebusy-file-locks-when-rebuilding-windows">
 <code>EBUSY</code> file locks when rebuilding (Windows)<a class="anchor" aria-label="anchor" href="#ebusy-file-locks-when-rebuilding-windows"></a>
@@ -443,24 +438,24 @@ v All systems ready! You should be able to build Electron apps successfully</cod
 <p>Symptom: users see “app is damaged and can’t be opened” or “app can’t be opened because Apple cannot check it for malicious software”.</p>
 <p>Cause: Gatekeeper blocks unsigned or unnotarized apps.</p>
 <p>For <strong>distribution</strong>, sign and notarize. Configure in <code>_shinyelectron.yml</code>:</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">signing</span><span class="kw">:</span></span>
-<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">mac</span><span class="kw">:</span></span>
-<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">identity</span><span class="kw">:</span><span class="at"> </span><span class="st">"Developer ID Application: Your Name (TEAMID)"</span></span>
-<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">team_id</span><span class="kw">:</span><span class="at"> </span><span class="st">"TEAMID"</span></span>
-<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">notarize</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">signing</span><span class="kw">:</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">mac</span><span class="kw">:</span></span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">identity</span><span class="kw">:</span><span class="at"> </span><span class="st">"Developer ID Application: Your Name (TEAMID)"</span></span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">team_id</span><span class="kw">:</span><span class="at"> </span><span class="st">"TEAMID"</span></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">notarize</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
 <p>Set <code>APPLE_TEAM_ID</code>, <code>APPLE_ID</code>, and <code>APPLE_APP_SPECIFIC_PASSWORD</code> before building.</p>
 <p>For <strong>local testing</strong>, right-click the app and choose Open, then confirm. That bypasses Gatekeeper for that app only. Or strip the quarantine attribute:</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="ex">xattr</span> <span class="at">-cr</span> /Applications/MyApp.app</span></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="ex">xattr</span> <span class="at">-cr</span> /Applications/MyApp.app</span></code></pre></div>
 </section><section class="level3"><h3 id="smartscreen-blocks-the-installer-windows">SmartScreen blocks the installer (Windows)<a class="anchor" aria-label="anchor" href="#smartscreen-blocks-the-installer-windows"></a>
 </h3>
 <p>Symptom: SmartScreen shows “Windows protected your PC” when the installer or app is run.</p>
 <p>Cause: the executable is unsigned or lacks SmartScreen reputation.</p>
 <p>For <strong>distribution</strong>, sign the app with a code signing certificate.</p>
-<div class="sourceCode" id="cb47"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">signing</span><span class="kw">:</span></span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">win</span><span class="kw">:</span></span>
-<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">certificate_file</span><span class="kw">:</span><span class="at"> </span><span class="st">"path/to/cert.pfx"</span></span></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">signing</span><span class="kw">:</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">win</span><span class="kw">:</span></span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">certificate_file</span><span class="kw">:</span><span class="at"> </span><span class="st">"path/to/cert.pfx"</span></span></code></pre></div>
 <p>Set <code>CSC_LINK</code> and <code>CSC_KEY_PASSWORD</code> before building.</p>
 <p>For <strong>local testing</strong>, click “More info” then “Run anyway”.</p>
 <p>EV certificates receive SmartScreen reputation immediately. Standard certificates build reputation over time, as more users run the signed installer.</p>
@@ -468,7 +463,7 @@ v All systems ready! You should be able to build Electron apps successfully</cod
 </h2>
 <p>When nothing else explains a problem, clear the cache. shinyelectron stores downloaded Node.js, runtimes, and npm assets under your user cache directory; a stale or partial download in there is a common silent failure.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb48"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Clear everything</span></span>
 <span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"all"</span><span class="op">)</span></span>
 <span></span>
@@ -478,18 +473,18 @@ v All systems ready! You should be able to build Electron apps successfully</cod
 </div>
 <p>Reinstall Node.js after a clear:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb49"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>Run <code><a href="../reference/cache_dir.html">cache_dir()</a></code> to see the exact path on your machine. See the <a href="nodejs-management.html">Node.js Management</a> vignette for the full layout.</p>
 </section><section class="level2"><h2 id="debugging-a-packaged-app">Debugging a packaged app<a class="anchor" aria-label="anchor" href="#debugging-a-packaged-app"></a>
 </h2>
 <p>A packaged Electron app is quiet by default; only warnings and errors print. To watch runtime detection, dependency installation, and server startup, launch the app with <code>SHINYELECTRON_DEBUG=1</code>:</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="co"># macOS / Linux</span></span>
-<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a><span class="va">SHINYELECTRON_DEBUG</span><span class="op">=</span>1 <span class="ex">/path/to/YourApp.app/Contents/MacOS/YourApp</span></span>
-<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Windows (PowerShell)</span></span>
-<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="ex">:SHINYELECTRON_DEBUG</span> = <span class="st">"1"</span><span class="kw">;</span> <span class="kw">&amp;</span> <span class="st">"C:\Path\To\YourApp.exe"</span></span></code></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co"># macOS / Linux</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="va">SHINYELECTRON_DEBUG</span><span class="op">=</span>1 <span class="ex">/path/to/YourApp.app/Contents/MacOS/YourApp</span></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Windows (PowerShell)</span></span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="ex">:SHINYELECTRON_DEBUG</span> = <span class="st">"1"</span><span class="kw">;</span> <span class="kw">&amp;</span> <span class="st">"C:\Path\To\YourApp.exe"</span></span></code></pre></div>
 <p>Debug messages are prefixed with <code>[shinyelectron]</code> and include which runtime was found, the spawn command for R or Python, port retries, and server-ready events. Include this output when you file a bug report.</p>
 </section><section class="level2"><h2 id="deprecation-warnings-shinylive-as-an-app-type">Deprecation warnings: shinylive as an app type<a class="anchor" aria-label="anchor" href="#deprecation-warnings-shinylive-as-an-app-type"></a>
 </h2>
@@ -541,7 +536,7 @@ v All systems ready! You should be able to build Electron apps successfully</cod
 </ol>
 <p>When you file an issue, include the output of:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb51"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep_shinyelectron.html">sitrep_shinyelectron</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>

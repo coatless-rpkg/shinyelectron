@@ -119,7 +119,7 @@
 <ul><li>Fixed <code><a href="https://fs.r-lib.org/reference/copy.html" class="external-link">fs::dir_copy()</a></code> creating nested subdirectories on Windows by introducing <code><a href="../reference/copy_dir_contents.html">copy_dir_contents()</a></code> with consistent cross-platform semantics.</li>
 <li>Fixed GNU tar (from Git for Windows) misinterpreting drive letters as remote hosts by resolving to <code>%SystemRoot%\System32\tar.exe</code> (bsdtar) explicitly.</li>
 <li>Fixed Python download URL: <code>python-build-standalone</code> ships <code>.tar.gz</code> on all platforms, not <code>.zip</code> on Windows.</li>
-<li>Fixed bundled R package installation: packages are now installed into the portable R’s own library with a scrubbed environment (<code>--vanilla</code>, <code>R_LIBS_USER=""</code>).</li>
+<li>Fixed bundled R package installation: packages are installed into a sibling <code>runtime/library</code> directory alongside the portable R, not into the portable R’s own library. This avoids macOS hardened-runtime segfaults that occurred when installing unsigned CRAN binaries directly into the bundled R tree.</li>
 <li>Added post-copy entrypoint validation to catch file layout issues at build time instead of inside a running Electron app.</li>
 </ul></div>
 <div class="section level3">

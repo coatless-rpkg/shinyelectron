@@ -89,7 +89,7 @@
 
     <p>A <code>_shinyelectron.yml</code> file keeps your build settings next to your app. <code><a href="../reference/export.html">export()</a></code> reads it automatically, so the function call stays short and the details live in version control where the rest of the project already does.</p>
 <div class="quarto-figure quarto-figure-center">
-<figure><p><img src="../reference/figures/config-overview.svg" style="width:100.0%" alt="Overview of the _shinyelectron.yml configuration file. A title bar at the top reads _shinyelectron.yml. Below it, eight labeled cards arranged in two rows describe the main sections: app (display name and version), build (language, runtime strategy, target platforms and architectures), window (Electron window size), server (local Shiny port), icon (app icon, one PNG fanned out per OS), nodejs (build toolchain version and auto-install), r and python (runtime version for bundled and auto-download strategies), and container (Docker or Podman engine and image for the container strategy). A wider card underneath describes apps, the optional multi-app suite, where each entry may override the suite-level type or runtime_strategy so shinylive apps can coexist with bundled or system apps in the same build."></p>
+<figure><p><img src="../reference/figures/config-overview.svg" style="width:100.0%" alt="Overview of the _shinyelectron.yml configuration file. A title bar at the top reads _shinyelectron.yml. Below it, eight labeled cards arranged in two rows describe the main sections: app (display name and version), build (language, runtime strategy, target platforms and architectures), window (Electron window size), server (local Shiny port), icon (app icon, one PNG fanned out per OS), nodejs (build toolchain version), dependencies (r and python version pins for bundled and auto-download strategies), and container (Docker or Podman engine and image for the container strategy). A wider card underneath describes apps, the optional multi-app suite, where each entry may override the suite-level type or runtime_strategy so shinylive apps can coexist with bundled or system apps in the same build."></p>
 <figcaption>Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape a different part of the build, from app metadata and target platforms down to the runtime and the optional multi-app launcher.</figcaption></figure>
 </div>
 <section class="level2"><h2 id="why-use-one">Why use one<a class="anchor" aria-label="anchor" href="#why-use-one"></a>
@@ -128,12 +128,9 @@
 </div>
 <pre><code>✔ Created configuration file: path/to/my-app/_shinyelectron.yml
 ℹ Edit this file to customize your Electron app settings</code></pre>
-<p>The generated file carries the documented defaults you can edit in place. For most projects, the only settings you need to write yourself are the app name and whether to auto-install Node.js:</p>
+<p>The generated file carries the documented defaults you can edit in place. For most projects, the only setting you need to write yourself is the app name:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"My App"</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"My App"</span></span></code></pre></div>
 <p>Everything else is filled in by defaults described below.</p>
 </section><section class="level2"><h2 id="complete-reference">Complete reference<a class="anchor" aria-label="anchor" href="#complete-reference"></a>
 </h2>
@@ -156,11 +153,11 @@
 <span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> x64</span></span>
 <span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> arm64</span></span>
 <span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="fu">r</span><span class="kw">:</span></span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span><span class="co">              # R version for bundled/auto-download (null = latest release)</span></span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="fu">python</span><span class="kw">:</span></span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span><span class="co">              # Python version for bundled/auto-download (null = "3.12.10")</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="fu">dependencies</span><span class="kw">:</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">r</span><span class="kw">:</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span><span class="co">            # R version for bundled/auto-download (null = latest release)</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">python</span><span class="kw">:</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span><span class="co">            # Python version for bundled/auto-download (null = "3.12.10")</span></span>
 <span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a><span class="fu">window</span><span class="kw">:</span></span>
 <span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">width</span><span class="kw">:</span><span class="at"> </span><span class="dv">1200</span><span class="co">                # Default window width (pixels)</span></span>
@@ -179,7 +176,7 @@
 <span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
 <span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span><span class="co">              # Node.js version (null = latest LTS)</span></span>
-<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span><span class="co">        # Auto-install Node.js if not found</span></span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a><span class="co">  # auto_install: false      # Planned: auto-install Node.js if not found (not yet implemented)</span></span>
 <span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a><span class="fu">container</span><span class="kw">:</span><span class="co">                   # Used when runtime_strategy is "container"</span></span>
 <span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">engine</span><span class="kw">:</span><span class="at"> </span><span class="st">"docker"</span><span class="co">           # "docker" or "podman"</span></span>
@@ -452,26 +449,23 @@
 <th>Default</th>
 <th>Description</th>
 </tr></thead>
-<tbody>
-<tr class="odd">
+<tbody><tr class="odd">
 <td><code>version</code></td>
 <td>string</td>
 <td><code>null</code></td>
 <td>Node.js version to install (<code>null</code> = latest LTS)</td>
-</tr>
-<tr class="even">
-<td><code>auto_install</code></td>
-<td>boolean</td>
-<td><code>false</code></td>
-<td>Auto-install Node.js if not found</td>
-</tr>
-</tbody>
+</tr></tbody>
 </table>
-<p>Auto-install is off by default. Set <code>auto_install: true</code> explicitly to let <code><a href="../reference/export.html">export()</a></code> install Node.js for you when it is missing.</p>
-</section><section class="level3"><h3 id="r">
-<code>r</code><a class="anchor" aria-label="anchor" href="#r"></a>
+<div>
+<blockquote>
+<p><strong><code>auto_install</code> is planned, not yet active</strong></p>
+<p>An <code>auto_install</code> key is reserved for a future release. Today, a missing Node.js aborts the build with guidance to run <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code> or install Node.js manually. Do not rely on <code>auto_install: true</code> having any effect.</p>
+</blockquote>
+</div>
+</section><section class="level3"><h3 id="dependencies-r">
+<code>dependencies.r</code><a class="anchor" aria-label="anchor" href="#dependencies-r"></a>
 </h3>
-<p>Pins R for the <code>bundled</code> and <code>auto-download</code> runtime strategies. Ignored otherwise.</p>
+<p>Pins R for the <code>bundled</code> and <code>auto-download</code> runtime strategies. Nested under <code>dependencies:</code>. Ignored otherwise.</p>
 <table class="table caption-top">
 <colgroup>
 <col style="width: 15%">
@@ -491,10 +485,10 @@
 <td><code>null</code></td>
 <td>R version (e.g. <code>"4.4.1"</code>); <code>null</code> uses the latest release</td>
 </tr></tbody>
-</table></section><section class="level3"><h3 id="python">
-<code>python</code><a class="anchor" aria-label="anchor" href="#python"></a>
+</table></section><section class="level3"><h3 id="dependencies-python">
+<code>dependencies.python</code><a class="anchor" aria-label="anchor" href="#dependencies-python"></a>
 </h3>
-<p>Pins Python for the <code>bundled</code> and <code>auto-download</code> runtime strategies. Ignored otherwise.</p>
+<p>Pins Python for the <code>bundled</code> and <code>auto-download</code> runtime strategies. Nested under <code>dependencies:</code>. Ignored otherwise.</p>
 <table class="table caption-top">
 <colgroup>
 <col style="width: 15%">
@@ -667,10 +661,7 @@
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="fu">window</span><span class="kw">:</span></span>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">width</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">height</span><span class="kw">:</span><span class="at"> </span><span class="dv">700</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">height</span><span class="kw">:</span><span class="at"> </span><span class="dv">700</span></span></code></pre></div>
 </section><section class="level3"><h3 id="production-multi-platform-build">Production multi-platform build<a class="anchor" aria-label="anchor" href="#production-multi-platform-build"></a>
 </h3>
 <p>For distribution across platforms:</p>
@@ -696,8 +687,7 @@
 <span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a><span class="fu">icon</span><span class="kw">:</span><span class="at"> </span><span class="st">"branding/icon.png"</span></span>
 <span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
-<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"22.11.0"</span></span>
-<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span></code></pre></div>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"22.11.0"</span></span></code></pre></div>
 </section><section class="level3"><h3 id="native-r-app-with-bundled-runtime">Native R app with bundled runtime<a class="anchor" aria-label="anchor" href="#native-r-app-with-bundled-runtime"></a>
 </h3>
 <p>Ship R inside the app:</p>
@@ -712,11 +702,9 @@
 <span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> mac</span></span>
 <span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> win</span></span>
 <span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="fu">r</span><span class="kw">:</span></span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"4.4.1"</span></span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="fu">dependencies</span><span class="kw">:</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">r</span><span class="kw">:</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"4.4.1"</span></span></code></pre></div>
 </section><section class="level3"><h3 id="multi-app-suite">Multi-app suite<a class="anchor" aria-label="anchor" href="#multi-app-suite"></a>
 </h3>
 <p>Several apps behind one launcher:</p>
@@ -737,10 +725,7 @@
 <span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Admin Panel"</span></span>
 <span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/admin"</span></span>
 <span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"py-shiny"</span></span>
-<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"User management"</span></span>
-<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
-<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"User management"</span></span></code></pre></div>
 </section></section><section class="level2"><h2 id="what-happens-when-a-value-is-invalid">What happens when a value is invalid<a class="anchor" aria-label="anchor" href="#what-happens-when-a-value-is-invalid"></a>
 </h2>
 <p>shinyelectron validates values on read and degrades gracefully rather than aborting the build:</p>

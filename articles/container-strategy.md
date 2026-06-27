@@ -52,8 +52,9 @@ The end user needs one of:
   drop-in without the Desktop subscription)
 - **Podman**: <https://podman.io/getting-started/installation>
 
-The engine has to be running when Electron launches. shinyelectron picks
-whichever it finds, checking Docker first, then Podman.
+The engine has to be running when Electron launches. The engine is set
+from your `_shinyelectron.yml` config (default: `docker`). Podman users
+must set `engine: "podman"` explicitly.
 
 On the build machine a container engine is optional. If present,
 shinyelectron confirms the daemon is reachable. If absent, it warns and
@@ -87,8 +88,8 @@ The eight underlying steps:
     `docker context inspect` first, then well-known Unix sockets
     (`/var/run/docker.sock`, `~/.docker/run/docker.sock`,
     `~/.colima/docker.sock`) or Windows named pipes.
-3.  It **selects an engine** (Docker or Podman) based on what is
-    available.
+3.  It **reads the engine** from the baked configuration (set via
+    `engine:` in `_shinyelectron.yml`; default is `docker`).
 4.  If the image is missing, it is **built from an embedded Dockerfile**
     or **pulled from a registry**.
 5.  `docker run -d` starts the container. The host port is mapped
@@ -175,11 +176,18 @@ The exact Dockerfile that ships with the package, read live from
 # Supports both amd64 and arm64 (Apple Silicon)
 FROM rocker/r2u:24.04
 
+# Keep apt non-interactive. apt-get update can pull a newer r-base-core than the
+# one baked into the base image, and its Rprofile.site conffile would otherwise
+# trigger an interactive dpkg prompt that aborts a cold build (no TTY). Keep the
+# image's existing conffiles (rocker customizes Rprofile.site for r2u).
+ENV DEBIAN_FRONTEND=noninteractive
+
 # Install Shiny and its runtime dependencies as pre-built system packages.
 # r-cran-shiny's apt Depends can lag shiny's actual R imports on bleeding-edge
 # r2u, so the transitive deps (R6, httpuv, later, ...) are listed explicitly
 # to guarantee shiny can load. Works on both amd64 and arm64.
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    -o Dpkg::Options::=--force-confold \
     r-cran-shiny \
     r-cran-jsonlite \
     r-cran-r6 \
@@ -251,7 +259,7 @@ Read live from `inst/dockerfiles/py-shiny/Dockerfile`:
 
 ``` dockerfile
 # Minimal Python + Shiny image for shinyelectron container strategy
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 RUN pip install --no-cache-dir shiny
 
@@ -373,9 +381,12 @@ Check what shinyelectron sees on this machine:
 sitrep_electron_system()
 ```
 
-The report names the container engine it would use (Docker or Podman),
-where the socket lives, and whether the daemon is reachable. Run it
-before a release build to catch a missing or stopped engine cheaply.
+The report names the container engine installed on this machine (Docker
+or Podman) and where the binary was found. It checks only whether the
+engine binary is on PATH; it does not probe the daemon socket, so a
+stopped daemon is not detected. Use
+[`validate_container_available()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/validate_container_available.md)
+or attempt a build to confirm the daemon is running.
 
 ## Limitations
 
@@ -402,8 +413,9 @@ cannot start the daemon on their behalf.
 
 **Docker Desktop is paid at scale.** Larger organizations need a
 subscription. [Podman](https://podman.io/) is a free, daemonless
-drop-in: set `engine: "podman"` in your config, or let auto-detection
-sort it out.
+drop-in, but Podman users must set `engine: "podman"` explicitly in
+`_shinyelectron.yml`. The default engine is `docker`; leaving it
+unchanged will fail on a Podman-only machine.
 
 **Architecture matching.** shinyelectron pulls or builds for the host’s
 CPU: `linux/arm64` on Apple Silicon, `linux/amd64` elsewhere. That keeps

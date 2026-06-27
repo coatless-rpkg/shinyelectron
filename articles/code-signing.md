@@ -48,21 +48,20 @@ ticket. Windows row: without signing SmartScreen warns that Windows
 protected your PC and prevented the unrecognized app from starting; with
 signing the app opens cleanly, with EV certificates trusted immediately
 and OV certificates building reputation over weeks. Linux row: without
-signing the app opens without any OS warning but users cannot verify the
-artifact; with signing the GPG signature allows security-minded users to
-verify authenticity
-manually.](../reference/figures/signing-outcomes.svg)
+signing the app opens without any OS warning; GPG signing is planned but
+not yet implemented, so no signature is produced
+today.](../reference/figures/signing-outcomes.svg)
 
 Side-by-side comparison of launch behaviour with and without signing on
 macOS, Windows, and Linux. macOS and Windows block or warn on unsigned
-builds, while Linux has no OS-level enforcement but benefits from an
-optional GPG signature.
+builds, while Linux has no OS-level enforcement and GPG signing is not
+yet implemented in shinyelectron.
 
 |  | macOS | Windows | Linux |
 |----|----|----|----|
 | **Required?** | Strongly recommended | Strongly recommended | Optional |
-| **Cost** | \$99/year (Apple Developer) | \$200 to \$700/year (CA cert) | Free (GPG) |
-| **Certificate** | Developer ID Application | OV or EV code signing | GPG key |
+| **Cost** | \$99/year (Apple Developer) | \$200 to \$700/year (CA cert) | None (planned) |
+| **Certificate** | Developer ID Application | OV or EV code signing | Not yet supported |
 | **Notarization** | Yes (macOS 10.15+) | N/A | N/A |
 
 ## Turning signing on
@@ -203,14 +202,16 @@ every download. There is no workaround short of signing the build.
 
 ## Linux: optional GPG signing
 
-**Cost:** free. Uses a GPG key you already control.
+**Cost:** none today; free (GPG key) when implemented.
 
-**What you need:** a GPG key whose private half lives on the build
-machine. Generate one with `gpg --full-generate-key` if you do not have
-one, and publish the public key where your users can find it (your
-website, a keyserver, or your GitHub profile).
+**Status: not yet implemented.** The `gpg_sign: true` flag and `GPG_KEY`
+environment variable are reserved for a future release. Setting them has
+no effect today: no signature is produced, and a console warning is
+emitted if `GPG_KEY` is not set. Linux AppImages run without any
+OS-enforced signature check, so the absence of GPG signing has no effect
+on whether the app launches.
 
-**Wiring it up.**
+**Configuration (reserved for future use).**
 
 ``` bash
 export GPG_KEY="your-gpg-key-id"
@@ -224,9 +225,8 @@ signing:
 ```
 
 **Without signing:** nothing visibly changes. AppImage files do not
-require a signature to run, so most users never notice. Sign if your
-audience includes security-minded users who want to verify authenticity
-with `gpg --verify` before installing.
+require a signature to run, so users can open the app without any
+additional steps.
 
 ## Signing in CI
 
@@ -301,7 +301,7 @@ One canonical table for every variable the signing pipeline reads.
 | `APPLE_ID` | macOS | Apple ID email used for notarization |
 | `APPLE_APP_SPECIFIC_PASSWORD` | macOS | App-specific password from `appleid.apple.com` |
 | `APPLE_TEAM_ID` | macOS | 10-character Apple Developer Team ID |
-| `GPG_KEY` | Linux | GPG key ID for AppImage signing |
+| `GPG_KEY` | Linux | GPG key ID for AppImage signing (reserved; not yet implemented) |
 
 ## Next steps
 

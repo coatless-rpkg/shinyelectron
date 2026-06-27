@@ -3,6 +3,7 @@
     <filter id="pl-shadow">
       <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
     </filter>
+    <clipPath id="pl-card-clip"><rect width="210" height="200" rx="8"/></clipPath>
   </defs>
 
   <!-- Column headers -->
@@ -13,10 +14,10 @@
   <!-- ============ Card 1: spinner ============ -->
   <g transform="translate(20,34)" filter="url(#pl-shadow)">
     <rect width="210" height="200" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="210" height="3" rx="1.5" fill="#3b82f6"/>
+    <rect width="210" height="3" fill="#3b82f6" clip-path="url(#pl-card-clip)"/>
 
     <!-- chrome -->
-    <rect x="0" y="3" width="210" height="14" fill="#f8fafc"/>
+    <rect x="0" y="3" width="210" height="14" fill="#f8fafc" clip-path="url(#pl-card-clip)"/>
     <circle cx="10" cy="13" r="2" fill="#f87171"/>
     <circle cx="17" cy="13" r="2" fill="#fbbf24"/>
     <circle cx="24" cy="13" r="2" fill="#34d399"/>
@@ -27,7 +28,7 @@
       <path d="M -20 0 A 20 20 0 0 1 14.14 -14.14" stroke="#3b82f6" stroke-width="4" fill="none" stroke-linecap="round"/>
       <!-- Subtle rotation arc -->
       <path d="M 26 -2 A 26 26 0 0 1 22 12" stroke="#3b82f6" stroke-width="0.8" fill="none" stroke-dasharray="2,2" opacity="0.5"/>
-      <polygon points="22,12 25,15 19,16" fill="#3b82f6" opacity="0.5"/>
+      <polygon points="21.3,13.3 21.8,7.4 26,9.7" fill="#3b82f6" opacity="0.5"/>
     </g>
 
     <!-- Message -->
@@ -44,10 +45,10 @@
   <!-- ============ Card 2: bar ============ -->
   <g transform="translate(275,34)" filter="url(#pl-shadow)">
     <rect width="210" height="200" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="210" height="3" rx="1.5" fill="#3b82f6"/>
+    <rect width="210" height="3" fill="#3b82f6" clip-path="url(#pl-card-clip)"/>
 
     <!-- chrome -->
-    <rect x="0" y="3" width="210" height="14" fill="#f8fafc"/>
+    <rect x="0" y="3" width="210" height="14" fill="#f8fafc" clip-path="url(#pl-card-clip)"/>
     <circle cx="10" cy="13" r="2" fill="#f87171"/>
     <circle cx="17" cy="13" r="2" fill="#fbbf24"/>
     <circle cx="24" cy="13" r="2" fill="#34d399"/>
@@ -76,10 +77,10 @@
   <!-- ============ Card 3: dots ============ -->
   <g transform="translate(530,34)" filter="url(#pl-shadow)">
     <rect width="210" height="200" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="210" height="3" rx="1.5" fill="#3b82f6"/>
+    <rect width="210" height="3" fill="#3b82f6" clip-path="url(#pl-card-clip)"/>
 
     <!-- chrome -->
-    <rect x="0" y="3" width="210" height="14" fill="#f8fafc"/>
+    <rect x="0" y="3" width="210" height="14" fill="#f8fafc" clip-path="url(#pl-card-clip)"/>
     <circle cx="10" cy="13" r="2" fill="#f87171"/>
     <circle cx="17" cy="13" r="2" fill="#fbbf24"/>
     <circle cx="24" cy="13" r="2" fill="#34d399"/>

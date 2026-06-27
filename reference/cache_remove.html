@@ -83,14 +83,15 @@ or <code>"nodejs"</code>.</p></dd>
 
 
 <dt id="arg-platform">platform<a class="anchor" aria-label="anchor" href="#arg-platform"></a></dt>
-<dd><p>Character string. Platform (e.g., <code>"win"</code>,
-<code>"mac"</code>, <code>"linux"</code>). For Node.js, use the combined
-platform-arch format shown by <code><a href="cache_info.html">cache_info()</a></code>.</p></dd>
+<dd><p>Character string. Platform (<code>"win"</code>, <code>"mac"</code>,
+or <code>"linux"</code>). Required for all runtimes including Node.js.
+Use the same canonical names that <code><a href="cache_info.html">cache_info()</a></code> reports in the
+<code>platform</code> column (e.g. <code>"mac"</code>, not <code>"darwin"</code>).</p></dd>
 
 
 <dt id="arg-arch">arch<a class="anchor" aria-label="anchor" href="#arg-arch"></a></dt>
-<dd><p>Character string. Architecture (<code>"x64"</code> or
-<code>"arm64"</code>). Ignored for Node.js (embedded in platform).</p></dd>
+<dd><p>Character string. Architecture (<code>"x64"</code> or <code>"arm64"</code>).
+Required for all runtimes including Node.js.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -111,6 +112,9 @@ remove all cached assets of a type.</p></div>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Remove a cached Python version</span></span></span>
 <span class="r-in"><span><span class="fu">cache_remove</span><span class="op">(</span><span class="st">"python"</span>, <span class="st">"3.12.10"</span>, <span class="st">"win"</span>, <span class="st">"x64"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Remove one platform/arch slot of a Node.js version</span></span></span>
+<span class="r-in"><span><span class="fu">cache_remove</span><span class="op">(</span><span class="st">"nodejs"</span>, <span class="st">"v22.11.0"</span>, <span class="st">"mac"</span>, <span class="st">"arm64"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

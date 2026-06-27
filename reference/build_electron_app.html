@@ -98,10 +98,13 @@ Creates platform-specific installers and executables.</p>
 
 
 <dt id="arg-app-type">app_type<a class="anchor" aria-label="anchor" href="#arg-app-type"></a></dt>
-<dd><p>Character string. Language of the Shiny app: <code>"r-shiny"</code> or
-<code>"py-shiny"</code>. The legacy values <code>"r-shinylive"</code> / <code>"py-shinylive"</code> are
-accepted with a deprecation warning and translate to the canonical
-language plus <code>runtime_strategy = "shinylive"</code>.</p></dd>
+<dd><p>Character string. Language of the Shiny app: <code>"r-shiny"</code>
+(default) or <code>"py-shiny"</code>. Unlike <code><a href="export.html">export()</a></code>, this function does <strong>not</strong>
+autodetect the language from source files – the default <code>"r-shiny"</code> is
+used when <code>app_type</code> is not supplied. Supply <code>"py-shiny"</code> explicitly for
+Python Shiny applications. The legacy values <code>"r-shinylive"</code> /
+<code>"py-shinylive"</code> are accepted with a deprecation warning and translate to
+the canonical language plus <code>runtime_strategy = "shinylive"</code>.</p></dd>
 
 
 <dt id="arg-runtime-strategy">runtime_strategy<a class="anchor" aria-label="anchor" href="#arg-runtime-strategy"></a></dt>

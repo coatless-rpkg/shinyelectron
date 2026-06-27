@@ -173,8 +173,8 @@
 <td><strong>Linux support</strong></td>
 <td>Yes</td>
 <td>Yes</td>
-<td>No (use system or container)</td>
-<td>No (use system or container)</td>
+<td>R: No; Python: Yes</td>
+<td>R: No; Python: Yes</td>
 <td>Yes</td>
 </tr>
 </tbody>
@@ -252,8 +252,8 @@
 <p>Bundled embeds a complete portable R or Python runtime inside the Electron app at build time. The user needs nothing beyond the app itself.</p>
 <p>Think of it as shipping a laptop with the OS pre-installed: heavy download, then everything works offline. Auto-download (the next section) is the other extreme, shipping a setup script that fetches the OS on first boot.</p>
 <div class="quarto-figure quarto-figure-center">
-<figure><p><img src="../reference/figures/strategy-bundled.svg" style="width:100.0%" alt="Three-column diagram for the bundled strategy. Ships column shows the Electron shell containing a portable runtime under resources with a private package library, plus the app source. First launch column shows a green check badge noting the app opens instantly with no download because the runtime is already on disk. Running column shows the Electron window connecting over localhost to a bundled Rscript or python3 spawned as a child process from the packaged resources directory."></p>
-<figcaption>Bundled ships the Electron shell together with a portable R or Python runtime and the app source, opens instantly offline, and runs by spawning the bundled Rscript or python3 from the packaged resources directory.</figcaption></figure>
+<figure><p><img src="../reference/figures/strategy-bundled.svg" style="width:100.0%" alt="Three-column diagram for the bundled strategy. Ships column shows the Electron shell containing a portable runtime under runtime/ with a private package library, plus the app source. First launch column shows a green check badge noting the app opens instantly with no download because the runtime is already on disk. Running column shows the Electron window connecting over localhost to a bundled Rscript or python3 spawned as a child process from the packaged runtime/ directory."></p>
+<figcaption>Bundled ships the Electron shell together with a portable R or Python runtime and the app source, opens instantly offline, and runs by spawning the bundled Rscript or python3 from the packaged runtime/ directory.</figcaption></figure>
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
@@ -266,7 +266,7 @@
 <section class="level3"><h3 id="the-build-flow">The build flow<a class="anchor" aria-label="anchor" href="#the-build-flow"></a>
 </h3>
 <ol type="1">
-<li>During <code><a href="../reference/export.html">export()</a></code>, shinyelectron downloads a portable runtime and writes it into the Electron project’s <code>resources/</code> directory.</li>
+<li>During <code><a href="../reference/export.html">export()</a></code>, shinyelectron downloads a portable runtime and writes it into the Electron project’s <code>runtime/</code> directory.</li>
 <li>Your app dependencies are installed into that runtime’s library.</li>
 <li>At launch, the Electron backend uses the bundled <code>Rscript</code> or <code>python3</code> instead of anything on the user’s system.</li>
 </ol></section><section class="level3"><h3 id="tradeoffs-2">Tradeoffs<a class="anchor" aria-label="anchor" href="#tradeoffs-2"></a>
@@ -278,7 +278,7 @@
 </h2>
 <p>Auto-download is the compromise between <code>system</code> and <code>bundled</code>. The installer stays small because no runtime ships with the app, and the end user needs nothing pre-installed because the runtime arrives on first launch. After that, every launch uses a cached copy on disk.</p>
 <div class="quarto-figure quarto-figure-center">
-<figure><p><img src="../reference/figures/strategy-auto-download.svg" style="width:100.0%" alt="Three-column diagram for the auto-download strategy. Ships column shows the Electron shell with app source and a downloader module (runtime-downloader.js), with no runtime embedded. First launch column shows three numbered steps: check cache directory, download portable runtime, extract and install packages, with the cache path noted as tilde slash dot shinyelectron slash cache. Running column shows the Electron window connecting over localhost to a cached Rscript or python3 spawned from the cache directory that is shared across all shinyelectron apps."></p>
+<figure><p><img src="../reference/figures/strategy-auto-download.svg" style="width:100.0%" alt="Three-column diagram for the auto-download strategy. Ships column shows the Electron shell with app source and a downloader module (runtime-downloader.js), with no runtime embedded. First launch column shows three numbered steps: check cache directory, download portable runtime, extract and install packages, with the cache path noted as tilde slash dot shinyelectron slash runtimes. Running column shows the Electron window connecting over localhost to a cached Rscript or python3 spawned from the runtimes directory that is shared across all shinyelectron apps."></p>
 <figcaption>Auto-download ships the Electron shell, the app source, and a downloader module but no runtime; on first launch it checks the local cache, downloads a portable runtime, and installs packages, then later launches spawn the cached runtime shared across shinyelectron apps.</figcaption></figure>
 </div>
 <div class="cell">
@@ -295,7 +295,7 @@
 <li>
 <code><a href="../reference/export.html">export()</a></code> packages the app without a runtime and includes the <code>runtime-downloader.js</code> backend.</li>
 <li>On first launch, the downloader checks a local cache directory. If it finds no runtime, it downloads and extracts a portable build.</li>
-<li>The runtime is cached per-user: <code>~/.shinyelectron/cache/</code> on macOS and Linux, <code>%LOCALAPPDATA%\shinyelectron\cache\</code> on Windows.</li>
+<li>The runtime is cached per-user at <code>~/.shinyelectron/runtimes/</code> on all platforms.</li>
 <li>Subsequent launches skip the download and reuse the cached runtime.</li>
 </ol>
 <p>The download sources are the same ones bundled uses: portable-r for R, python-build-standalone for Python.</p>
@@ -352,7 +352,7 @@
 <p>Portable Python comes from <a href="https://github.com/astral-sh/python-build-standalone" class="external-link">python-build-standalone</a> by Astral and covers all three platforms. Python apps can use every strategy everywhere.</p>
 </section><section class="level3"><h3 id="cross-platform-builds">Cross-platform builds<a class="anchor" aria-label="anchor" href="#cross-platform-builds"></a>
 </h3>
-<p>A bundled build can only target the platform you built on, because the embedded runtime is a platform-specific binary. To ship installers for Windows, macOS, and Linux from one machine, use <code>auto-download</code> or <code>container</code>, or build each platform separately. The <a href="github-actions.html">GitHub Actions</a> vignette shows how to fan out bundled builds across matrix runners in CI.</p>
+<p>The <code>bundled</code> and <code>auto-download</code> strategies each embed a single platform-specific runtime (or a manifest pointing to one) at export time and abort when more than one platform or architecture is requested. To ship installers for Windows, macOS, and Linux from one machine, use <code>system</code>, <code>container</code>, or <code>shinylive</code>, or build each platform separately. The <a href="github-actions.html">GitHub Actions</a> vignette shows how to fan out per-platform builds across matrix runners in CI.</p>
 </section><section class="level3"><h3 id="macos-code-signing">macOS code signing<a class="anchor" aria-label="anchor" href="#macos-code-signing"></a>
 </h3>
 <p><code>bundled</code> and <code>auto-download</code> embed or download a runtime that may need re-signing for macOS notarization. Pass <code>sign = TRUE</code> to <code><a href="../reference/export.html">export()</a></code> and set up your signing credentials; see the <a href="code-signing.html">Code Signing</a> vignette for specifics.</p>

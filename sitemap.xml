@@ -21,8 +21,8 @@
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/SHINYELECTRON_DEFAULTS.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_check.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_entrypoints.html</loc></url>
+<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/assert_safe_to_overwrite.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/available_examples.html</loc></url>
-<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/backend_needs_express.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/bake_dockerfile_dependencies.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/build_electron_app.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/build_for_platforms.html</loc></url>
@@ -30,7 +30,6 @@
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_clear.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_dir.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_info.html</loc></url>
-<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_npm_path.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_r_path.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_remove.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/check_auto_update_status.html</loc></url>
@@ -67,18 +66,14 @@
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/generate_python_runtime_manifest.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/generate_runtime_manifest.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/generate_template_variables.html</loc></url>
-<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/get_default.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/get_node_command.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/get_npm_command.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/index.html</loc></url>
-<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/infer_runtime_strategy.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/init_config.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_npm_dependencies.html</loc></url>
-<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_py_binary_packages.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_python.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_r.html</loc></url>
-<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_r_binary_packages.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/is_multi_app.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/manifest-schemas.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/merge_config_deep.html</loc></url>
@@ -92,7 +87,6 @@
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/nodejs_is_installed.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/nodejs_latest_lts.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/nodejs_list_installed.html</loc></url>
-<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/nodejs_remove.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/nodejs_shasums_url.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/nodejs_verify_checksum.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/normalize_app_type_arg.html</loc></url>

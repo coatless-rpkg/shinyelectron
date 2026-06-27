@@ -176,27 +176,24 @@ i shinyelectron will automatically use this installation</code></pre>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep_electron_system.html">sitrep_electron_system</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 <pre><code>-- System Requirements Report ------------------------------------------------
-v Platform: darwin
+v Platform: mac
 v Architecture: arm64
 v Local Node.js (shinyelectron): v22.11.0
   Other versions: 20.18.0
 v Active Node.js: v22.11.0 (local)
-v npm: v10.9.0</code></pre>
-</section><section class="level2"><h2 id="auto-install-from-_shinyelectron-yml">Auto-install from <code>_shinyelectron.yml</code>
-<a class="anchor" aria-label="anchor" href="#auto-install-from-_shinyelectron-yml"></a>
+v npm: v11.5.0</code></pre>
+</section><section class="level2"><h2 id="auto-install-from-_shinyelectron-yml-planned">Auto-install from <code>_shinyelectron.yml</code> (planned)<a class="anchor" aria-label="anchor" href="#auto-install-from-_shinyelectron-yml-planned"></a>
 </h2>
-<p>If you would rather have <code><a href="../reference/export.html">export()</a></code> install Node.js on demand, set <code>auto_install: true</code>. shinyelectron will fetch Node when it cannot find one and then continue the build.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
-<p>Pin the version too, when you want it:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"22.11.0"</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">auto_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
 <div>
 <blockquote>
-<p><strong>Opt-in only</strong></p>
-<p>Auto-install is off by default. shinyelectron does not download anything without explicit consent: either <code>auto_install: true</code> here, or a manual <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code> call.</p>
+<p><strong>Not yet implemented</strong></p>
+<p><code>auto_install</code> is reserved for a future release and has no effect today. A missing Node.js aborts the build with a message directing you to run <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code> or install Node.js manually from <a href="https://nodejs.org/" class="external-link uri">https://nodejs.org/</a>.</p>
 </blockquote>
+</div>
+<p>When implemented, setting <code>auto_install: true</code> in <code>_shinyelectron.yml</code> will let <code><a href="../reference/export.html">export()</a></code> fetch Node.js automatically when it cannot find one and then continue the build. For now, call <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code> before running <code><a href="../reference/export.html">export()</a></code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="cache-layout">Cache layout<a class="anchor" aria-label="anchor" href="#cache-layout"></a>
 </h2>
@@ -284,13 +281,13 @@ v npm: v10.9.0</code></pre>
 </h2>
 <p>Remove every Node.js install shinyelectron has downloaded:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"nodejs"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<pre><code>v Cleared nodejs cache</code></pre>
+<pre><code>v Cleared Node.js installation cache</code></pre>
 <p>Remove everything shinyelectron has cached (Node.js, R/Python runtimes, npm modules):</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"all"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>Useful when an install is broken, when disk space is tight, or when you want to test a fresh download from scratch.</p>
@@ -357,7 +354,7 @@ x Error: could not resolve host</code></pre>
 x Downloaded file may be corrupted</code></pre>
 <p>Force a re-download:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span>force <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>If the mismatch persists, nodejs.org may be serving a bad mirror. Wait and retry, or pin to a known-good earlier version with <code>version = "..."</code>.</p>
@@ -366,7 +363,7 @@ x Downloaded file may be corrupted</code></pre>
 <p>Symptom: Node.js runs but Electron fails with an architecture mismatch (for example, <code>node was compiled for darwin-x64 but the system is darwin-arm64</code>).</p>
 <p>The cached install is the wrong build for your machine. Clear and reinstall:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep_electron_system.html">sitrep_electron_system</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"nodejs"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
@@ -376,7 +373,7 @@ x Downloaded file may be corrupted</code></pre>
 <p>Symptom: shinyelectron keeps reaching for the system Node.js even though <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code> reported success.</p>
 <p>The local install is probably incomplete. Clear and reinstall, then verify with <code><a href="../reference/sitrep_electron_system.html">sitrep_electron_system()</a></code>:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/cache_clear.html">cache_clear</a></span><span class="op">(</span><span class="st">"nodejs"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/install_nodejs.html">install_nodejs</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/sitrep_electron_system.html">sitrep_electron_system</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>

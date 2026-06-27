@@ -116,7 +116,7 @@
 <strong>Podman</strong>: <a href="https://podman.io/getting-started/installation" class="external-link uri">https://podman.io/getting-started/installation</a>
 </li>
 </ul>
-<p>The engine has to be running when Electron launches. shinyelectron picks whichever it finds, checking Docker first, then Podman.</p>
+<p>The engine has to be running when Electron launches. The engine is set from your <code>_shinyelectron.yml</code> config (default: <code>docker</code>). Podman users must set <code>engine: "podman"</code> explicitly.</p>
 <p>On the build machine a container engine is optional. If present, shinyelectron confirms the daemon is reachable. If absent, it warns and keeps going: the image is built or pulled on the user’s machine at first launch.</p>
 </section><section class="level2"><h2 id="the-launch-flow">The launch flow<a class="anchor" aria-label="anchor" href="#the-launch-flow"></a>
 </h2>
@@ -130,7 +130,7 @@
 <li>
 <strong>Electron starts</strong> and shows the lifecycle splash.</li>
 <li>The <code>container.js</code> backend <strong>locates the socket</strong>: <code>docker context inspect</code> first, then well-known Unix sockets (<code>/var/run/docker.sock</code>, <code>~/.docker/run/docker.sock</code>, <code>~/.colima/docker.sock</code>) or Windows named pipes.</li>
-<li>It <strong>selects an engine</strong> (Docker or Podman) based on what is available.</li>
+<li>It <strong>reads the engine</strong> from the baked configuration (set via <code>engine:</code> in <code>_shinyelectron.yml</code>; default is <code>docker</code>).</li>
 <li>If the image is missing, it is <strong>built from an embedded Dockerfile</strong> or <strong>pulled from a registry</strong>.</li>
 <li>
 <code>docker run -d</code> starts the container. The host port is mapped through; the app directory is bind-mounted to <code>/app</code> so the container reads your files live.</li>
@@ -183,42 +183,49 @@
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Supports both amd64 and arm64 (Apple Silicon)</span></span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> rocker/r2u:24.04</span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Install Shiny and its runtime dependencies as pre-built system packages.</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># r-cran-shiny's apt Depends can lag shiny's actual R imports on bleeding-edge</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># r2u, so the transitive deps (R6, httpuv, later, ...) are listed explicitly</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co"># to guarantee shiny can load. Works on both amd64 and arm64.</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">apt-get</span> update <span class="kw">&amp;&amp;</span> <span class="ex">apt-get</span> install <span class="at">-y</span> <span class="at">--no-install-recommends</span> <span class="dt">\</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    r-cran-shiny <span class="dt">\</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    r-cran-jsonlite <span class="dt">\</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    r-cran-r6 <span class="dt">\</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    r-cran-httpuv <span class="dt">\</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    r-cran-later <span class="dt">\</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    r-cran-promises <span class="dt">\</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    r-cran-htmltools <span class="dt">\</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    r-cran-fastmap <span class="dt">\</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    r-cran-rlang <span class="dt">\</span></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    r-cran-mime <span class="dt">\</span></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    r-cran-fontawesome <span class="dt">\</span></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    r-cran-bslib <span class="dt">\</span></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    r-cran-cachem <span class="dt">\</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    r-cran-commonmark <span class="dt">\</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    r-cran-glue <span class="dt">\</span></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    r-cran-crayon <span class="dt">\</span></span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    r-cran-lifecycle <span class="dt">\</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    r-cran-digest <span class="dt">\</span></span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    r-cran-sass <span class="dt">\</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    r-cran-jquerylib <span class="dt">\</span></span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    r-cran-memoise <span class="dt">\</span></span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&amp;&amp;</span> <span class="fu">rm</span> <span class="at">-rf</span> /var/lib/apt/lists/<span class="pp">*</span></span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="kw">WORKDIR</span> /app</span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> entrypoint.sh /entrypoint.sh</span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">chmod</span> +x /entrypoint.sh</span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a><span class="kw">EXPOSE</span> 3838</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep apt non-interactive. apt-get update can pull a newer r-base-core than the</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># one baked into the base image, and its Rprofile.site conffile would otherwise</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># trigger an interactive dpkg prompt that aborts a cold build (no TTY). Keep the</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co"># image's existing conffiles (rocker customizes Rprofile.site for r2u).</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="kw">ENV</span> DEBIAN_FRONTEND=noninteractive</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Install Shiny and its runtime dependencies as pre-built system packages.</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co"># r-cran-shiny's apt Depends can lag shiny's actual R imports on bleeding-edge</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co"># r2u, so the transitive deps (R6, httpuv, later, ...) are listed explicitly</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co"># to guarantee shiny can load. Works on both amd64 and arm64.</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">apt-get</span> update <span class="kw">&amp;&amp;</span> <span class="ex">apt-get</span> install <span class="at">-y</span> <span class="at">--no-install-recommends</span> <span class="dt">\</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">-o</span> Dpkg::Options::=--force-confold <span class="dt">\</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    r-cran-shiny <span class="dt">\</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    r-cran-jsonlite <span class="dt">\</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    r-cran-r6 <span class="dt">\</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    r-cran-httpuv <span class="dt">\</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    r-cran-later <span class="dt">\</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    r-cran-promises <span class="dt">\</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    r-cran-htmltools <span class="dt">\</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    r-cran-fastmap <span class="dt">\</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    r-cran-rlang <span class="dt">\</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>    r-cran-mime <span class="dt">\</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    r-cran-fontawesome <span class="dt">\</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    r-cran-bslib <span class="dt">\</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    r-cran-cachem <span class="dt">\</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    r-cran-commonmark <span class="dt">\</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    r-cran-glue <span class="dt">\</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    r-cran-crayon <span class="dt">\</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    r-cran-lifecycle <span class="dt">\</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    r-cran-digest <span class="dt">\</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    r-cran-sass <span class="dt">\</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    r-cran-jquerylib <span class="dt">\</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    r-cran-memoise <span class="dt">\</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&amp;&amp;</span> <span class="fu">rm</span> <span class="at">-rf</span> /var/lib/apt/lists/<span class="pp">*</span></span>
 <span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="kw">ENTRYPOINT</span> [<span class="st">"/entrypoint.sh"</span>]</span></code></pre></div>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="kw">WORKDIR</span> /app</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> entrypoint.sh /entrypoint.sh</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">chmod</span> +x /entrypoint.sh</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a><span class="kw">EXPOSE</span> 3838</span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="kw">ENTRYPOINT</span> [<span class="st">"/entrypoint.sh"</span>]</span></code></pre></div>
 <p>The image’s <code>ENTRYPOINT</code> is the bundled <code>entrypoint.sh</code>. It honors <code>PORT</code> and <code>HOST</code> env vars (defaulting to <code>3838</code> / <code>0.0.0.0</code>) and launches the app with the apt-installed R libraries on <code><a href="https://rdrr.io/r/base/libPaths.html" class="external-link">.libPaths()</a></code>. R package dependencies are baked into the image at build time as <code>r-cran-*</code> apt packages, not installed by the entrypoint.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="at">-e</span></span>
@@ -241,7 +248,7 @@
 <span><span class="op">)</span></span></code></pre></div>
 <p>Read live from <code>inst/dockerfiles/py-shiny/Dockerfile</code>:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Minimal Python + Shiny image for shinyelectron container strategy</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> python:3.12-slim</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> python:3.14-slim</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">pip</span> install <span class="at">--no-cache-dir</span> shiny</span>
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
@@ -327,7 +334,7 @@
 <p>Check what shinyelectron sees on this machine:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sitrep_electron_system.html">sitrep_electron_system</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>The report names the container engine it would use (Docker or Podman), where the socket lives, and whether the daemon is reachable. Run it before a release build to catch a missing or stopped engine cheaply.</p>
+<p>The report names the container engine installed on this machine (Docker or Podman) and where the binary was found. It checks only whether the engine binary is on PATH; it does not probe the daemon socket, so a stopped daemon is not detected. Use <code><a href="../reference/validate_container_available.html">validate_container_available()</a></code> or attempt a build to confirm the daemon is running.</p>
 </section><section class="level2"><h2 id="limitations">Limitations<a class="anchor" aria-label="anchor" href="#limitations"></a>
 </h2>
 <p>For the security side (volumes, root, escapes), see <a href="security.html#container-strategy-security">Security Considerations</a>.</p>
@@ -337,7 +344,7 @@
 <p><strong>The daemon must be running first.</strong> If Docker Desktop is off, the app surfaces a lifecycle error asking the user to start it. shinyelectron cannot start the daemon on their behalf.</p>
 </section><section class="level2"><h2 id="platform-notes">Platform notes<a class="anchor" aria-label="anchor" href="#platform-notes"></a>
 </h2>
-<p><strong>Docker Desktop is paid at scale.</strong> Larger organizations need a subscription. <a href="https://podman.io/" class="external-link">Podman</a> is a free, daemonless drop-in: set <code>engine: "podman"</code> in your config, or let auto-detection sort it out.</p>
+<p><strong>Docker Desktop is paid at scale.</strong> Larger organizations need a subscription. <a href="https://podman.io/" class="external-link">Podman</a> is a free, daemonless drop-in, but Podman users must set <code>engine: "podman"</code> explicitly in <code>_shinyelectron.yml</code>. The default engine is <code>docker</code>; leaving it unchanged will fail on a Podman-only machine.</p>
 <p><strong>Architecture matching.</strong> shinyelectron pulls or builds for the host’s CPU: <code>linux/arm64</code> on Apple Silicon, <code>linux/amd64</code> elsewhere. That keeps Apple Silicon off the Rosetta emulation path and the performance tax it carries.</p>
 <p><strong>Colima on macOS.</strong> <a href="https://github.com/abiosoft/colima" class="external-link">Colima</a> is a Docker drop-in, not a third engine: same <code>docker</code> CLI, daemon hosted in a Lima VM rather than Docker Desktop. Keep <code>engine: "docker"</code> in your config; shinyelectron finds the socket at <code>~/.colima/docker.sock</code> automatically.</p>
 </section><script id="quarto-html-after-body" type="application/javascript">

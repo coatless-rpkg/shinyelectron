@@ -99,40 +99,36 @@ sitrep_electron_system()
 ```
 
     -- System Requirements Report ------------------------------------------------
-    v Platform: darwin
+    v Platform: mac
     v Architecture: arm64
     v Local Node.js (shinyelectron): v22.11.0
       Other versions: 20.18.0
     v Active Node.js: v22.11.0 (local)
-    v npm: v10.9.0
+    v npm: v11.5.0
 
-## Auto-install from `_shinyelectron.yml`
+## Auto-install from `_shinyelectron.yml` (planned)
 
-If you would rather have
-[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
-install Node.js on demand, set `auto_install: true`. shinyelectron will
-fetch Node when it cannot find one and then continue the build.
-
-``` yaml
-nodejs:
-  auto_install: true
-```
-
-Pin the version too, when you want it:
-
-``` yaml
-nodejs:
-  version: "22.11.0"
-  auto_install: true
-```
-
-> **Opt-in only**
+> **Not yet implemented**
 >
-> Auto-install is off by default. shinyelectron does not download
-> anything without explicit consent: either `auto_install: true` here,
-> or a manual
+> `auto_install` is reserved for a future release and has no effect
+> today. A missing Node.js aborts the build with a message directing you
+> to run
 > [`install_nodejs()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.md)
-> call.
+> or install Node.js manually from <https://nodejs.org/>.
+
+When implemented, setting `auto_install: true` in `_shinyelectron.yml`
+will let
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+fetch Node.js automatically when it cannot find one and then continue
+the build. For now, call
+[`install_nodejs()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.md)
+before running
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md).
+
+``` r
+
+install_nodejs()
+```
 
 ## Cache layout
 
@@ -204,7 +200,7 @@ Remove every Node.js install shinyelectron has downloaded:
 cache_clear("nodejs")
 ```
 
-    v Cleared nodejs cache
+    v Cleared Node.js installation cache
 
 Remove everything shinyelectron has cached (Node.js, R/Python runtimes,
 npm modules):

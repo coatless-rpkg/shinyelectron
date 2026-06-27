@@ -3,12 +3,14 @@
     <filter id="sec-shadow">
       <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
     </filter>
+    <clipPath id="sec-card-clip"><rect width="220" height="292" rx="8"/></clipPath>
+    <clipPath id="sec-preload-clip"><rect width="216" height="164" rx="8"/></clipPath>
   </defs>
 
   <!-- Renderer (untrusted) -->
   <g transform="translate(20,24)" filter="url(#sec-shadow)">
     <rect width="220" height="292" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="220" height="3" rx="1.5" fill="#f59e0b"/>
+    <rect width="220" height="3" fill="#f59e0b" clip-path="url(#sec-card-clip)"/>
     <text x="110" y="30" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">Renderer</text>
     <text x="110" y="48" text-anchor="middle" font-size="10" fill="#94a3b8" letter-spacing="0.6">UNTRUSTED ZONE</text>
 
@@ -34,7 +36,7 @@
   <!-- Preload bridge -->
   <g transform="translate(272,88)">
     <rect width="216" height="164" rx="8" fill="#fff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#sec-shadow)"/>
-    <rect width="216" height="3" rx="1.5" fill="#8b5cf6"/>
+    <rect width="216" height="3" fill="#8b5cf6" clip-path="url(#sec-preload-clip)"/>
     <text x="108" y="28" text-anchor="middle" font-size="12" font-weight="600" fill="#1e293b">Preload (contextBridge)</text>
     <text x="108" y="46" text-anchor="middle" font-size="10" fill="#94a3b8">narrow IPC surface</text>
 
@@ -50,7 +52,7 @@
   <!-- Main (trusted) -->
   <g transform="translate(520,24)" filter="url(#sec-shadow)">
     <rect width="220" height="292" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="220" height="3" rx="1.5" fill="#3b82f6"/>
+    <rect width="220" height="3" fill="#3b82f6" clip-path="url(#sec-card-clip)"/>
     <text x="110" y="30" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">Main</text>
     <text x="110" y="48" text-anchor="middle" font-size="10" fill="#94a3b8" letter-spacing="0.6">TRUSTED ZONE</text>
 

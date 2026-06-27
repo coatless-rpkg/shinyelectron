@@ -3,12 +3,14 @@
     <filter id="shadow">
       <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
     </filter>
+    <clipPath id="po-card-clip"><rect width="180" height="120" rx="8"/></clipPath>
+    <clipPath id="po-card-sm-clip"><rect width="164" height="120" rx="8"/></clipPath>
   </defs>
 
   <!-- Step 1: Shiny App -->
   <g transform="translate(20,20)" filter="url(#shadow)">
     <rect width="180" height="120" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="180" height="3" rx="1.5" fill="#3b82f6"/>
+    <rect width="180" height="3" fill="#3b82f6" clip-path="url(#po-card-clip)"/>
     <text x="90" y="40" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">Shiny App</text>
     <text x="90" y="62" text-anchor="middle" font-size="12" fill="#64748b">app.R or app.py</text>
     <line x1="30" y1="78" x2="150" y2="78" stroke="#f1f5f9" stroke-width="1"/>
@@ -24,7 +26,7 @@
   <!-- Step 2: shinyelectron -->
   <g transform="translate(298,20)" filter="url(#shadow)">
     <rect width="180" height="120" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="180" height="3" rx="1.5" fill="#8b5cf6"/>
+    <rect width="180" height="3" fill="#8b5cf6" clip-path="url(#po-card-clip)"/>
     <text x="90" y="40" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">shinyelectron</text>
     <text x="90" y="62" text-anchor="middle" font-size="12" fill="#64748b">Convert + Package</text>
     <line x1="30" y1="78" x2="150" y2="78" stroke="#f1f5f9" stroke-width="1"/>
@@ -41,7 +43,7 @@
   <!-- Step 3: Desktop App -->
   <g transform="translate(576,20)" filter="url(#shadow)">
     <rect width="164" height="120" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
-    <rect width="164" height="3" rx="1.5" fill="#10b981"/>
+    <rect width="164" height="3" fill="#10b981" clip-path="url(#po-card-sm-clip)"/>
     <text x="82" y="36" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">Desktop App</text>
     <!-- Mini window -->
     <g transform="translate(32,46)">

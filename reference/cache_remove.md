@@ -24,14 +24,15 @@ cache_remove(runtime, version, platform = NULL, arch = NULL)
 
 - platform:
 
-  Character string. Platform (e.g., `"win"`, `"mac"`, `"linux"`). For
-  Node.js, use the combined platform-arch format shown by
-  [`cache_info()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_info.md).
+  Character string. Platform (`"win"`, `"mac"`, or `"linux"`). Required
+  for all runtimes including Node.js. Use the same canonical names that
+  [`cache_info()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_info.md)
+  reports in the `platform` column (e.g. `"mac"`, not `"darwin"`).
 
 - arch:
 
-  Character string. Architecture (`"x64"` or `"arm64"`). Ignored for
-  Node.js (embedded in platform).
+  Character string. Architecture (`"x64"` or `"arm64"`). Required for
+  all runtimes including Node.js.
 
 ## Value
 
@@ -53,5 +54,8 @@ cache_remove("r", "4.4.0", "mac", "arm64")
 
 # Remove a cached Python version
 cache_remove("python", "3.12.10", "win", "x64")
+
+# Remove one platform/arch slot of a Node.js version
+cache_remove("nodejs", "v22.11.0", "mac", "arm64")
 } # }
 ```

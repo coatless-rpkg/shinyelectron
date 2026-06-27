@@ -289,9 +289,9 @@
 <li>
 <strong>macOS apps build only on macOS.</strong> Apple’s signing and <code>.app</code> packaging run through native tools. Windows and Linux will cross-compile from macOS, but each platform’s own native build is more reliable.</li>
 <li>
-<strong>The <code>bundled</code> runtime strategy needs a matching host.</strong> A bundled app embeds a platform-specific R or Python binary at build time, so exporting for Windows requires building on Windows, and the same for macOS and Linux. <code>auto-download</code>, <code>system</code>, and <code>container</code> sidestep this: the runtime is fetched, found, or isolated at launch instead of at build, so any host can target any platform.</li>
+<strong>The <code>bundled</code> and <code>auto-download</code> strategies need a per-platform build.</strong> Both embed a single platform-specific runtime (or a manifest pointing to one) at export time and abort when more than one platform or architecture is requested. Build each target separately, or use <code>system</code>, <code>container</code>, or <code>shinylive</code> for multi-platform builds from a single host.</li>
 </ul>
-<p>In practice, if you want a single workstation to emit installers for every OS, reach for auto-download or container. If you want bundled everywhere, hand the job to CI (see the <a href="github-actions.html">GitHub Actions</a> article).</p>
+<p>In practice, if you want a single workstation to emit installers for every OS, reach for <code>system</code>, <code>container</code>, or <code>shinylive</code>. If you want <code>bundled</code> everywhere, hand the job to CI (see the <a href="github-actions.html">GitHub Actions</a> article).</p>
 </section><section class="level2"><h2 id="give-the-app-a-custom-icon">Give the app a custom icon<a class="anchor" aria-label="anchor" href="#give-the-app-a-custom-icon"></a>
 </h2>
 <p>Point <code>icon</code> at a single file. Each platform wants its own format: <code>.icns</code> for macOS, <code>.ico</code> for Windows, <code>.png</code> for Linux.</p>

@@ -16,11 +16,14 @@ check_auto_update_status(appdir)
 
 ## Value
 
-Invisibly returns the `updates` configuration list, with elements
-`enabled` (logical), `provider` (character or NULL), `check_on_startup`,
-`auto_download`, `auto_install` (logical), and, for the GitHub provider,
-`github` (a list with `owner`, `repo`, `private`). Returns NULL when no
-`updates` section is present.
+Invisibly returns the `updates` configuration list, which is always
+present because
+[`read_config()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/read_config.md)
+deep-merges defaults. Elements include `enabled` (logical, `FALSE` by
+default when auto-updates have never been enabled), `provider`
+(character), `check_on_startup`, `auto_download`, `auto_install`
+(logical), and, for the GitHub provider, `github` (a list with `owner`,
+`repo`, `private`).
 
 ## Examples
 

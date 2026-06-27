@@ -205,16 +205,16 @@ Not every combination is portable. Two rules to keep in mind:
   packaging run through native tools. Windows and Linux will
   cross-compile from macOS, but each platform’s own native build is more
   reliable.
-- **The `bundled` runtime strategy needs a matching host.** A bundled
-  app embeds a platform-specific R or Python binary at build time, so
-  exporting for Windows requires building on Windows, and the same for
-  macOS and Linux. `auto-download`, `system`, and `container` sidestep
-  this: the runtime is fetched, found, or isolated at launch instead of
-  at build, so any host can target any platform.
+- **The `bundled` and `auto-download` strategies need a per-platform
+  build.** Both embed a single platform-specific runtime (or a manifest
+  pointing to one) at export time and abort when more than one platform
+  or architecture is requested. Build each target separately, or use
+  `system`, `container`, or `shinylive` for multi-platform builds from a
+  single host.
 
 In practice, if you want a single workstation to emit installers for
-every OS, reach for auto-download or container. If you want bundled
-everywhere, hand the job to CI (see the [GitHub
+every OS, reach for `system`, `container`, or `shinylive`. If you want
+`bundled` everywhere, hand the job to CI (see the [GitHub
 Actions](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/github-actions.md)
 article).
 

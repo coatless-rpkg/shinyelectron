@@ -11,12 +11,12 @@ arranged in two rows describe the main sections: app (display name and
 version), build (language, runtime strategy, target platforms and
 architectures), window (Electron window size), server (local Shiny
 port), icon (app icon, one PNG fanned out per OS), nodejs (build
-toolchain version and auto-install), r and python (runtime version for
-bundled and auto-download strategies), and container (Docker or Podman
-engine and image for the container strategy). A wider card underneath
-describes apps, the optional multi-app suite, where each entry may
-override the suite-level type or runtime_strategy so shinylive apps can
-coexist with bundled or system apps in the same
+toolchain version), dependencies (r and python version pins for bundled
+and auto-download strategies), and container (Docker or Podman engine
+and image for the container strategy). A wider card underneath describes
+apps, the optional multi-app suite, where each entry may override the
+suite-level type or runtime_strategy so shinylive apps can coexist with
+bundled or system apps in the same
 build.](../reference/figures/config-overview.svg)
 
 Every `_shinyelectron.yml` section at a glance: nine knobs that shape a
@@ -75,15 +75,12 @@ init_config("path/to/my-app")
     ℹ Edit this file to customize your Electron app settings
 
 The generated file carries the documented defaults you can edit in
-place. For most projects, the only settings you need to write yourself
-are the app name and whether to auto-install Node.js:
+place. For most projects, the only setting you need to write yourself is
+the app name:
 
 ``` yaml
 app:
   name: "My App"
-
-nodejs:
-  auto_install: true
 ```
 
 Everything else is filled in by defaults described below.
@@ -112,11 +109,11 @@ build:
     - x64
     - arm64
 
-r:
-  version: null              # R version for bundled/auto-download (null = latest release)
-
-python:
-  version: null              # Python version for bundled/auto-download (null = "3.12.10")
+dependencies:
+  r:
+    version: null            # R version for bundled/auto-download (null = latest release)
+  python:
+    version: null            # Python version for bundled/auto-download (null = "3.12.10")
 
 window:
   width: 1200                # Default window width (pixels)
@@ -135,7 +132,7 @@ icon: "branding/icon.png"    # Single high-res source; electron-builder fans out
 
 nodejs:
   version: null              # Node.js version (null = latest LTS)
-  auto_install: false        # Auto-install Node.js if not found
+  # auto_install: false      # Planned: auto-install Node.js if not found (not yet implemented)
 
 container:                   # Used when runtime_strategy is "container"
   engine: "docker"           # "docker" or "podman"
@@ -279,29 +276,31 @@ Development server settings.
 
 Node.js installation behavior.
 
-| Key | Type | Default | Description |
-|----|----|----|----|
-| `version` | string | `null` | Node.js version to install (`null` = latest LTS) |
-| `auto_install` | boolean | `false` | Auto-install Node.js if not found |
+| Key       | Type   | Default | Description                                      |
+|-----------|--------|---------|--------------------------------------------------|
+| `version` | string | `null`  | Node.js version to install (`null` = latest LTS) |
 
-Auto-install is off by default. Set `auto_install: true` explicitly to
-let
-[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
-install Node.js for you when it is missing.
+> **`auto_install` is planned, not yet active**
+>
+> An `auto_install` key is reserved for a future release. Today, a
+> missing Node.js aborts the build with guidance to run
+> [`install_nodejs()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.md)
+> or install Node.js manually. Do not rely on `auto_install: true`
+> having any effect.
 
-### `r`
+### `dependencies.r`
 
-Pins R for the `bundled` and `auto-download` runtime strategies. Ignored
-otherwise.
+Pins R for the `bundled` and `auto-download` runtime strategies. Nested
+under `dependencies:`. Ignored otherwise.
 
 | Key | Type | Default | Description |
 |----|----|----|----|
 | `version` | string | `null` | R version (e.g. `"4.4.1"`); `null` uses the latest release |
 
-### `python`
+### `dependencies.python`
 
 Pins Python for the `bundled` and `auto-download` runtime strategies.
-Ignored otherwise.
+Nested under `dependencies:`. Ignored otherwise.
 
 | Key | Type | Default | Description |
 |----|----|----|----|
@@ -384,9 +383,6 @@ app:
 window:
   width: 1000
   height: 700
-
-nodejs:
-  auto_install: true
 ```
 
 ### Production multi-platform build
@@ -417,7 +413,6 @@ icon: "branding/icon.png"
 
 nodejs:
   version: "22.11.0"
-  auto_install: false
 ```
 
 ### Native R app with bundled runtime
@@ -436,11 +431,9 @@ build:
     - mac
     - win
 
-r:
-  version: "4.4.1"
-
-nodejs:
-  auto_install: true
+dependencies:
+  r:
+    version: "4.4.1"
 ```
 
 ### Multi-app suite
@@ -466,9 +459,6 @@ apps:
     path: "./apps/admin"
     type: "py-shiny"
     description: "User management"
-
-nodejs:
-  auto_install: true
 ```
 
 ## What happens when a value is invalid

@@ -39,10 +39,15 @@ build_electron_app(
 
 - app_type:
 
-  Character string. Language of the Shiny app: `"r-shiny"` or
-  `"py-shiny"`. The legacy values `"r-shinylive"` / `"py-shinylive"` are
-  accepted with a deprecation warning and translate to the canonical
-  language plus `runtime_strategy = "shinylive"`.
+  Character string. Language of the Shiny app: `"r-shiny"` (default) or
+  `"py-shiny"`. Unlike
+  [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md),
+  this function does **not** autodetect the language from source files –
+  the default `"r-shiny"` is used when `app_type` is not supplied.
+  Supply `"py-shiny"` explicitly for Python Shiny applications. The
+  legacy values `"r-shinylive"` / `"py-shinylive"` are accepted with a
+  deprecation warning and translate to the canonical language plus
+  `runtime_strategy = "shinylive"`.
 
 - runtime_strategy:
 

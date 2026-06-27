@@ -70,7 +70,7 @@ their machine.
 | **User requirements** | None | R or Python installed | None | Internet on first run | Docker or Podman |
 | **Dependency isolation** | WebR/Pyodide sandbox | None | Full | Full | Full |
 | **Package compatibility** | Limited (WebR/Pyodide) | Complete | Complete | Complete | Complete |
-| **Linux support** | Yes | Yes | No (use system or container) | No (use system or container) | Yes |
+| **Linux support** | Yes | Yes | R: No; Python: Yes | R: No; Python: Yes | Yes |
 
 ## Shinylive strategy
 
@@ -203,17 +203,17 @@ section) is the other extreme, shipping a setup script that fetches the
 OS on first boot.
 
 ![Three-column diagram for the bundled strategy. Ships column shows the
-Electron shell containing a portable runtime under resources with a
+Electron shell containing a portable runtime under runtime/ with a
 private package library, plus the app source. First launch column shows
 a green check badge noting the app opens instantly with no download
 because the runtime is already on disk. Running column shows the
 Electron window connecting over localhost to a bundled Rscript or
-python3 spawned as a child process from the packaged resources
+python3 spawned as a child process from the packaged runtime/
 directory.](../reference/figures/strategy-bundled.svg)
 
 Bundled ships the Electron shell together with a portable R or Python
 runtime and the app source, opens instantly offline, and runs by
-spawning the bundled Rscript or python3 from the packaged resources
+spawning the bundled Rscript or python3 from the packaged runtime/
 directory.
 
 ``` r
@@ -230,7 +230,7 @@ export(
 1.  During
     [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md),
     shinyelectron downloads a portable runtime and writes it into the
-    Electron project’s `resources/` directory.
+    Electron project’s `runtime/` directory.
 2.  Your app dependencies are installed into that runtime’s library.
 3.  At launch, the Electron backend uses the bundled `Rscript` or
     `python3` instead of anything on the user’s system.
@@ -264,10 +264,10 @@ shows the Electron shell with app source and a downloader module
 (runtime-downloader.js), with no runtime embedded. First launch column
 shows three numbered steps: check cache directory, download portable
 runtime, extract and install packages, with the cache path noted as
-tilde slash dot shinyelectron slash cache. Running column shows the
+tilde slash dot shinyelectron slash runtimes. Running column shows the
 Electron window connecting over localhost to a cached Rscript or python3
-spawned from the cache directory that is shared across all shinyelectron
-apps.](../reference/figures/strategy-auto-download.svg)
+spawned from the runtimes directory that is shared across all
+shinyelectron apps.](../reference/figures/strategy-auto-download.svg)
 
 Auto-download ships the Electron shell, the app source, and a downloader
 module but no runtime; on first launch it checks the local cache,
@@ -290,8 +290,8 @@ export(
     `runtime-downloader.js` backend.
 2.  On first launch, the downloader checks a local cache directory. If
     it finds no runtime, it downloads and extracts a portable build.
-3.  The runtime is cached per-user: `~/.shinyelectron/cache/` on macOS
-    and Linux, `%LOCALAPPDATA%\shinyelectron\cache\` on Windows.
+3.  The runtime is cached per-user at `~/.shinyelectron/runtimes/` on
+    all platforms.
 4.  Subsequent launches skip the download and reuse the cached runtime.
 
 The download sources are the same ones bundled uses: portable-r for R,
@@ -408,13 +408,15 @@ strategy everywhere.
 
 ### Cross-platform builds
 
-A bundled build can only target the platform you built on, because the
-embedded runtime is a platform-specific binary. To ship installers for
-Windows, macOS, and Linux from one machine, use `auto-download` or
-`container`, or build each platform separately. The [GitHub
+The `bundled` and `auto-download` strategies each embed a single
+platform-specific runtime (or a manifest pointing to one) at export time
+and abort when more than one platform or architecture is requested. To
+ship installers for Windows, macOS, and Linux from one machine, use
+`system`, `container`, or `shinylive`, or build each platform
+separately. The [GitHub
 Actions](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/github-actions.md)
-vignette shows how to fan out bundled builds across matrix runners in
-CI.
+vignette shows how to fan out per-platform builds across matrix runners
+in CI.
 
 ### macOS code signing
 

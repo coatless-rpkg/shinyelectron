@@ -94,31 +94,36 @@
 </div>
 <section class="level2"><h2 id="pick-a-publish-host">Pick a publish host<a class="anchor" aria-label="anchor" href="#pick-a-publish-host"></a>
 </h2>
-<p>Three backends are supported. Pick the one that matches how you already ship software.</p>
+<p>GitHub Releases is the only provider currently supported. S3 and Generic HTTP are planned for a future release and are not yet wired into the build.</p>
 <table class="table caption-top">
 <colgroup>
-<col style="width: 29%">
-<col style="width: 29%">
-<col style="width: 41%">
+<col style="width: 23%">
+<col style="width: 19%">
+<col style="width: 23%">
+<col style="width: 33%">
 </colgroup>
 <thead><tr class="header">
 <th>Provider</th>
+<th>Status</th>
 <th>Best for</th>
 <th>Requirements</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td>GitHub Releases</td>
+<td>Supported</td>
 <td>Open source projects</td>
 <td>Public or private GitHub repo</td>
 </tr>
 <tr class="even">
 <td>S3</td>
+<td>Planned</td>
 <td>Enterprise deployments</td>
 <td>AWS S3 bucket</td>
 </tr>
 <tr class="odd">
 <td>Generic HTTP</td>
+<td>Planned</td>
 <td>Custom infrastructure</td>
 <td>Any HTTP server</td>
 </tr>
@@ -170,7 +175,7 @@
 <li>Go to your repo on GitHub.</li>
 <li>Click Releases, then Create a new release.</li>
 <li>Create a tag such as <code>v1.0.0</code>.</li>
-<li>Upload the built installers:
+<li>Upload the built installers and update manifests:
 <ul>
 <li>
 <code>MyApp-1.0.0.dmg</code> (macOS)</li>
@@ -178,6 +183,12 @@
 <code>MyApp-Setup-1.0.0.exe</code> (Windows)</li>
 <li>
 <code>MyApp-1.0.0.AppImage</code> (Linux)</li>
+<li>
+<code>latest-mac.yml</code> (macOS update manifest)</li>
+<li>
+<code>latest.yml</code> (Windows update manifest)</li>
+<li>
+<code>latest-linux.yml</code> (Linux update manifest)</li>
 </ul>
 </li>
 <li>Publish the release.</li>
@@ -263,6 +274,12 @@
 <span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> GH_TOKEN=ghp_xxxxxxxxxxxx</span></code></pre></div>
 </section><section class="level2"><h2 id="s3">S3<a class="anchor" aria-label="anchor" href="#s3"></a>
 </h2>
+<div>
+<blockquote>
+<p><strong>Important</strong></p>
+<p>S3 is planned but not yet supported. <code><a href="../reference/enable_auto_updates.html">enable_auto_updates()</a></code> currently accepts only <code>"github"</code> as the provider, and S3 configuration in <code>_shinyelectron.yml</code> is not consumed by the build. This section documents the intended design for when S3 support is added.</p>
+</blockquote>
+</div>
 <p>Point at a bucket for enterprise distribution.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">updates</span><span class="kw">:</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
@@ -285,6 +302,12 @@
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">AWS_SECRET_ACCESS_KEY</span><span class="op">=</span>xxx</span></code></pre></div>
 </section><section class="level2"><h2 id="generic-http">Generic HTTP<a class="anchor" aria-label="anchor" href="#generic-http"></a>
 </h2>
+<div>
+<blockquote>
+<p><strong>Important</strong></p>
+<p>Generic HTTP is planned but not yet supported. <code><a href="../reference/enable_auto_updates.html">enable_auto_updates()</a></code> currently accepts only <code>"github"</code> as the provider, and generic HTTP configuration in <code>_shinyelectron.yml</code> is not consumed by the build. This section documents the intended design for when Generic HTTP support is added.</p>
+</blockquote>
+</div>
 <p>Anything that can serve static files works.</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">updates</span><span class="kw">:</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
