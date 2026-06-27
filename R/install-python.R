@@ -1,3 +1,96 @@
+#' List python-build-standalone releases from GitHub
+#'
+#' Fetches release metadata from the astral-sh/python-build-standalone GitHub
+#' API. Returns a list of release objects, each with a `tag_name` field and an
+#' `assets` list whose elements have a `name` field. Releases are ordered
+#' newest first (GitHub API default). This function is intentionally a thin
+#' network wrapper so it can be stubbed in tests.
+#'
+#' @return List of release objects from the GitHub releases API.
+#' @keywords internal
+pbs_list_releases <- function() {
+  url <- "https://api.github.com/repos/astral-sh/python-build-standalone/releases"
+  tmp <- tempfile(fileext = ".json")
+  on.exit(unlink(tmp), add = TRUE)
+
+  ok <- tryCatch({
+    utils::download.file(url, tmp, mode = "wb", quiet = TRUE)
+    TRUE
+  }, error = function(e) {
+    cli::cli_abort(c(
+      "Could not reach the python-build-standalone release API.",
+      "x" = "{e$message}",
+      "i" = "Check your internet connection.",
+      "i" = paste0(
+        "Or pin a version in your config matching the maintained default: ",
+        "{.val {SHINYELECTRON_DEFAULTS$runtime_versions$python$version}}."
+      )
+    ))
+  })
+
+  jsonlite::fromJSON(tmp, simplifyVector = FALSE)
+}
+
+#' Resolve a Python version to its python-build-standalone release
+#'
+#' Scans release asset names of the form
+#' `cpython-<ver>+<release>-<arch>-<os>-install_only.tar.gz`. For an explicit
+#' version, returns the newest release that contains an asset for that version.
+#' For `"latest"`, returns the newest release and the first CPython version
+#' found in it. Network access is isolated to `pbs_list_releases()` so tests
+#' can stub that function.
+#'
+#' @param version Character string. A concrete Python version such as
+#'   `"3.12.10"`, or `"latest"` for the newest available build.
+#' @return Named list with elements `version` (character) and `release`
+#'   (character YYYYMMDD tag).
+#' @keywords internal
+python_resolve_pbs <- function(version = "latest") {
+  releases <- pbs_list_releases()
+
+  # Asset pattern: cpython-<ver>+<release_date>-<arch>-<os>-install_only.tar.gz
+  asset_re <- "^cpython-(\\d+\\.\\d+\\.\\d+)\\+(\\d{8})-.*-install_only\\.tar\\.gz$"
+
+  if (identical(version, "latest")) {
+    for (rel in releases) {
+      for (asset in rel$assets) {
+        m <- regmatches(asset$name, regexec(asset_re, asset$name))[[1]]
+        if (length(m) == 3L) {
+          return(list(version = m[[2L]], release = m[[3L]]))
+        }
+      }
+    }
+    cli::cli_abort(c(
+      "No python-build-standalone release with a CPython install_only asset was found.",
+      "i" = "Check your internet connection.",
+      "i" = paste0(
+        "Or pin the maintained default version in your config: ",
+        "{.val {SHINYELECTRON_DEFAULTS$runtime_versions$python$version}}."
+      )
+    ))
+  } else {
+    for (rel in releases) {
+      for (asset in rel$assets) {
+        m <- regmatches(asset$name, regexec(asset_re, asset$name))[[1]]
+        if (length(m) == 3L && identical(m[[2L]], version)) {
+          return(list(version = m[[2L]], release = m[[3L]]))
+        }
+      }
+    }
+    cli::cli_abort(c(
+      "Python {.val {version}} was not found in any python-build-standalone release.",
+      "i" = paste0(
+        "Check available releases at ",
+        "{.url https://github.com/astral-sh/python-build-standalone/releases}."
+      ),
+      "i" = paste0(
+        "Or pin the maintained default: ",
+        "{.val {SHINYELECTRON_DEFAULTS$runtime_versions$python$version}}."
+      )
+    ))
+  }
+}
+
 #' Construct download URL for portable Python
 #'
 #' Uses python-build-standalone releases for portable Python builds.
