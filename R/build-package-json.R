@@ -42,8 +42,8 @@ generate_package_json <- function(app_slug, app_version, backend, config,
     author = "",
     license = "AGPL-3.0-or-later",
     devDependencies = list(
-      electron = "^41.0.0",
-      `electron-builder` = "^26.8.0"
+      electron = paste0("^", resolve_runtime_version("electron", config)),
+      `electron-builder` = paste0("^", SHINYELECTRON_DEFAULTS$electron_toolchain$builder)
     )
   )
 
@@ -57,8 +57,8 @@ generate_package_json <- function(app_slug, app_version, backend, config,
   # Auto-update dependencies
   updates_enabled <- isTRUE(config$updates$enabled)
   if (updates_enabled) {
-    deps[["electron-updater"]] <- "^6.8.0"
-    deps[["electron-log"]] <- "^5.4.0"
+    deps[["electron-updater"]] <- paste0("^", SHINYELECTRON_DEFAULTS$electron_toolchain$updater)
+    deps[["electron-log"]] <- paste0("^", SHINYELECTRON_DEFAULTS$electron_toolchain$log)
   }
 
   if (length(deps) > 0) {

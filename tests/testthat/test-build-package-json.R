@@ -87,3 +87,55 @@ test_that("generate_package_json includes lifecycle.html and preload.js in files
   expect_true("lifecycle.html" %in% parsed$build$files)
   expect_true("preload.js" %in% parsed$build$files)
 })
+
+test_that("generate_package_json uses default electron and toolchain versions", {
+  result <- generate_package_json(
+    app_slug = "my-app",
+    app_version = "1.0.0",
+    backend = "native-r",
+    config = list()
+  )
+  parsed <- jsonlite::fromJSON(result, simplifyVector = FALSE)
+
+  expect_equal(
+    parsed$devDependencies$electron,
+    paste0("^", SHINYELECTRON_DEFAULTS$runtime_versions$electron)
+  )
+  expect_equal(
+    parsed$devDependencies[["electron-builder"]],
+    paste0("^", SHINYELECTRON_DEFAULTS$electron_toolchain$builder)
+  )
+})
+
+test_that("generate_package_json uses toolchain pins for updater and log", {
+  result <- generate_package_json(
+    app_slug = "my-app",
+    app_version = "1.0.0",
+    backend = "native-r",
+    config = list(updates = list(enabled = TRUE, provider = "github",
+                                 github = list(owner = "me", repo = "app")))
+  )
+  parsed <- jsonlite::fromJSON(result, simplifyVector = FALSE)
+
+  expect_equal(
+    parsed$dependencies[["electron-updater"]],
+    paste0("^", SHINYELECTRON_DEFAULTS$electron_toolchain$updater)
+  )
+  expect_equal(
+    parsed$dependencies[["electron-log"]],
+    paste0("^", SHINYELECTRON_DEFAULTS$electron_toolchain$log)
+  )
+})
+
+test_that("generate_package_json respects config electron version override", {
+  config <- list(dependencies = list(electron = list(version = "42.1.0")))
+  result <- generate_package_json(
+    app_slug = "my-app",
+    app_version = "1.0.0",
+    backend = "native-r",
+    config = config
+  )
+  parsed <- jsonlite::fromJSON(result, simplifyVector = FALSE)
+
+  expect_equal(parsed$devDependencies$electron, "^42.1.0")
+})
