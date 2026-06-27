@@ -101,11 +101,17 @@ build:
     - x64
     - arm64
 
-dependencies:
+dependencies:               # Runtime version pins and system packages
   r:
-    version: null            # R version for bundled/auto-download (null = latest release)
+    version: null           # null = maintained pin; "latest" = live query; "4.6.1" = exact
   python:
-    version: null            # Python version for bundled/auto-download (null = "3.12.10")
+    version: null           # null = maintained pin; "latest" = live query; "3.12.0" = exact
+  node:
+    version: null           # null = maintained pin; "latest" = live query; "22.0.0" = exact
+  # system_packages: extra apt packages baked into the container image
+  # system_packages:
+  #   - libgdal-dev
+  #   - libpq-dev
 
 window:
   width: 1200                # Default window width (pixels)
@@ -128,8 +134,8 @@ nodejs:
 
 container:                   # Used when runtime_strategy is "container"
   engine: "docker"           # "docker" or "podman"
-  image: null                # Container image (null = auto-select)
-  tag: "latest"
+  image: null                # Container image (null = use bundled Dockerfile)
+  tag: null                  # null = resolved runtime version; "latest" for BYO image
   pull_on_start: true        # Pull latest image on app start
   volumes:                   # Host-to-container volume map (not a list)
     "/data": "/app/data"
@@ -261,21 +267,56 @@ Node.js installation behavior.
 An `auto_install` key is reserved for a future release. Today, a missing Node.js aborts the build with guidance to run `install_nodejs()` or install Node.js manually. Do not rely on `auto_install: true` having any effect.
 :::
 
-### `dependencies.r`
+### `dependencies`
 
-Pins R for the `bundled` and `auto-download` runtime strategies. Nested under `dependencies:`. Ignored otherwise.
+Controls runtime version pins and (for the container strategy) system-level apt packages.
+
+#### Version keys
+
+Each runtime has a `version` key under its own sub-section. Three values are accepted:
+
+| Value | Effect |
+|-------|--------|
+| `null` or omitted | Uses the maintained latest pin shipped with shinyelectron |
+| `"latest"` | Queries the upstream source at build time for the newest available version |
+| A version string such as `"4.6.1"` | Uses that exact version for the build |
+
+The maintained pins are updated with each shinyelectron release. Using `null` is recommended for most projects: you get a version known to work, and you can pin explicitly when you need a specific release.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `version` | string | `null` | R version (e.g. `"4.4.1"`); `null` uses the latest release |
+| `r.version` | string | `null` | R version for `bundled`, `auto-download`, and `container` strategies |
+| `python.version` | string | `null` | Python version for `bundled`, `auto-download`, and `container` strategies |
+| `node.version` | string | `null` | Node.js version for the build toolchain |
 
-### `dependencies.python`
+#### `system_packages`
 
-Pins Python for the `bundled` and `auto-download` runtime strategies. Nested under `dependencies:`. Ignored otherwise.
+A list of apt package names baked into the container image at build time. Used only when `runtime_strategy` is `"container"`.
+
+For R apps, shinyelectron already calls `pak::pkg_sysreqs()` to auto-detect system libraries required by your R packages (for example, `libgdal-dev` for `sf`) and bakes them in automatically. `system_packages` is the escape hatch for anything not covered by that auto-detection.
+
+For Python apps, auto-detection is not performed. `system_packages` is the only way to add system-level libraries to the image.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `version` | string | `null` | Python version (e.g. `"3.12.10"`); `null` resolves to `"3.12.10"` |
+| `system_packages` | list of strings | `null` | Extra apt packages baked into the container image (container strategy only) |
+
+**Example:**
+
+```yaml
+dependencies:
+  r:
+    version: "4.6.1"        # pin to an exact R release
+  python:
+    version: null           # use maintained pin
+  node:
+    version: "latest"       # resolve live LTS at build time
+  system_packages:
+    - libgdal-dev
+    - libpq-dev
+```
+
+`system_packages` has no effect for `shinylive`, `bundled`, `auto-download`, or `system` strategies.
 
 ### `container`
 
@@ -285,7 +326,7 @@ Used when `runtime_strategy` is `"container"`. Ignored otherwise.
 |-----|------|---------|-------------|
 | `engine` | string | `"docker"` | Container engine: `"docker"` or `"podman"` |
 | `image` | string | `null` | Container image name (`null` = auto-select based on `app.type`) |
-| `tag` | string | `"latest"` | Image tag |
+| `tag` | string | `null` | Image tag. For the bundled Dockerfile (`image: null`), defaults to the resolved runtime version (e.g. `"4.6.1"` for R). For a BYO `image`, defaults to `"latest"`. |
 | `pull_on_start` | boolean | `true` | Pull the latest image when the app starts |
 | `volumes` | map | `{}` | Host-to-container volume mounts (`host: container`) |
 | `env` | map | `{}` | Environment variables (`KEY: value`) |
