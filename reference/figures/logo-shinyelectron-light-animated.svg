@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 692" width="600" height="692">
+  <defs>
+    <linearGradient id="orbitGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#33A9DE"/><stop offset="100%" stop-color="#15659F"/></linearGradient>
+    <radialGradient id="electronGrad" cx="38%" cy="35%" r="70%"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="45%" stop-color="#5FC0EC"/><stop offset="100%" stop-color="#1E78B4"/></radialGradient>
+    <radialGradient id="orbGrad" cx="50%" cy="34%" r="72%"><stop offset="0%" stop-color="#2C7CC4"/><stop offset="45%" stop-color="#1C6BB0"/><stop offset="100%" stop-color="#0C3C66"/></radialGradient>
+    <radialGradient id="atmosGrad" cx="50%" cy="44%" r="60%"><stop offset="0%" stop-color="#78E1FA" stop-opacity="0.26"/><stop offset="45%" stop-color="#3C96E6" stop-opacity="0.11"/><stop offset="100%" stop-color="#0A1423" stop-opacity="0"/></radialGradient>
+    <linearGradient id="orbRing" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#BFE8FF" stop-opacity="0.9"/><stop offset="50%" stop-color="#2E7DB6" stop-opacity="0.5"/><stop offset="100%" stop-color="#0B2438" stop-opacity="0.85"/></linearGradient>
+    <radialGradient id="orbTopShade" cx="50%" cy="22%" r="55%"><stop offset="0%" stop-color="#03070D" stop-opacity="0.55"/><stop offset="100%" stop-color="#03070D" stop-opacity="0"/></radialGradient>
+    <filter id="softGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4"/></filter>
+    <filter id="bigGlow" x="-120%" y="-120%" width="340%" height="340%"><feGaussianBlur stdDeviation="9"/></filter>
+    <filter id="haloBlur" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="7"/></filter>
+    <clipPath id="frontHalf"><rect x="0" y="305" width="600" height="235"/></clipPath>
+  </defs>
+
+  <polygon points="300,6 594.4,176 594.4,516 300,686 5.6,516 5.6,176" fill="#C7D6E2"/>
+  <polygon points="300,16 585.7,181 585.7,511 300,676 14.3,511 14.3,181" fill="#F4F8FC"/>
+
+  
+
+  <g fill="none" stroke="url(#orbitGrad)" stroke-width="9" opacity="0.2" stroke-linecap="round" filter="url(#softGlow)">
+    <ellipse cx="300" cy="305" rx="216" ry="84" transform="rotate(30 300 305)"/>
+    <ellipse cx="300" cy="305" rx="216" ry="84" transform="rotate(150 300 305)"/>
+    <ellipse cx="300" cy="305" rx="216" ry="84" transform="rotate(270 300 305)"/>
+  </g>
+  <g fill="none" stroke="url(#orbitGrad)" stroke-width="5" opacity="0.95" stroke-linecap="round" >
+    <ellipse cx="300" cy="305" rx="216" ry="84" transform="rotate(30 300 305)"/>
+    <ellipse cx="300" cy="305" rx="216" ry="84" transform="rotate(150 300 305)"/>
+    <ellipse cx="300" cy="305" rx="216" ry="84" transform="rotate(270 300 305)"/>
+  </g>
+
+  <circle cx="300" cy="305" r="70" fill="#2C8FE0" opacity="0.1" filter="url(#haloBlur)"/>
+  <circle cx="300" cy="305" r="60" fill="url(#orbGrad)"/>
+  <circle cx="300" cy="305" r="60" fill="url(#orbTopShade)"/>
+  <g clip-path="url(#frontHalf)"><g fill="none" stroke="url(#orbitGrad)" stroke-width="5" opacity="0.95" stroke-linecap="round" >
+    <ellipse cx="300" cy="305" rx="216" ry="84" transform="rotate(30 300 305)"/>
+    <ellipse cx="300" cy="305" rx="216" ry="84" transform="rotate(150 300 305)"/>
+    <ellipse cx="300" cy="305" rx="216" ry="84" transform="rotate(270 300 305)"/>
+  </g></g>
+  <circle cx="300" cy="305" r="60" fill="none" stroke="url(#orbRing)" stroke-width="2" opacity="0.9"/>
+
+  <text x="300" y="340.5" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="bold" font-size="100" fill="#FFFFFF">S</text>
+
+  
+  <g transform="rotate(30 300 305)">
+    <circle cx="516" cy="305" r="20" fill="#7FC4EC" opacity="0.35" filter="url(#bigGlow)">
+      <animateMotion dur="4s" begin="0s" repeatCount="indefinite" path="M 0,0 A 216,84 0 1 1 -432,0 A 216,84 0 1 1 0,0 Z"/>
+    </circle>
+    <circle cx="516" cy="305" r="11.5" fill="url(#electronGrad)">
+      <animateMotion dur="4s" begin="0s" repeatCount="indefinite" path="M 0,0 A 216,84 0 1 1 -432,0 A 216,84 0 1 1 0,0 Z"/>
+    </circle>
+  </g>
+  <g transform="rotate(150 300 305)">
+    <circle cx="516" cy="305" r="20" fill="#7FC4EC" opacity="0.35" filter="url(#bigGlow)">
+      <animateMotion dur="4s" begin="-1.3333333333333333s" repeatCount="indefinite" path="M 0,0 A 216,84 0 1 1 -432,0 A 216,84 0 1 1 0,0 Z"/>
+    </circle>
+    <circle cx="516" cy="305" r="11.5" fill="url(#electronGrad)">
+      <animateMotion dur="4s" begin="-1.3333333333333333s" repeatCount="indefinite" path="M 0,0 A 216,84 0 1 1 -432,0 A 216,84 0 1 1 0,0 Z"/>
+    </circle>
+  </g>
+  <g transform="rotate(270 300 305)">
+    <circle cx="516" cy="305" r="20" fill="#7FC4EC" opacity="0.35" filter="url(#bigGlow)">
+      <animateMotion dur="4s" begin="-2.6666666666666665s" repeatCount="indefinite" path="M 0,0 A 216,84 0 1 1 -432,0 A 216,84 0 1 1 0,0 Z"/>
+    </circle>
+    <circle cx="516" cy="305" r="11.5" fill="url(#electronGrad)">
+      <animateMotion dur="4s" begin="-2.6666666666666665s" repeatCount="indefinite" path="M 0,0 A 216,84 0 1 1 -432,0 A 216,84 0 1 1 0,0 Z"/>
+    </circle>
+  </g>
+
+  <text x="300" y="583" text-anchor="middle" font-family="Helvetica, 'Helvetica Neue', Arial, sans-serif" font-size="46" font-weight="500" letter-spacing="1"><tspan fill="#15659F">shiny</tspan><tspan fill="#2A8FC9">electron</tspan></text>
+
+  <polygon points="300,16 585.7,181 585.7,511 300,676 14.3,511 14.3,181" fill="none" stroke="#1E78B4" stroke-width="3" stroke-linejoin="round" opacity="1"/>
+</svg>

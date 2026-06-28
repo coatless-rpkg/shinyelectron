@@ -1,4 +1,4 @@
-# shinyelectron
+# shinyelectron [![A hexagonal logo for shinyelectron](reference/figures/logo-shinyelectron-dark-animated.svg)](https://r-pkg.thecoatlessprofessor.com/shinyelectron/)
 
 Turn any Shiny app (R or Python) into a standalone desktop application
 that runs on macOS, Windows, and Linux. No web server, no browser tab,
