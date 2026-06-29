@@ -740,6 +740,11 @@ function createWindow() {
       navigate();
     }).catch(function(err) {
       log('error', 'Shinylive server start failed:', err.message);
+      // Reset the singleton so a subsequent selection gets a clean server
+      // with no accumulated duplicate listeners.
+      sharedShinyliveServer.removeAllListeners();
+      sharedShinyliveServer = null;
+      // sharedShinylivePort is already null (start never completed)
     });
   }
 
@@ -880,6 +885,11 @@ function createWindow() {
               };
               currentBackend.on('status', onExit);
               currentBackend.stop();
+            } else {
+              // No per-app backend is running (shinylive uses the shared
+              // server, which is stopped in before-quit). Proceed immediately
+              // instead of waiting the full shutdown_timeout.
+              setTimeout(() => app.quit(), 0);
             }
           });
           mainWindow.loadFile('lifecycle.html');
