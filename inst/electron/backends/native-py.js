@@ -6,7 +6,8 @@ const path = require('path');
 const os = require('os');
 const {
   waitForServer, findAvailablePort, killProcessTree,
-  sortCandidatesByVersion, reportRuntimeCandidates, meetsMinimumVersion, logDebug
+  sortCandidatesByVersion, reportRuntimeCandidates, meetsMinimumVersion, logDebug,
+  resolveRuntimeManifestPath
 } = require('./utils');
 
 class NativePyBackend extends EventEmitter {
@@ -87,7 +88,7 @@ class NativePyBackend extends EventEmitter {
    * @param {object} config - Backend configuration.
    * @returns {string} Path to Python executable.
    */
-  findPython(config) {
+  findPython(config, appPath) {
     this.emit('status', { phase: 'finding_runtime', message: 'Looking for Python...' });
 
     // Check for bundled runtime embedded in the Electron app
@@ -138,8 +139,7 @@ class NativePyBackend extends EventEmitter {
     // 3. Check for auto-downloaded runtime via manifest
     if (config && config.runtime_strategy === 'auto-download') {
       try {
-        const appBasePath = path.join(__dirname, '..');
-        const manifestPath = path.join(appBasePath, 'src', 'app', 'runtime-manifest.json');
+        const manifestPath = resolveRuntimeManifestPath(appPath);
         if (fs.existsSync(manifestPath)) {
           const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
           if (manifest.language === 'python') {
@@ -203,13 +203,12 @@ class NativePyBackend extends EventEmitter {
       startBasePath = unpackedStart;
     }
 
-    let python = this.findPython(config || {});
+    let python = this.findPython(config || {}, appPath);
 
     // For auto-download strategy, download runtime if not found on system
     if (config && config.runtime_strategy === 'auto-download') {
       try {
-        const appBasePath = path.join(__dirname, '..');
-        const manifestPath = path.join(appBasePath, 'src', 'app', 'runtime-manifest.json');
+        const manifestPath = resolveRuntimeManifestPath(appPath);
         if (fs.existsSync(manifestPath)) {
           const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
           if (manifest.language === 'python') {

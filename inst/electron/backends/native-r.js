@@ -6,7 +6,8 @@ const path = require('path');
 const os = require('os');
 const {
   waitForServer, findAvailablePort, killProcessTree,
-  sortCandidatesByVersion, reportRuntimeCandidates, meetsMinimumVersion, logDebug
+  sortCandidatesByVersion, reportRuntimeCandidates, meetsMinimumVersion, logDebug,
+  resolveRuntimeManifestPath
 } = require('./utils');
 
 class NativeRBackend extends EventEmitter {
@@ -109,7 +110,7 @@ class NativeRBackend extends EventEmitter {
    * @param {object} config - Backend configuration.
    * @returns {string} Path to Rscript executable.
    */
-  findRscript(config) {
+  findRscript(config, appPath) {
     this.emit('status', { phase: 'finding_runtime', message: 'Looking for R...' });
 
     // Check for bundled runtime embedded in the Electron app
@@ -156,8 +157,7 @@ class NativeRBackend extends EventEmitter {
     // 3. Check for auto-downloaded runtime via manifest
     if (config && config.runtime_strategy === 'auto-download') {
       try {
-        const appBasePath = path.join(__dirname, '..');
-        const manifestPath = path.join(appBasePath, 'src', 'app', 'runtime-manifest.json');
+        const manifestPath = resolveRuntimeManifestPath(appPath);
         if (fs.existsSync(manifestPath)) {
           const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
           const { findCachedRuntime } = require('./runtime-downloader');
@@ -218,13 +218,12 @@ class NativeRBackend extends EventEmitter {
       appBasePath = unpackedStart;
     }
 
-    let rscript = this.findRscript(config || {});
+    let rscript = this.findRscript(config || {}, appPath);
 
     // For auto-download strategy, download runtime if not found on system
     if (config && config.runtime_strategy === 'auto-download') {
       try {
-        const appBasePath = path.join(__dirname, '..');
-        const manifestPath = path.join(appBasePath, 'src', 'app', 'runtime-manifest.json');
+        const manifestPath = resolveRuntimeManifestPath(appPath);
         if (fs.existsSync(manifestPath)) {
           const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
           const { findCachedRuntime, downloadRuntime } = require('./runtime-downloader');
