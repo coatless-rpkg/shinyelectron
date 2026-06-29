@@ -68,9 +68,21 @@ resolve_brand_yml <- function(output_dir, is_multi_app, apps_manifest) {
   brand <- read_brand_yml(fs::path(output_dir, "src", "app"))
   if (!is.null(brand)) return(brand)
   if (is_multi_app && !is.null(apps_manifest) && length(apps_manifest) > 0) {
-    first_app_path <- fs::path(output_dir, apps_manifest[[1]]$path)
-    if (fs::dir_exists(first_app_path)) {
-      return(read_brand_yml(first_app_path))
+    serve <- apps_manifest[[1]]$serve
+    rel_path <- if (!is.null(serve)) {
+      if (identical(serve$kind, "shinylive")) {
+        fs::path(serve$site, serve$subdir)
+      } else {
+        serve$path
+      }
+    } else {
+      NULL
+    }
+    if (!is.null(rel_path)) {
+      first_app_path <- fs::path(output_dir, rel_path)
+      if (fs::dir_exists(first_app_path)) {
+        return(read_brand_yml(first_app_path))
+      }
     }
   }
   NULL

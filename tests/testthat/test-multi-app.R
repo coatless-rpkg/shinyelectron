@@ -454,3 +454,41 @@ test_that("build_multi_app writes runtime-manifest.json into each auto-download 
   expect_true(fs::file_exists(
     fs::path(output_dir, "src", "apps", "report", "runtime-manifest.json")))
 })
+
+test_that("resolve_brand_yml finds _brand.yml for native serve descriptor", {
+  output_dir <- withr::local_tempdir()
+  brand_dir <- file.path(output_dir, "src", "apps", "dash")
+  dir.create(brand_dir, recursive = TRUE)
+  writeLines("meta:\n  name: Dash", file.path(brand_dir, "_brand.yml"))
+
+  apps_manifest <- list(
+    list(
+      id = "dash",
+      serve = list(kind = "native", path = "src/apps/dash",
+                   runtime_strategy = "system")
+    )
+  )
+
+  result <- resolve_brand_yml(output_dir, TRUE, apps_manifest)
+  expect_false(is.null(result))
+  expect_equal(result$meta$name, "Dash")
+})
+
+test_that("resolve_brand_yml finds _brand.yml for shinylive serve descriptor", {
+  output_dir <- withr::local_tempdir()
+  brand_dir <- file.path(output_dir, "src", "shinylive-site", "viewer")
+  dir.create(brand_dir, recursive = TRUE)
+  writeLines("meta:\n  name: Viewer", file.path(brand_dir, "_brand.yml"))
+
+  apps_manifest <- list(
+    list(
+      id = "viewer",
+      serve = list(kind = "shinylive", site = "src/shinylive-site",
+                   subdir = "viewer")
+    )
+  )
+
+  result <- resolve_brand_yml(output_dir, TRUE, apps_manifest)
+  expect_false(is.null(result))
+  expect_equal(result$meta$name, "Viewer")
+})
