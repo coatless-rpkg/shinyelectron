@@ -4,12 +4,20 @@
 \alias{convert_py_to_shinylive}
 \title{Convert Python Shiny Application to Shinylive}
 \usage{
-convert_py_to_shinylive(appdir, output_dir, overwrite = FALSE, verbose = TRUE)
+convert_py_to_shinylive(
+  appdir,
+  output_dir,
+  subdir = NULL,
+  overwrite = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{appdir}{Character string. Path to the directory containing the Python Shiny application.}
 
 \item{output_dir}{Character string. Path where the converted shinylive app will be saved.}
+
+\item{subdir}{Character or NULL. When set, the app is exported into a \code{<subdir>} subdirectory of \code{output_dir} as an additive shared-site export, preserving existing contents (including a shared \code{shinylive/} asset tree). When NULL (default), a single-app export is performed and an existing \code{output_dir} is removed when \code{overwrite = TRUE}.}
 
 \item{overwrite}{Logical. Whether to overwrite existing output directory. Default is FALSE.}
 

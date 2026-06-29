@@ -5,6 +5,7 @@
 #'
 #' @param appdir Character string. Path to the directory containing the Python Shiny application.
 #' @param output_dir Character string. Path where the converted shinylive app will be saved.
+#' @param subdir Character or NULL. When set, the app is exported into a \code{<subdir>} subdirectory of \code{output_dir} as an additive shared-site export, preserving existing contents (including a shared \code{shinylive/} asset tree). When NULL (default), a single-app export is performed and an existing \code{output_dir} is removed when \code{overwrite = TRUE}.
 #' @param overwrite Logical. Whether to overwrite existing output directory. Default is FALSE.
 #' @param verbose Logical. Whether to display detailed progress information. Default is TRUE.
 #'
@@ -31,7 +32,7 @@
 #' }
 #'
 #' @export
-convert_py_to_shinylive <- function(appdir, output_dir, overwrite = FALSE, verbose = TRUE) {
+convert_py_to_shinylive <- function(appdir, output_dir, subdir = NULL, overwrite = FALSE, verbose = TRUE) {
   validate_directory_exists(appdir, "Application directory")
   validate_python_app_structure(appdir)
 
@@ -41,7 +42,9 @@ convert_py_to_shinylive <- function(appdir, output_dir, overwrite = FALSE, verbo
     cli::cli_alert_info("Output: {.path {output_dir}}")
   }
 
-  if (fs::dir_exists(output_dir)) {
+  # Single-app: enforce/clear the output dir. Shared-site (subdir) exports are
+  # additive across apps, so never wipe an existing site.
+  if (is.null(subdir) && fs::dir_exists(output_dir)) {
     if (!overwrite) {
       cli::cli_abort(c(
         "Output directory already exists: {.path {output_dir}}",
@@ -59,14 +62,15 @@ convert_py_to_shinylive <- function(appdir, output_dir, overwrite = FALSE, verbo
   fs::dir_create(output_dir, recurse = TRUE)
 
   # Prefer the CLI command, fall back to python -m
+  subdir_args <- if (!is.null(subdir)) c("--subdir", subdir) else character(0)
   shinylive_cmd <- Sys.which("shinylive")
   if (nzchar(shinylive_cmd)) {
     cmd <- "shinylive"
-    cmd_args <- c("export", appdir, output_dir)
+    cmd_args <- c("export", appdir, output_dir, subdir_args)
   } else {
     python_cmd <- find_python_command()
     cmd <- python_cmd
-    cmd_args <- c("-m", "shinylive", "export", appdir, output_dir)
+    cmd_args <- c("-m", "shinylive", "export", appdir, output_dir, subdir_args)
   }
 
   if (verbose) {
@@ -95,7 +99,7 @@ convert_py_to_shinylive <- function(appdir, output_dir, overwrite = FALSE, verbo
     }
 
     if (verbose) cli::cli_progress_update(id = pb, set = 2)
-    validate_shinylive_output(output_dir)
+    validate_shinylive_output(output_dir, subdir = subdir)
 
     if (verbose) cli::cli_progress_update(id = pb, set = 3)
 

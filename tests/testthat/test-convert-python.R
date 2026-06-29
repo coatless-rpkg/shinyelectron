@@ -90,3 +90,61 @@ test_that("convert_py_to_shinylive rejects overwrite when dir exists", {
     "already exists"
   )
 })
+
+test_that("convert_py_to_shinylive adds --subdir for multi-app and is additive", {
+  tmpdir <- tempfile(); dir.create(tmpdir)
+  writeLines("from shiny import App", file.path(tmpdir, "app.py"))
+  outdir <- tempfile("site-"); dir.create(outdir)
+  writeLines("keep", file.path(outdir, "sentinel.txt"))
+  on.exit(unlink(c(tmpdir, outdir), recursive = TRUE))
+
+  mockery::stub(convert_py_to_shinylive, "validate_python_available",
+                function() invisible(TRUE))
+  mockery::stub(convert_py_to_shinylive, "validate_python_shinylive_installed",
+                function() invisible(TRUE))
+  mockery::stub(convert_py_to_shinylive, "Sys.which",
+                function(cmd) if (cmd == "shinylive") "/usr/bin/shinylive" else "")
+
+  run_args <- NULL
+  mockery::stub(convert_py_to_shinylive, "processx::run", function(command, args, ...) {
+    run_args <<- args
+    dir.create(file.path(outdir, "shinylive"), showWarnings = FALSE)
+    dir.create(file.path(outdir, "beta"), recursive = TRUE, showWarnings = FALSE)
+    writeLines("<html></html>", file.path(outdir, "beta", "index.html"))
+    list(status = 0, stdout = "", stderr = "")
+  })
+
+  convert_py_to_shinylive(tmpdir, outdir, subdir = "beta", verbose = FALSE)
+
+  expect_true("--subdir" %in% run_args)
+  idx <- which(run_args == "--subdir")
+  expect_equal(run_args[idx + 1], "beta")
+  expect_true(file.exists(file.path(outdir, "sentinel.txt"))) # additive, no unlink
+})
+
+test_that("convert_py_to_shinylive omits --subdir for single-app", {
+  tmpdir <- tempfile(); dir.create(tmpdir)
+  writeLines("from shiny import App", file.path(tmpdir, "app.py"))
+  outdir <- tempfile()
+  on.exit(unlink(c(tmpdir, outdir), recursive = TRUE))
+
+  mockery::stub(convert_py_to_shinylive, "validate_python_available",
+                function() invisible(TRUE))
+  mockery::stub(convert_py_to_shinylive, "validate_python_shinylive_installed",
+                function() invisible(TRUE))
+  mockery::stub(convert_py_to_shinylive, "Sys.which",
+                function(cmd) if (cmd == "shinylive") "/usr/bin/shinylive" else "")
+
+  run_args <- NULL
+  mockery::stub(convert_py_to_shinylive, "processx::run", function(command, args, ...) {
+    run_args <<- args
+    dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
+    writeLines("<html></html>", file.path(outdir, "index.html"))
+    dir.create(file.path(outdir, "shinylive"), showWarnings = FALSE)
+    list(status = 0, stdout = "", stderr = "")
+  })
+
+  convert_py_to_shinylive(tmpdir, outdir, verbose = FALSE)
+
+  expect_false("--subdir" %in% run_args)
+})
