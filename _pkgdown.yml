@@ -2,6 +2,10 @@ url: https://r-pkg.thecoatlessprofessor.com/shinyelectron/
 
 template:
   bootstrap: 5
+  bslib:
+    primary: "#2563eb"
+    base_font: {google: "Inter"}
+    code_font: {google: "JetBrains Mono"}
 
 navbar:
   structure:

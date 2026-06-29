@@ -17,6 +17,8 @@ All five strategies work with both `r-shiny` and `py-shiny`. `shinylive` is the 
 
 Set the strategy either as the `runtime_strategy` argument to `export()` or as `build.runtime_strategy` in `_shinyelectron.yml`. Function arguments override the config file, so passing `runtime_strategy = "bundled"` wins even if the config says something else.
 
+In a multi-app suite, each app may set its own `runtime_strategy`, subject to one rule: each language uses a single native strategy across the suite. See the [Multi-App Suites](multi-app-suites.html) guide.
+
 ## Picking a strategy
 
 The matrix below lays out what each strategy ships in the exported bundle, what happens on first launch, and how the pieces fit together once the app is running. Start here if you want the shape of each option at a glance.
@@ -162,11 +164,11 @@ export(
 ### The launch flow
 
 1. `export()` packages the app without a runtime and includes the `runtime-downloader.js` backend.
-2. On first launch, the downloader checks a local cache directory. If it finds no runtime, it downloads and extracts a portable build.
+2. On first launch, the downloader checks a local cache directory. If it finds no runtime, it downloads a portable build, verifies it against the SHA-256 checksum recorded in the runtime manifest at build time, and extracts it.
 3. The runtime is cached per-user at `~/.shinyelectron/runtimes/` on all platforms.
 4. Subsequent launches skip the download and reuse the cached runtime.
 
-The download sources are the same ones bundled uses: portable-r for R, python-build-standalone for Python.
+The download sources are the same ones bundled uses: portable-r for R, python-build-standalone for Python. Downloads are SHA-256 verified before extraction; see [Security Considerations](security.html) for details.
 
 ### Tradeoffs
 

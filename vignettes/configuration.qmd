@@ -283,6 +283,8 @@ Each runtime has a `version` key under its own sub-section. Three values are acc
 
 The maintained pins are updated with each shinyelectron release. Using `null` is recommended for most projects: you get a version known to work, and you can pin explicitly when you need a specific release.
 
+A custom version must correspond to a build the upstream source actually publishes. The maintained pin resolves offline; other versions are resolved against the upstream releases at build time (portable-r for R, python-build-standalone for Python), so a very old patch version may no longer be available. If a pin cannot be resolved, the build aborts with a message pointing you back to the maintained default.
+
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `r.version` | string | `null` | R version for `bundled`, `auto-download`, and `container` strategies |
