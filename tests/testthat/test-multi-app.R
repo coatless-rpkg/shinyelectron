@@ -325,3 +325,100 @@ test_that("export rejects a one-app apps: suite with a clear error", {
   )
   expect_match(conditionMessage(err), "2 apps", fixed = TRUE)
 })
+
+test_that("build_multi_app embeds the R runtime once with the unioned package set", {
+  skip_if_not_installed("mockery")
+
+  apps_dir <- withr::local_tempdir()
+  output_dir <- file.path(withr::local_tempdir(), "electron-app")
+
+  config <- list(
+    build = list(type = "r-shiny", runtime_strategy = "bundled"),
+    apps = list(
+      list(id = "dash",   name = "Dash",   path = "./apps/dash"),
+      list(id = "report", name = "Report", path = "./apps/report")
+    )
+  )
+  apps_manifest <- list(
+    list(id = "dash", name = "Dash", path = "src/apps/dash",
+         type = "r-shiny", runtime_strategy = "bundled"),
+    list(id = "report", name = "Report", path = "src/apps/report",
+         type = "r-shiny", runtime_strategy = "bundled")
+  )
+
+  # Direct union of each app's packages, deliberately unsorted with a duplicate.
+  union_pkgs <- c("shiny", "bslib", "shiny", "DT")
+
+  captured <- NULL
+  n_calls <- 0
+  mockery::stub(build_multi_app, "embed_r_runtime",
+    function(output_dir, packages, repos, version, platform, arch, verbose = TRUE) {
+      captured <<- packages
+      n_calls <<- n_calls + 1
+      invisible(TRUE)
+    })
+  mockery::stub(build_multi_app, "validate_node_npm", function() invisible(TRUE))
+  mockery::stub(build_multi_app, "setup_electron_project", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "process_templates", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "install_npm_dependencies", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "build_for_platforms", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "validate_build_output", function(...) invisible(TRUE))
+
+  build_multi_app(
+    apps_dir = apps_dir, output_dir = output_dir, app_name = "Suite",
+    apps_manifest = apps_manifest, default_type = "r-shiny",
+    runtime_strategy = "bundled", sign = FALSE,
+    platform = "mac", arch = "arm64", icon = NULL, config = config,
+    overwrite = TRUE, verbose = FALSE,
+    r_packages = union_pkgs
+  )
+
+  expect_equal(n_calls, 1)
+  expect_equal(captured, sort(unique(union_pkgs)))
+})
+
+test_that("build_multi_app writes runtime-manifest.json into each auto-download app dir", {
+  skip_if_not_installed("mockery")
+
+  apps_dir <- withr::local_tempdir()
+  dir.create(file.path(apps_dir, "dash"))
+  dir.create(file.path(apps_dir, "report"))
+  writeLines("library(shiny)", file.path(apps_dir, "dash", "app.R"))
+  writeLines("library(shiny)", file.path(apps_dir, "report", "app.R"))
+
+  output_dir <- file.path(withr::local_tempdir(), "electron-app")
+
+  config <- list(
+    build = list(type = "r-shiny", runtime_strategy = "auto-download"),
+    apps = list(
+      list(id = "dash",   name = "Dash",   path = "./apps/dash"),
+      list(id = "report", name = "Report", path = "./apps/report")
+    )
+  )
+  apps_manifest <- list(
+    list(id = "dash", name = "Dash", path = "src/apps/dash",
+         type = "r-shiny", runtime_strategy = "auto-download"),
+    list(id = "report", name = "Report", path = "src/apps/report",
+         type = "r-shiny", runtime_strategy = "auto-download")
+  )
+
+  mockery::stub(build_multi_app, "validate_node_npm", function() invisible(TRUE))
+  mockery::stub(build_multi_app, "setup_electron_project", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "process_templates", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "install_npm_dependencies", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "build_for_platforms", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "validate_build_output", function(...) invisible(TRUE))
+
+  build_multi_app(
+    apps_dir = apps_dir, output_dir = output_dir, app_name = "Suite",
+    apps_manifest = apps_manifest, default_type = "r-shiny",
+    runtime_strategy = "auto-download", sign = FALSE,
+    platform = "mac", arch = "arm64", icon = NULL, config = config,
+    overwrite = TRUE, verbose = FALSE
+  )
+
+  expect_true(fs::file_exists(
+    fs::path(output_dir, "src", "apps", "dash", "runtime-manifest.json")))
+  expect_true(fs::file_exists(
+    fs::path(output_dir, "src", "apps", "report", "runtime-manifest.json")))
+})

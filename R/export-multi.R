@@ -79,6 +79,14 @@ export_multi_app <- function(appdir, destdir, config,
 
     apps_manifest <- list()
 
+    # Accumulate the per-language UNION of DIRECT package sets. embed_*_runtime
+    # resolves the recursive tree internally, so the union of direct sets is the
+    # right input (R: each app's detected deps; Python: the shared suite list).
+    r_union_packages <- character(0)
+    r_union_repos <- NULL
+    py_union_packages <- character(0)
+    py_union_index_urls <- NULL
+
     for (app_entry in config$apps) {
       app_id <- app_entry$id
       app_src <- fs::path(appdir, app_entry$path)
@@ -116,6 +124,14 @@ export_multi_app <- function(appdir, destdir, config,
             index_urls = dep_info$index_urls
           )
           writeLines(manifest, fs::path(app_dest, "dependencies.json"))
+
+          if (grepl("^r-", this_type)) {
+            r_union_packages <- c(r_union_packages, unlist(dep_info$packages))
+            if (is.null(r_union_repos)) r_union_repos <- dep_info$repos
+          } else {
+            py_union_packages <- c(py_union_packages, unlist(dep_info$packages))
+            if (is.null(py_union_index_urls)) py_union_index_urls <- dep_info$index_urls
+          }
         }
       }
 
@@ -156,7 +172,11 @@ export_multi_app <- function(appdir, destdir, config,
         icon = icon,
         config = config,
         overwrite = TRUE,
-        verbose = verbose
+        verbose = verbose,
+        r_packages = sort(unique(r_union_packages)),
+        r_repos = r_union_repos,
+        py_packages = sort(unique(py_union_packages)),
+        py_index_urls = py_union_index_urls
       )
 
       result$electron_app <- built_app_dir
@@ -212,7 +232,9 @@ export_multi_app <- function(appdir, destdir, config,
 build_multi_app <- function(apps_dir, output_dir, app_name,
                              apps_manifest, default_type,
                              runtime_strategy, sign, platform, arch,
-                             icon, config, overwrite, verbose) {
+                             icon, config, overwrite, verbose,
+                             r_packages = NULL, r_repos = NULL,
+                             py_packages = NULL, py_index_urls = NULL) {
 
   if (is.null(platform)) platform <- detect_current_platform()
   if (is.null(arch)) arch <- detect_current_arch()
@@ -257,6 +279,49 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
     copy_dir_contents(app_id_dir, fs::path(src_apps_dir, app_id))
   }
 
+  # Embed native runtimes once per bundled language. Call unconditionally for a
+  # bundled language even when the union package set is empty: shipping no
+  # runtime/<lang> would break the suite-wide bundled detection in the backends.
+  r_bundled  <- any(grepl("^r-",  app_types) & app_strategies == "bundled")
+  py_bundled <- any(grepl("^py-", app_types) & app_strategies == "bundled")
+
+  if (r_bundled) {
+    if (verbose) cli::cli_alert_info("Embedding R runtime for bundled apps...")
+    embed_r_runtime(
+      output_dir = output_dir,
+      packages = sort(unique(r_packages)),
+      repos = r_repos %||% SHINYELECTRON_DEFAULTS$dependencies$r$repos,
+      version = resolve_runtime_version("r", config),
+      platform = platform[1],
+      arch = arch[1],
+      verbose = verbose
+    )
+  }
+  if (py_bundled) {
+    if (verbose) cli::cli_alert_info("Embedding Python runtime for bundled apps...")
+    embed_python_runtime(
+      output_dir = output_dir,
+      packages = sort(unique(py_packages)),
+      index_urls = py_index_urls %||% SHINYELECTRON_DEFAULTS$dependencies$python$index_urls,
+      version = resolve_runtime_version("python", config),
+      platform = platform[1],
+      arch = arch[1],
+      verbose = verbose
+    )
+  }
+
+  # Auto-download native apps read runtime-manifest.json from their OWN app dir
+  # (src/apps/<id>/runtime-manifest.json), so write one per such app.
+  for (i in seq_along(config$apps)) {
+    if (app_strategies[i] == "auto-download" && grepl("^(r|py)-", app_types[i])) {
+      app_id <- config$apps[[i]]$id
+      write_runtime_manifest(
+        fs::path(src_apps_dir, app_id),
+        app_types[i], platform, arch, config, verbose = verbose
+      )
+    }
+  }
+
   # Write apps-manifest.json
   manifest_data <- list(
     schema_version = MANIFEST_SCHEMA_VERSION,
@@ -282,6 +347,9 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
 
   # Build for platforms
   build_for_platforms(output_dir, platform, arch, sign = sign, verbose = verbose)
+
+  # Validate the assembled build output (mirrors the single-app pipeline).
+  validate_build_output(output_dir, platform)
 
   return(fs::path_abs(output_dir))
 }
