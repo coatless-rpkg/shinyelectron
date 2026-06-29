@@ -54,6 +54,10 @@ export_multi_app <- function(appdir, destdir, config,
     apps_dir <- fs::path(destdir, "apps")
     fs::dir_create(apps_dir)
 
+    # Shinylive apps share ONE static site (one WebR/Pyodide asset tree) under
+    # destdir/shinylive-site, each app exported into its own <id> subdir.
+    shinylive_site_dir <- fs::path(destdir, "shinylive-site")
+
     # For Python multi-app suites, read dependencies from the suite root
     # (requirements.txt / pyproject.toml). All apps share one runtime/venv,
     # so a single global dep list is the right abstraction.
@@ -98,12 +102,14 @@ export_multi_app <- function(appdir, destdir, config,
 
       # Convert or copy based on strategy
       if (this_strategy == "shinylive") {
+        # Additive shared-site export: each app lands at shinylive-site/<id>,
+        # all sharing shinylive-site/shinylive/ (one runtime copy).
         if (this_type == "r-shiny") {
-          convert_shiny_to_shinylive(appdir = app_src, output_dir = app_dest,
-                                     overwrite = TRUE, verbose = verbose)
+          convert_shiny_to_shinylive(appdir = app_src, output_dir = shinylive_site_dir,
+                                     subdir = app_id, verbose = verbose)
         } else {
-          convert_py_to_shinylive(appdir = app_src, output_dir = app_dest,
-                                  overwrite = TRUE, verbose = verbose)
+          convert_py_to_shinylive(appdir = app_src, output_dir = shinylive_site_dir,
+                                  subdir = app_id, verbose = verbose)
         }
       } else {
         copy_dir_contents(app_src, app_dest)
@@ -184,6 +190,7 @@ export_multi_app <- function(appdir, destdir, config,
 
       built_app_dir <- build_multi_app(
         apps_dir = apps_dir,
+        shinylive_site_dir = shinylive_site_dir,
         output_dir = electron_dir,
         app_name = app_name,
         apps_manifest = apps_manifest,
@@ -257,7 +264,8 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
                              runtime_strategy, sign, platform, arch,
                              icon, config, overwrite, verbose,
                              r_packages = NULL, r_repos = NULL,
-                             py_packages = NULL, py_index_urls = NULL) {
+                             py_packages = NULL, py_index_urls = NULL,
+                             shinylive_site_dir = NULL) {
 
   if (is.null(platform)) platform <- detect_current_platform()
   if (is.null(arch)) arch <- detect_current_arch()
@@ -293,13 +301,27 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
   # Setup project structure
   setup_electron_project(output_dir, app_name, default_type, verbose = verbose)
 
-  # Copy all apps to src/apps/
+  # Copy native/container apps to src/apps/. Shinylive apps are NOT staged in
+  # apps_dir (they live in shinylive_site_dir); we additionally skip any
+  # shinylive id defensively so the per-app WASM duplication never reappears.
   src_apps_dir <- fs::path(output_dir, "src", "apps")
   fs::dir_create(src_apps_dir, recurse = TRUE)
 
+  shinylive_ids <- vapply(apps_manifest, function(a) {
+    if (!is.null(a$serve) && identical(a$serve$kind, "shinylive")) a$id else NA_character_
+  }, character(1))
+  shinylive_ids <- shinylive_ids[!is.na(shinylive_ids)]
+
   for (app_id_dir in list.dirs(apps_dir, recursive = FALSE, full.names = TRUE)) {
     app_id <- basename(app_id_dir)
+    if (app_id %in% shinylive_ids) next
     copy_dir_contents(app_id_dir, fs::path(src_apps_dir, app_id))
+  }
+
+  # Copy the shared shinylive site once, preserving the single shinylive/ asset
+  # tree shared by every sub-app.
+  if (!is.null(shinylive_site_dir) && fs::dir_exists(shinylive_site_dir)) {
+    copy_dir_contents(shinylive_site_dir, fs::path(output_dir, "src", "shinylive-site"))
   }
 
   # Embed native runtimes once per bundled language. Call unconditionally for a

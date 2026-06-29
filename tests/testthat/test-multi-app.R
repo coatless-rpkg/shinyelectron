@@ -492,3 +492,73 @@ test_that("resolve_brand_yml finds _brand.yml for shinylive serve descriptor", {
   expect_false(is.null(result))
   expect_equal(result$meta$name, "Viewer")
 })
+
+test_that("export_multi_app stages one shared shinylive site and build copies it once", {
+  skip_if_not_installed("mockery")
+
+  appdir <- withr::local_tempdir()
+  dir.create(file.path(appdir, "apps", "alpha"), recursive = TRUE)
+  dir.create(file.path(appdir, "apps", "beta"), recursive = TRUE)
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "apps", "alpha", "app.R"))
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "apps", "beta", "app.R"))
+
+  yaml::write_yaml(list(
+    app = list(name = "Suite", version = "1.0.0"),
+    build = list(type = "r-shiny", runtime_strategy = "shinylive"),
+    apps = list(
+      list(id = "alpha", name = "Alpha", path = "./apps/alpha"),
+      list(id = "beta",  name = "Beta",  path = "./apps/beta")
+    )
+  ), file.path(appdir, "_shinyelectron.yml"))
+
+  config  <- read_config(appdir)
+  destdir <- withr::local_tempdir()
+
+  # Fake the converter: write the per-app subdir entry plus a SHARED, additive
+  # shinylive/ asset tree at the site root (the subdir export model).
+  fake_convert <- function(appdir, output_dir, subdir = NULL,
+                           overwrite = FALSE, verbose = TRUE) {
+    fs::dir_create(output_dir, recurse = TRUE)
+    fs::dir_create(fs::path(output_dir, "shinylive"), recurse = TRUE)
+    writeLines("asset", fs::path(output_dir, "shinylive", "webr.js"))
+    fs::dir_create(fs::path(output_dir, subdir), recurse = TRUE)
+    writeLines("<html></html>", fs::path(output_dir, subdir, "index.html"))
+    fs::path_abs(output_dir)
+  }
+
+  testthat::local_mocked_bindings(
+    convert_shiny_to_shinylive = fake_convert,
+    validate_node_npm        = function(...) invisible(TRUE),
+    setup_electron_project   = function(output_dir, ...) {
+      fs::dir_create(fs::path(output_dir, "src"), recurse = TRUE); invisible(output_dir)
+    },
+    process_templates        = function(...) invisible(TRUE),
+    install_npm_dependencies = function(...) invisible(TRUE),
+    build_for_platforms      = function(...) invisible(TRUE)
+  )
+
+  result <- export_multi_app(
+    appdir = appdir, destdir = destdir, config = config,
+    app_name = "Suite", overwrite = TRUE, build = TRUE, verbose = FALSE
+  )
+  out <- result$electron_app
+
+  # Exactly one shared asset tree + two app subdirs under the shared site.
+  expect_true(fs::dir_exists(fs::path(out, "src", "shinylive-site", "shinylive")))
+  expect_true(fs::dir_exists(fs::path(out, "src", "shinylive-site", "alpha")))
+  expect_true(fs::dir_exists(fs::path(out, "src", "shinylive-site", "beta")))
+  expect_true(fs::file_exists(fs::path(out, "src", "shinylive-site", "alpha", "index.html")))
+
+  # No per-app shinylive copies leaked into src/apps/<id> (Defect 2 stays fixed).
+  expect_false(fs::dir_exists(fs::path(out, "src", "apps", "alpha")))
+  expect_false(fs::dir_exists(fs::path(out, "src", "apps", "beta")))
+
+  # Serve descriptors, order preserved, no stray top-level path.
+  expect_equal(result$apps[[1]]$serve$kind, "shinylive")
+  expect_equal(result$apps[[1]]$serve$site, "src/shinylive-site")
+  expect_equal(result$apps[[1]]$serve$subdir, "alpha")
+  expect_equal(result$apps[[2]]$serve$subdir, "beta")
+  expect_null(result$apps[[1]]$path)
+})

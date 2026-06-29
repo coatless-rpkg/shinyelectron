@@ -21,7 +21,8 @@ build_multi_app(
   r_packages = NULL,
   r_repos = NULL,
   py_packages = NULL,
-  py_index_urls = NULL
+  py_index_urls = NULL,
+  shinylive_site_dir = NULL
 )
 }
 \description{
