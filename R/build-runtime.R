@@ -178,3 +178,74 @@ embed_r_runtime <- function(output_dir, packages, repos, version,
   if (verbose) cli::cli_alert_success("Embedded R runtime")
   invisible(runtime_dest)
 }
+
+#' Embed a portable Python runtime into a bundled Electron build
+#'
+#' Behavior-preserving extraction of the Python bundled-embedding block from
+#' [build_electron_app()]. ALWAYS installs + copies the interpreter so the shared
+#' `runtime/Python` path exists for suite-wide bundled detection; only the pip
+#' install is gated on a non-empty `packages` set. Warn-only (not abort) on pip
+#' failure; the result is not verified, matching the original block. Reproduces
+#' the three `output_dir`-derived paths and the unix-only fallback glob so the
+#' `native-py.js` `sys.path` expectations hold.
+#'
+#' @param output_dir Character. The Electron app output directory.
+#' @param packages Character vector. Python package specs (may be empty/NULL).
+#' @param index_urls Character vector. PyPI-like index URLs.
+#' @param version Character. Resolved Python version (non-NULL from callers).
+#' @param platform Character scalar. Target platform.
+#' @param arch Character scalar. Target architecture.
+#' @param verbose Logical. Whether to display progress.
+#' @return Invisibly, the path to the embedded `runtime/Python` directory.
+#' @keywords internal
+embed_python_runtime <- function(output_dir, packages, index_urls, version,
+                                 platform, arch, verbose = TRUE) {
+  if (verbose) cli::cli_alert_info("Embedding Python runtime for bundled strategy...")
+
+  # Resolve the effective version ONCE and pass it to both install_python and
+  # python_executable.
+  effective_version <- version %||% SHINYELECTRON_DEFAULTS$runtime_versions$python$version
+
+  py_path <- install_python(
+    version = effective_version,
+    platform = platform,
+    arch = arch,
+    verbose = verbose
+  )
+
+  runtime_dest <- fs::path(output_dir, "runtime", "Python")
+  copy_dir_contents(py_path, runtime_dest)
+
+  # Install packages using the BUNDLED Python (not system Python) so
+  # C extensions match the bundled Python version's ABI
+  bundled_python <- python_executable(effective_version, platform, arch)
+  if (is.null(bundled_python)) {
+    # Fall back to searching the copied runtime
+    bundled_python <- Sys.glob(fs::path(runtime_dest, "*", "python", "bin", "python3"))[1]
+  }
+
+  if (!is.null(bundled_python) && length(packages) > 0) {
+    index_url <- unlist(index_urls)[1] %||% "https://pypi.org/simple"
+    pip_args <- c("-m", "pip", "install", "--only-binary", ":all:",
+                 "-i", index_url,
+                 "--target", fs::path(runtime_dest, "lib", "python", "site-packages"),
+                 unlist(packages))
+    if (verbose) {
+      cli::cli_alert_info("Installing Python packages using bundled Python...")
+    }
+    pip_result <- processx::run(
+      bundled_python, pip_args,
+      echo = verbose, spinner = verbose,
+      error_on_status = FALSE, timeout = 600
+    )
+    if (pip_result$status != 0) {
+      cli::cli_warn(c(
+        "Failed to install some Python packages",
+        "x" = "Error: {pip_result$stderr}"
+      ))
+    }
+  }
+
+  if (verbose) cli::cli_alert_success("Embedded Python runtime")
+  invisible(runtime_dest)
+}

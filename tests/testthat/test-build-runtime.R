@@ -105,3 +105,100 @@ test_that("embed_r_runtime embeds the interpreter even when packages is empty", 
   expect_true(copy_called)        # runtime still copied
   expect_false(run_called)        # install.packages NOT invoked
 })
+
+# --- Python runtime embedding ---
+
+test_that("embed_python_runtime targets bundled site-packages and embeds unconditionally", {
+  skip_if_not_installed("mockery")
+  out <- withr::local_tempdir()
+
+  install_called <- FALSE
+  mockery::stub(embed_python_runtime, "install_python", function(version, platform, arch, verbose) {
+    install_called <<- TRUE
+    fs::path(out, "cached-py")
+  })
+  copy_dst <- NULL
+  mockery::stub(embed_python_runtime, "copy_dir_contents", function(src, dst) {
+    copy_dst <<- dst
+    fs::dir_create(dst, recurse = TRUE)
+    invisible(dst)
+  })
+  mockery::stub(embed_python_runtime, "python_executable",
+                function(version, platform, arch) fs::path(out, "cached-py", "bin", "python3"))
+
+  pip_args <- NULL
+  mockery::stub(embed_python_runtime, "processx::run", function(command, args, ...) {
+    pip_args <<- args
+    list(status = 0, stdout = "", stderr = "")
+  })
+
+  embed_python_runtime(
+    output_dir = out,
+    packages = c("shiny", "pandas"),
+    index_urls = "https://pypi.org/simple",
+    version = "3.14.6",
+    platform = "mac",
+    arch = "arm64",
+    verbose = FALSE
+  )
+
+  expect_true(install_called)
+  expect_equal(copy_dst, fs::path(out, "runtime", "Python"))
+
+  target_idx <- which(pip_args == "--target")
+  expect_length(target_idx, 1)
+  expect_equal(
+    pip_args[[target_idx + 1]],
+    as.character(fs::path(out, "runtime", "Python", "lib", "python", "site-packages"))
+  )
+  expect_true(all(c("shiny", "pandas") %in% pip_args))
+})
+
+test_that("embed_python_runtime warns (does not abort) when pip fails", {
+  skip_if_not_installed("mockery")
+  out <- withr::local_tempdir()
+  mockery::stub(embed_python_runtime, "install_python", function(...) fs::path(out, "cached-py"))
+  mockery::stub(embed_python_runtime, "copy_dir_contents", function(src, dst) {
+    fs::dir_create(dst, recurse = TRUE); invisible(dst)
+  })
+  mockery::stub(embed_python_runtime, "python_executable",
+                function(...) fs::path(out, "cached-py", "bin", "python3"))
+  mockery::stub(embed_python_runtime, "processx::run",
+                function(...) list(status = 1, stdout = "", stderr = "boom"))
+
+  expect_warning(
+    embed_python_runtime(
+      output_dir = out, packages = "shiny", index_urls = "https://pypi.org/simple",
+      version = "3.14.6", platform = "mac", arch = "arm64", verbose = FALSE
+    ),
+    "Failed to install some Python packages"
+  )
+})
+
+test_that("embed_python_runtime embeds the interpreter even when packages is empty", {
+  skip_if_not_installed("mockery")
+  out <- withr::local_tempdir()
+  install_called <- FALSE
+  mockery::stub(embed_python_runtime, "install_python", function(...) {
+    install_called <<- TRUE; fs::path(out, "cached-py")
+  })
+  copy_called <- FALSE
+  mockery::stub(embed_python_runtime, "copy_dir_contents", function(src, dst) {
+    copy_called <<- TRUE; fs::dir_create(dst, recurse = TRUE); invisible(dst)
+  })
+  mockery::stub(embed_python_runtime, "python_executable",
+                function(...) fs::path(out, "cached-py", "bin", "python3"))
+  run_called <- FALSE
+  mockery::stub(embed_python_runtime, "processx::run", function(...) {
+    run_called <<- TRUE; list(status = 0, stdout = "", stderr = "")
+  })
+
+  embed_python_runtime(
+    output_dir = out, packages = character(0), index_urls = "https://pypi.org/simple",
+    version = "3.14.6", platform = "mac", arch = "arm64", verbose = FALSE
+  )
+
+  expect_true(install_called)
+  expect_true(copy_called)
+  expect_false(run_called)   # pip install NOT invoked
+})
