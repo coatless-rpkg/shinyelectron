@@ -570,21 +570,30 @@ function createWindow() {
   // select_app and retry IPC actions so retry re-attempts the SAME app
   // rather than the single-app defaults.
   function startSelectedApp(appId) {
-    // Stop current backend and purge all listeners (status, error,
-    // install-packages, runtime-selected) to prevent dangling handlers
+    var selectedApp = appsManifest && appsManifest.apps.find(function(a) { return a.id === appId; });
+    if (!selectedApp) return;
+
+    // Derive the serve descriptor defensively so an absent/older apps-manifest
+    // (no `serve`) degrades to native dispatch instead of throwing. The per-app
+    // runtime_strategy comes from the serve descriptor when present.
+    var serve = selectedApp.serve || {};
+    var serveKind = serve.kind || (
+      selectedApp.runtime_strategy === 'shinylive' ? 'shinylive' :
+      (selectedApp.runtime_strategy === 'container' ? 'container' : 'native')
+    );
+    var serveStrategy = serve.runtime_strategy || selectedApp.runtime_strategy || appsManifest.runtime_strategy;
+
+    // Stop the outgoing backend and purge all listeners (status, error,
+    // install-packages, runtime-selected) to prevent dangling handlers.
     if (currentBackend) {
       currentBackend.removeAllListeners();
       currentBackend.stop();
     }
 
-    var selectedApp = appsManifest && appsManifest.apps.find(function(a) { return a.id === appId; });
-    if (!selectedApp) return;
-
-    // Load the correct backend for this app, preferring per-app
-    // runtime_strategy when present (mixed-strategy suites).
-    var appStrategy = selectedApp.runtime_strategy || appsManifest.runtime_strategy;
+    // Load the correct backend for this app, keyed on the resolved per-app
+    // runtime strategy (mixed-strategy suites).
     var appType = selectedApp.type || appsManifest.default_type;
-    currentBackend = getBackendForApp(appType, appStrategy);
+    currentBackend = getBackendForApp(appType, serveStrategy);
 
     // Forward status to lifecycle.html and track running state (so multi-app
     // builds get the same quit-confirmation / shutdown UI as single-app).
@@ -626,8 +635,9 @@ function createWindow() {
     // Show lifecycle page during startup
     mainWindow.loadFile('lifecycle.html');
 
-    // Resolve the app path (ASAR-aware)
-    var selectedAppPath = path.join(__dirname, selectedApp.path);
+    // Resolve the app path (ASAR-aware). Prefer the serve descriptor's
+    // path/site; fall back to the legacy top-level path for older manifests.
+    var selectedAppPath = path.join(__dirname, serve.path || serve.site || selectedApp.path);
     var unpackedAppPath = selectedAppPath.replace('app.asar', 'app.asar.unpacked');
     if (unpackedAppPath !== selectedAppPath && fs.existsSync(unpackedAppPath)) {
       selectedAppPath = unpackedAppPath;
@@ -641,7 +651,8 @@ function createWindow() {
       port: port,
       config: Object.assign({}, {{{backend_config_json}}}, {
         app_type: appType,
-        app_id: selectedApp.id
+        app_id: selectedApp.id,
+        runtime_strategy: serveStrategy
       })
     }).then(function(result) {
       actualPort = result.port;
