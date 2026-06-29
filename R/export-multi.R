@@ -131,12 +131,14 @@ export_multi_app <- function(appdir, destdir, config,
           )
           writeLines(manifest, fs::path(app_dest, "dependencies.json"))
 
-          if (grepl("^r-", this_type)) {
-            r_union_packages <- c(r_union_packages, unlist(dep_info$packages))
-            if (is.null(r_union_repos)) r_union_repos <- dep_info$repos
-          } else {
-            py_union_packages <- c(py_union_packages, unlist(dep_info$packages))
-            if (is.null(py_union_index_urls)) py_union_index_urls <- dep_info$index_urls
+          if (this_strategy == "bundled") {
+            if (grepl("^r-", this_type)) {
+              r_union_packages <- c(r_union_packages, unlist(dep_info$packages))
+              if (is.null(r_union_repos)) r_union_repos <- dep_info$repos
+            } else {
+              py_union_packages <- c(py_union_packages, unlist(dep_info$packages))
+              if (is.null(py_union_index_urls)) py_union_index_urls <- dep_info$index_urls
+            }
           }
         }
       }

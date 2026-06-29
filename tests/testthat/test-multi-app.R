@@ -562,3 +562,86 @@ test_that("export_multi_app stages one shared shinylive site and build copies it
   expect_equal(result$apps[[2]]$serve$subdir, "beta")
   expect_null(result$apps[[1]]$path)
 })
+
+# --- Bundled-union scoping bug (container packages must not reach embed_r_runtime) ---
+
+test_that("export_multi_app does not include container-app packages in bundled embed", {
+  # Fixture: two R apps -- one bundled, one container. The bundled app declares
+  # pkgA; the container app declares pkgB. After the fix, embed_r_runtime must
+  # receive only pkgA.  Before the fix it received both, because the union
+  # accumulation was gated on app TYPE not app STRATEGY.
+
+  appdir <- withr::local_tempdir()
+  dir.create(file.path(appdir, "apps", "rbundled"), recursive = TRUE)
+  dir.create(file.path(appdir, "apps", "rcontainer"), recursive = TRUE)
+  writeLines(
+    "library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+    file.path(appdir, "apps", "rbundled", "app.R")
+  )
+  writeLines(
+    "library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+    file.path(appdir, "apps", "rcontainer", "app.R")
+  )
+
+  config <- list(
+    app  = list(name = "Suite", version = "1.0.0"),
+    build = list(type = "r-shiny", runtime_strategy = "bundled"),
+    apps = list(
+      list(id = "rbundled",   name = "Bundled App",   path = "./apps/rbundled"),
+      list(id = "rcontainer", name = "Container App", path = "./apps/rcontainer",
+           runtime_strategy = "container")
+    )
+  )
+
+  destdir <- withr::local_tempdir()
+  captured_packages <- NULL
+
+  local_mocked_bindings(
+    # Controlled dependency resolution: bundled app gets pkgA, container gets pkgB.
+    resolve_app_dependencies = function(appdir, app_type, runtime_strategy, config) {
+      if (identical(runtime_strategy, "bundled")) {
+        list(language = "r", packages = c("pkgA"), repos = list())
+      } else {
+        list(language = "r", packages = c("pkgB"), repos = list())
+      }
+    },
+    # Avoid network calls inside generate_dependency_manifest (query_sysreqs).
+    generate_dependency_manifest = function(packages, language,
+                                            repos = NULL, index_urls = NULL) {
+      '{"schema_version":"2","language":"r","packages":[]}'
+    },
+    # Capture what embed_r_runtime receives.
+    embed_r_runtime = function(output_dir, packages, repos, version,
+                               platform, arch, verbose = TRUE) {
+      captured_packages <<- packages
+      invisible(TRUE)
+    },
+    # Stub the heavy build-pipeline steps that require npm / Electron.
+    validate_node_npm        = function(...) invisible(TRUE),
+    setup_electron_project   = function(output_dir, ...) {
+      fs::dir_create(fs::path(output_dir, "src"), recurse = TRUE)
+      invisible(output_dir)
+    },
+    process_templates        = function(...) invisible(TRUE),
+    install_npm_dependencies = function(...) invisible(TRUE),
+    build_for_platforms      = function(...) invisible(TRUE),
+    validate_build_output    = function(...) invisible(TRUE)
+  )
+
+  export_multi_app(
+    appdir   = appdir,
+    destdir  = destdir,
+    config   = config,
+    app_name = "Suite",
+    platform = "mac",
+    arch     = "arm64",
+    build    = TRUE,
+    overwrite = TRUE,
+    verbose  = FALSE
+  )
+
+  expect_true("pkgA" %in% captured_packages,
+    label = "bundled app's package (pkgA) must reach embed_r_runtime")
+  expect_false("pkgB" %in% captured_packages,
+    label = "container app's package (pkgB) must NOT reach embed_r_runtime")
+})
