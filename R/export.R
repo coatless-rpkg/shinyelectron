@@ -117,6 +117,17 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
     }
   }
 
+  # A one-entry `apps:` block is not a suite. Reject it explicitly rather than
+  # silently falling through to the single-app path, which ignores the declared
+  # per-app config and usually aborts later with a confusing autodetect error.
+  if (!is.null(config$apps) && length(config$apps) == 1) {
+    cli::cli_abort(c(
+      "An {.field apps:} suite needs at least 2 apps, but only 1 was declared.",
+      "i" = "Remove the {.field apps:} block to build the single app directly.",
+      "x" = "Found 1 app entry: {.val {config$apps[[1]]$id %||% config$apps[[1]]$name}}"
+    ), class = "shinyelectron_one_app_suite")
+  }
+
   # Detect multi-app mode (skip single-app structure validation)
   if (is_multi_app(config)) {
     return(export_multi_app(appdir, destdir, config,

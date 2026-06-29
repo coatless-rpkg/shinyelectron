@@ -262,3 +262,24 @@ test_that("export_multi_app keeps build output when run_after fails", {
   # The build directory must survive the failed run_electron_app call.
   expect_true(fs::dir_exists(file.path(destdir, "electron-app")))
 })
+
+test_that("export rejects a one-app apps: suite with a clear error", {
+  appdir <- withr::local_tempdir()
+  dir.create(file.path(appdir, "apps", "solo"), recursive = TRUE)
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "apps", "solo", "app.R"))
+  yaml::write_yaml(list(
+    app = list(name = "Solo Suite"),
+    build = list(type = "r-shiny"),
+    apps = list(
+      list(id = "solo", name = "Solo", path = "./apps/solo")
+    )
+  ), file.path(appdir, "_shinyelectron.yml"))
+
+  destdir <- file.path(withr::local_tempdir(), "out")
+  err <- expect_error(
+    export(appdir = appdir, destdir = destdir, build = FALSE, verbose = FALSE),
+    class = "shinyelectron_one_app_suite"
+  )
+  expect_match(conditionMessage(err), "2 apps", fixed = TRUE)
+})
