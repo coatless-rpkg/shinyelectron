@@ -73,11 +73,15 @@ test_that("r_executable returns NULL when not installed", {
   expect_null(result)
 })
 
-test_that("install_r validates version format", {
-  expect_error(install_r(version = "not-a-version"), "version")
+test_that("install_r_portable validates version format", {
+  expect_error(install_r_portable(version = "not-a-version"), "version")
 })
 
 test_that("generate_runtime_manifest creates valid JSON", {
+  skip_if_not_installed("mockery")
+  # Keep manifest generation offline; the published-checksum lookup is covered
+  # in test-checksum.R.
+  mockery::stub(generate_runtime_manifest, "r_expected_sha256", function(...) NULL)
   manifest <- generate_runtime_manifest("4.4.0", "mac", "arm64")
   parsed <- jsonlite::fromJSON(manifest, simplifyVector = FALSE)
 
@@ -93,6 +97,8 @@ test_that("generate_runtime_manifest uses current platform when NULL", {
   # Uses current platform; on Linux this hits r_download_url() which
   # aborts because portable-r has no Linux builds.
   skip_on_os("linux")
+  skip_if_not_installed("mockery")
+  mockery::stub(generate_runtime_manifest, "r_expected_sha256", function(...) NULL)
   manifest <- generate_runtime_manifest("4.4.0")
   parsed <- jsonlite::fromJSON(manifest, simplifyVector = FALSE)
 
@@ -146,8 +152,8 @@ test_that("python_executable returns NULL when not installed", {
   expect_null(result)
 })
 
-test_that("install_python validates version format", {
-  expect_error(install_python(version = "not-a-version"), "version")
+test_that("install_python_standalone validates version format", {
+  expect_error(install_python_standalone(version = "not-a-version"), "version")
 })
 
 test_that("generate_python_runtime_manifest creates valid JSON", {
@@ -155,6 +161,7 @@ test_that("generate_python_runtime_manifest creates valid JSON", {
   mockery::stub(generate_python_runtime_manifest, "resolve_python_pbs", function(v) {
     list(version = v, release = "20250101")
   })
+  mockery::stub(generate_python_runtime_manifest, "python_expected_sha256", function(...) NULL)
   manifest <- generate_python_runtime_manifest("3.12.0", "mac", "arm64")
   parsed <- jsonlite::fromJSON(manifest, simplifyVector = FALSE)
   expect_equal(parsed$language, "python")
@@ -418,7 +425,7 @@ test_that("build_electron_app delegates bundled R embedding to embed_r_runtime w
 
   # Neutralize the PRE-refactor inline path so the only behavioral difference is
   # whether embed_r_runtime is reached (clean red-before-green).
-  mockery::stub(build_electron_app, "install_r", function(...) fs::path(out, "cached-r"))
+  mockery::stub(build_electron_app, "install_r_portable", function(...) fs::path(out, "cached-r"))
   mockery::stub(build_electron_app, "copy_dir_contents", function(src, dst) {
     fs::dir_create(dst, recurse = TRUE)
     if (basename(dst) == "R") {

@@ -42,14 +42,50 @@ pbs_list_releases <- function() {
   jsonlite::fromJSON(tmp, simplifyVector = FALSE)
 }
 
+#' Fetch the latest python-build-standalone release from GitHub
+#'
+#' Queries the single `releases/latest` endpoint. This is a small, reliable
+#' call, unlike the full release list which is large enough to time out (HTTP
+#' 504) on this repository. The latest release carries the newest patch of every
+#' currently supported CPython minor, so it resolves `"latest"` and any current
+#' version on its own. A thin network wrapper so tests can stub it.
+#'
+#' @return A single release object with a `tag_name` field and an `assets` list.
+#' @keywords internal
+pbs_latest_release <- function() {
+  url <- "https://api.github.com/repos/astral-sh/python-build-standalone/releases/latest"
+  tmp <- tempfile(fileext = ".json")
+  on.exit(unlink(tmp), add = TRUE)
+
+  status <- tryCatch(
+    utils::download.file(url, tmp, mode = "wb", quiet = TRUE),
+    error = function(e) {
+      cli::cli_abort(c(
+        "Could not reach the python-build-standalone release API.",
+        "x" = "{e$message}"
+      ))
+    }
+  )
+  if (!identical(status, 0L)) {
+    cli::cli_abort("python-build-standalone release API returned status {status}.")
+  }
+
+  jsonlite::fromJSON(tmp, simplifyVector = FALSE)
+}
+
 #' Resolve a Python version to its python-build-standalone release
 #'
 #' Scans release asset names of the form
 #' `cpython-<ver>+<release>-<arch>-<os>-install_only.tar.gz`. For an explicit
 #' version, returns the newest release that contains an asset for that version.
-#' For `"latest"`, returns the newest release and the first CPython version
-#' found in it. Network access is isolated to `pbs_list_releases()` so tests
-#' can stub that function.
+#' For `"latest"`, returns the first CPython version found in the newest release.
+#'
+#' Resolution tries the lightweight `releases/latest` endpoint first via
+#' [pbs_latest_release()], which carries the newest patch of every supported
+#' minor and resolves the common case in one reliable call. It falls back to the
+#' full release history ([pbs_list_releases()], which can time out) only when the
+#' latest release does not contain the requested version. Network access is
+#' isolated to those two helpers so tests can stub them.
 #'
 #' @param version Character string. A concrete Python version such as
 #'   `"3.14.6"`, or `"latest"` for the newest available build.
@@ -57,20 +93,35 @@ pbs_list_releases <- function() {
 #'   (character YYYYMMDD tag).
 #' @keywords internal
 python_resolve_pbs <- function(version = "latest") {
-  releases <- pbs_list_releases()
-
   # Asset pattern: cpython-<ver>+<release_date>-<arch>-<os>-install_only.tar.gz
   asset_re <- "^cpython-(\\d+\\.\\d+\\.\\d+)\\+(\\d{8})-.*-install_only\\.tar\\.gz$"
 
-  if (identical(version, "latest")) {
+  # Return the first install_only asset matching `version` ("latest" matches
+  # any) across a list of release objects, or NULL when none match.
+  scan_releases <- function(releases) {
     for (rel in releases) {
       for (asset in rel$assets) {
         m <- regmatches(asset$name, regexec(asset_re, asset$name))[[1]]
-        if (length(m) == 3L) {
+        if (length(m) == 3L &&
+            (identical(version, "latest") || identical(m[[2L]], version))) {
           return(list(version = m[[2L]], release = m[[3L]]))
         }
       }
     }
+    NULL
+  }
+
+  # Fast path: the latest release resolves "latest" and any current version in a
+  # single lightweight call. Treat a failure here as a miss and fall back.
+  hit <- tryCatch(scan_releases(list(pbs_latest_release())), error = function(e) NULL)
+  if (!is.null(hit)) return(hit)
+
+  # Fallback: scan the full release history for an older patch. This call can
+  # time out; pbs_list_releases() aborts with actionable guidance if it does.
+  hit <- scan_releases(pbs_list_releases())
+  if (!is.null(hit)) return(hit)
+
+  if (identical(version, "latest")) {
     cli::cli_abort(c(
       "No python-build-standalone release with a CPython install_only asset was found.",
       "i" = "Check your internet connection.",
@@ -79,27 +130,18 @@ python_resolve_pbs <- function(version = "latest") {
         "{.val {SHINYELECTRON_DEFAULTS$runtime_versions$python$version}}."
       )
     ))
-  } else {
-    for (rel in releases) {
-      for (asset in rel$assets) {
-        m <- regmatches(asset$name, regexec(asset_re, asset$name))[[1]]
-        if (length(m) == 3L && identical(m[[2L]], version)) {
-          return(list(version = m[[2L]], release = m[[3L]]))
-        }
-      }
-    }
-    cli::cli_abort(c(
-      "Python {.val {version}} was not found in any python-build-standalone release.",
-      "i" = paste0(
-        "Check available releases at ",
-        "{.url https://github.com/astral-sh/python-build-standalone/releases}."
-      ),
-      "i" = paste0(
-        "Or pin the maintained default: ",
-        "{.val {SHINYELECTRON_DEFAULTS$runtime_versions$python$version}}."
-      )
-    ))
   }
+  cli::cli_abort(c(
+    "Python {.val {version}} was not found in a recent python-build-standalone release.",
+    "i" = paste0(
+      "Check available releases at ",
+      "{.url https://github.com/astral-sh/python-build-standalone/releases}."
+    ),
+    "i" = paste0(
+      "Or pin the maintained default: ",
+      "{.val {SHINYELECTRON_DEFAULTS$runtime_versions$python$version}}."
+    )
+  ))
 }
 
 #' Resolve a Python version to its python-build-standalone release (offline-first)
@@ -221,20 +263,20 @@ python_executable <- function(version, platform = NULL, arch = NULL) {
 #' @param verbose Logical. Whether to show progress.
 #' @return Character string. Path to the installed Python directory.
 #'
-#' @seealso [install_r()], [install_nodejs()] for other runtime installers;
+#' @seealso [install_r_portable()], [install_nodejs()] for other runtime installers;
 #'   [python_executable()] to find the installed Python path.
 #'
 #' @examples
 #' \dontrun{
 #' # Install default Python version
-#' install_python()
+#' install_python_standalone()
 #'
 #' # Install specific version
-#' install_python(version = "3.12.0")
+#' install_python_standalone(version = "3.12.0")
 #' }
 #'
 #' @export
-install_python <- function(version = NULL, platform = NULL, arch = NULL,
+install_python_standalone <- function(version = NULL, platform = NULL, arch = NULL,
                            force = FALSE, verbose = TRUE) {
   platform <- platform %||% detect_current_platform()
   arch <- arch %||% detect_current_arch()
@@ -254,6 +296,14 @@ install_python <- function(version = NULL, platform = NULL, arch = NULL,
     cli::cli_alert_info("Platform: {platform}, Architecture: {arch}")
   }
 
+  expected_sha256 <- python_expected_sha256(version, platform, arch, pbs$release)
+  if (is.null(expected_sha256) && verbose) {
+    cli::cli_warn(c(
+      "Could not fetch the published SHA-256 checksum for Python {version}",
+      "i" = "Continuing without checksum verification"
+    ))
+  }
+
   download_and_extract_portable_tool(
     label = "Python",
     version = version,
@@ -262,8 +312,34 @@ install_python <- function(version = NULL, platform = NULL, arch = NULL,
     executable_finder = function() python_executable(version, platform, arch),
     force = force,
     is_installed = python_is_installed(version, platform, arch),
+    expected_sha256 = expected_sha256,
     verbose = verbose
   )
+}
+
+#' URL of the python-build-standalone SHA256SUMS file for a release
+#' @param release_date Character. python-build-standalone release tag (YYYYMMDD).
+#' @return Character URL.
+#' @keywords internal
+python_sha256sums_url <- function(release_date) {
+  paste0(
+    "https://github.com/astral-sh/python-build-standalone/releases/download/",
+    release_date, "/SHA256SUMS"
+  )
+}
+
+#' Published SHA-256 checksum for a portable Python archive
+#'
+#' python-build-standalone publishes one `SHA256SUMS` file per release listing
+#' every asset. Returns `NULL` when unavailable or unmatched so the caller can
+#' continue without verification.
+#'
+#' @inheritParams python_download_url
+#' @return Character SHA-256 hash, or `NULL`.
+#' @keywords internal
+python_expected_sha256 <- function(version, platform = NULL, arch = NULL, release_date) {
+  url <- python_download_url(version, platform, arch, release_date = release_date)
+  fetch_published_sha256(python_sha256sums_url(release_date), asset_filename = basename(url))
 }
 
 #' Generate a Python runtime manifest for auto-download
@@ -291,6 +367,11 @@ generate_python_runtime_manifest <- function(version, platform = NULL, arch = NU
     platform = platform,
     arch = arch
   )
+
+  # Embed the published SHA-256 so the Electron runtime-downloader verifies the
+  # archive before extraction on first launch. Omitted when unavailable.
+  sha256 <- python_expected_sha256(version, platform, arch, release_date)
+  if (!is.null(sha256)) manifest$sha256 <- sha256
 
   jsonlite::toJSON(manifest, pretty = TRUE, auto_unbox = TRUE)
 }

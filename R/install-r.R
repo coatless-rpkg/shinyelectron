@@ -161,20 +161,20 @@ r_executable <- function(version, platform = NULL, arch = NULL) {
 #' @param verbose Logical. Whether to show progress.
 #' @return Character string. Path to the installed R directory.
 #'
-#' @seealso [install_python()], [install_nodejs()] for other runtime installers;
+#' @seealso [install_python_standalone()], [install_nodejs()] for other runtime installers;
 #'   [r_executable()] to find the installed Rscript path.
 #'
 #' @examples
 #' \dontrun{
 #' # Install latest R release
-#' install_r()
+#' install_r_portable()
 #'
 #' # Install specific version for a target platform
-#' install_r(version = "4.4.0", platform = "win", arch = "x64")
+#' install_r_portable(version = "4.4.0", platform = "win", arch = "x64")
 #' }
 #'
 #' @export
-install_r <- function(version = NULL, platform = NULL, arch = NULL,
+install_r_portable <- function(version = NULL, platform = NULL, arch = NULL,
                       force = FALSE, verbose = TRUE) {
   platform <- platform %||% detect_current_platform()
   arch <- arch %||% detect_current_arch()
@@ -195,6 +195,14 @@ install_r <- function(version = NULL, platform = NULL, arch = NULL,
     cli::cli_alert_info("Platform: {platform}, Architecture: {arch}")
   }
 
+  expected_sha256 <- r_expected_sha256(version, platform, arch)
+  if (is.null(expected_sha256) && verbose) {
+    cli::cli_warn(c(
+      "Could not fetch the published SHA-256 checksum for R {version}",
+      "i" = "Continuing without checksum verification"
+    ))
+  }
+
   download_and_extract_portable_tool(
     label = "R",
     version = version,
@@ -203,8 +211,23 @@ install_r <- function(version = NULL, platform = NULL, arch = NULL,
     executable_finder = function() r_executable(version, platform, arch),
     force = force,
     is_installed = r_is_installed(version, platform, arch),
+    expected_sha256 = expected_sha256,
     verbose = verbose
   )
+}
+
+#' Published SHA-256 checksum for a portable R archive
+#'
+#' Portable R publishes a per-asset `.sha256` sidecar next to each release
+#' archive (`<archive-url>.sha256`). Returns `NULL` when unavailable so the
+#' caller can continue without verification.
+#'
+#' @inheritParams r_download_url
+#' @return Character SHA-256 hash, or `NULL`.
+#' @keywords internal
+r_expected_sha256 <- function(version, platform = NULL, arch = NULL) {
+  url <- r_download_url(version, platform, arch)
+  fetch_published_sha256(paste0(url, ".sha256"))
 }
 
 #' Generate a runtime manifest for auto-download
@@ -231,9 +254,13 @@ generate_runtime_manifest <- function(version, platform = NULL, arch = NULL) {
     install_path = paste0("~/.shinyelectron/runtimes/R-", version),
     platform = platform,
     arch = arch
-    # sha256: set at build time if the archive is pre-downloaded for integrity verification.
-    # The Electron runtime-downloader verifies this hash before extraction when present.
   )
+
+  # Embed the published SHA-256 so the Electron runtime-downloader verifies the
+  # archive before extraction on first launch. Omitted when unavailable; the
+  # downloader treats an absent hash as "verification unavailable".
+  sha256 <- r_expected_sha256(version, platform, arch)
+  if (!is.null(sha256)) manifest$sha256 <- sha256
 
   jsonlite::toJSON(manifest, pretty = TRUE, auto_unbox = TRUE)
 }

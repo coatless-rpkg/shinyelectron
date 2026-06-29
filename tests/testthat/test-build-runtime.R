@@ -5,7 +5,7 @@ test_that("embed_r_runtime resolves the recursive closure minus pre_installed an
   out <- withr::local_tempdir()
 
   install_r_called <- NULL
-  mockery::stub(embed_r_runtime, "install_r", function(version, platform, arch, verbose) {
+  mockery::stub(embed_r_runtime, "install_r_portable", function(version, platform, arch, verbose) {
     install_r_called <<- list(version = version, platform = platform, arch = arch)
     fs::path(out, "cached-r")
   })
@@ -72,7 +72,7 @@ test_that("embed_r_runtime embeds the interpreter even when packages is empty", 
   out <- withr::local_tempdir()
 
   install_r_called <- FALSE
-  mockery::stub(embed_r_runtime, "install_r", function(version, platform, arch, verbose) {
+  mockery::stub(embed_r_runtime, "install_r_portable", function(version, platform, arch, verbose) {
     install_r_called <<- TRUE
     fs::path(out, "cached-r")
   })
@@ -113,7 +113,7 @@ test_that("embed_python_runtime targets bundled site-packages and embeds uncondi
   out <- withr::local_tempdir()
 
   install_called <- FALSE
-  mockery::stub(embed_python_runtime, "install_python", function(version, platform, arch, verbose) {
+  mockery::stub(embed_python_runtime, "install_python_standalone", function(version, platform, arch, verbose) {
     install_called <<- TRUE
     fs::path(out, "cached-py")
   })
@@ -157,7 +157,7 @@ test_that("embed_python_runtime targets bundled site-packages and embeds uncondi
 test_that("embed_python_runtime warns (does not abort) when pip fails", {
   skip_if_not_installed("mockery")
   out <- withr::local_tempdir()
-  mockery::stub(embed_python_runtime, "install_python", function(...) fs::path(out, "cached-py"))
+  mockery::stub(embed_python_runtime, "install_python_standalone", function(...) fs::path(out, "cached-py"))
   mockery::stub(embed_python_runtime, "copy_dir_contents", function(src, dst) {
     fs::dir_create(dst, recurse = TRUE); invisible(dst)
   })
@@ -179,7 +179,7 @@ test_that("embed_python_runtime embeds the interpreter even when packages is emp
   skip_if_not_installed("mockery")
   out <- withr::local_tempdir()
   install_called <- FALSE
-  mockery::stub(embed_python_runtime, "install_python", function(...) {
+  mockery::stub(embed_python_runtime, "install_python_standalone", function(...) {
     install_called <<- TRUE; fs::path(out, "cached-py")
   })
   copy_called <- FALSE

@@ -284,7 +284,7 @@ nodejs_list_installed <- function() {
 #'
 #' @return Invisibly returns the path to the installed Node.js directory.
 #'
-#' @seealso [install_r()], [install_python()] for other runtime installers.
+#' @seealso [install_r_portable()], [install_python_standalone()] for other runtime installers.
 #'
 #' @examples
 #' \dontrun{

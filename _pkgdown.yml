@@ -89,8 +89,8 @@ reference:
   - title: "Runtime Management"
     desc: "Install and manage R, Python, and Node.js runtimes"
     contents:
-      - install_r
-      - install_python
+      - install_r_portable
+      - install_python_standalone
       - install_nodejs
 
   - title: "Configuration"

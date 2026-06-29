@@ -21,12 +21,12 @@ embed_r_runtime <- function(output_dir, packages, repos, version,
                             platform, arch, verbose = TRUE) {
   if (verbose) cli::cli_alert_info("Embedding R runtime for bundled strategy...")
 
-  # Resolve the effective version ONCE and pass it to both install_r and
+  # Resolve the effective version ONCE and pass it to both install_r_portable and
   # r_executable, replacing the two independent NULL-fallbacks that could
   # otherwise make two GitHub API calls that disagree.
   effective_version <- version %||% r_portable_latest_version(platform)
 
-  r_path <- install_r(
+  r_path <- install_r_portable(
     version = effective_version,
     platform = platform,
     arch = arch,
@@ -44,7 +44,6 @@ embed_r_runtime <- function(output_dir, packages, repos, version,
                               full.names = TRUE, all.files = TRUE)
   for (f in runtime_files) {
     if (nzchar(Sys.readlink(f))) {
-      target <- Sys.readlink(f)
       abs_target <- normalizePath(f, mustWork = FALSE)
       if (file.exists(abs_target)) {
         file.remove(f)
@@ -84,7 +83,7 @@ embed_r_runtime <- function(output_dir, packages, repos, version,
     if (is.null(bundled_rscript) || !fs::file_exists(bundled_rscript)) {
       cli::cli_abort(c(
         "Could not locate the cached portable Rscript",
-        "i" = "Try: {.code shinyelectron::install_r(force = TRUE)}"
+        "i" = "Try: {.code shinyelectron::install_r_portable(force = TRUE)}"
       ))
     }
 
@@ -202,11 +201,11 @@ embed_python_runtime <- function(output_dir, packages, index_urls, version,
                                  platform, arch, verbose = TRUE) {
   if (verbose) cli::cli_alert_info("Embedding Python runtime for bundled strategy...")
 
-  # Resolve the effective version ONCE and pass it to both install_python and
+  # Resolve the effective version ONCE and pass it to both install_python_standalone and
   # python_executable.
   effective_version <- version %||% SHINYELECTRON_DEFAULTS$runtime_versions$python$version
 
-  py_path <- install_python(
+  py_path <- install_python_standalone(
     version = effective_version,
     platform = platform,
     arch = arch,

@@ -1,6 +1,6 @@
 #' Download and extract a portable runtime into a cache directory
 #'
-#' Shared helper for `install_r()` and `install_python()`. Handles the
+#' Shared helper for `install_r_portable()` and `install_python_standalone()`. Handles the
 #' common flow: cache-hit short-circuit, download to temp file, extract
 #' by archive type, verify the expected executable appears, cleanup.
 #'
@@ -124,4 +124,60 @@ download_and_extract_portable_tool <- function(label, version, install_path,
   }
 
   invisible(install_path)
+}
+
+#' Fetch a published SHA-256 checksum for a portable runtime archive
+#'
+#' Reads a checksum file published alongside a runtime release and returns the
+#' hash for one archive. Two layouts are supported, both in the standard
+#' `sha256sum` format (`<hash>  <filename>`):
+#'
+#' * Per-asset sidecar (portable R): the checksum file contains a single line
+#'   for the archive. Pass `asset_filename = NULL` and the first line's hash is
+#'   returned.
+#' * Combined `SHA256SUMS` (python-build-standalone): the file lists every
+#'   asset. Pass `asset_filename` and the matching line's hash is returned.
+#'
+#' Returns `NULL` when the checksum cannot be fetched or no matching entry is
+#' found, so callers can continue without verification rather than failing on a
+#' transient network error (the same graceful-skip behavior as the Node.js
+#' installer).
+#'
+#' @param checksum_url Character. URL of the `.sha256` sidecar or `SHA256SUMS`.
+#' @param asset_filename Character or NULL. Archive file name to match within a
+#'   combined `SHA256SUMS`; `NULL` for a single-asset sidecar.
+#' @return Character SHA-256 hash, or `NULL`.
+#' @keywords internal
+fetch_published_sha256 <- function(checksum_url, asset_filename = NULL) {
+  tryCatch({
+    # suppressWarnings hides the connection-level "cannot open URL" warning a
+    # 404 or offline host emits; the accompanying error is caught below so the
+    # caller still gets a clean NULL (graceful skip).
+    lines <- suppressWarnings(readLines(checksum_url, warn = FALSE))
+    lines <- lines[nzchar(trimws(lines))]
+    if (length(lines) == 0) return(NULL)
+
+    parse_hash <- function(line) {
+      parts <- strsplit(trimws(line), "\\s+")[[1]]
+      if (length(parts) == 0 || !grepl("^[0-9a-fA-F]{64}$", parts[1])) return(NULL)
+      list(
+        hash = parts[1],
+        # sha256sum marks binary entries with a leading "*"; strip it.
+        file = if (length(parts) >= 2) basename(sub("^\\*", "", parts[length(parts)])) else NA_character_
+      )
+    }
+
+    if (is.null(asset_filename)) {
+      entry <- parse_hash(lines[1])
+      return(if (is.null(entry)) NULL else entry$hash)
+    }
+
+    for (line in lines) {
+      entry <- parse_hash(line)
+      if (!is.null(entry) && identical(entry$file, asset_filename)) {
+        return(entry$hash)
+      }
+    }
+    NULL
+  }, error = function(e) NULL)
 }

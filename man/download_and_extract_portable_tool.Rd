@@ -42,7 +42,7 @@ When supplied, the download is verified before extraction.}
 Invisibly returns the installation path.
 }
 \description{
-Shared helper for \code{install_r()} and \code{install_python()}. Handles the
+Shared helper for \code{install_r_portable()} and \code{install_python_standalone()}. Handles the
 common flow: cache-hit short-circuit, download to temp file, extract
 by archive type, verify the expected executable appears, cleanup.
 }

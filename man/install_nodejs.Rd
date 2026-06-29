@@ -47,5 +47,5 @@ install_nodejs(force = TRUE)
 
 }
 \seealso{
-\code{\link[=install_r]{install_r()}}, \code{\link[=install_python]{install_python()}} for other runtime installers.
+\code{\link[=install_r_portable]{install_r_portable()}}, \code{\link[=install_python_standalone]{install_python_standalone()}} for other runtime installers.
 }

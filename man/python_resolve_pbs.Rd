@@ -18,8 +18,14 @@ Named list with elements \code{version} (character) and \code{release}
 Scans release asset names of the form
 \verb{cpython-<ver>+<release>-<arch>-<os>-install_only.tar.gz}. For an explicit
 version, returns the newest release that contains an asset for that version.
-For \code{"latest"}, returns the newest release and the first CPython version
-found in it. Network access is isolated to \code{pbs_list_releases()} so tests
-can stub that function.
+For \code{"latest"}, returns the first CPython version found in the newest release.
+}
+\details{
+Resolution tries the lightweight \code{releases/latest} endpoint first via
+\code{\link[=pbs_latest_release]{pbs_latest_release()}}, which carries the newest patch of every supported
+minor and resolves the common case in one reliable call. It falls back to the
+full release history (\code{\link[=pbs_list_releases]{pbs_list_releases()}}, which can time out) only when the
+latest release does not contain the requested version. Network access is
+isolated to those two helpers so tests can stub them.
 }
 \keyword{internal}
