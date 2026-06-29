@@ -4,10 +4,15 @@
 \alias{validate_shinylive_output}
 \title{Validate shinylive output}
 \usage{
-validate_shinylive_output(output_dir)
+validate_shinylive_output(output_dir, subdir = NULL)
 }
 \arguments{
-\item{output_dir}{Character path to shinylive output}
+\item{output_dir}{Character path to shinylive output (the site root).}
+
+\item{subdir}{Character or NULL. When set, the app entry lives at
+\verb{output_dir/<subdir>/index.html} and the shared asset tree at
+\verb{output_dir/shinylive/} (multi-app shared-site export). When NULL the
+single-app root layout is checked.}
 }
 \description{
 Validate shinylive output

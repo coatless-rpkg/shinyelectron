@@ -5,6 +5,11 @@
 #'
 #' @param appdir Character string. Path to the directory containing the Shiny application.
 #' @param output_dir Character string. Path where the converted shinylive app will be saved.
+#' @param subdir Character or NULL. When set, the app is exported into a \code{<subdir>}
+#'   subdirectory of \code{output_dir} as an additive shared-site export: existing contents
+#'   of \code{output_dir} (including a shared \code{shinylive/} asset tree) are preserved.
+#'   When NULL (default), a single-app export is performed and an existing \code{output_dir}
+#'   is removed when \code{overwrite = TRUE}.
 #' @param overwrite Logical. Whether to overwrite existing output directory. Default is FALSE.
 #' @param verbose Logical. Whether to display detailed progress information. Default is TRUE.
 #'
