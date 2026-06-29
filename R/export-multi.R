@@ -32,6 +32,10 @@ export_multi_app <- function(appdir, destdir, config,
   # Validate multi-app config
   validate_multi_app_config(config, appdir)
 
+  # Reject conflicting native runtime strategies within a language before
+  # staging (e.g. one bundled and one auto-download R app in the suite).
+  validate_suite_strategies(config$apps, config)
+
   # Create destination
   if (fs::dir_exists(destdir)) {
     if (!overwrite) {
@@ -270,4 +274,57 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
   build_for_platforms(output_dir, platform, arch, sign = sign, verbose = verbose)
 
   return(fs::path_abs(output_dir))
+}
+
+#' Validate that each language uses a single native runtime strategy
+#'
+#' Native strategies (`system`, `bundled`, `auto-download`) share one backend
+#' module and one suite-wide runtime detection per language, so a suite may
+#' declare at most one distinct native strategy per language. `shinylive` and
+#' `container` apps use their own backends and are exempt.
+#'
+#' @param apps List. `config$apps` entries.
+#' @param config List. Full suite configuration.
+#' @keywords internal
+validate_suite_strategies <- function(apps, config) {
+  native_strategies <- c("system", "bundled", "auto-download")
+  suite_strategy <- config$build$runtime_strategy
+
+  for (lang in c("r", "py")) {
+    lang_pattern <- paste0("^", lang, "-")
+
+    ids <- character(0)
+    strategies <- character(0)
+    for (app in apps) {
+      if (!grepl(lang_pattern, resolve_app_type(app, config))) next
+      strat <- resolve_app_strategy(app, config)
+      if (!strat %in% native_strategies) next
+      ids <- c(ids, app$id)
+      strategies <- c(strategies, strat)
+    }
+
+    if (length(strategies) == 0) next
+
+    distinct <- unique(strategies)
+    if (length(distinct) > 1) {
+      conflict_idx <- which(strategies != strategies[1])[1]
+      cli::cli_abort(c(
+        "Conflicting native runtime strategies for {.field {lang}-shiny} apps.",
+        "x" = "App {.val {ids[1]}} uses {.val {strategies[1]}} but app {.val {ids[conflict_idx]}} uses {.val {strategies[conflict_idx]}}.",
+        "i" = "All native apps of one language must share a single runtime strategy.",
+        "i" = "Use {.val shinylive} or {.val container} for apps that need a different delivery."
+      ), class = "shinyelectron_suite_strategy_conflict")
+    }
+
+    if (!is.null(suite_strategy) && suite_strategy %in% native_strategies &&
+        !identical(suite_strategy, distinct)) {
+      cli::cli_abort(c(
+        "Suite-level {.field build.runtime_strategy} conflicts with a per-app strategy.",
+        "x" = "Suite default is {.val {suite_strategy}} but app {.val {ids[1]}} resolves to {.val {strategies[1]}}.",
+        "i" = "Set {.field build.runtime_strategy} to {.val {strategies[1]}} or remove the per-app override."
+      ), class = "shinyelectron_suite_strategy_conflict")
+    }
+  }
+
+  invisible(TRUE)
 }
