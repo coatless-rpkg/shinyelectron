@@ -263,6 +263,48 @@ test_that("export_multi_app keeps build output when run_after fails", {
   expect_true(fs::dir_exists(file.path(destdir, "electron-app")))
 })
 
+test_that("build_multi_app aborts multi-platform when any app resolves to a native bundled strategy", {
+  skip_if_not_installed("mockery")
+
+  apps_dir <- withr::local_tempdir()
+  output_dir <- file.path(withr::local_tempdir(), "electron-app")
+
+  # Suite default is shinylive; only the per-app override is bundled.
+  config <- list(
+    build = list(type = "r-shiny"),
+    apps = list(
+      list(id = "dash",   name = "Dash",   path = "./apps/dash"),
+      list(id = "report", name = "Report", path = "./apps/report",
+           runtime_strategy = "bundled")
+    )
+  )
+  apps_manifest <- list(
+    list(id = "dash", name = "Dash", path = "src/apps/dash",
+         type = "r-shiny", runtime_strategy = "shinylive"),
+    list(id = "report", name = "Report", path = "src/apps/report",
+         type = "r-shiny", runtime_strategy = "bundled")
+  )
+
+  # Stub everything after the guard so that, absent the fix, build_multi_app
+  # would complete without error (making the missing abort observable).
+  mockery::stub(build_multi_app, "validate_node_npm", function() invisible(TRUE))
+  mockery::stub(build_multi_app, "setup_electron_project", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "process_templates", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "install_npm_dependencies", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "build_for_platforms", function(...) invisible(TRUE))
+
+  expect_error(
+    build_multi_app(
+      apps_dir = apps_dir, output_dir = output_dir, app_name = "Suite",
+      apps_manifest = apps_manifest, default_type = "r-shiny",
+      runtime_strategy = "shinylive", sign = FALSE,
+      platform = c("win", "mac"), arch = "x64", icon = NULL,
+      config = config, overwrite = TRUE, verbose = FALSE
+    ),
+    "only one platform"
+  )
+})
+
 test_that("export rejects a one-app apps: suite with a clear error", {
   appdir <- withr::local_tempdir()
   dir.create(file.path(appdir, "apps", "solo"), recursive = TRUE)

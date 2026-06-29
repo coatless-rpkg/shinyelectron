@@ -220,13 +220,23 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
   validate_platform(platform)
   validate_arch(arch)
 
+  # Resolve each app's type and runtime strategy once; the single-platform
+  # guard, runtime embedding, and auto-download manifest writing all key off the
+  # per-app resolved strategy rather than the suite-level scalar.
+  app_types <- vapply(config$apps, function(a) resolve_app_type(a, config), character(1))
+  app_strategies <- vapply(config$apps, function(a) resolve_app_strategy(a, config), character(1))
+
   # Bundled / auto-download native runtimes embed a single platform's runtime,
-  # so they cannot target multiple platforms or architectures in one build.
-  if (runtime_strategy %in% c("bundled", "auto-download") &&
-      grepl("^(r|py)-", default_type) &&
-      (length(platform) > 1 || length(arch) > 1)) {
+  # so a suite containing ANY such native app cannot target multiple platforms
+  # or architectures in one build, regardless of the suite-level default.
+  if ((length(platform) > 1 || length(arch) > 1) &&
+      any(app_strategies %in% c("bundled", "auto-download"))) {
+    offending_idx <- which(app_strategies %in% c("bundled", "auto-download"))[1]
+    offending_id <- config$apps[[offending_idx]]$id
+    offending_strategy <- app_strategies[offending_idx]
     cli::cli_abort(c(
-      "The {.val {runtime_strategy}} strategy supports only one platform and architecture per build.",
+      "The {.val {offending_strategy}} strategy supports only one platform and architecture per build.",
+      "i" = "App {.val {offending_id}} embeds a single-platform runtime that would be packaged into every installer.",
       "i" = "Build each target separately, or use the {.val system}, {.val container}, or {.val shinylive} strategy for multi-platform builds."
     ))
   }
