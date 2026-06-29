@@ -21,6 +21,12 @@
   locally.
 * Container runs apps inside Docker or Podman for full environment
   isolation.
+* Downloaded runtimes are verified against an upstream-published SHA-256
+  checksum before extraction: Node.js against `SHASUMS256.txt`, portable R
+  against its per-asset `.sha256` sidecar, and portable Python against
+  python-build-standalone's `SHA256SUMS`. A missing checksum warns and
+  continues. The `auto-download` runtime manifest also carries the hash, so
+  the first-launch download is verified on the end user's machine.
 * The older `app_type = "r-shinylive"` and `"py-shinylive"` values
   are still accepted with a deprecation warning of class
   `shinyelectron_deprecated_app_type`; they translate to the canonical
@@ -34,7 +40,14 @@
   launcher UI.
 * Configure via `_shinyelectron.yml` with an `apps` array; each app
   entry may carry its own `runtime_strategy`, so a suite can mix
-  (for example) one shinylive app with a bundled R app.
+  (for example) one shinylive app with a bundled R app. Mixing follows
+  one rule: each language uses a single native strategy (`system`,
+  `bundled`, or `auto-download`) across the suite, enforced at export.
+* Bundled and auto-download suites embed the runtime correctly: a bundled
+  suite installs the union of its bundled apps' packages into one shared
+  runtime, and an auto-download suite writes a per-app runtime manifest.
+  Shinylive suites share a single WebAssembly runtime across all apps
+  instead of duplicating it per app.
 * Python suites read dependencies from a single suite-root
   `requirements.txt`.
 

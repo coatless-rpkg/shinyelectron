@@ -94,6 +94,33 @@ The three styles render differently above the progress bar:
 
 When the runtime reports a percent-complete (e.g. during a runtime download), the progress bar fills accordingly regardless of style.
 
+### Advanced lifecycle options
+
+The `lifecycle` section of `_shinyelectron.yml` provides lower-level controls for the lifecycle window: timeouts, log visibility, custom HTML overrides, and install or version prompts.
+
+```yaml
+lifecycle:
+  show_phase_details: true
+  error_show_logs: true
+  shutdown_timeout: 10000
+  custom_splash_html: null
+  custom_error_html: null
+  prompt_before_install: false
+  prompt_runtime_version: false
+```
+
+| Option | Type | Description | Default |
+|--------|------|-------------|---------|
+| `show_phase_details` | boolean | Show the phase-detail line under the preloader headline | `true` |
+| `error_show_logs` | boolean | Show the collapsible error-log block in the error state | `true` |
+| `shutdown_timeout` | integer (ms) | Maximum milliseconds to wait for backend teardown before force-quitting | `10000` |
+| `custom_splash_html` | string | Raw HTML that replaces the entire splash state; `null` uses the built-in splash | `null` |
+| `custom_error_html` | string | Raw HTML that replaces the entire error state; `null` uses the built-in error view | `null` |
+| `prompt_before_install` | boolean | Prompt the user before installing missing R or Python packages | `false` |
+| `prompt_runtime_version` | boolean | Show a runtime-version picker when multiple R or Python installations are detected | `false` |
+
+`custom_splash_html` and `custom_error_html` replace the full inner content of the corresponding state `<div>`. Any HTML is accepted; inline styles are allowed by the lifecycle window's Content Security Policy. Leave both `null` to use the branded defaults driven by your other splash and preloader settings.
+
 ## System tray
 
 The system tray (the menu bar on macOS, the system tray on Windows, the system area on Linux) lets your app live between window appearances. An icon sits in the tray, a click brings the window back, and the runtime keeps going whether the window is open or not.
@@ -113,7 +140,7 @@ tray:
   enabled: true
 ```
 
-Everything else defaults sensibly: the icon comes from `app.icon`, the tooltip from `app.name`, and the buttons behave as users expect. To override:
+Everything else defaults sensibly: the icon comes from the top-level `icon` key, the tooltip from `app.name`, and the buttons behave as users expect. To override:
 
 ```yaml
 tray:

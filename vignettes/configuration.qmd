@@ -293,6 +293,32 @@ The support toolchain (`electron-builder`, `electron-updater`, `electron-log`) i
 
 `r.version` and `python.version` apply only to the `bundled`, `auto-download`, and `container` strategies. They have no effect under `shinylive`, where the R or Python runtime is the WebR or Pyodide version shipped by the `shinylive` package (set upstream, not configurable here), or under `system`, where the app runs against the end user's installed R or Python.
 
+#### Detection and extra packages
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `auto_detect` | boolean | `true` | Automatically scan the app source to detect required R or Python packages (applies to `bundled`, `auto-download`, and `container` strategies) |
+| `extra_packages` | list of strings | `[]` | Additional packages to include beyond those auto-detected |
+
+#### R-specific dependency options
+
+These keys sit under `dependencies.r` and apply to the `bundled`, `auto-download`, and `system` strategies.
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `r.packages` | list of strings | `[]` | R packages to install alongside the app |
+| `r.repos` | list of strings | `["https://cloud.r-project.org"]` | CRAN-compatible repository URLs to use when installing R packages |
+| `r.lib_path` | string | `null` | Custom library path where R packages are installed; `null` uses the default R library |
+
+#### Python-specific dependency options
+
+These keys sit under `dependencies.python` and apply to the `bundled`, `auto-download`, and `system` strategies.
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `python.packages` | list of strings | `[]` | Python packages to install alongside the app |
+| `python.index_urls` | list of strings | `["https://pypi.org/simple"]` | Package index URLs used when installing Python packages |
+
 #### `system_packages`
 
 A list of apt package names baked into the container image at build time. Used only when `runtime_strategy` is `"container"`.
@@ -351,7 +377,7 @@ container:
 
 ### `apps`
 
-Defines a multi-app suite: two or more Shiny apps packaged in one Electron shell with a launcher screen. At least two entries are required. Any entry can override `build.type` or `build.runtime_strategy`, which is how mixed-strategy suites work.
+Defines a multi-app suite: two or more Shiny apps packaged in one Electron shell with a launcher screen. At least two entries are required. Any entry can override `build.type` or `build.runtime_strategy`, which is how mixed-strategy suites work. One constraint applies: within a language, all native apps (`system`, `bundled`, `auto-download`) must share one strategy; `shinylive` and `container` apps combine freely. Export aborts on a conflict. See the [Multi-App Suites](multi-app-suites.html) vignette for details.
 
 | Key | Type | Required | Description |
 |-----|------|----------|-------------|
@@ -379,6 +405,56 @@ apps:
 ```
 
 See the [Multi-App Suites](multi-app-suites.html) vignette for mixed-strategy examples and launcher customization.
+
+### `logging`
+
+Controls where and how the app writes its log files.
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `log_dir` | string | `null` | Directory for log files; `null` writes to the Electron app's `userData/logs` directory |
+| `log_level` | string | `"info"` | Logging verbosity: `"debug"`, `"info"`, `"warn"`, or `"error"` |
+
+**Example:**
+
+```yaml
+logging:
+  log_dir: "/var/log/my-app"
+  log_level: "debug"
+```
+
+### `lifecycle`
+
+Controls the lifecycle window that fills the gap between launch and app readiness. See the [Customizations](customizations.html) guide for the visual options (splash image, preloader style, etc.). The keys below govern behavior and timeout rather than appearance.
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `show_phase_details` | boolean | `true` | Show the phase-detail line under the preloader headline |
+| `error_show_logs` | boolean | `true` | Show the collapsible error-log block in the error state |
+| `shutdown_timeout` | integer (ms) | `10000` | Maximum milliseconds to wait for backend teardown before force-quitting |
+| `custom_splash_html` | string | `null` | Raw HTML replacing the entire splash state; `null` uses the built-in splash |
+| `custom_error_html` | string | `null` | Raw HTML replacing the entire error state; `null` uses the built-in error view |
+| `prompt_before_install` | boolean | `false` | Prompt the user before installing missing R or Python packages |
+| `prompt_runtime_version` | boolean | `false` | Show a runtime-version picker when multiple R or Python installations are detected |
+
+### `installer`
+
+Controls installer branding and behavior for the Windows (NSIS) installer produced by electron-builder.
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `app_id` | string | `null` | Unique application identifier (e.g. `"com.example.myapp"`); `null` derives one from the app name |
+| `license_file` | string | `null` | Path to a license file shown during installation (Windows NSIS only) |
+| `one_click` | boolean | `true` | Use a one-click installer on Windows; set to `false` for a wizard-style installer |
+
+**Example:**
+
+```yaml
+installer:
+  app_id: "com.example.my-dashboard"
+  license_file: "LICENSE.txt"
+  one_click: false
+```
 
 ## Common recipes
 
