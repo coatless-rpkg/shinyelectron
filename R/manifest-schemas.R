@@ -17,7 +17,7 @@
 #'
 #' ```json
 #' {
-#'   "schema_version": "1",
+#'   "schema_version": "2",
 #'   "language": "r" | "python",
 #'   "packages": ["shiny", "bslib", ...],
 #'   "binary_only": true,
@@ -38,7 +38,7 @@
 #'
 #' ```json
 #' {
-#'   "schema_version": "1",
+#'   "schema_version": "2",
 #'   "language": "r" | "python",
 #'   "version": "4.5.3",
 #'   "download_url": "https://...",
@@ -55,7 +55,7 @@
 #'
 #' ```json
 #' {
-#'   "schema_version": "1",
+#'   "schema_version": "2",
 #'   "default_type": "r-shiny",
 #'   "runtime_strategy": "auto-download",
 #'   "apps": [
@@ -63,10 +63,28 @@
 #'       "id": "dashboard",
 #'       "name": "Dashboard",
 #'       "description": "...",
-#'       "path": "src/apps/dashboard",
 #'       "type": "r-shiny",
-#'       "runtime_strategy": "auto-download",   // optional per-app override
-#'       "icon": null
+#'       "runtime_strategy": "auto-download",
+#'       "icon": null,
+#'       "serve": { "kind": "native", "path": "src/apps/dashboard", "runtime_strategy": "auto-download" }
+#'     },
+#'     {
+#'       "id": "viewer",
+#'       "name": "Viewer",
+#'       "description": "...",
+#'       "type": "r-shiny",
+#'       "runtime_strategy": "shinylive",
+#'       "icon": null,
+#'       "serve": { "kind": "shinylive", "site": "src/shinylive-site", "subdir": "viewer" }
+#'     },
+#'     {
+#'       "id": "boxed",
+#'       "name": "Boxed",
+#'       "description": "...",
+#'       "type": "r-shiny",
+#'       "runtime_strategy": "container",
+#'       "icon": null,
+#'       "serve": { "kind": "container", "path": "src/apps/boxed" }
 #'     }
 #'   ]
 #' }

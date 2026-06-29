@@ -106,23 +106,55 @@ test_that("resolve_app_strategy treats legacy per-app r-shinylive as shinylive",
   expect_equal(suppressWarnings(resolve_app_strategy(app_legacy, config)), "shinylive")
 })
 
-test_that("mixed-strategy multi-app suite picks per-app strategy in the manifest", {
-  # Hand-build the apps manifest loop the way export-multi.R does, to verify
-  # that different strategies produce different per-app manifest entries.
+test_that("export_multi_app emits serve descriptors for native and container apps", {
+  skip_if_not_installed("renv")
+
+  appdir <- withr::local_tempdir()
+  dir.create(file.path(appdir, "apps", "dash"), recursive = TRUE)
+  dir.create(file.path(appdir, "apps", "box"), recursive = TRUE)
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "apps", "dash", "app.R"))
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "apps", "box", "app.R"))
+
   config <- list(
+    app = list(name = "Suite", version = "1.0.0"),
     build = list(type = "r-shiny", runtime_strategy = "system"),
     apps = list(
-      list(id = "dash",  name = "D", path = "./d"),
-      list(id = "quick", name = "Q", path = "./q", runtime_strategy = "shinylive")
+      list(id = "dash", name = "Dashboard", path = "./apps/dash"),
+      list(id = "box",  name = "Boxed",     path = "./apps/box",
+           runtime_strategy = "container")
     )
   )
 
-  strategies <- vapply(
-    config$apps,
-    function(a) resolve_app_strategy(a, config),
-    character(1)
-  )
-  expect_equal(strategies, c("system", "shinylive"))
+  destdir <- file.path(withr::local_tempdir(), "out")
+  export_multi_app(appdir = appdir, destdir = destdir, config = config,
+                   app_name = "Suite", runtime_strategy = "system",
+                   build = FALSE, overwrite = TRUE, verbose = FALSE)
+
+  manifest_path <- fs::path(destdir, "apps-manifest.json")
+  expect_true(fs::file_exists(manifest_path))
+
+  manifest <- jsonlite::fromJSON(manifest_path, simplifyVector = FALSE)
+  expect_equal(manifest$schema_version, "2")
+
+  # Ordering preserved.
+  ids <- vapply(manifest$apps, function(a) a$id, character(1))
+  expect_equal(ids, c("dash", "box"))
+
+  # Native serve descriptor; no stray top-level path.
+  dash <- manifest$apps[[1]]
+  expect_null(dash$path)
+  expect_equal(dash$serve$kind, "native")
+  expect_equal(dash$serve$path, "src/apps/dash")
+  expect_equal(dash$serve$runtime_strategy, "system")
+
+  # Container serve descriptor.
+  box <- manifest$apps[[2]]
+  expect_null(box$path)
+  expect_equal(box$serve$kind, "container")
+  expect_equal(box$serve$path, "src/apps/box")
+  expect_null(box$serve$runtime_strategy)
 })
 
 # --- Integration Tests ---

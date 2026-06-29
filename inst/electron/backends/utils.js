@@ -218,7 +218,7 @@ function meetsMinimumVersion(version, minimum) {
 // Current manifest schema version. Bump in lockstep with
 // R/constants.R::MANIFEST_SCHEMA_VERSION. Older apps built against an
 // older R version may ship older manifests -- we warn rather than crash.
-const MANIFEST_SCHEMA_VERSION = '1';
+const MANIFEST_SCHEMA_VERSION = '2';
 
 /**
  * Validate a parsed manifest object has the expected schema version.

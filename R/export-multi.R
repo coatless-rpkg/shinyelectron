@@ -137,18 +137,41 @@ export_multi_app <- function(appdir, destdir, config,
 
       # Build manifest entry (use NA for missing icon so jsonlite writes null, not {})
       app_icon <- if (is.null(app_entry$icon) || !nzchar(app_entry$icon %||% "")) NA else app_entry$icon
+      serve <- if (this_strategy == "shinylive") {
+        list(kind = "shinylive", site = "src/shinylive-site", subdir = app_id)
+      } else if (this_strategy == "container") {
+        list(kind = "container", path = paste0("src/apps/", app_id))
+      } else {
+        list(kind = "native", path = paste0("src/apps/", app_id),
+             runtime_strategy = this_strategy)
+      }
       apps_manifest <- c(apps_manifest, list(list(
         id = app_id,
         name = app_entry$name,
         description = app_entry$description %||% "",
-        path = paste0("src/apps/", app_id),
         type = this_type,
         runtime_strategy = this_strategy,
-        icon = app_icon
+        icon = app_icon,
+        serve = serve
       )))
     }
 
     result$apps <- apps_manifest
+
+    # Write the apps manifest into the staging root so it is emitted even when
+    # build = FALSE (tests and tooling can read the serve descriptors without a
+    # full Electron build). build_multi_app persists the same manifest into the
+    # Electron output directory.
+    manifest_data <- list(
+      schema_version = MANIFEST_SCHEMA_VERSION,
+      apps = apps_manifest,
+      default_type = app_type,
+      runtime_strategy = runtime_strategy
+    )
+    writeLines(
+      jsonlite::toJSON(manifest_data, pretty = TRUE, auto_unbox = TRUE),
+      fs::path(destdir, "apps-manifest.json")
+    )
 
     # Step 2: Build Electron application
     if (build) {

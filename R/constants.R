@@ -2,7 +2,7 @@
 # runtime-manifest.json, apps-manifest.json). Bump when the shape of
 # any manifest changes in a backwards-incompatible way. The JS side
 # warns on mismatch; see inst/electron/backends/utils.js.
-MANIFEST_SCHEMA_VERSION <- "1"
+MANIFEST_SCHEMA_VERSION <- "2"
 
 #' Default configuration values for shinyelectron
 #'
