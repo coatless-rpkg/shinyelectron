@@ -30,7 +30,7 @@
 #' }
 #'
 #' @export
-convert_shiny_to_shinylive <- function(appdir, output_dir, overwrite = FALSE, verbose = TRUE) {
+convert_shiny_to_shinylive <- function(appdir, output_dir, subdir = NULL, overwrite = FALSE, verbose = TRUE) {
   validate_directory_exists(appdir, "Application directory")
   validate_shiny_app_structure(appdir)
 
@@ -40,7 +40,10 @@ convert_shiny_to_shinylive <- function(appdir, output_dir, overwrite = FALSE, ve
     cli::cli_alert_info("Output: {.path {output_dir}}")
   }
 
-  if (fs::dir_exists(output_dir)) {
+  # Single-app: enforce/clear the output dir. Shared-site (subdir) exports are
+  # additive -- multiple apps write into one output_dir under distinct subdirs
+  # and share one shinylive/ asset tree, so we must NOT wipe existing contents.
+  if (is.null(subdir) && fs::dir_exists(output_dir)) {
     if (!overwrite) {
       cli::cli_abort(c(
         "Output directory already exists: {.path {output_dir}}",
@@ -72,12 +75,13 @@ convert_shiny_to_shinylive <- function(appdir, output_dir, overwrite = FALSE, ve
     copy_dir_contents(appdir, temp_app_dir)
 
     if (verbose) cli::cli_progress_update(id = pb, set = 2)
-    shinylive::export(appdir = temp_app_dir, destdir = output_dir, overwrite = TRUE, quiet = TRUE)
+    shinylive::export(appdir = temp_app_dir, destdir = output_dir,
+                      subdir = subdir %||% "", quiet = TRUE)
 
     if (verbose) cli::cli_progress_update(id = pb, set = 3)
 
     if (verbose) cli::cli_progress_update(id = pb, set = 4)
-    validate_shinylive_output(output_dir)
+    validate_shinylive_output(output_dir, subdir = subdir)
 
     if (verbose) {
       cli::cli_progress_done(id = pb)

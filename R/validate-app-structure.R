@@ -35,12 +35,18 @@ validate_python_app_structure <- function(appdir) {
 
 #' Validate shinylive output
 #'
-#' @param output_dir Character path to shinylive output
+#' @param output_dir Character path to shinylive output (the site root).
+#' @param subdir Character or NULL. When set, the app entry lives at
+#'   `output_dir/<subdir>/index.html` and the shared asset tree at
+#'   `output_dir/shinylive/` (multi-app shared-site export). When NULL the
+#'   single-app root layout is checked.
 #' @keywords internal
-validate_shinylive_output <- function(output_dir) {
-  index_html <- fs::path(output_dir, "index.html")
+validate_shinylive_output <- function(output_dir, subdir = NULL) {
+  app_root <- if (is.null(subdir)) output_dir else fs::path(output_dir, subdir)
+
+  index_html <- fs::path(app_root, "index.html")
   if (!fs::file_exists(index_html)) {
-    cli::cli_abort("Shinylive conversion failed: no index.html found in {.path {output_dir}}")
+    cli::cli_abort("Shinylive conversion failed: no index.html found in {.path {app_root}}")
   }
 
   shinylive_dir <- fs::path(output_dir, "shinylive")
