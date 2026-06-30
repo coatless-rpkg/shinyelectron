@@ -14,72 +14,58 @@ validate_python_available <- function() {
   )
 }
 
-#' Resolve a working shinylive Python CLI invocation
-#'
-#' Prefers the `shinylive` console script, but if that script is on PATH yet
-#' backed by a Python without the module (a PATH / version skew that CI
-#' environments hit), falls back to `python -m shinylive`. Runs `--version` on
-#' each candidate to confirm it actually executes -- an import check is not
-#' enough, since shinylive ships no `__main__.py`. Aborts with installation
-#' hints if neither candidate works.
-#'
-#' @return A list with `program` (character), `prefix` (character vector of
-#'   leading arguments), `label` (human-readable command), and `version`.
-#'   `c(prefix, <cli args>)` are the arguments to pass to `program`.
-#' @keywords internal
-resolve_python_shinylive_cmd <- function() {
-  candidates <- list()
-  if (nzchar(Sys.which("shinylive"))) {
-    candidates <- c(candidates, list(
-      list(program = "shinylive", prefix = character(0), label = "shinylive")
-    ))
-  }
-  python_cmd <- find_python_command()
-  if (!is.null(python_cmd)) {
-    candidates <- c(candidates, list(
-      list(program = python_cmd, prefix = c("-m", "shinylive"),
-           label = paste(python_cmd, "-m shinylive"))
-    ))
-  }
-
-  last_stderr <- ""
-  for (cand in candidates) {
-    result <- processx::run(
-      cand$program, c(cand$prefix, "--version"),
-      error_on_status = FALSE, timeout = 30
-    )
-    if (result$status == 0) {
-      cand$version <- trimws(paste0(result$stdout, result$stderr))
-      return(cand)
-    }
-    last_stderr <- trimws(result$stderr %||% "")
-  }
-
-  module_present <- grepl("cannot be directly executed|No module named shinylive\\.__main__", last_stderr)
-  hints <- "Install the CLI with: {.code pip install shinylive}"
-  if (module_present) {
-    hints <- c(
-      "Your Python has shinylive as a module but the {.code shinylive} command is not usable.",
-      "On Windows, pip installs scripts into {.path %APPDATA%\\\\Python\\\\Python3XX\\\\Scripts}; add that directory to PATH.",
-      "Or (re)install with: {.code pip install --upgrade --force-reinstall shinylive}"
-    )
-  }
-  cli::cli_abort(c(
-    "The {.pkg shinylive} Python package CLI is required for the shinylive strategy with Python apps",
-    stats::setNames(hints, rep("i", length(hints))),
-    "x" = "Error: {last_stderr}"
-  ))
-}
-
 #' Validate the Python shinylive package CLI is usable
 #'
-#' Thin wrapper over [resolve_python_shinylive_cmd()] for callers that only
-#' need to confirm the CLI works (pre-flight checks, sitrep).
+#' Mirrors the command preference used by `convert_py_to_shinylive()`: first
+#' the `shinylive` console script on PATH, then `python -m shinylive` as a
+#' fallback. Runs `--version` to confirm the CLI actually executes (an import
+#' check is not enough -- shinylive ships no `__main__.py`, so a package that
+#' imports fine can still fail at export time).
 #'
 #' @return Invisible character string with the detected shinylive version.
 #' @keywords internal
 validate_python_shinylive_installed <- function() {
-  invisible(resolve_python_shinylive_cmd()$version)
+  shinylive_cmd <- Sys.which("shinylive")
+  if (nzchar(shinylive_cmd)) {
+    result <- processx::run(
+      "shinylive", c("--version"),
+      error_on_status = FALSE, timeout = 30
+    )
+    cmd_label <- "shinylive"
+  } else {
+    python_cmd <- find_python_command()
+    if (is.null(python_cmd)) {
+      cli::cli_abort("Python is required but was not found")
+    }
+    result <- processx::run(
+      python_cmd, c("-m", "shinylive", "--version"),
+      error_on_status = FALSE, timeout = 30
+    )
+    cmd_label <- paste(python_cmd, "-m shinylive")
+  }
+
+  if (result$status != 0) {
+    stderr <- trimws(result$stderr %||% "")
+    main_missing <- grepl("cannot be directly executed|No module named shinylive\\.__main__", stderr)
+    hints <- c(
+      "Install the CLI with: {.code pip install shinylive}"
+    )
+    if (main_missing) {
+      hints <- c(
+        "Your Python has shinylive as a module but the {.code shinylive} command is not on PATH.",
+        "On Windows, pip installs scripts into {.path %APPDATA%\\\\Python\\\\Python3XX\\\\Scripts}; add that directory to PATH.",
+        "Or (re)install with: {.code pip install --upgrade --force-reinstall shinylive}"
+      )
+    }
+    cli::cli_abort(c(
+      "The {.pkg shinylive} Python package CLI is required for the shinylive strategy with Python apps",
+      stats::setNames(hints, rep("i", length(hints))),
+      "x" = "Command: {.code {cmd_label} --version}",
+      "x" = "Error: {stderr}"
+    ))
+  }
+
+  invisible(trimws(paste0(result$stdout, result$stderr)))
 }
 
 #' Validate the Python shiny package is installed
