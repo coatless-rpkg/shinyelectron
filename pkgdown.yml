@@ -7,6 +7,7 @@ articles:
   configuration: configuration.html
   container-strategy: container-strategy.html
   customizations: customizations.html
+  download-demos: download-demos.html
   getting-started: getting-started.html
   github-actions: github-actions.html
   multi-app-suites: multi-app-suites.html
@@ -14,7 +15,7 @@ articles:
   runtime-strategies: runtime-strategies.html
   security: security.html
   troubleshooting: troubleshooting.html
-last_built: 2026-06-30T00:56Z
+last_built: 2026-06-30T21:25Z
 urls:
   reference: https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference
   article: https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles

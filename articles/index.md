@@ -34,3 +34,5 @@
   Management](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/nodejs-management.md):
 - [Troubleshooting
   Guide](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/troubleshooting.md):
+- [Download Prebuilt
+  Demos](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/download-demos.md):
