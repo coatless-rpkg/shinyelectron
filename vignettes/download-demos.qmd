@@ -15,7 +15,7 @@ knitr:
 library(shinyelectron)
 ```
 
-Every demo is built with every runtime strategy on every supported platform and published as a release asset. Pick a row, check what it needs, and download.
+Every demo is built with every runtime strategy on each supported platform and published as a release asset. The only gap is the `bundled` and `auto-download` strategies for R on Linux, which have no portable runtime; those cells show `--`. Pick a row, check what it needs, and download.
 
 What each strategy needs on the user's machine:
 
