@@ -25,18 +25,50 @@ What each strategy needs on the user's machine:
 - `auto-download`: internet access on first launch to fetch the runtime.
 - `container`: Docker or Podman installed.
 
+Your platform's downloads are shown first. Use **More downloads** for every other platform.
+
 ```{r}
 #| echo: false
 #| results: asis
 m <- shinyelectron:::demo_release_matrix()
 base <- "https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/"
-cat("| Demo | Strategy | Platform | Requirement | Download |\n")
-cat("|------|----------|----------|-------------|----------|\n")
-for (i in seq_len(nrow(m))) {
-  cat(sprintf("| %s | `%s` | %s %s | %s | [%s](%s%s) |\n",
-    m$name[i], m$strategy[i], m$platform[i], m$arch[i],
-    m$requirement[i], m$asset_name[i], base, m$asset_name[i]))
+
+platforms <- list(
+  list(id = "mac-arm64", label = "macOS (Apple Silicon)", platform = "mac", arch = "arm64"),
+  list(id = "mac-x64",   label = "macOS (Intel)",         platform = "mac", arch = "x64"),
+  list(id = "win-x64",   label = "Windows",               platform = "win", arch = "x64"),
+  list(id = "linux-x64", label = "Linux",                 platform = "linux", arch = "x64")
+)
+languages <- list(list(name = "Python", lang = "py"), list(name = "R", lang = "r"))
+groups <- list(
+  list(title = "Standalone (no setup)", strategies = c("shinylive", "bundled")),
+  list(title = "Needs a runtime or tooling", strategies = c("system", "auto-download", "container"))
+)
+
+dl <- function(rows, demo, strat) {
+  r <- rows[rows$demo == demo & rows$strategy == strat, ]
+  if (nrow(r) == 0) return("--")
+  sprintf("[download](%s%s)", base, r$asset_name)
+}
+
+for (p in platforms) {
+  cat(sprintf("\n::: {.platform-block data-platform=\"%s\" data-label=\"%s\"}\n", p$id, p$label))
+  pm <- m[m$platform == p$platform & m$arch == p$arch, ]
+  for (lg in languages) {
+    cat(sprintf("\n## %s\n", lg$name))
+    lm <- pm[pm$language == lg$lang, ]
+    demos <- unique(lm[, c("demo", "name")])
+    for (g in groups) {
+      strs <- g$strategies
+      cat(sprintf("\n### %s\n\n", g$title))
+      cat(paste0("| Demo | ", paste(sprintf("`%s`", strs), collapse = " | "), " |\n"))
+      cat(paste0("|", paste(rep("---", length(strs) + 1), collapse = "|"), "|\n"))
+      for (i in seq_len(nrow(demos))) {
+        cells <- vapply(strs, function(s) dl(lm, demos$demo[i], s), character(1))
+        cat(sprintf("| %s | %s |\n", demos$name[i], paste(cells, collapse = " | ")))
+      }
+    }
+  }
+  cat("\n:::\n")
 }
 ```
-
-All links point at the latest release, so they stay current as new versions are published.
