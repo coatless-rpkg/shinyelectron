@@ -51,6 +51,25 @@ That’s the whole workflow: one call converts your app, wraps it in
 Electron, builds a distributable, and launches it. Takes about a minute
 for a small app.
 
+## Try a prebuilt demo
+
+Download a demo and run it locally. These builds use the `shinylive`
+strategy, so they need nothing installed: download, open, and the app
+runs.
+
+| Demo | macOS (Apple) | macOS (Intel) | Windows | Linux |
+|----|----|----|----|----|
+| Python demo suite | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-shinylive-mac-arm64.dmg) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-shinylive-mac-x64.dmg) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-shinylive-win-x64.exe) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-shinylive-linux-x64.AppImage) |
+| Python single app | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-shinylive-mac-arm64.dmg) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-shinylive-mac-x64.dmg) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-shinylive-win-x64.exe) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-shinylive-linux-x64.AppImage) |
+| R demo suite | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-shinylive-mac-arm64.dmg) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-shinylive-mac-x64.dmg) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-shinylive-win-x64.exe) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-shinylive-linux-x64.AppImage) |
+| R single app | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-shinylive-mac-arm64.dmg) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-shinylive-mac-x64.dmg) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-shinylive-win-x64.exe) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-shinylive-linux-x64.AppImage) |
+
+Other strategies (bundled, system, auto-download, container) are
+published too. See the [download-demos
+guide](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/download-demos.html)
+for the full set and what each one needs, or browse the [releases
+page](https://github.com/coatless-rpkg/shinyelectron/releases/latest).
+
 ## What you can export
 
 shinyelectron supports two app types, autodetected from the contents of
