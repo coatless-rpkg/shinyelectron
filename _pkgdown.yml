@@ -49,6 +49,8 @@ navbar:
           href: articles/nodejs-management.html
         - text: Troubleshooting
           href: articles/troubleshooting.html
+        - text: Download Prebuilt Demos
+          href: articles/download-demos.html
 
 articles:
   - title: "Basics"
@@ -75,6 +77,7 @@ articles:
     contents:
       - nodejs-management
       - troubleshooting
+      - download-demos
 
 reference:
   - title: "Export & Build"

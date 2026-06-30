@@ -1,0 +1,42 @@
+---
+title: "Download Prebuilt Demos"
+vignette: >
+  %\VignetteIndexEntry{Download Prebuilt Demos}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"
+---
+
+```{r}
+#| include: false
+library(shinyelectron)
+```
+
+Every demo is built with every runtime strategy on every supported platform and published as a release asset. Pick a row, check what it needs, and download.
+
+What each strategy needs on the user's machine:
+
+- `shinylive`: nothing. The app runs in WebAssembly.
+- `bundled`: nothing. A runtime is embedded in the installer.
+- `system`: R or Python already installed and on the PATH.
+- `auto-download`: internet access on first launch to fetch the runtime.
+- `container`: Docker or Podman installed.
+
+```{r}
+#| echo: false
+#| results: asis
+m <- shinyelectron:::demo_release_matrix()
+base <- "https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/"
+cat("| Demo | Strategy | Platform | Requirement | Download |\n")
+cat("|------|----------|----------|-------------|----------|\n")
+for (i in seq_len(nrow(m))) {
+  cat(sprintf("| %s | `%s` | %s %s | %s | [%s](%s%s) |\n",
+    m$name[i], m$strategy[i], m$platform[i], m$arch[i],
+    m$requirement[i], m$asset_name[i], base, m$asset_name[i]))
+}
+```
+
+All links point at the latest release, so they stay current as new versions are published.
