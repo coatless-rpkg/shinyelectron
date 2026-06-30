@@ -1,3 +1,31 @@
+#' Select the tar program used to unpack a `.tar.gz` runtime archive
+#'
+#' Windows ships bsdtar (libarchive) at `System32\\tar.exe`. It handles the
+#' PAX / long-name records in python-build-standalone archives that R's
+#' internal tar cannot (those surface as "embedded nul in string" errors), and
+#' unlike a GNU tar from Git for Windows it does not misparse `C:\\...` paths as
+#' remote hosts. Fall back to R's internal tar only when bsdtar is unavailable.
+#' On macOS / Linux the system tar (bsdtar or GNU tar) already handles PAX
+#' records, including the Apple `com.apple.cs.CodeSignature` xattrs in portable
+#' R archives.
+#'
+#' @param os_type Operating system family, defaulting to `.Platform$OS.type`.
+#' @param system_root Windows system root, defaulting to the `SystemRoot`
+#'   environment variable.
+#' @return A value suitable for the `tar` argument of [utils::untar()]: a path
+#'   to a tar executable, the string `"internal"`, or the result of
+#'   [Sys.which()].
+#' @keywords internal
+extract_tar_program <- function(os_type = .Platform$OS.type,
+                                system_root = Sys.getenv("SystemRoot", unset = "C:\\Windows")) {
+  if (os_type == "windows") {
+    bsdtar <- file.path(system_root, "System32", "tar.exe")
+    if (file.exists(bsdtar)) bsdtar else "internal"
+  } else {
+    Sys.which("tar")
+  }
+}
+
 #' Download and extract a portable runtime into a cache directory
 #'
 #' Shared helper for `install_r_portable()` and `install_python_standalone()`. Handles the
@@ -78,17 +106,7 @@ download_and_extract_portable_tool <- function(label, version, install_path,
   tryCatch({
     ext <- tools::file_ext(temp_file)
     if (ext == "gz") {
-      if (.Platform$OS.type == "windows") {
-        # Force R's internal tar so a system GNU tar (e.g. from Git for
-        # Windows) doesn't misparse "C:\\..." paths as remote hosts.
-        utils::untar(temp_file, exdir = staging, tar = "internal")
-      } else {
-        # Use system tar on macOS / Linux. macOS bsdtar and Linux GNU tar
-        # both handle PAX records that include xattrs (e.g. the Apple
-        # com.apple.cs.CodeSignature metadata in portable R archives),
-        # which R's internal tar cannot.
-        utils::untar(temp_file, exdir = staging, tar = Sys.which("tar"))
-      }
+      utils::untar(temp_file, exdir = staging, tar = extract_tar_program())
     } else if (ext == "zip") {
       utils::unzip(temp_file, exdir = staging)
     } else {
