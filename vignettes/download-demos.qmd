@@ -72,3 +72,48 @@ for (p in platforms) {
   cat("\n:::\n")
 }
 ```
+
+```{=html}
+<style>
+.detected-platform { margin: 1rem 0 0.25rem; }
+details.more-downloads { margin-top: 1.5rem; }
+details.more-downloads > summary { cursor: pointer; font-weight: 600; }
+</style>
+<script>
+(function () {
+  function detectTarget() {
+    var ua = navigator.userAgent || "";
+    var uaData = navigator.userAgentData;
+    var platStr = ((uaData && uaData.platform) || navigator.platform || "") + " " + ua;
+    var os = /mac/i.test(platStr) ? "mac" : /win/i.test(platStr) ? "win" : /linux|x11/i.test(platStr) ? "linux" : null;
+    if (!os) return Promise.resolve(null);
+    if (os !== "mac") return Promise.resolve(os + "-x64");
+    if (uaData && uaData.getHighEntropyValues) {
+      return uaData.getHighEntropyValues(["architecture"]).then(function (h) {
+        return "mac-" + (h.architecture === "arm" ? "arm64" : "x64");
+      }).catch(function () { return "mac-arm64"; });
+    }
+    return Promise.resolve("mac-arm64");
+  }
+  function organize(targetId) {
+    var blocks = Array.prototype.slice.call(document.querySelectorAll(".platform-block"));
+    if (!blocks.length) return;
+    var target = targetId && document.querySelector('.platform-block[data-platform="' + targetId + '"]');
+    if (!target) return; // detection failed: leave every block visible
+    var label = target.getAttribute("data-label") || targetId;
+    var heading = document.createElement("p");
+    heading.className = "detected-platform";
+    heading.innerHTML = "Showing downloads for: <strong>" + label + "</strong>";
+    target.parentNode.insertBefore(heading, target);
+    var details = document.createElement("details");
+    details.className = "more-downloads";
+    var summary = document.createElement("summary");
+    summary.textContent = "More downloads (other platforms)";
+    details.appendChild(summary);
+    blocks.forEach(function (b) { if (b !== target) details.appendChild(b); });
+    target.parentNode.insertBefore(details, target.nextSibling);
+  }
+  document.addEventListener("DOMContentLoaded", function () { detectTarget().then(organize); });
+})();
+</script>
+```
