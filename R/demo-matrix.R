@@ -32,7 +32,7 @@ demo_release_matrix <- function() {
   targets <- data.frame(
     platform = c("mac", "mac", "win", "linux"),
     arch = c("arm64", "x64", "x64", "x64"),
-    runner = c("macos-latest", "macos-13", "windows-latest", "ubuntu-latest"),
+    runner = c("macos-latest", "macos-15-intel", "windows-latest", "ubuntu-latest"),
     stringsAsFactors = FALSE
   )
   requirement <- c(
