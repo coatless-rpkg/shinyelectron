@@ -38,7 +38,7 @@ test_that("convert_py_to_shinylive checks shinylive package", {
 
   mockery::stub(convert_py_to_shinylive, "validate_python_available",
                 function() invisible(TRUE))
-  mockery::stub(convert_py_to_shinylive, "validate_python_shinylive_installed",
+  mockery::stub(convert_py_to_shinylive, "resolve_python_shinylive_cmd",
                 function() cli::cli_abort("shinylive Python package required"))
   expect_error(
     convert_py_to_shinylive(tmpdir, tempfile()),
@@ -55,8 +55,9 @@ test_that("convert_py_to_shinylive calls Python shinylive CLI", {
 
   mockery::stub(convert_py_to_shinylive, "validate_python_available",
                 function() invisible(TRUE))
-  mockery::stub(convert_py_to_shinylive, "validate_python_shinylive_installed",
-                function() invisible(TRUE))
+  mockery::stub(convert_py_to_shinylive, "resolve_python_shinylive_cmd",
+                function() list(program = "shinylive", prefix = character(0),
+                                label = "shinylive", version = "shinylive 0.8.6"))
 
   run_called_with <- NULL
   mockery::stub(convert_py_to_shinylive, "processx::run", function(command, args, ...) {
@@ -66,9 +67,6 @@ test_that("convert_py_to_shinylive calls Python shinylive CLI", {
     dir.create(file.path(outdir, "shinylive"), showWarnings = FALSE)
     list(status = 0, stdout = "", stderr = "")
   })
-  # Mock Sys.which so it finds the shinylive CLI
-  mockery::stub(convert_py_to_shinylive, "Sys.which",
-                function(cmd) if (cmd == "shinylive") "/usr/bin/shinylive" else "")
 
   result <- convert_py_to_shinylive(tmpdir, outdir, verbose = FALSE)
 

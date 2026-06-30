@@ -57,21 +57,15 @@ convert_py_to_shinylive <- function(appdir, output_dir, subdir = NULL, overwrite
   }
 
   validate_python_available()
-  validate_python_shinylive_installed()
+  shinylive <- resolve_python_shinylive_cmd()
 
   fs::dir_create(output_dir, recurse = TRUE)
 
-  # Prefer the CLI command, fall back to python -m
+  # Use the invocation the resolver confirmed works (console script or
+  # `python -m shinylive`), so the export matches the validated CLI.
   subdir_args <- if (!is.null(subdir)) c("--subdir", subdir) else character(0)
-  shinylive_cmd <- Sys.which("shinylive")
-  if (nzchar(shinylive_cmd)) {
-    cmd <- "shinylive"
-    cmd_args <- c("export", appdir, output_dir, subdir_args)
-  } else {
-    python_cmd <- find_python_command()
-    cmd <- python_cmd
-    cmd_args <- c("-m", "shinylive", "export", appdir, output_dir, subdir_args)
-  }
+  cmd <- shinylive$program
+  cmd_args <- c(shinylive$prefix, "export", appdir, output_dir, subdir_args)
 
   if (verbose) {
     pb <- cli::cli_progress_bar("Converting to shinylive (Python)", total = 3)

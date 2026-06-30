@@ -10,10 +10,7 @@ validate_python_shinylive_installed()
 Invisible character string with the detected shinylive version.
 }
 \description{
-Mirrors the command preference used by \code{convert_py_to_shinylive()}: first
-the \code{shinylive} console script on PATH, then \verb{python -m shinylive} as a
-fallback. Runs \code{--version} to confirm the CLI actually executes (an import
-check is not enough -- shinylive ships no \verb{__main__.py}, so a package that
-imports fine can still fail at export time).
+Thin wrapper over \code{\link[=resolve_python_shinylive_cmd]{resolve_python_shinylive_cmd()}} for callers that only
+need to confirm the CLI works (pre-flight checks, sitrep).
 }
 \keyword{internal}
