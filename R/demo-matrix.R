@@ -43,12 +43,10 @@ demo_release_matrix <- function() {
     "container" = "Docker or Podman"
   )
   # Per-(demo, strategy, platform) exclusions for combinations that do not build
-  # reliably. demo-py-single on shinylive/linux hits an elusive CI-only failure
-  # where the shinylive console script cannot resolve the package even though it
-  # imports under `python`; the same demo builds fine on other platforms and the
-  # Python suite covers shinylive/linux. Tracked for a proper fix.
+  # reliably. Empty by default; add rows of (demo, strategy, platform) here when
+  # a combination proves incompatible.
   exclusions <- data.frame(
-    demo = "demo-py-single", strategy = "shinylive", platform = "linux",
+    demo = character(0), strategy = character(0), platform = character(0),
     stringsAsFactors = FALSE
   )
 
