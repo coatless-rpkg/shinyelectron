@@ -11,14 +11,15 @@ A named character vector suitable for the \code{env} argument of
 \code{\link[processx:run]{processx::run()}}.
 }
 \description{
-R prepends its own library directory (\code{R.home("lib")}) to \code{LD_LIBRARY_PATH}.
-When a Python child process inherits that, the dynamic loader can pull a
-conflicting library from R's lib directory and Python's \code{site} module drops
-\code{site-packages} from \code{sys.path} entirely, making pip-installed packages (for
-example the Python \code{shinylive} CLI) unimportable -- the process then fails
-with \verb{No module named ...} even though the package is installed. This returns
-the current environment with R's lib directory removed from
-\code{LD_LIBRARY_PATH}, so a Python child resolves its own libraries and
-site-packages. Only relevant on Unix; a no-op when \code{LD_LIBRARY_PATH} is unset.
+R prepends its own and related library directories to \code{LD_LIBRARY_PATH}
+(its lib directory plus system paths such as \verb{/usr/lib/x86_64-linux-gnu}).
+When a Python child inherits that, the dynamic loader can resolve a \emph{system}
+\code{libpython} ahead of the interpreter's own; the interpreter then computes a
+different \code{sys.prefix} and its \code{site} module drops \code{site-packages} from
+\code{sys.path}, so pip-installed packages (for example the Python \code{shinylive}
+CLI) become unimportable and the process fails with \verb{No module named ...}
+even though the package is installed. Python resolves its own libraries via
+rpath, so \code{LD_LIBRARY_PATH} is removed for Python children. A no-op on
+platforms / installs where it is not set (Windows, macOS, most user setups).
 }
 \keyword{internal}
