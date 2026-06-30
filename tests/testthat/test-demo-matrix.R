@@ -16,8 +16,8 @@ test_that("demo_release_matrix has the expected shape and count", {
       "platform", "arch", "runner", "asset_name", "requirement")
   )
   # 4 demos x 5 strategies x 4 targets = 80, minus 4 (R x {bundled,auto-download}
-  # x linux), minus 1 (demo-py-single x shinylive x linux exclusion).
-  expect_equal(nrow(m), 75)
+  # x linux).
+  expect_equal(nrow(m), 76)
 })
 
 test_that("demo_release_matrix excludes bundled/auto-download R on Linux", {
@@ -31,21 +31,6 @@ test_that("demo_release_matrix excludes bundled/auto-download R on Linux", {
   # shinylive R on Linux IS valid.
   expect_true(any(m$demo == "demo-r-app-suite" & m$platform == "linux" &
                     m$strategy == "shinylive"))
-})
-
-test_that("demo_release_matrix excludes only demo-py-single shinylive on Linux", {
-  m <- demo_release_matrix()
-  # The excluded combination is absent.
-  expect_false(any(m$demo == "demo-py-single" & m$strategy == "shinylive" &
-                     m$platform == "linux"))
-  # Its siblings on other platforms are kept.
-  expect_true(any(m$demo == "demo-py-single" & m$strategy == "shinylive" &
-                    m$platform == "win"))
-  expect_true(any(m$demo == "demo-py-single" & m$strategy == "shinylive" &
-                    m$platform == "mac"))
-  # And the Python suite still covers shinylive on Linux.
-  expect_true(any(m$demo == "demo-py-app-suite" & m$strategy == "shinylive" &
-                    m$platform == "linux"))
 })
 
 test_that("demo_release_matrix builds version-free asset names and requirements", {
