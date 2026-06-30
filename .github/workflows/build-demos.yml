@@ -1,0 +1,104 @@
+name: Build demo installers
+
+on:
+  release:
+    types: [published]
+  pull_request:
+    types: [labeled, synchronize]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-demos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    # Opt-in on PRs: only run when the PR carries the build-demos label.
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'build-demos')
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+      - name: Generate the build matrix
+        id: gen
+        shell: bash
+        run: |
+          Rscript -e 'install.packages("jsonlite", repos = "https://cloud.r-project.org")'
+          M=$(Rscript -e 'source("R/demo-matrix.R"); cat(jsonlite::toJSON(demo_release_matrix()))')
+          echo "matrix=$M" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: setup
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'build-demos')
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.setup.outputs.matrix) }}
+    name: ${{ matrix.demo }} / ${{ matrix.strategy }} / ${{ matrix.platform }}-${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve shinyelectron source ref
+        id: src
+        shell: bash
+        run: |
+          case "${{ github.event_name }}" in
+            release) ref="${{ github.event.release.tag_name }}" ;;
+            pull_request) ref="${{ github.event.pull_request.head.sha }}" ;;
+            *) ref="${{ github.sha }}" ;;
+          esac
+          echo "source=github::coatless-rpkg/shinyelectron@${ref}" >> "$GITHUB_OUTPUT"
+
+      - name: Build the demo installer
+        id: stbuild
+        uses: coatless-actions/shiny-to-electron@v1
+        with:
+          appdir: inst/demos/${{ matrix.demo }}
+          app-name: ${{ matrix.demo }}
+          runtime-strategy: ${{ matrix.strategy }}
+          shinyelectron-source: ${{ steps.src.outputs.source }}
+          upload-artifact: 'false'
+
+      - name: Collect the installer
+        id: collect
+        shell: bash
+        run: |
+          dist="${{ steps.stbuild.outputs.dist-path }}"
+          asset="${{ matrix.asset_name }}"
+          ext="${asset##*.}"
+          file=$(find "$dist" -maxdepth 1 -type f -name "*.${ext}" | head -n 1)
+          if [ -z "$file" ]; then
+            echo "No .${ext} installer found in ${dist}"; ls -la "$dist" || true; exit 1
+          fi
+          mkdir -p _assets
+          cp "$file" "_assets/${asset}"
+          echo "asset=_assets/${asset}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload to the release
+        if: github.event_name == 'release'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            "${{ steps.collect.outputs.asset }}" --clobber
+
+      - name: Upload as a workflow artifact
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: ${{ steps.collect.outputs.asset }}
+          if-no-files-found: error
