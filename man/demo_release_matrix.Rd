@@ -8,7 +8,7 @@ demo_release_matrix()
 }
 \value{
 A data frame with one row per valid combination and columns \code{demo},
-\code{name}, \code{language}, \code{kind}, \code{strategy}, \code{platform}, \code{arch}, \code{runner},
+\code{name}, \code{language}, \code{strategy}, \code{platform}, \code{arch}, \code{runner},
 \code{asset_name}, \code{requirement}.
 }
 \description{

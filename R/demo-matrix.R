@@ -18,7 +18,7 @@ ext_for <- function(platform) {
 #' so the build matrix and the published links cannot drift.
 #'
 #' @return A data frame with one row per valid combination and columns `demo`,
-#'   `name`, `language`, `kind`, `strategy`, `platform`, `arch`, `runner`,
+#'   `name`, `language`, `strategy`, `platform`, `arch`, `runner`,
 #'   `asset_name`, `requirement`.
 #' @keywords internal
 demo_release_matrix <- function() {
@@ -26,7 +26,6 @@ demo_release_matrix <- function() {
     demo = c("demo-single", "demo-py-single", "demo-r-app-suite", "demo-py-app-suite"),
     name = c("R single app", "Python single app", "R demo suite", "Python demo suite"),
     language = c("r", "py", "r", "py"),
-    kind = c("single", "single", "suite", "suite"),
     stringsAsFactors = FALSE
   )
   strategies <- c("shinylive", "bundled", "system", "auto-download", "container")
@@ -58,7 +57,6 @@ demo_release_matrix <- function() {
     demo = demos$demo[combos$demo_i],
     name = demos$name[combos$demo_i],
     language = demos$language[combos$demo_i],
-    kind = demos$kind[combos$demo_i],
     strategy = combos$strategy,
     platform = targets$platform[combos$target_i],
     arch = targets$arch[combos$target_i],

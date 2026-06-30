@@ -12,7 +12,7 @@ test_that("demo_release_matrix has the expected shape and count", {
   expect_s3_class(m, "data.frame")
   expect_equal(
     names(m),
-    c("demo", "name", "language", "kind", "strategy",
+    c("demo", "name", "language", "strategy",
       "platform", "arch", "runner", "asset_name", "requirement")
   )
   # 4 demos x 5 strategies x 4 targets = 80, minus 4 (R x {bundled,auto-download} x linux).
