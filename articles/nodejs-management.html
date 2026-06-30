@@ -8,7 +8,9 @@
 <title>Node.js Management • shinyelectron</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="nodejs-management_files/libs/quarto-html/popper.min.js"></script><script src="nodejs-management_files/libs/quarto-html/tippy.umd.min.js"></script><link href="nodejs-management_files/libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="nodejs-management_files/libs/quarto-html/light-border.css" rel="stylesheet">
@@ -276,7 +278,7 @@ v npm: v11.5.0</code></pre>
 <li>Compare against the expected checksum.</li>
 <li>Abort on any mismatch; the archive is never extracted.</li>
 </ol>
-<p>This catches both ordinary corruption and anything tampered with in transit.</p>
+<p>This catches both ordinary corruption and anything tampered with in transit. If <code>SHASUMS256.txt</code> cannot be fetched (a transient network error), shinyelectron warns and continues without verifying rather than failing the install. The portable R and Python runtimes are verified the same way, against their own published checksums.</p>
 </section><section class="level2"><h2 id="clearing-the-cache">Clearing the cache<a class="anchor" aria-label="anchor" href="#clearing-the-cache"></a>
 </h2>
 <p>Remove every Node.js install shinyelectron has downloaded:</p>

@@ -8,7 +8,9 @@
 <title>Runtime Strategies • shinyelectron</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="runtime-strategies_files/libs/quarto-html/popper.min.js"></script><script src="runtime-strategies_files/libs/quarto-html/tippy.umd.min.js"></script><link href="runtime-strategies_files/libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="runtime-strategies_files/libs/quarto-html/light-border.css" rel="stylesheet">
@@ -90,6 +92,7 @@
     <p>The runtime strategy decides how your Shiny app actually runs inside the Electron shell. Five options, five tradeoffs. The right one depends on your audience, your package dependencies, and whether you can assume internet access on first launch.</p>
 <p>All five strategies work with both <code>r-shiny</code> and <code>py-shiny</code>. <code>shinylive</code> is the default when you do not set one explicitly.</p>
 <p>Set the strategy either as the <code>runtime_strategy</code> argument to <code><a href="../reference/export.html">export()</a></code> or as <code>build.runtime_strategy</code> in <code>_shinyelectron.yml</code>. Function arguments override the config file, so passing <code>runtime_strategy = "bundled"</code> wins even if the config says something else.</p>
+<p>In a multi-app suite, each app may set its own <code>runtime_strategy</code>, subject to one rule: each language uses a single native strategy across the suite. See the <a href="multi-app-suites.html">Multi-App Suites</a> guide.</p>
 <section class="level2"><h2 id="picking-a-strategy">Picking a strategy<a class="anchor" aria-label="anchor" href="#picking-a-strategy"></a>
 </h2>
 <p>The matrix below lays out what each strategy ships in the exported bundle, what happens on first launch, and how the pieces fit together once the app is running. Start here if you want the shape of each option at a glance.</p>
@@ -296,11 +299,11 @@
 <ol type="1">
 <li>
 <code><a href="../reference/export.html">export()</a></code> packages the app without a runtime and includes the <code>runtime-downloader.js</code> backend.</li>
-<li>On first launch, the downloader checks a local cache directory. If it finds no runtime, it downloads and extracts a portable build.</li>
+<li>On first launch, the downloader checks a local cache directory. If it finds no runtime, it downloads a portable build, verifies it against the SHA-256 checksum recorded in the runtime manifest at build time, and extracts it.</li>
 <li>The runtime is cached per-user at <code>~/.shinyelectron/runtimes/</code> on all platforms.</li>
 <li>Subsequent launches skip the download and reuse the cached runtime.</li>
 </ol>
-<p>The download sources are the same ones bundled uses: portable-r for R, python-build-standalone for Python.</p>
+<p>The download sources are the same ones bundled uses: portable-r for R, python-build-standalone for Python. Downloads are SHA-256 verified before extraction; see <a href="security.html">Security Considerations</a> for details.</p>
 </section><section class="level3"><h3 id="tradeoffs-3">Tradeoffs<a class="anchor" aria-label="anchor" href="#tradeoffs-3"></a>
 </h3>
 <p>Auto-download wins on download size (essentially the Electron shell plus your app) and on package compatibility, since the user ends up with a real R or Python behind the window. The cached runtime is shared across every shinyelectron app installed on the same machine, so the cost amortizes after the first install.</p>

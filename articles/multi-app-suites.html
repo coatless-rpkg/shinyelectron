@@ -8,7 +8,9 @@
 <title>Multi-App Suites • shinyelectron</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="multi-app-suites_files/libs/quarto-html/popper.min.js"></script><script src="multi-app-suites_files/libs/quarto-html/tippy.umd.min.js"></script><link href="multi-app-suites_files/libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="multi-app-suites_files/libs/quarto-html/light-border.css" rel="stylesheet">
@@ -259,7 +261,7 @@
 <span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"Needs packages that are not in WebR"</span></span>
 <span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/modeler"</span></span>
 <span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"system"</span><span class="co">    # overrides the suite default</span></span></code></pre></div>
-<p>Per-app <code>runtime_strategy:</code> overrides the suite default for just that app. The other apps keep inheriting the default. You can mix all five strategies this way, with the usual platform caveats (for example, bundled R still needs a portable R build for the target OS).</p>
+<p>Per-app <code>runtime_strategy:</code> overrides the suite default for just that app. The other apps keep inheriting the default. There is one rule on mixing: within a single language, all native apps (<code>system</code>, <code>bundled</code>, <code>auto-download</code>) must use the same strategy. <code>shinylive</code> and <code>container</code> apps use their own backends and combine freely with anything. So a suite can hold a shinylive R app, a bundled R app, and a system Python app, but it cannot hold both a bundled R app and an auto-download R app, or a bundled R app and a system R app, because that is two native strategies for the same language. Export aborts with a message naming the conflicting apps if you cross that line. The usual platform caveats still apply (for example, bundled R needs a portable R build for the target OS).</p>
 </section><section class="level2"><h2 id="how-dependencies-are-handled">How dependencies are handled<a class="anchor" aria-label="anchor" href="#how-dependencies-are-handled"></a>
 </h2>
 <p>R apps can be scanned for dependencies; Python apps cannot. R lets you skip declaration entirely and rely on the source. Python always asks you to write a list, just in one of two files. Both languages can also use <code>_shinyelectron.yml</code> for explicit declarations, and lists from any source merge into one install plan.</p>
@@ -301,7 +303,7 @@
 <span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span>appdir <span class="op">=</span> <span class="st">"path/to/my-py-suite"</span>, destdir <span class="op">=</span> <span class="st">"output-py-suite"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>You do not pass <code>app_type</code> or <code>runtime_strategy</code>. The YAML owns those choices, through <code>build.type</code> and <code>build.runtime_strategy</code>.</p>
-<p>All five <a href="runtime-strategies.html">runtime strategies</a> (shinylive, system, bundled, auto-download, container) work with suites, exactly as they do with single apps. Per-app overrides let one suite mix them.</p>
+<p>All five <a href="runtime-strategies.html">runtime strategies</a> (shinylive, system, bundled, auto-download, container) work with suites, exactly as they do with single apps. Per-app overrides let one suite mix them, subject to the one-native-strategy-per-language rule described above.</p>
 </section><section class="level2"><h2 id="launcher-and-app-switching">Launcher and app switching<a class="anchor" aria-label="anchor" href="#launcher-and-app-switching"></a>
 </h2>
 <p>The Electron window opens to a launcher page. Each app gets a card with its name, description, type badge, and icon (your image, or a generated initial).</p>

@@ -104,6 +104,23 @@ nothing else: it never sees `ipcRenderer`, never imports a Node module.
 anything injected into the page, execute JavaScript and inspect any
 value the app holds.
 
+## Content-Security-Policy scope
+
+The lifecycle window (`lifecycle.html`) and the multi-app launcher
+(`launcher.html`) each carry a `Content-Security-Policy` meta tag that
+restricts sources to `'self'` with `'unsafe-inline'` permitted for
+styles and scripts. This covers the startup, error, and shutdown phases
+shown before the Shiny app is ready.
+
+The Shiny application itself is loaded by navigating to a localhost URL
+(`http://localhost:<port>`). No CSP is injected for that content by the
+Electron shell; the CSP that applies to the running Shiny app is
+whatever the Shiny server sends in its own HTTP headers, which is none
+by default. Keep this in mind if the app loads any external scripts or
+embeds third-party widgets: the Electron `webSecurity: true` setting
+enforces the same-origin policy, but it does not substitute for a CSP on
+the app content.
+
 ## Cross-origin headers (Shinylive only)
 
 Shinylive runs WebR or Pyodide in the browser, which needs
@@ -115,12 +132,42 @@ Express server attaches the right headers automatically:
     Cross-Origin-Resource-Policy: cross-origin
 
 Native R and Python apps load over plain `localhost` and need no extra
-CSP work: the content originates from a process you started, not a third
-party.
+cross-origin header work: the content originates from a process you
+started, not a third party.
 
 **Rule of thumb.** Avoid external scripts (CDNs, third-party widgets)
 unless the app genuinely needs them. Each external resource is a trust
 dependency you cannot audit. Bundle local copies when you can.
+
+## Runtime download integrity
+
+Every runtime archive is verified against a SHA-256 checksum published
+by its upstream before extraction. A mismatch aborts the install with
+the expected and actual hashes.
+
+- **Node.js**
+  ([`install_nodejs()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.md)):
+  verifies against `SHASUMS256.txt` from nodejs.org.
+- **Portable R**
+  ([`install_r_portable()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_r_portable.md)):
+  verifies against the per-asset `.sha256` sidecar published next to
+  each portable-r release archive.
+- **Portable Python**
+  ([`install_python_standalone()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_python_standalone.md)):
+  verifies against the `SHA256SUMS` file published with each
+  python-build-standalone release.
+
+If the published checksum cannot be fetched (for example, a transient
+network error), the installer prints a warning and continues without
+verification rather than failing the build, mirroring the Node.js
+behavior. To require verification, confirm the checksum file is
+reachable before building.
+
+The `auto-download` strategy carries the same protection to the end
+user’s machine: the runtime manifest embedded in the app records the
+expected SHA-256 (when available at build time), and the Electron
+runtime-downloader verifies the archive it fetches on first launch
+before extracting it.
 
 ## Where your app still has to think
 

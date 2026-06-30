@@ -6,7 +6,13 @@ application that can run entirely in the browser using Pyodide.
 ## Usage
 
 ``` r
-convert_py_to_shinylive(appdir, output_dir, overwrite = FALSE, verbose = TRUE)
+convert_py_to_shinylive(
+  appdir,
+  output_dir,
+  subdir = NULL,
+  overwrite = FALSE,
+  verbose = TRUE
+)
 ```
 
 ## Arguments
@@ -20,6 +26,14 @@ convert_py_to_shinylive(appdir, output_dir, overwrite = FALSE, verbose = TRUE)
 
   Character string. Path where the converted shinylive app will be
   saved.
+
+- subdir:
+
+  Character or NULL. When set, the app is exported into a `<subdir>`
+  subdirectory of `output_dir` as an additive shared-site export,
+  preserving existing contents (including a shared `shinylive/` asset
+  tree). When NULL (default), a single-app export is performed and an
+  existing `output_dir` is removed when `overwrite = TRUE`.
 
 - overwrite:
 

@@ -175,9 +175,17 @@ apps:
 ```
 
 Per-app `runtime_strategy:` overrides the suite default for just that
-app. The other apps keep inheriting the default. You can mix all five
-strategies this way, with the usual platform caveats (for example,
-bundled R still needs a portable R build for the target OS).
+app. The other apps keep inheriting the default. There is one rule on
+mixing: within a single language, all native apps (`system`, `bundled`,
+`auto-download`) must use the same strategy. `shinylive` and `container`
+apps use their own backends and combine freely with anything. So a suite
+can hold a shinylive R app, a bundled R app, and a system Python app,
+but it cannot hold both a bundled R app and an auto-download R app, or a
+bundled R app and a system R app, because that is two native strategies
+for the same language. Export aborts with a message naming the
+conflicting apps if you cross that line. The usual platform caveats
+still apply (for example, bundled R needs a portable R build for the
+target OS).
 
 ## How dependencies are handled
 
@@ -268,7 +276,8 @@ All five [runtime
 strategies](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/runtime-strategies.md)
 (shinylive, system, bundled, auto-download, container) work with suites,
 exactly as they do with single apps. Per-app overrides let one suite mix
-them.
+them, subject to the one-native-strategy-per-language rule described
+above.
 
 ## Launcher and app switching
 

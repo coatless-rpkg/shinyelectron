@@ -24,9 +24,9 @@ Convert Shiny apps to shinylive format
 
 Install and manage R, Python, and Node.js runtimes
 
-- [`install_r()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_r.md)
+- [`install_r_portable()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_r_portable.md)
   : Install a portable R distribution
-- [`install_python()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_python.md)
+- [`install_python_standalone()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_python_standalone.md)
   : Install a portable Python distribution
 - [`install_nodejs()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.md)
   : Install Node.js locally

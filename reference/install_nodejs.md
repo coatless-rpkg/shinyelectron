@@ -47,8 +47,8 @@ Invisibly returns the path to the installed Node.js directory.
 
 ## See also
 
-[`install_r()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_r.md),
-[`install_python()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_python.md)
+[`install_r_portable()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_r_portable.md),
+[`install_python_standalone()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_python_standalone.md)
 for other runtime installers.
 
 ## Examples

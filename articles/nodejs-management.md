@@ -189,7 +189,10 @@ is unpacked:
 5.  Abort on any mismatch; the archive is never extracted.
 
 This catches both ordinary corruption and anything tampered with in
-transit.
+transit. If `SHASUMS256.txt` cannot be fetched (a transient network
+error), shinyelectron warns and continues without verifying rather than
+failing the install. The portable R and Python runtimes are verified the
+same way, against their own published checksums.
 
 ## Clearing the cache
 

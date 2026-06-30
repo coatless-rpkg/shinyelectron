@@ -8,7 +8,9 @@
 <title>Configuration Guide • shinyelectron</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="configuration_files/libs/quarto-html/popper.min.js"></script><script src="configuration_files/libs/quarto-html/tippy.umd.min.js"></script><link href="configuration_files/libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="configuration_files/libs/quarto-html/light-border.css" rel="stylesheet">
@@ -502,6 +504,7 @@
 </tbody>
 </table>
 <p>The maintained pins are updated with each shinyelectron release. Using <code>null</code> is recommended for most projects: you get a version known to work, and you can pin explicitly when you need a specific release.</p>
+<p>A custom version must correspond to a build the upstream source actually publishes. The maintained pin resolves offline; other versions are resolved against the upstream releases at build time (portable-r for R, python-build-standalone for Python), so a very old patch version may no longer be available. If a pin cannot be resolved, the build aborts with a message pointing you back to the maintained default.</p>
 <table class="table caption-top">
 <colgroup>
 <col style="width: 15%">
@@ -539,7 +542,102 @@
 </table>
 <p>The support toolchain (<code>electron-builder</code>, <code>electron-updater</code>, <code>electron-log</code>) is pinned internally by shinyelectron and is not user-configurable via <code>_shinyelectron.yml</code>. Node.js is the build toolchain taken from the system PATH and is not bundled in the app; it is managed via the <code>nodejs</code> section below.</p>
 <p><code>r.version</code> and <code>python.version</code> apply only to the <code>bundled</code>, <code>auto-download</code>, and <code>container</code> strategies. They have no effect under <code>shinylive</code>, where the R or Python runtime is the WebR or Pyodide version shipped by the <code>shinylive</code> package (set upstream, not configurable here), or under <code>system</code>, where the app runs against the end user’s installed R or Python.</p>
-</section><section class="level4"><h4 id="system_packages">
+</section><section class="level4"><h4 id="detection-and-extra-packages">Detection and extra packages<a class="anchor" aria-label="anchor" href="#detection-and-extra-packages"></a>
+</h4>
+<table class="table caption-top">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 18%">
+<col style="width: 27%">
+<col style="width: 39%">
+</colgroup>
+<thead><tr class="header">
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>auto_detect</code></td>
+<td>boolean</td>
+<td><code>true</code></td>
+<td>Automatically scan the app source to detect required R or Python packages (applies to <code>bundled</code>, <code>auto-download</code>, and <code>container</code> strategies)</td>
+</tr>
+<tr class="even">
+<td><code>extra_packages</code></td>
+<td>list of strings</td>
+<td><code>[]</code></td>
+<td>Additional packages to include beyond those auto-detected</td>
+</tr>
+</tbody>
+</table></section><section class="level4"><h4 id="r-specific-dependency-options">R-specific dependency options<a class="anchor" aria-label="anchor" href="#r-specific-dependency-options"></a>
+</h4>
+<p>These keys sit under <code>dependencies.r</code> and apply to the <code>bundled</code>, <code>auto-download</code>, and <code>system</code> strategies.</p>
+<table class="table caption-top">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 18%">
+<col style="width: 27%">
+<col style="width: 39%">
+</colgroup>
+<thead><tr class="header">
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>r.packages</code></td>
+<td>list of strings</td>
+<td><code>[]</code></td>
+<td>R packages to install alongside the app</td>
+</tr>
+<tr class="even">
+<td><code>r.repos</code></td>
+<td>list of strings</td>
+<td><code>["https://cloud.r-project.org"]</code></td>
+<td>CRAN-compatible repository URLs to use when installing R packages</td>
+</tr>
+<tr class="odd">
+<td><code>r.lib_path</code></td>
+<td>string</td>
+<td><code>null</code></td>
+<td>Custom library path where R packages are installed; <code>null</code> uses the default R library</td>
+</tr>
+</tbody>
+</table></section><section class="level4"><h4 id="python-specific-dependency-options">Python-specific dependency options<a class="anchor" aria-label="anchor" href="#python-specific-dependency-options"></a>
+</h4>
+<p>These keys sit under <code>dependencies.python</code> and apply to the <code>bundled</code>, <code>auto-download</code>, and <code>system</code> strategies.</p>
+<table class="table caption-top">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 18%">
+<col style="width: 27%">
+<col style="width: 39%">
+</colgroup>
+<thead><tr class="header">
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>python.packages</code></td>
+<td>list of strings</td>
+<td><code>[]</code></td>
+<td>Python packages to install alongside the app</td>
+</tr>
+<tr class="even">
+<td><code>python.index_urls</code></td>
+<td>list of strings</td>
+<td><code>["https://pypi.org/simple"]</code></td>
+<td>Package index URLs used when installing Python packages</td>
+</tr>
+</tbody>
+</table></section><section class="level4"><h4 id="system_packages">
 <code>system_packages</code><a class="anchor" aria-label="anchor" href="#system_packages"></a>
 </h4>
 <p>A list of apt package names baked into the container image at build time. Used only when <code>runtime_strategy</code> is <code>"container"</code>.</p>
@@ -647,7 +745,7 @@
 </section><section class="level3"><h3 id="apps">
 <code>apps</code><a class="anchor" aria-label="anchor" href="#apps"></a>
 </h3>
-<p>Defines a multi-app suite: two or more Shiny apps packaged in one Electron shell with a launcher screen. At least two entries are required. Any entry can override <code>build.type</code> or <code>build.runtime_strategy</code>, which is how mixed-strategy suites work.</p>
+<p>Defines a multi-app suite: two or more Shiny apps packaged in one Electron shell with a launcher screen. At least two entries are required. Any entry can override <code>build.type</code> or <code>build.runtime_strategy</code>, which is how mixed-strategy suites work. One constraint applies: within a language, all native apps (<code>system</code>, <code>bundled</code>, <code>auto-download</code>) must share one strategy; <code>shinylive</code> and <code>container</code> apps combine freely. Export aborts on a conflict. See the <a href="multi-app-suites.html">Multi-App Suites</a> vignette for details.</p>
 <table class="table caption-top">
 <colgroup>
 <col style="width: 14%">
@@ -718,82 +816,223 @@
 <span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"py-shiny"</span></span>
 <span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"User management"</span></span></code></pre></div>
 <p>See the <a href="multi-app-suites.html">Multi-App Suites</a> vignette for mixed-strategy examples and launcher customization.</p>
+</section><section class="level3"><h3 id="logging">
+<code>logging</code><a class="anchor" aria-label="anchor" href="#logging"></a>
+</h3>
+<p>Controls where and how the app writes its log files.</p>
+<table class="table caption-top">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 18%">
+<col style="width: 27%">
+<col style="width: 39%">
+</colgroup>
+<thead><tr class="header">
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>log_dir</code></td>
+<td>string</td>
+<td><code>null</code></td>
+<td>Directory for log files; <code>null</code> writes to the Electron app’s <code>userData/logs</code> directory</td>
+</tr>
+<tr class="even">
+<td><code>log_level</code></td>
+<td>string</td>
+<td><code>"info"</code></td>
+<td>Logging verbosity: <code>"debug"</code>, <code>"info"</code>, <code>"warn"</code>, or <code>"error"</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong></p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">logging</span><span class="kw">:</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">log_dir</span><span class="kw">:</span><span class="at"> </span><span class="st">"/var/log/my-app"</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">log_level</span><span class="kw">:</span><span class="at"> </span><span class="st">"debug"</span></span></code></pre></div>
+</section><section class="level3"><h3 id="lifecycle">
+<code>lifecycle</code><a class="anchor" aria-label="anchor" href="#lifecycle"></a>
+</h3>
+<p>Controls the lifecycle window that fills the gap between launch and app readiness. See the <a href="customizations.html">Customizations</a> guide for the visual options (splash image, preloader style, etc.). The keys below govern behavior and timeout rather than appearance.</p>
+<table class="table caption-top">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 18%">
+<col style="width: 27%">
+<col style="width: 39%">
+</colgroup>
+<thead><tr class="header">
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>show_phase_details</code></td>
+<td>boolean</td>
+<td><code>true</code></td>
+<td>Show the phase-detail line under the preloader headline</td>
+</tr>
+<tr class="even">
+<td><code>error_show_logs</code></td>
+<td>boolean</td>
+<td><code>true</code></td>
+<td>Show the collapsible error-log block in the error state</td>
+</tr>
+<tr class="odd">
+<td><code>shutdown_timeout</code></td>
+<td>integer (ms)</td>
+<td><code>10000</code></td>
+<td>Maximum milliseconds to wait for backend teardown before force-quitting</td>
+</tr>
+<tr class="even">
+<td><code>custom_splash_html</code></td>
+<td>string</td>
+<td><code>null</code></td>
+<td>Raw HTML replacing the entire splash state; <code>null</code> uses the built-in splash</td>
+</tr>
+<tr class="odd">
+<td><code>custom_error_html</code></td>
+<td>string</td>
+<td><code>null</code></td>
+<td>Raw HTML replacing the entire error state; <code>null</code> uses the built-in error view</td>
+</tr>
+<tr class="even">
+<td><code>prompt_before_install</code></td>
+<td>boolean</td>
+<td><code>false</code></td>
+<td>Prompt the user before installing missing R or Python packages</td>
+</tr>
+<tr class="odd">
+<td><code>prompt_runtime_version</code></td>
+<td>boolean</td>
+<td><code>false</code></td>
+<td>Show a runtime-version picker when multiple R or Python installations are detected</td>
+</tr>
+</tbody>
+</table></section><section class="level3"><h3 id="installer">
+<code>installer</code><a class="anchor" aria-label="anchor" href="#installer"></a>
+</h3>
+<p>Controls installer branding and behavior for the Windows (NSIS) installer produced by electron-builder.</p>
+<table class="table caption-top">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 18%">
+<col style="width: 27%">
+<col style="width: 39%">
+</colgroup>
+<thead><tr class="header">
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>app_id</code></td>
+<td>string</td>
+<td><code>null</code></td>
+<td>Unique application identifier (e.g. <code>"com.example.myapp"</code>); <code>null</code> derives one from the app name</td>
+</tr>
+<tr class="even">
+<td><code>license_file</code></td>
+<td>string</td>
+<td><code>null</code></td>
+<td>Path to a license file shown during installation (Windows NSIS only)</td>
+</tr>
+<tr class="odd">
+<td><code>one_click</code></td>
+<td>boolean</td>
+<td><code>true</code></td>
+<td>Use a one-click installer on Windows; set to <code>false</code> for a wizard-style installer</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong></p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">installer</span><span class="kw">:</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">app_id</span><span class="kw">:</span><span class="at"> </span><span class="st">"com.example.my-dashboard"</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">license_file</span><span class="kw">:</span><span class="at"> </span><span class="st">"LICENSE.txt"</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">one_click</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span></code></pre></div>
 </section></section><section class="level2"><h2 id="common-recipes">Common recipes<a class="anchor" aria-label="anchor" href="#common-recipes"></a>
 </h2>
 <section class="level3"><h3 id="development-setup">Development setup<a class="anchor" aria-label="anchor" href="#development-setup"></a>
 </h3>
 <p>Fast iteration while you work:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"My App (Dev)"</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"0.0.1"</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">window</span><span class="kw">:</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">width</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">height</span><span class="kw">:</span><span class="at"> </span><span class="dv">700</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"My App (Dev)"</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"0.0.1"</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="fu">window</span><span class="kw">:</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">width</span><span class="kw">:</span><span class="at"> </span><span class="dv">1000</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">height</span><span class="kw">:</span><span class="at"> </span><span class="dv">700</span></span></code></pre></div>
 </section><section class="level3"><h3 id="production-multi-platform-build">Production multi-platform build<a class="anchor" aria-label="anchor" href="#production-multi-platform-build"></a>
 </h3>
 <p>For distribution across platforms:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Production App"</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"1.0.0"</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"r-shiny"</span></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"shinylive"</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">platforms</span><span class="kw">:</span></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> mac</span></span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> win</span></span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> linux</span></span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">architectures</span><span class="kw">:</span></span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> x64</span></span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> arm64</span></span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="fu">window</span><span class="kw">:</span></span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">width</span><span class="kw">:</span><span class="at"> </span><span class="dv">1200</span></span>
-<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">height</span><span class="kw">:</span><span class="at"> </span><span class="dv">800</span></span>
-<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="fu">icon</span><span class="kw">:</span><span class="at"> </span><span class="st">"branding/icon.png"</span></span>
-<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
-<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"22.11.0"</span></span></code></pre></div>
-</section><section class="level3"><h3 id="native-r-app-with-bundled-runtime">Native R app with bundled runtime<a class="anchor" aria-label="anchor" href="#native-r-app-with-bundled-runtime"></a>
-</h3>
-<p>Ship R inside the app:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Analytics Tool"</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"1.0.0"</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"r-shiny"</span></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"bundled"</span></span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">platforms</span><span class="kw">:</span></span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> mac</span></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> win</span></span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="fu">dependencies</span><span class="kw">:</span></span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">r</span><span class="kw">:</span></span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"4.4.1"</span></span></code></pre></div>
-</section><section class="level3"><h3 id="multi-app-suite">Multi-app suite<a class="anchor" aria-label="anchor" href="#multi-app-suite"></a>
-</h3>
-<p>Several apps behind one launcher:</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"My App Suite"</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Production App"</span></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"1.0.0"</span></span>
 <span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"r-shiny"</span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"auto-download"</span></span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="fu">apps</span><span class="kw">:</span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> </span><span class="st">"dashboard"</span></span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Dashboard"</span></span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/dashboard"</span></span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"Sales analytics"</span></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> </span><span class="st">"admin"</span></span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Admin Panel"</span></span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/admin"</span></span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"py-shiny"</span></span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"User management"</span></span></code></pre></div>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"shinylive"</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">platforms</span><span class="kw">:</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> mac</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> win</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> linux</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">architectures</span><span class="kw">:</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> x64</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> arm64</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="fu">window</span><span class="kw">:</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">width</span><span class="kw">:</span><span class="at"> </span><span class="dv">1200</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">height</span><span class="kw">:</span><span class="at"> </span><span class="dv">800</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="fu">icon</span><span class="kw">:</span><span class="at"> </span><span class="st">"branding/icon.png"</span></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"22.11.0"</span></span></code></pre></div>
+</section><section class="level3"><h3 id="native-r-app-with-bundled-runtime">Native R app with bundled runtime<a class="anchor" aria-label="anchor" href="#native-r-app-with-bundled-runtime"></a>
+</h3>
+<p>Ship R inside the app:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Analytics Tool"</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"1.0.0"</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"r-shiny"</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"bundled"</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">platforms</span><span class="kw">:</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> mac</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> win</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="fu">dependencies</span><span class="kw">:</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">r</span><span class="kw">:</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"4.4.1"</span></span></code></pre></div>
+</section><section class="level3"><h3 id="multi-app-suite">Multi-app suite<a class="anchor" aria-label="anchor" href="#multi-app-suite"></a>
+</h3>
+<p>Several apps behind one launcher:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"My App Suite"</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"1.0.0"</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"r-shiny"</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"auto-download"</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="fu">apps</span><span class="kw">:</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> </span><span class="st">"dashboard"</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Dashboard"</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/dashboard"</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"Sales analytics"</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> </span><span class="st">"admin"</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Admin Panel"</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">"./apps/admin"</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"py-shiny"</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"User management"</span></span></code></pre></div>
 </section></section><section class="level2"><h2 id="what-happens-when-a-value-is-invalid">What happens when a value is invalid<a class="anchor" aria-label="anchor" href="#what-happens-when-a-value-is-invalid"></a>
 </h2>
 <p>shinyelectron validates values on read and degrades gracefully rather than aborting the build:</p>

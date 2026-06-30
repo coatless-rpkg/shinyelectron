@@ -202,9 +202,10 @@ export(
 Not every combination is portable. Two rules to keep in mind:
 
 - **macOS apps build only on macOS.** Apple’s signing and `.app`
-  packaging run through native tools. Windows and Linux will
-  cross-compile from macOS, but each platform’s own native build is more
-  reliable.
+  packaging run through native tools. Windows and Linux installers are
+  not reliably cross-compiled from a macOS host; each platform’s
+  installer is most reliably produced by building on that platform’s own
+  OS.
 - **The `bundled` and `auto-download` strategies need a per-platform
   build.** Both embed a single platform-specific runtime (or a manifest
   pointing to one) at export time and abort when more than one platform

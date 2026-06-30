@@ -8,7 +8,9 @@
 <title>Security Considerations • shinyelectron</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="security_files/libs/quarto-html/popper.min.js"></script><script src="security_files/libs/quarto-html/tippy.umd.min.js"></script><link href="security_files/libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="security_files/libs/quarto-html/light-border.css" rel="stylesheet">
@@ -174,14 +176,31 @@
 </table>
 <p><strong>The preload script is the only bridge.</strong> It exposes a short list of named IPC methods (<code>lifecycle.onStatus</code>, <code>lifecycle.retry</code>, <code>lifecycle.quit</code>, and a few peers) through <code>contextBridge.exposeInMainWorld()</code>. The renderer can call those and nothing else: it never sees <code>ipcRenderer</code>, never imports a Node module.</p>
 <p><strong>DevTools default to off.</strong> The DevTools menu item only appears when <code>menu.show_dev_tools</code> is <code>true</code> in <code>_shinyelectron.yml</code> (the default is <code>false</code>). Leave it that way for production. DevTools lets the user, or anything injected into the page, execute JavaScript and inspect any value the app holds.</p>
+</section><section class="level2"><h2 id="content-security-policy-scope">Content-Security-Policy scope<a class="anchor" aria-label="anchor" href="#content-security-policy-scope"></a>
+</h2>
+<p>The lifecycle window (<code>lifecycle.html</code>) and the multi-app launcher (<code>launcher.html</code>) each carry a <code>Content-Security-Policy</code> meta tag that restricts sources to <code>'self'</code> with <code>'unsafe-inline'</code> permitted for styles and scripts. This covers the startup, error, and shutdown phases shown before the Shiny app is ready.</p>
+<p>The Shiny application itself is loaded by navigating to a localhost URL (<code>http://localhost:&lt;port&gt;</code>). No CSP is injected for that content by the Electron shell; the CSP that applies to the running Shiny app is whatever the Shiny server sends in its own HTTP headers, which is none by default. Keep this in mind if the app loads any external scripts or embeds third-party widgets: the Electron <code>webSecurity: true</code> setting enforces the same-origin policy, but it does not substitute for a CSP on the app content.</p>
 </section><section class="level2"><h2 id="cross-origin-headers-shinylive-only">Cross-origin headers (Shinylive only)<a class="anchor" aria-label="anchor" href="#cross-origin-headers-shinylive-only"></a>
 </h2>
 <p>Shinylive runs WebR or Pyodide in the browser, which needs <code>SharedArrayBuffer</code>, which needs cross-origin isolation. The local Express server attaches the right headers automatically:</p>
 <pre><code><span><span class="va">Cross</span><span class="op">-</span><span class="va">Origin</span><span class="op">-</span><span class="va">Opener</span><span class="op">-</span><span class="va">Policy</span><span class="op">:</span> <span class="va">same</span><span class="op">-</span><span class="va">origin</span></span>
 <span><span class="va">Cross</span><span class="op">-</span><span class="va">Origin</span><span class="op">-</span><span class="va">Embedder</span><span class="op">-</span><span class="va">Policy</span><span class="op">:</span> <span class="va">require</span><span class="op">-</span><span class="va">corp</span></span>
 <span><span class="va">Cross</span><span class="op">-</span><span class="va">Origin</span><span class="op">-</span><span class="va">Resource</span><span class="op">-</span><span class="va">Policy</span><span class="op">:</span> <span class="va">cross</span><span class="op">-</span><span class="va">origin</span></span></code></pre>
-<p>Native R and Python apps load over plain <code>localhost</code> and need no extra CSP work: the content originates from a process you started, not a third party.</p>
+<p>Native R and Python apps load over plain <code>localhost</code> and need no extra cross-origin header work: the content originates from a process you started, not a third party.</p>
 <p><strong>Rule of thumb.</strong> Avoid external scripts (CDNs, third-party widgets) unless the app genuinely needs them. Each external resource is a trust dependency you cannot audit. Bundle local copies when you can.</p>
+</section><section class="level2"><h2 id="runtime-download-integrity">Runtime download integrity<a class="anchor" aria-label="anchor" href="#runtime-download-integrity"></a>
+</h2>
+<p>Every runtime archive is verified against a SHA-256 checksum published by its upstream before extraction. A mismatch aborts the install with the expected and actual hashes.</p>
+<ul>
+<li>
+<strong>Node.js</strong> (<code><a href="../reference/install_nodejs.html">install_nodejs()</a></code>): verifies against <code>SHASUMS256.txt</code> from nodejs.org.</li>
+<li>
+<strong>Portable R</strong> (<code><a href="../reference/install_r_portable.html">install_r_portable()</a></code>): verifies against the per-asset <code>.sha256</code> sidecar published next to each portable-r release archive.</li>
+<li>
+<strong>Portable Python</strong> (<code><a href="../reference/install_python_standalone.html">install_python_standalone()</a></code>): verifies against the <code>SHA256SUMS</code> file published with each python-build-standalone release.</li>
+</ul>
+<p>If the published checksum cannot be fetched (for example, a transient network error), the installer prints a warning and continues without verification rather than failing the build, mirroring the Node.js behavior. To require verification, confirm the checksum file is reachable before building.</p>
+<p>The <code>auto-download</code> strategy carries the same protection to the end user’s machine: the runtime manifest embedded in the app records the expected SHA-256 (when available at build time), and the Electron runtime-downloader verifies the archive it fetches on first launch before extracting it.</p>
 </section><section class="level2"><h2 id="where-your-app-still-has-to-think">Where your app still has to think<a class="anchor" aria-label="anchor" href="#where-your-app-still-has-to-think"></a>
 </h2>
 <p>shinyelectron secures the shell. Inside the shell, your Shiny code runs with the same OS permissions as the user who launched it. That is the whole point of a desktop app, and it is also the part you have to defend yourself.</p>

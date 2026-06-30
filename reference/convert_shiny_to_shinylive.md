@@ -10,6 +10,7 @@ server.
 convert_shiny_to_shinylive(
   appdir,
   output_dir,
+  subdir = NULL,
   overwrite = FALSE,
   verbose = TRUE
 )
@@ -26,6 +27,15 @@ convert_shiny_to_shinylive(
 
   Character string. Path where the converted shinylive app will be
   saved.
+
+- subdir:
+
+  Character or NULL. When set, the app is exported into a `<subdir>`
+  subdirectory of `output_dir` as an additive shared-site export:
+  existing contents of `output_dir` (including a shared `shinylive/`
+  asset tree) are preserved. When NULL (default), a single-app export is
+  performed and an existing `output_dir` is removed when
+  `overwrite = TRUE`.
 
 - overwrite:
 

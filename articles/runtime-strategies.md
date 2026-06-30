@@ -15,6 +15,12 @@ arguments override the config file, so passing
 `runtime_strategy = "bundled"` wins even if the config says something
 else.
 
+In a multi-app suite, each app may set its own `runtime_strategy`,
+subject to one rule: each language uses a single native strategy across
+the suite. See the [Multi-App
+Suites](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/multi-app-suites.md)
+guide.
+
 ## Picking a strategy
 
 The matrix below lays out what each strategy ships in the exported
@@ -295,13 +301,18 @@ export(
     packages the app without a runtime and includes the
     `runtime-downloader.js` backend.
 2.  On first launch, the downloader checks a local cache directory. If
-    it finds no runtime, it downloads and extracts a portable build.
+    it finds no runtime, it downloads a portable build, verifies it
+    against the SHA-256 checksum recorded in the runtime manifest at
+    build time, and extracts it.
 3.  The runtime is cached per-user at `~/.shinyelectron/runtimes/` on
     all platforms.
 4.  Subsequent launches skip the download and reuse the cached runtime.
 
 The download sources are the same ones bundled uses: portable-r for R,
-python-build-standalone for Python.
+python-build-standalone for Python. Downloads are SHA-256 verified
+before extraction; see [Security
+Considerations](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/security.md)
+for details.
 
 ### Tradeoffs
 

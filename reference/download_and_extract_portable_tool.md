@@ -1,9 +1,9 @@
 # Download and extract a portable runtime into a cache directory
 
 Shared helper for
-[`install_r()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_r.md)
+[`install_r_portable()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_r_portable.md)
 and
-[`install_python()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_python.md).
+[`install_python_standalone()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_python_standalone.md).
 Handles the common flow: cache-hit short-circuit, download to temp file,
 extract by archive type, verify the expected executable appears,
 cleanup.
