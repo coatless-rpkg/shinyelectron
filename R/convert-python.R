@@ -83,6 +83,7 @@ convert_py_to_shinylive <- function(appdir, output_dir, subdir = NULL, overwrite
     result <- processx::run(
       cmd,
       cmd_args,
+      env = python_subprocess_env(),
       echo = verbose,
       spinner = verbose,
       error_on_status = FALSE,

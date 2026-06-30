@@ -29,6 +29,7 @@ validate_python_shinylive_installed <- function() {
   if (nzchar(shinylive_cmd)) {
     result <- processx::run(
       "shinylive", c("--version"),
+      env = python_subprocess_env(),
       error_on_status = FALSE, timeout = 30
     )
     cmd_label <- "shinylive"
@@ -39,6 +40,7 @@ validate_python_shinylive_installed <- function() {
     }
     result <- processx::run(
       python_cmd, c("-m", "shinylive", "--version"),
+      env = python_subprocess_env(),
       error_on_status = FALSE, timeout = 30
     )
     cmd_label <- paste(python_cmd, "-m shinylive")
@@ -86,6 +88,7 @@ validate_python_shiny_installed <- function() {
   result <- processx::run(
     python_cmd,
     c("-c", "import shiny; print(shiny.__version__)"),
+    env = python_subprocess_env(),
     error_on_status = FALSE,
     timeout = 30
   )
