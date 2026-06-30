@@ -63,31 +63,26 @@ minute for a small app.
 
 ## Try a prebuilt demo
 
-Download a demo and run it locally. These builds use the `shinylive` strategy, so they need nothing installed: download, open, and the app runs.
+Download the R demo suite and run it locally. It uses the `shinylive` strategy, so it needs nothing installed: download, open, and the app runs.
 
 ```{r}
 #| echo: false
 #| results: asis
 m <- shinyelectron:::demo_release_matrix()
 base <- "https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/"
-sl <- m[m$strategy == "shinylive", ]
-demos <- unique(sl[, c("demo", "name")])
-link <- function(d, plat, ar) {
-  row <- sl[sl$demo == d & sl$platform == plat & sl$arch == ar, ]
+sl <- m[m$demo == "demo-r-app-suite" & m$strategy == "shinylive", ]
+link <- function(plat, ar) {
+  row <- sl[sl$platform == plat & sl$arch == ar, ]
   if (nrow(row) == 0) return("--")
   sprintf("[download](%s%s)", base, row$asset_name)
 }
-cat("| Demo | macOS (Apple) | macOS (Intel) | Windows | Linux |\n")
-cat("|------|---------------|---------------|---------|-------|\n")
-for (i in seq_len(nrow(demos))) {
-  d <- demos$demo[i]
-  cat(sprintf("| %s | %s | %s | %s | %s |\n", demos$name[i],
-    link(d, "mac", "arm64"), link(d, "mac", "x64"),
-    link(d, "win", "x64"), link(d, "linux", "x64")))
-}
+cat("| macOS (Apple) | macOS (Intel) | Windows | Linux |\n")
+cat("|---------------|---------------|---------|-------|\n")
+cat(sprintf("| %s | %s | %s | %s |\n",
+  link("mac", "arm64"), link("mac", "x64"), link("win", "x64"), link("linux", "x64")))
 ```
 
-Other strategies (bundled, system, auto-download, container) are published too. See the [download-demos guide](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/download-demos.html) for the full set and what each one needs, or browse the [releases page](https://github.com/coatless-rpkg/shinyelectron/releases/latest).
+For every demo, platform, and runtime option, see the [Download Prebuilt Demos guide](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/download-demos.html), or browse the [releases page](https://github.com/coatless-rpkg/shinyelectron/releases/latest).
 
 ## What you can export
 
