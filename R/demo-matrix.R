@@ -76,11 +76,11 @@ demo_release_matrix <- function() {
                  paste(exclusions$demo, exclusions$strategy), ]
   }
 
-  out$requirement <- unname(requirement[out$strategy])
   out$asset_name <- sprintf(
     "%s-%s-%s-%s.%s", out$demo, out$strategy, out$platform, out$arch,
     ext_for(out$platform)
   )
+  out$requirement <- unname(requirement[out$strategy])
   out <- out[order(out$demo, out$strategy, out$platform, out$arch), ]
   rownames(out) <- NULL
   out

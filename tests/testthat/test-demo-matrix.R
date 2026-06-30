@@ -10,7 +10,7 @@ test_that("ext_for maps platforms to installer extensions", {
 test_that("demo_release_matrix has the expected shape and count", {
   m <- demo_release_matrix()
   expect_s3_class(m, "data.frame")
-  expect_setequal(
+  expect_equal(
     names(m),
     c("demo", "name", "language", "kind", "strategy",
       "platform", "arch", "runner", "asset_name", "requirement")
