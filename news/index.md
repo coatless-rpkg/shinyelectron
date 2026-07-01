@@ -39,7 +39,9 @@ strategies, and multi-app suites.
   and
   [`check_auto_update_status()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/check_auto_update_status.md)
   manage electron-updater configuration.
-- `install_r()`, `install_python()`, and
+- [`install_r_portable()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_r_portable.md),
+  [`install_python_standalone()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_python_standalone.md),
+  and
   [`install_nodejs()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.md)
   download and cache portable runtimes, and
   [`cache_dir()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_dir.md),
