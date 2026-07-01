@@ -95,7 +95,7 @@ jobs:
           - { os: windows-latest, platform: win,   arch: x64 }
           - { os: ubuntu-latest,  platform: linux, arch: x64 }
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Build the Electron app
         uses: coatless-actions/shiny-to-electron@v1
@@ -295,7 +295,7 @@ variables, Actions, then pass them to the build job’s `env` and flip
       APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: coatless-actions/shiny-to-electron@v1
         with:
           appdir: app
@@ -342,7 +342,7 @@ jobs:
           - { os: windows-latest, platform: win,   arch: x64 }
           - { os: ubuntu-latest,  platform: linux, arch: x64 }
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: r-lib/actions/setup-r@v2
         with:
