@@ -58,146 +58,58 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="shinyelectron-020">shinyelectron 0.2.0<a class="anchor" aria-label="anchor" href="#shinyelectron-020"></a></h2>
-<p>This release expands shinyelectron from an R shinylive exporter into a general Shiny-to-desktop toolkit: R and Python apps, five runtime strategies, multi-app suites, and a rewritten Electron shell.</p>
+<p>This release grows shinyelectron from an R shinylive exporter into a general Shiny-to-desktop toolkit, adding Python apps, five runtime strategies, and multi-app suites.</p>
 <div class="section level3">
-<h3 id="app-types-and-autodetection-0-2-0">App types and autodetection<a class="anchor" aria-label="anchor" href="#app-types-and-autodetection-0-2-0"></a></h3>
-<ul><li>Python Shiny is now supported alongside R Shiny. <code>app_type</code> takes <code>"r-shiny"</code> or <code>"py-shiny"</code>, with <code>NULL</code> (default) meaning autodetect from the files in <code>appdir</code>. <code><a href="../reference/detect_app_type.html">detect_app_type()</a></code> resolves <code>app.R</code>, <code>ui.R</code> + <code>server.R</code>, or <code>app.py</code>; directories carrying both R and Python entrypoints, or only one of <code>server.R</code> / <code>ui.R</code>, abort with guidance.</li>
-<li>
-<code>export(appdir, destdir)</code> with no other arguments now works for the common case.</li>
-<li>Python subprocesses (shinylive conversion and Python or shinylive validation) are spawned without <code>LD_LIBRARY_PATH</code>. On Linux, R prepends its own library directory to that variable, so an inherited value made a spawned Python load a system <code>libpython</code>, recompute <code>sys.prefix</code>, and drop its <code>site-packages</code>, surfacing as <code>No module named shinylive</code> even when it was installed.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="runtime-strategies-0-2-0">Runtime strategies<a class="anchor" aria-label="anchor" href="#runtime-strategies-0-2-0"></a></h3>
-<ul><li>Five strategies, all legal with both languages: <strong>shinylive</strong> (the default, compiles to WebAssembly and runs in-browser, fully offline), <strong>bundled</strong>, <strong>system</strong>, <strong>auto-download</strong>, and <strong>container</strong>.</li>
-<li>Bundled embeds a portable R or Python runtime inside the Electron app for zero-dependency distribution.</li>
-<li>Auto-download fetches the runtime on first launch and caches it locally.</li>
-<li>System runs against an interpreter already installed on the end user’s machine. Native backends probe it first and fail with an actionable message when R is older than 4.4.0 or Python older than 3.9.0.</li>
-<li>Container runs apps inside Docker or Podman for full environment isolation (see Container strategy below).</li>
-<li>Downloaded runtimes are verified against an upstream-published SHA-256 checksum before extraction: Node.js against <code>SHASUMS256.txt</code>, portable R against its per-asset <code>.sha256</code> sidecar, and portable Python against python-build-standalone’s <code>SHA256SUMS</code>. A missing checksum warns and continues. The <code>auto-download</code> runtime manifest also carries the hash, so the first-launch download is verified on the end user’s machine.</li>
-<li>Bundled and auto-download builds resolve an R version that actually has a portable build (the newest r-hub release can outpace portable-r), read a pinned version from <code>dependencies.r.version</code> / <code>dependencies.python.version</code>, and abort when combined with more than one platform or architecture, since they embed a single platform’s runtime.</li>
-<li>The older <code>app_type = "r-shinylive"</code> and <code>"py-shinylive"</code> values are still accepted with a deprecation warning of class <code>shinyelectron_deprecated_app_type</code>; they translate to the canonical language plus <code>runtime_strategy = "shinylive"</code>. Pairing a legacy type with a non-shinylive strategy is an error. The shim will be removed in a future release.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="runtime-versions-and-installers-0-2-0">Runtime versions and installers<a class="anchor" aria-label="anchor" href="#runtime-versions-and-installers-0-2-0"></a></h3>
+<h3 id="breaking-changes-0-2-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0"></a></h3>
 <ul><li>
-<code>dependencies.r.version</code>, <code>dependencies.python.version</code>, and <code>dependencies.electron.version</code> each accept <code>null</code> (the maintained pin), <code>"latest"</code> (fetch the newest published version), or an exact version string. Resolution follows a config, then latest, then pin precedence and drives native, container, and <code>package.json</code> builds. Maintained pins ship in <code>SHINYELECTRON_DEFAULTS$runtime_versions</code>.</li>
-<li>New exported installers <code>install_r()</code>, <code>install_python()</code>, and <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code> download and cache portable R, Python (python-build-standalone), and Node.js for the bundled and auto-download strategies. <code>install_python(version = NULL)</code> resolves the maintained pin and derives the correct release tag automatically.</li>
-<li>Runtime cache management: <code><a href="../reference/cache_dir.html">cache_dir()</a></code> reports the cache location, <code><a href="../reference/cache_info.html">cache_info()</a></code> lists cached R, Python, and Node.js runtimes with version, platform, arch, and disk usage, <code><a href="../reference/cache_remove.html">cache_remove()</a></code> deletes a specific version (platform and arch are required for Node.js, and only that build is removed), and <code><a href="../reference/cache_clear.html">cache_clear()</a></code> gains <code>nodejs</code> and <code>python</code> targets.</li>
-<li>Generated Electron apps now build on Electron 41 (up from Electron 38), with electron-builder, electron-updater, and express bumped to current releases. The <code>electron</code> version is read from config; the previous Node version knob was removed.</li>
-<li>Portable archives extract atomically into a staging directory swapped into place only on success, so a failed or forced reinstall never destroys a working install. Extraction uses the system <code>tar</code> on macOS and Linux (R’s internal tar aborts on PAX records with embedded nuls, such as Apple code signing metadata) and Windows’ bundled bsdtar (<code>%SystemRoot%\System32\tar.exe</code>) for the PAX and long-name records in python-build-standalone archives, which also ship as <code>.tar.gz</code> on every platform (not <code>.zip</code> on Windows).</li>
-<li>Bundled R packages install into a sibling <code>runtime/library</code> directory alongside the portable R, not into the portable R’s own library. This avoids macOS hardened-runtime segfaults that occurred when installing unsigned CRAN binaries directly into the bundled R tree.</li>
+<code>app_type</code> now takes only <code>"r-shiny"</code>, <code>"py-shiny"</code>, or <code>NULL</code> (autodetected), and shinylive is a <code>runtime_strategy</code> rather than an app type. The old <code>"r-shinylive"</code> and <code>"py-shinylive"</code> values still work with a deprecation warning and will be removed in a future release.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="dependency-detection-and-installation-0-2-0">Dependency detection and installation<a class="anchor" aria-label="anchor" href="#dependency-detection-and-installation-0-2-0"></a></h3>
-<ul><li>App dependencies are detected automatically for native, bundled, and container builds: R packages from <code><a href="https://rdrr.io/r/base/library.html" class="external-link">library()</a></code> / <code><a href="https://rdrr.io/r/base/library.html" class="external-link">require()</a></code> calls (minus base packages) and Python packages from <code>requirements.txt</code> or <code>pyproject.toml</code>, merged with any declared in config. Requirement parsing handles VCS and bare-URL entries, PEP 508 <code>name @ url</code> specs, and multi-entry lines.</li>
-<li>Container builds resolve the required Linux system libraries from the Posit Package Manager system-requirements API and install them before the R packages, with a <code>dependencies.system_packages</code> config key as an escape hatch.</li>
+<h3 id="new-features-0-2-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h3>
+<ul><li>Python Shiny apps are supported alongside R. <code>app_type</code> autodetects <code>"r-shiny"</code> or <code>"py-shiny"</code> from <code>appdir</code>, so <code>export(appdir, destdir)</code> works with no other arguments.</li>
 <li>
-<code><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages()</a></code> no longer forces <code>type = "binary"</code> on Linux, where the package type is source.</li>
+<code>runtime_strategy</code> selects how an app runs, and all five strategies work with both languages: <code>shinylive</code> (the default; compiled to WebAssembly and run offline in the browser), <code>bundled</code> (embeds a portable R or Python runtime), <code>system</code> (uses an installed interpreter), <code>auto-download</code> (fetches the runtime on first launch), and <code>container</code> (runs in Docker or Podman).</li>
+<li>Multi-app suites bundle several apps into one Electron shell with a launcher. An <code>apps</code> array in <code>_shinyelectron.yml</code> lists them, and each app can set its own <code>runtime_strategy</code>.</li>
+<li>
+<code><a href="../reference/export.html">export()</a></code> and <code><a href="../reference/build_electron_app.html">build_electron_app()</a></code> gain a <code>sign</code> argument for macOS signing and notarization and Windows Authenticode, driven by the usual <code>CSC_*</code> and <code>APPLE_*</code> environment variables.</li>
+<li>
+<code><a href="../reference/enable_auto_updates.html">enable_auto_updates()</a></code>, <code><a href="../reference/disable_auto_updates.html">disable_auto_updates()</a></code>, and <code><a href="../reference/check_auto_update_status.html">check_auto_update_status()</a></code> manage electron-updater configuration.</li>
+<li>
+<code>install_r()</code>, <code>install_python()</code>, and <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code> download and cache portable runtimes, and <code><a href="../reference/cache_dir.html">cache_dir()</a></code>, <code><a href="../reference/cache_info.html">cache_info()</a></code>, and <code><a href="../reference/cache_remove.html">cache_remove()</a></code> inspect and prune the cache.</li>
+<li>
+<code>dependencies.r.version</code>, <code>dependencies.python.version</code>, and <code>dependencies.electron.version</code> pin the versions a build uses; each accepts <code>null</code>, <code>"latest"</code>, or an exact version.</li>
+<li>App dependencies are detected automatically for native, bundled, and container builds, from <code><a href="https://rdrr.io/r/base/library.html" class="external-link">library()</a></code> and <code><a href="https://rdrr.io/r/base/library.html" class="external-link">require()</a></code> calls for R and <code>requirements.txt</code> or <code>pyproject.toml</code> for Python.</li>
+<li>A configurable lifecycle splash and preloader report startup progress, and a system tray and application menu are set through <code>_shinyelectron.yml</code>.</li>
+<li>
+<code><a href="../reference/app_check.html">app_check()</a></code> validates an app before building, <code><a href="../reference/wizard.html">wizard()</a></code> generates a config interactively, <code><a href="../reference/show_config.html">show_config()</a></code> prints the merged configuration, and <code><a href="../reference/available_examples.html">available_examples()</a></code> and <code><a href="../reference/example_app.html">example_app()</a></code> browse the bundled demos.</li>
+<li>Apps can supply a Posit <code>_brand.yml</code> for theming.</li>
+<li>Prebuilt demo installers are published for every strategy and platform, listed in the new Download Prebuilt Demos article.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="container-strategy-0-2-0">Container strategy<a class="anchor" aria-label="anchor" href="#container-strategy-0-2-0"></a></h3>
-<ul><li>Runs native Shiny apps inside a Docker or Podman container, with engine autodetection, image selection, and bundled Dockerfiles for R, Python, and combined apps.</li>
-<li>Container host resolution is engine-aware: Podman’s machine socket (or its default connection) is resolved and <code>CONTAINER_HOST</code> set accordingly, with an engine-specific not-running message, so Podman is now functional.</li>
-<li>The host port is assigned by the engine (<code>-p 127.0.0.1::&lt;port&gt;</code>, read back with <code>docker port</code>) instead of pre-picked, avoiding collisions between concurrent apps and keeping the container off the LAN.</li>
-<li>Shutdown is asynchronous, so the closing screen renders immediately while the container stops and is removed in the background.</li>
-<li>Images are pinned and tagged by the resolved runtime version. The R image moved to <code>rocker/r-ver</code> with an <code>R_VERSION</code> build arg and installs Shiny’s transitive R dependencies explicitly because r2u’s <code>r-cran-shiny</code> can lag on bleeding-edge R. Cold builds pass <code>DEBIAN_FRONTEND=noninteractive</code> and <code>--force-confold</code> so a mid-build <code>r-base-core</code> upgrade does not stall on a conffile prompt.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="multi-app-suites-0-2-0">Multi-app suites<a class="anchor" aria-label="anchor" href="#multi-app-suites-0-2-0"></a></h3>
-<ul><li>Bundle multiple Shiny apps into a single Electron shell with a launcher UI.</li>
-<li>Configure via <code>_shinyelectron.yml</code> with an <code>apps</code> array; each app entry may carry its own <code>runtime_strategy</code>, so a suite can mix (for example) one shinylive app with a bundled R app. Mixing follows one rule: each language uses a single native strategy (<code>system</code>, <code>bundled</code>, or <code>auto-download</code>) across the suite, enforced at export. A single-entry <code>apps</code> block is rejected with a clear error.</li>
-<li>Bundled and auto-download suites embed the runtime correctly: a bundled suite installs the union of its bundled apps’ packages into one shared runtime, and an auto-download suite writes a per-app runtime manifest that the backends locate relative to the running app. Shinylive suites share a single WebAssembly runtime across all apps instead of duplicating it, served from one origin so app-to-app navigation keeps one root-scoped service worker.</li>
-<li>Python suites read dependencies from a single suite-root <code>requirements.txt</code>.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="config-file-0-2-0">Config file<a class="anchor" aria-label="anchor" href="#config-file-0-2-0"></a></h3>
+<h3 id="minor-improvements-and-fixes-0-2-0">Minor improvements and fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-fixes-0-2-0"></a></h3>
 <ul><li>
-<code>build.type</code> may be omitted; autodetection runs at build time.</li>
+<code><a href="../reference/build_electron_app.html">build_electron_app()</a></code> refuses to overwrite protected directories such as <code>~</code>, <code>/</code>, and <code><a href="https://rdrr.io/r/base/Rhome.html" class="external-link">R.home()</a></code>.</li>
 <li>
-<code>build.runtime_strategy: "shinylive"</code> is accepted alongside the other four strategies.</li>
+<code><a href="../reference/convert_shiny_to_shinylive.html">convert_shiny_to_shinylive()</a></code> removes its temporary copy on every exit path.</li>
 <li>
-<code><a href="../reference/init_config.html">init_config()</a></code> writes a template that leaves <code>build.type</code> commented out and lists all five strategies, and <code><a href="../reference/show_config.html">show_config()</a></code> pretty-prints the effective merged configuration.</li>
-<li>An app may supply a Posit <code>_brand.yml</code> for visual theming; its assets are copied into the generated project, with a graceful fallback to default branding on parse errors.</li>
-<li>Config validation is stricter and more forgiving in the right places: invalid <code>runtime_strategy</code>, <code>container.engine</code>, and out-of-range version or <code>system_packages</code> values warn and fall back to defaults rather than aborting a build later, while genuine validation errors surface with their specific message instead of a generic parse warning. Multi-element <code>window.width</code>, <code>window.height</code>, and <code>server.port</code> values warn by field name and fall back.</li>
-<li>Deep config merge no longer discards user-set lists and scalars (repos, index URLs, package lists); it recurses only into fully named lists.</li>
+<code><a href="../reference/export.html">export()</a></code> and <code><a href="../reference/export_multi_app.html">export_multi_app()</a></code> clean up partial output when a build fails, so a retry no longer needs <code>overwrite = TRUE</code>.</li>
 <li>
-<code><a href="../reference/init_config.html">init_config()</a></code> escapes app names containing quotes or backslashes so the generated YAML round-trips.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="removed-config-keys-0-2-0">Removed config keys<a class="anchor" aria-label="anchor" href="#removed-config-keys-0-2-0"></a></h3>
-<ul><li>
-<code>splash.width</code>, <code>splash.height</code>, <code>preloader.enabled</code>, and <code>lifecycle.splash_min_duration</code> were validated but never read and have been removed from the schema.</li>
+<code><a href="../reference/export.html">export()</a></code> no longer aborts or deletes a finished build when a <code>run_after</code> or <code>open_after</code> step fails; those steps now only warn.</li>
 <li>
-<code>menu.template</code> accepts only <code>"default"</code> and <code>"minimal"</code>; the previously listed <code>"custom"</code> value is no longer accepted.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="desktop-ui-and-lifecycle-0-2-0">Desktop UI and lifecycle<a class="anchor" aria-label="anchor" href="#desktop-ui-and-lifecycle-0-2-0"></a></h3>
-<ul><li>The rewritten Electron shell adds a configurable system tray, a default or minimal application menu, and splash and preloader screens, all set through <code>_shinyelectron.yml</code>.</li>
-<li>New lifecycle splash screen with progressive status updates during startup. Backend stderr is parsed and surfaced (package loading, font downloads, server status) so users see progress instead of a frozen screen, and native R and Python startup failures now appear in the lifecycle UI instead of only the logs.</li>
-<li>Splash and preloader gain working knobs: <code>splash.enabled</code> toggles the splash state, <code>splash.duration</code> sets a minimum display time before transitioning, <code>splash.background</code> and <code>preloader.background</code> override the lifecycle window background, and <code>preloader.style</code> picks the loading indicator (<code>spinner</code>, <code>bar</code>, or <code>dots</code>).</li>
-<li>Native servers bind to an OS-assigned free port via <code>findAvailablePort()</code> to prevent collisions when multiple apps run.</li>
-<li>Window and tray icons use the icon’s real file extension, and a restored window is clamped to a currently connected display instead of opening off-screen on a since-disconnected monitor.</li>
-<li>Backends no longer wipe the main process’s status subscribers on start; they remove only their own one-shot handlers, so the lifecycle UI keeps updating. In a suite, install and runtime prompts are routed to the active sub-app, a retry restarts the app the user selected, and the tray tooltip and status item track the running sub-app.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="code-signing-0-2-0">Code signing<a class="anchor" aria-label="anchor" href="#code-signing-0-2-0"></a></h3>
-<ul><li>Added <code>sign</code> parameter to <code><a href="../reference/export.html">export()</a></code> and <code><a href="../reference/build_electron_app.html">build_electron_app()</a></code>.</li>
-<li>Supports macOS code signing plus notarization and Windows Authenticode via environment variables (<code>CSC_LINK</code>, <code>CSC_KEY_PASSWORD</code>, <code>APPLE_ID</code>, <code>APPLE_APP_SPECIFIC_PASSWORD</code>, <code>APPLE_TEAM_ID</code>).</li>
-<li>Signing is resolved before the multi-app branch, so suites honor <code>sign: true</code>, and disabled builds set <code>CSC_IDENTITY_AUTO_DISCOVERY=false</code> rather than nulling the macOS identity. The <code>icon</code> and per-platform icon keys are honored for single and multi-app builds.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="auto-updates-0-2-0">Auto-updates<a class="anchor" aria-label="anchor" href="#auto-updates-0-2-0"></a></h3>
-<ul><li>New management API: <code><a href="../reference/enable_auto_updates.html">enable_auto_updates()</a></code>, <code><a href="../reference/disable_auto_updates.html">disable_auto_updates()</a></code>, and <code><a href="../reference/check_auto_update_status.html">check_auto_update_status()</a></code> configure electron-updater in <code>_shinyelectron.yml</code> and report the current update status. Only the GitHub provider is wired into the build today; <code>s3</code> and <code>generic</code> are rejected with a message saying they are planned.</li>
-<li>Update-enabled builds now parse and load correctly: R booleans render as lowercase JavaScript <code>true</code> / <code>false</code> in the generated <code>main.js</code>, and the electron-log import no longer clashes with the app logger.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="developer-tools-0-2-0">Developer tools<a class="anchor" aria-label="anchor" href="#developer-tools-0-2-0"></a></h3>
-<ul><li>
-<code><a href="../reference/app_check.html">app_check()</a></code>: pre-flight validator that inspects app structure, config, runtime availability, and dependencies and reports issues without aborting, honoring <code>app_type</code>, <code>runtime_strategy</code>, <code>platform</code>, and <code>sign</code> overrides, and reporting config parse errors as warnings.</li>
+<code><a href="../reference/init_config.html">init_config()</a></code> escapes app names so the generated YAML round-trips, and <code>build.type</code> may be omitted and autodetected.</li>
 <li>
-<code><a href="../reference/wizard.html">wizard()</a></code>: interactive configuration generator for <code>_shinyelectron.yml</code>. It asks for language and runtime strategy separately, re-prompts on non-numeric window or port input, validates platform tokens, offers only the GitHub update provider, and validates that the file it writes round-trips.</li>
+<code><a href="../reference/run_electron_app.html">run_electron_app()</a></code> reports the real exit code and stderr on failure and returns <code>NULL</code> when interrupted.</li>
 <li>
-<code><a href="../reference/sitrep_shinyelectron.html">sitrep_shinyelectron()</a></code>: diagnostics across system, dependencies, build tools, and project state, including the Python shinylive CLI and shiny package.</li>
-<li>
-<code><a href="../reference/available_examples.html">available_examples()</a></code> and <code><a href="../reference/example_app.html">example_app()</a></code>: browse and retrieve bundled demo apps (R single, Python single, and suites); <code><a href="../reference/available_examples.html">available_examples()</a></code> reports a <code>type</code> column.</li>
-<li>Backend diagnostic logging is gated behind <code>SHINYELECTRON_DEBUG</code>; warnings and errors still print unconditionally.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="bug-fixes-0-2-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-2-0"></a></h3>
-<p>These correct behavior that shipped in 0.1.0.</p>
-<ul><li>Directory copying created a nested subdirectory of the destination on Windows. <code><a href="https://fs.r-lib.org/reference/copy.html" class="external-link">fs::dir_copy()</a></code> was replaced with <code><a href="../reference/copy_dir_contents.html">copy_dir_contents()</a></code>, which has consistent cross-platform semantics.</li>
-<li>A failed Electron run reported a generic “Failed to run” message that hid the exit code and stderr, because the exit-code check ran inside its own error handler. The check now runs outside the handler so the real diagnostics surface, and a Ctrl+C interruption returns <code>NULL</code> cleanly.</li>
-<li>A failed <code><a href="../reference/export.html">export()</a></code> left its partially populated output directory behind, so a retry needed <code>overwrite = TRUE</code>. Both <code><a href="../reference/export.html">export()</a></code> and <code><a href="../reference/export_multi_app.html">export_multi_app()</a></code> now remove output they created on error.</li>
-<li>A failing <code>run_after</code> or <code>open_after</code> step (a non-zero Electron exit or a <code><a href="https://rdrr.io/r/utils/browseURL.html" class="external-link">browseURL()</a></code> failure) aborted <code><a href="../reference/export.html">export()</a></code> and could delete the finished build. Those steps now run after the build and only warn, preserving the output.</li>
-<li>
-<code><a href="../reference/convert_shiny_to_shinylive.html">convert_shiny_to_shinylive()</a></code> removed its temporary app copy only on success, leaking it whenever <code><a href="https://posit-dev.github.io/r-shinylive/reference/export.html" class="external-link">shinylive::export()</a></code> errored. Cleanup now runs on every exit path.</li>
-<li>
-<code><a href="../reference/build_electron_app.html">build_electron_app()</a></code> unlinked its output directory unconditionally when overwriting, so an overwrite of <code>~</code>, <code>/</code>, or <code><a href="https://rdrr.io/r/base/Rhome.html" class="external-link">R.home()</a></code> was possible. A protected-directory guard, <code><a href="../reference/assert_safe_to_overwrite.html">assert_safe_to_overwrite()</a></code>, now runs first.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="demos-0-2-0">Demos<a class="anchor" aria-label="anchor" href="#demos-0-2-0"></a></h3>
-<ul><li>Prebuilt desktop installers of the bundled demo apps are published for every runtime strategy on macOS, Windows, and Linux. The new Download Prebuilt Demos article detects the visitor’s platform, shows its installers first, and collapses the rest, while remaining usable without JavaScript.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="documentation-0-2-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-2-0"></a></h3>
-<ul><li>New vignettes cover getting started, configuration, runtime strategies, multi-app suites, code signing, container strategy, security, auto-updates, Node.js management, customizations, GitHub Actions, and troubleshooting (0.1.0 shipped none).</li>
-<li>The Advanced Features vignette was renamed to Customizations and rewritten around the splash, tray, and menu options.</li>
-<li>The GitHub Actions vignette reads its env-vars block live from <code>inst/templates/github-actions-build.yml</code>, so the documented values stay in sync with the shipped template, and its runner matrix was reconciled with the four CI runners the template ships.</li>
-<li>Configuration and security vignettes gain reference tables for logging, lifecycle, installer, and dependency options, plus custom runtime-version guidance, runtime-download SHA-256 integrity, and Content-Security-Policy scope. Version pins are documented under <code>dependencies:</code> (top-level keys are ignored), and <code>auto_install</code> is marked planned.</li>
-<li>Runtime-strategy docs were corrected for multi-platform builds (one export per target), the <code>~/.shinyelectron/runtimes/</code> cache path, the bundled runtime landing in <code>runtime/</code>, and R bundling being unsupported on Linux while Python bundling works.</li>
-<li>Auto-update, code-signing, and container docs were realigned with the shipped behavior (GitHub-only updates with S3 and generic planned, the update manifests to upload with a release, Linux GPG signing as a reserved no-op, and the container engine being baked into config).</li>
-<li>Roxygen and man pages moved from <code>\code{}</code> to markdown backticks, and README and vignette drift was corrected.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="internal-0-2-0">Internal<a class="anchor" aria-label="anchor" href="#internal-0-2-0"></a></h3>
-<ul><li>DESCRIPTION now depends on R (&gt;= 4.4.0), moves <code>shinylive</code> from Imports to Suggests, adds <code>yaml</code> to Imports, imports the base <code>stats</code>, <code>tools</code>, and <code>utils</code> packages, adds <code>quarto</code>, <code>renv</code>, and <code>withr</code> to Suggests with <code>VignetteBuilder: quarto</code>, and raises version floors on current dependencies. <code>pak</code> was dropped once system requirements moved to the Posit Package Manager HTTP API.</li>
-<li>Extracted <code><a href="../reference/run_command_safe.html">run_command_safe()</a></code> for repeated <code><a href="http://processx.r-lib.org/reference/run.html" class="external-link">processx::run()</a></code> patterns and <code>killProcessTree()</code> into the shared JS utilities for process cleanup, and cached <code><a href="https://rdrr.io/r/utils/available.packages.html" class="external-link">available.packages()</a></code> during bundled R builds to avoid redundant CRAN calls.</li>
-<li>Native builds confirm a Shiny entrypoint survived the file copy and abort at build time rather than failing inside a running Electron app.</li>
-<li>Build success is judged by the presence of platform artifacts in <code>dist/</code>, and generated build scripts pass <code>--publish never</code>, so a non-zero electron-builder exit no longer prints a misleading failure when the installer was written. The generated <code>package.json</code> emits the <code>AGPL-3.0-or-later</code> license id.</li>
-<li>Portable and Node.js installs abort (rather than warn and return a broken path) when the extracted executable is missing, verify the target platform and arch rather than the build host, stage a Node.js reinstall so a mid-extraction failure leaves the prior install intact, and give a clear error for an unsupported platform or architecture instead of a malformed download URL.</li>
-<li>Electron file logging honors <code>log_level = "debug"</code>, and dependency checks no longer require <code>jsonlite</code> in a bare system R.</li>
-<li>
-<code>sitrep</code> helpers persist detected issues across their error handlers and align their R and npm version thresholds and required-package list with DESCRIPTION.</li>
+<code><a href="../reference/sitrep_shinyelectron.html">sitrep_shinyelectron()</a></code> also checks the Python shinylive CLI and shiny package.</li>
+<li>Directory copying keeps consistent cross-platform semantics on Windows.</li>
+<li>Python subprocesses spawn without <code>LD_LIBRARY_PATH</code>, fixing a Linux <code>No module named shinylive</code> error.</li>
+<li>Portable runtimes extract with the system <code>tar</code> on macOS and Linux and bsdtar on Windows, handling archives R’s internal tar cannot read.</li>
+<li>Native apps bind to an OS-assigned free port to avoid collisions, and native startup failures surface in the lifecycle splash.</li>
+<li>The <code>system</code> strategy checks for R &gt;= 4.4.0 or Python &gt;= 3.9.0 and fails with an actionable message.</li>
+<li>Invalid configuration values warn and fall back to defaults instead of aborting later in the build.</li>
+<li>Configuration keys that were never read (<code>splash.width</code>, <code>splash.height</code>, <code>preloader.enabled</code>, <code>lifecycle.splash_min_duration</code>) are removed, and <code>menu.template</code> accepts only <code>"default"</code> and <code>"minimal"</code>.</li>
+<li>Downloaded runtimes are verified against upstream SHA-256 checksums before extraction.</li>
+<li>Vignettes cover getting started, configuration, runtime strategies, multi-app suites, code signing, containers, security, and auto-updates.</li>
 </ul></div>
 </div>
     <div class="section level2">
