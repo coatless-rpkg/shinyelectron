@@ -350,7 +350,7 @@ These correct behavior that shipped in 0.1.0.
   update manifests to upload with a release, Linux GPG signing as a
   reserved no-op, and the container engine being baked into config).
 - Roxygen and man pages moved from `\code{}` to markdown backticks, and
-  README and vignette drift and em dashes were corrected.
+  README and vignette drift was corrected.
 
 ### Internal
 
