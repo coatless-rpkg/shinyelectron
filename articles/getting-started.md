@@ -63,6 +63,18 @@ export(
 One call converts the demo to shinylive, wraps it in Electron, builds a
 distributable, and launches it. Roughly a minute on a small app.
 
+## Try a prebuilt demo
+
+Prefer to see the result before building your own? Grab a prebuilt demo.
+These are `shinylive` builds, so they need no R, Python, or internet:
+download the installer for your platform, run it, and launch the app (on
+Linux the download is a portable AppImage you can run directly). The
+[Download Prebuilt Demos
+guide](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/download-demos.html)
+has a build of every demo for every runtime strategy and platform, or
+you can browse the [releases
+page](https://github.com/coatless-rpkg/shinyelectron/releases/latest).
+
 ## Export your Shiny app
 
 ### Shinylive: runs in the browser

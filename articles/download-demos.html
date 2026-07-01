@@ -90,568 +90,435 @@
 
 
 
-    <p>Every demo is built with every runtime strategy on every supported platform and published as a release asset. Pick a row, check what it needs, and download.</p>
-<p>What each strategy needs on the user’s machine:</p>
+    <p>Every demo is built with every runtime strategy on each supported platform and published as a release asset. The only gap is the <code>bundled</code> and <code>auto-download</code> strategies for R on Linux, which have no portable runtime; those cells show <code>--</code>.</p>
+<p>Each download is a desktop installer: run it to install the app, then launch the demo. On Linux the download is a portable AppImage you can run directly, with no install step. What changes between strategies is what the app needs once it launches:</p>
 <ul>
 <li>
-<code>shinylive</code>: nothing. The app runs in WebAssembly.</li>
+<code>shinylive</code>: no runtime at all. The app runs in WebAssembly, offline.</li>
 <li>
-<code>bundled</code>: nothing. A runtime is embedded in the installer.</li>
+<code>bundled</code>: no runtime to install. A copy of R or Python is embedded in the app.</li>
 <li>
 <code>system</code>: R or Python already installed and on the PATH.</li>
 <li>
-<code>auto-download</code>: internet access on first launch to fetch the runtime.</li>
+<code>auto-download</code>: internet access on first launch to download the runtime, then cached.</li>
 <li>
 <code>container</code>: Docker or Podman installed.</li>
 </ul>
+<p>Your platform’s downloads are shown first. Use <strong>More downloads</strong> for every other platform.</p>
+<div class="platform-block" data-platform="mac-arm64" data-label="macOS (Apple Silicon)">
+<section class="level2"><h2 id="python">Python<a class="anchor" aria-label="anchor" href="#python"></a>
+</h2>
+<section class="level3"><h3 id="standalone-no-r-or-python-needed">Standalone (no R or Python needed)<a class="anchor" aria-label="anchor" href="#standalone-no-r-or-python-needed"></a>
+</h3>
 <table class="table caption-top">
 <thead><tr class="header">
 <th>Demo</th>
-<th>Strategy</th>
-<th>Platform</th>
-<th>Requirement</th>
-<th>Download</th>
+<th><code>shinylive</code></th>
+<th><code>bundled</code></th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td>Python demo suite</td>
-<td><code>auto-download</code></td>
-<td>linux x64</td>
-<td>internet on first launch</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-auto-download-linux-x64.AppImage" class="external-link">demo-py-app-suite-auto-download-linux-x64.AppImage</a></td>
-</tr>
-<tr class="even">
-<td>Python demo suite</td>
-<td><code>auto-download</code></td>
-<td>mac arm64</td>
-<td>internet on first launch</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-auto-download-mac-arm64.dmg" class="external-link">demo-py-app-suite-auto-download-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>Python demo suite</td>
-<td><code>auto-download</code></td>
-<td>mac x64</td>
-<td>internet on first launch</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-auto-download-mac-x64.dmg" class="external-link">demo-py-app-suite-auto-download-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>Python demo suite</td>
-<td><code>auto-download</code></td>
-<td>win x64</td>
-<td>internet on first launch</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-auto-download-win-x64.exe" class="external-link">demo-py-app-suite-auto-download-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>Python demo suite</td>
-<td><code>bundled</code></td>
-<td>linux x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-bundled-linux-x64.AppImage" class="external-link">demo-py-app-suite-bundled-linux-x64.AppImage</a></td>
-</tr>
-<tr class="even">
-<td>Python demo suite</td>
-<td><code>bundled</code></td>
-<td>mac arm64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-bundled-mac-arm64.dmg" class="external-link">demo-py-app-suite-bundled-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>Python demo suite</td>
-<td><code>bundled</code></td>
-<td>mac x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-bundled-mac-x64.dmg" class="external-link">demo-py-app-suite-bundled-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>Python demo suite</td>
-<td><code>bundled</code></td>
-<td>win x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-bundled-win-x64.exe" class="external-link">demo-py-app-suite-bundled-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>Python demo suite</td>
-<td><code>container</code></td>
-<td>linux x64</td>
-<td>Docker or Podman</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-container-linux-x64.AppImage" class="external-link">demo-py-app-suite-container-linux-x64.AppImage</a></td>
-</tr>
-<tr class="even">
-<td>Python demo suite</td>
-<td><code>container</code></td>
-<td>mac arm64</td>
-<td>Docker or Podman</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-container-mac-arm64.dmg" class="external-link">demo-py-app-suite-container-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>Python demo suite</td>
-<td><code>container</code></td>
-<td>mac x64</td>
-<td>Docker or Podman</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-container-mac-x64.dmg" class="external-link">demo-py-app-suite-container-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>Python demo suite</td>
-<td><code>container</code></td>
-<td>win x64</td>
-<td>Docker or Podman</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-container-win-x64.exe" class="external-link">demo-py-app-suite-container-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>Python demo suite</td>
-<td><code>shinylive</code></td>
-<td>linux x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-shinylive-linux-x64.AppImage" class="external-link">demo-py-app-suite-shinylive-linux-x64.AppImage</a></td>
-</tr>
-<tr class="even">
-<td>Python demo suite</td>
-<td><code>shinylive</code></td>
-<td>mac arm64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-shinylive-mac-arm64.dmg" class="external-link">demo-py-app-suite-shinylive-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>Python demo suite</td>
-<td><code>shinylive</code></td>
-<td>mac x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-shinylive-mac-x64.dmg" class="external-link">demo-py-app-suite-shinylive-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>Python demo suite</td>
-<td><code>shinylive</code></td>
-<td>win x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-shinylive-win-x64.exe" class="external-link">demo-py-app-suite-shinylive-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>Python demo suite</td>
-<td><code>system</code></td>
-<td>linux x64</td>
-<td>R or Python installed</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-system-linux-x64.AppImage" class="external-link">demo-py-app-suite-system-linux-x64.AppImage</a></td>
-</tr>
-<tr class="even">
-<td>Python demo suite</td>
-<td><code>system</code></td>
-<td>mac arm64</td>
-<td>R or Python installed</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-system-mac-arm64.dmg" class="external-link">demo-py-app-suite-system-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>Python demo suite</td>
-<td><code>system</code></td>
-<td>mac x64</td>
-<td>R or Python installed</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-system-mac-x64.dmg" class="external-link">demo-py-app-suite-system-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>Python demo suite</td>
-<td><code>system</code></td>
-<td>win x64</td>
-<td>R or Python installed</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-system-win-x64.exe" class="external-link">demo-py-app-suite-system-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>Python single app</td>
-<td><code>auto-download</code></td>
-<td>linux x64</td>
-<td>internet on first launch</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-auto-download-linux-x64.AppImage" class="external-link">demo-py-single-auto-download-linux-x64.AppImage</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-shinylive-mac-arm64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-bundled-mac-arm64.dmg" class="external-link">download</a></td>
 </tr>
 <tr class="even">
 <td>Python single app</td>
-<td><code>auto-download</code></td>
-<td>mac arm64</td>
-<td>internet on first launch</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-auto-download-mac-arm64.dmg" class="external-link">demo-py-single-auto-download-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>Python single app</td>
-<td><code>auto-download</code></td>
-<td>mac x64</td>
-<td>internet on first launch</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-auto-download-mac-x64.dmg" class="external-link">demo-py-single-auto-download-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>Python single app</td>
-<td><code>auto-download</code></td>
-<td>win x64</td>
-<td>internet on first launch</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-auto-download-win-x64.exe" class="external-link">demo-py-single-auto-download-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>Python single app</td>
-<td><code>bundled</code></td>
-<td>linux x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-bundled-linux-x64.AppImage" class="external-link">demo-py-single-bundled-linux-x64.AppImage</a></td>
-</tr>
-<tr class="even">
-<td>Python single app</td>
-<td><code>bundled</code></td>
-<td>mac arm64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-bundled-mac-arm64.dmg" class="external-link">demo-py-single-bundled-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>Python single app</td>
-<td><code>bundled</code></td>
-<td>mac x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-bundled-mac-x64.dmg" class="external-link">demo-py-single-bundled-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>Python single app</td>
-<td><code>bundled</code></td>
-<td>win x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-bundled-win-x64.exe" class="external-link">demo-py-single-bundled-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>Python single app</td>
-<td><code>container</code></td>
-<td>linux x64</td>
-<td>Docker or Podman</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-container-linux-x64.AppImage" class="external-link">demo-py-single-container-linux-x64.AppImage</a></td>
-</tr>
-<tr class="even">
-<td>Python single app</td>
-<td><code>container</code></td>
-<td>mac arm64</td>
-<td>Docker or Podman</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-container-mac-arm64.dmg" class="external-link">demo-py-single-container-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>Python single app</td>
-<td><code>container</code></td>
-<td>mac x64</td>
-<td>Docker or Podman</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-container-mac-x64.dmg" class="external-link">demo-py-single-container-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>Python single app</td>
-<td><code>container</code></td>
-<td>win x64</td>
-<td>Docker or Podman</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-container-win-x64.exe" class="external-link">demo-py-single-container-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>Python single app</td>
-<td><code>shinylive</code></td>
-<td>linux x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-shinylive-linux-x64.AppImage" class="external-link">demo-py-single-shinylive-linux-x64.AppImage</a></td>
-</tr>
-<tr class="even">
-<td>Python single app</td>
-<td><code>shinylive</code></td>
-<td>mac arm64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-shinylive-mac-arm64.dmg" class="external-link">demo-py-single-shinylive-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>Python single app</td>
-<td><code>shinylive</code></td>
-<td>mac x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-shinylive-mac-x64.dmg" class="external-link">demo-py-single-shinylive-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>Python single app</td>
-<td><code>shinylive</code></td>
-<td>win x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-shinylive-win-x64.exe" class="external-link">demo-py-single-shinylive-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>Python single app</td>
-<td><code>system</code></td>
-<td>linux x64</td>
-<td>R or Python installed</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-system-linux-x64.AppImage" class="external-link">demo-py-single-system-linux-x64.AppImage</a></td>
-</tr>
-<tr class="even">
-<td>Python single app</td>
-<td><code>system</code></td>
-<td>mac arm64</td>
-<td>R or Python installed</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-system-mac-arm64.dmg" class="external-link">demo-py-single-system-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>Python single app</td>
-<td><code>system</code></td>
-<td>mac x64</td>
-<td>R or Python installed</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-system-mac-x64.dmg" class="external-link">demo-py-single-system-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>Python single app</td>
-<td><code>system</code></td>
-<td>win x64</td>
-<td>R or Python installed</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-system-win-x64.exe" class="external-link">demo-py-single-system-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>R demo suite</td>
-<td><code>auto-download</code></td>
-<td>mac arm64</td>
-<td>internet on first launch</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-auto-download-mac-arm64.dmg" class="external-link">demo-r-app-suite-auto-download-mac-arm64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>R demo suite</td>
-<td><code>auto-download</code></td>
-<td>mac x64</td>
-<td>internet on first launch</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-auto-download-mac-x64.dmg" class="external-link">demo-r-app-suite-auto-download-mac-x64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>R demo suite</td>
-<td><code>auto-download</code></td>
-<td>win x64</td>
-<td>internet on first launch</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-auto-download-win-x64.exe" class="external-link">demo-r-app-suite-auto-download-win-x64.exe</a></td>
-</tr>
-<tr class="even">
-<td>R demo suite</td>
-<td><code>bundled</code></td>
-<td>mac arm64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-bundled-mac-arm64.dmg" class="external-link">demo-r-app-suite-bundled-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>R demo suite</td>
-<td><code>bundled</code></td>
-<td>mac x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-bundled-mac-x64.dmg" class="external-link">demo-r-app-suite-bundled-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>R demo suite</td>
-<td><code>bundled</code></td>
-<td>win x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-bundled-win-x64.exe" class="external-link">demo-r-app-suite-bundled-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>R demo suite</td>
-<td><code>container</code></td>
-<td>linux x64</td>
-<td>Docker or Podman</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-container-linux-x64.AppImage" class="external-link">demo-r-app-suite-container-linux-x64.AppImage</a></td>
-</tr>
-<tr class="even">
-<td>R demo suite</td>
-<td><code>container</code></td>
-<td>mac arm64</td>
-<td>Docker or Podman</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-container-mac-arm64.dmg" class="external-link">demo-r-app-suite-container-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>R demo suite</td>
-<td><code>container</code></td>
-<td>mac x64</td>
-<td>Docker or Podman</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-container-mac-x64.dmg" class="external-link">demo-r-app-suite-container-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>R demo suite</td>
-<td><code>container</code></td>
-<td>win x64</td>
-<td>Docker or Podman</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-container-win-x64.exe" class="external-link">demo-r-app-suite-container-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>R demo suite</td>
-<td><code>shinylive</code></td>
-<td>linux x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-shinylive-linux-x64.AppImage" class="external-link">demo-r-app-suite-shinylive-linux-x64.AppImage</a></td>
-</tr>
-<tr class="even">
-<td>R demo suite</td>
-<td><code>shinylive</code></td>
-<td>mac arm64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-shinylive-mac-arm64.dmg" class="external-link">demo-r-app-suite-shinylive-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>R demo suite</td>
-<td><code>shinylive</code></td>
-<td>mac x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-shinylive-mac-x64.dmg" class="external-link">demo-r-app-suite-shinylive-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>R demo suite</td>
-<td><code>shinylive</code></td>
-<td>win x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-shinylive-win-x64.exe" class="external-link">demo-r-app-suite-shinylive-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>R demo suite</td>
-<td><code>system</code></td>
-<td>linux x64</td>
-<td>R or Python installed</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-system-linux-x64.AppImage" class="external-link">demo-r-app-suite-system-linux-x64.AppImage</a></td>
-</tr>
-<tr class="even">
-<td>R demo suite</td>
-<td><code>system</code></td>
-<td>mac arm64</td>
-<td>R or Python installed</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-system-mac-arm64.dmg" class="external-link">demo-r-app-suite-system-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>R demo suite</td>
-<td><code>system</code></td>
-<td>mac x64</td>
-<td>R or Python installed</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-system-mac-x64.dmg" class="external-link">demo-r-app-suite-system-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>R demo suite</td>
-<td><code>system</code></td>
-<td>win x64</td>
-<td>R or Python installed</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-system-win-x64.exe" class="external-link">demo-r-app-suite-system-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>R single app</td>
-<td><code>auto-download</code></td>
-<td>mac arm64</td>
-<td>internet on first launch</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-auto-download-mac-arm64.dmg" class="external-link">demo-single-auto-download-mac-arm64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>R single app</td>
-<td><code>auto-download</code></td>
-<td>mac x64</td>
-<td>internet on first launch</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-auto-download-mac-x64.dmg" class="external-link">demo-single-auto-download-mac-x64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>R single app</td>
-<td><code>auto-download</code></td>
-<td>win x64</td>
-<td>internet on first launch</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-auto-download-win-x64.exe" class="external-link">demo-single-auto-download-win-x64.exe</a></td>
-</tr>
-<tr class="even">
-<td>R single app</td>
-<td><code>bundled</code></td>
-<td>mac arm64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-bundled-mac-arm64.dmg" class="external-link">demo-single-bundled-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>R single app</td>
-<td><code>bundled</code></td>
-<td>mac x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-bundled-mac-x64.dmg" class="external-link">demo-single-bundled-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>R single app</td>
-<td><code>bundled</code></td>
-<td>win x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-bundled-win-x64.exe" class="external-link">demo-single-bundled-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>R single app</td>
-<td><code>container</code></td>
-<td>linux x64</td>
-<td>Docker or Podman</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-container-linux-x64.AppImage" class="external-link">demo-single-container-linux-x64.AppImage</a></td>
-</tr>
-<tr class="even">
-<td>R single app</td>
-<td><code>container</code></td>
-<td>mac arm64</td>
-<td>Docker or Podman</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-container-mac-arm64.dmg" class="external-link">demo-single-container-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>R single app</td>
-<td><code>container</code></td>
-<td>mac x64</td>
-<td>Docker or Podman</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-container-mac-x64.dmg" class="external-link">demo-single-container-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>R single app</td>
-<td><code>container</code></td>
-<td>win x64</td>
-<td>Docker or Podman</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-container-win-x64.exe" class="external-link">demo-single-container-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>R single app</td>
-<td><code>shinylive</code></td>
-<td>linux x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-shinylive-linux-x64.AppImage" class="external-link">demo-single-shinylive-linux-x64.AppImage</a></td>
-</tr>
-<tr class="even">
-<td>R single app</td>
-<td><code>shinylive</code></td>
-<td>mac arm64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-shinylive-mac-arm64.dmg" class="external-link">demo-single-shinylive-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>R single app</td>
-<td><code>shinylive</code></td>
-<td>mac x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-shinylive-mac-x64.dmg" class="external-link">demo-single-shinylive-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>R single app</td>
-<td><code>shinylive</code></td>
-<td>win x64</td>
-<td>none</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-shinylive-win-x64.exe" class="external-link">demo-single-shinylive-win-x64.exe</a></td>
-</tr>
-<tr class="odd">
-<td>R single app</td>
-<td><code>system</code></td>
-<td>linux x64</td>
-<td>R or Python installed</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-system-linux-x64.AppImage" class="external-link">demo-single-system-linux-x64.AppImage</a></td>
-</tr>
-<tr class="even">
-<td>R single app</td>
-<td><code>system</code></td>
-<td>mac arm64</td>
-<td>R or Python installed</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-system-mac-arm64.dmg" class="external-link">demo-single-system-mac-arm64.dmg</a></td>
-</tr>
-<tr class="odd">
-<td>R single app</td>
-<td><code>system</code></td>
-<td>mac x64</td>
-<td>R or Python installed</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-system-mac-x64.dmg" class="external-link">demo-single-system-mac-x64.dmg</a></td>
-</tr>
-<tr class="even">
-<td>R single app</td>
-<td><code>system</code></td>
-<td>win x64</td>
-<td>R or Python installed</td>
-<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-system-win-x64.exe" class="external-link">demo-single-system-win-x64.exe</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-shinylive-mac-arm64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-bundled-mac-arm64.dmg" class="external-link">download</a></td>
 </tr>
 </tbody>
-</table>
-<p>All links point at the latest release, so they stay current as new versions are published.</p>
-
-
-
-<script id="quarto-html-after-body" type="application/javascript">
+</table></section><section class="level3"><h3 id="needs-a-runtime-or-tooling">Needs a runtime or tooling<a class="anchor" aria-label="anchor" href="#needs-a-runtime-or-tooling"></a>
+</h3>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Demo</th>
+<th><code>system</code></th>
+<th><code>auto-download</code></th>
+<th><code>container</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Python demo suite</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-system-mac-arm64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-auto-download-mac-arm64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-container-mac-arm64.dmg" class="external-link">download</a></td>
+</tr>
+<tr class="even">
+<td>Python single app</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-system-mac-arm64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-auto-download-mac-arm64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-container-mac-arm64.dmg" class="external-link">download</a></td>
+</tr>
+</tbody>
+</table></section></section><section class="level2"><h2 id="r">R<a class="anchor" aria-label="anchor" href="#r"></a>
+</h2>
+<section class="level3"><h3 id="standalone-no-r-or-python-needed-1">Standalone (no R or Python needed)<a class="anchor" aria-label="anchor" href="#standalone-no-r-or-python-needed-1"></a>
+</h3>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Demo</th>
+<th><code>shinylive</code></th>
+<th><code>bundled</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>R demo suite</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-shinylive-mac-arm64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-bundled-mac-arm64.dmg" class="external-link">download</a></td>
+</tr>
+<tr class="even">
+<td>R single app</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-shinylive-mac-arm64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-bundled-mac-arm64.dmg" class="external-link">download</a></td>
+</tr>
+</tbody>
+</table></section><section class="level3"><h3 id="needs-a-runtime-or-tooling-1">Needs a runtime or tooling<a class="anchor" aria-label="anchor" href="#needs-a-runtime-or-tooling-1"></a>
+</h3>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Demo</th>
+<th><code>system</code></th>
+<th><code>auto-download</code></th>
+<th><code>container</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>R demo suite</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-system-mac-arm64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-auto-download-mac-arm64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-container-mac-arm64.dmg" class="external-link">download</a></td>
+</tr>
+<tr class="even">
+<td>R single app</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-system-mac-arm64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-auto-download-mac-arm64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-container-mac-arm64.dmg" class="external-link">download</a></td>
+</tr>
+</tbody>
+</table></section></section>
+</div>
+<div class="platform-block" data-platform="mac-x64" data-label="macOS (Intel)">
+<section class="level2"><h2 id="python-1">Python<a class="anchor" aria-label="anchor" href="#python-1"></a>
+</h2>
+<section class="level3"><h3 id="standalone-no-r-or-python-needed-2">Standalone (no R or Python needed)<a class="anchor" aria-label="anchor" href="#standalone-no-r-or-python-needed-2"></a>
+</h3>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Demo</th>
+<th><code>shinylive</code></th>
+<th><code>bundled</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Python demo suite</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-shinylive-mac-x64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-bundled-mac-x64.dmg" class="external-link">download</a></td>
+</tr>
+<tr class="even">
+<td>Python single app</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-shinylive-mac-x64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-bundled-mac-x64.dmg" class="external-link">download</a></td>
+</tr>
+</tbody>
+</table></section><section class="level3"><h3 id="needs-a-runtime-or-tooling-2">Needs a runtime or tooling<a class="anchor" aria-label="anchor" href="#needs-a-runtime-or-tooling-2"></a>
+</h3>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Demo</th>
+<th><code>system</code></th>
+<th><code>auto-download</code></th>
+<th><code>container</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Python demo suite</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-system-mac-x64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-auto-download-mac-x64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-container-mac-x64.dmg" class="external-link">download</a></td>
+</tr>
+<tr class="even">
+<td>Python single app</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-system-mac-x64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-auto-download-mac-x64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-container-mac-x64.dmg" class="external-link">download</a></td>
+</tr>
+</tbody>
+</table></section></section><section class="level2"><h2 id="r-1">R<a class="anchor" aria-label="anchor" href="#r-1"></a>
+</h2>
+<section class="level3"><h3 id="standalone-no-r-or-python-needed-3">Standalone (no R or Python needed)<a class="anchor" aria-label="anchor" href="#standalone-no-r-or-python-needed-3"></a>
+</h3>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Demo</th>
+<th><code>shinylive</code></th>
+<th><code>bundled</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>R demo suite</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-shinylive-mac-x64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-bundled-mac-x64.dmg" class="external-link">download</a></td>
+</tr>
+<tr class="even">
+<td>R single app</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-shinylive-mac-x64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-bundled-mac-x64.dmg" class="external-link">download</a></td>
+</tr>
+</tbody>
+</table></section><section class="level3"><h3 id="needs-a-runtime-or-tooling-3">Needs a runtime or tooling<a class="anchor" aria-label="anchor" href="#needs-a-runtime-or-tooling-3"></a>
+</h3>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Demo</th>
+<th><code>system</code></th>
+<th><code>auto-download</code></th>
+<th><code>container</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>R demo suite</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-system-mac-x64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-auto-download-mac-x64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-container-mac-x64.dmg" class="external-link">download</a></td>
+</tr>
+<tr class="even">
+<td>R single app</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-system-mac-x64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-auto-download-mac-x64.dmg" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-container-mac-x64.dmg" class="external-link">download</a></td>
+</tr>
+</tbody>
+</table></section></section>
+</div>
+<div class="platform-block" data-platform="win-x64" data-label="Windows">
+<section class="level2"><h2 id="python-2">Python<a class="anchor" aria-label="anchor" href="#python-2"></a>
+</h2>
+<section class="level3"><h3 id="standalone-no-r-or-python-needed-4">Standalone (no R or Python needed)<a class="anchor" aria-label="anchor" href="#standalone-no-r-or-python-needed-4"></a>
+</h3>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Demo</th>
+<th><code>shinylive</code></th>
+<th><code>bundled</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Python demo suite</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-shinylive-win-x64.exe" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-bundled-win-x64.exe" class="external-link">download</a></td>
+</tr>
+<tr class="even">
+<td>Python single app</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-shinylive-win-x64.exe" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-bundled-win-x64.exe" class="external-link">download</a></td>
+</tr>
+</tbody>
+</table></section><section class="level3"><h3 id="needs-a-runtime-or-tooling-4">Needs a runtime or tooling<a class="anchor" aria-label="anchor" href="#needs-a-runtime-or-tooling-4"></a>
+</h3>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Demo</th>
+<th><code>system</code></th>
+<th><code>auto-download</code></th>
+<th><code>container</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Python demo suite</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-system-win-x64.exe" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-auto-download-win-x64.exe" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-container-win-x64.exe" class="external-link">download</a></td>
+</tr>
+<tr class="even">
+<td>Python single app</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-system-win-x64.exe" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-auto-download-win-x64.exe" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-container-win-x64.exe" class="external-link">download</a></td>
+</tr>
+</tbody>
+</table></section></section><section class="level2"><h2 id="r-2">R<a class="anchor" aria-label="anchor" href="#r-2"></a>
+</h2>
+<section class="level3"><h3 id="standalone-no-r-or-python-needed-5">Standalone (no R or Python needed)<a class="anchor" aria-label="anchor" href="#standalone-no-r-or-python-needed-5"></a>
+</h3>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Demo</th>
+<th><code>shinylive</code></th>
+<th><code>bundled</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>R demo suite</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-shinylive-win-x64.exe" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-bundled-win-x64.exe" class="external-link">download</a></td>
+</tr>
+<tr class="even">
+<td>R single app</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-shinylive-win-x64.exe" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-bundled-win-x64.exe" class="external-link">download</a></td>
+</tr>
+</tbody>
+</table></section><section class="level3"><h3 id="needs-a-runtime-or-tooling-5">Needs a runtime or tooling<a class="anchor" aria-label="anchor" href="#needs-a-runtime-or-tooling-5"></a>
+</h3>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Demo</th>
+<th><code>system</code></th>
+<th><code>auto-download</code></th>
+<th><code>container</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>R demo suite</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-system-win-x64.exe" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-auto-download-win-x64.exe" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-container-win-x64.exe" class="external-link">download</a></td>
+</tr>
+<tr class="even">
+<td>R single app</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-system-win-x64.exe" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-auto-download-win-x64.exe" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-container-win-x64.exe" class="external-link">download</a></td>
+</tr>
+</tbody>
+</table></section></section>
+</div>
+<div class="platform-block" data-platform="linux-x64" data-label="Linux">
+<section class="level2"><h2 id="python-3">Python<a class="anchor" aria-label="anchor" href="#python-3"></a>
+</h2>
+<section class="level3"><h3 id="standalone-no-r-or-python-needed-6">Standalone (no R or Python needed)<a class="anchor" aria-label="anchor" href="#standalone-no-r-or-python-needed-6"></a>
+</h3>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Demo</th>
+<th><code>shinylive</code></th>
+<th><code>bundled</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Python demo suite</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-shinylive-linux-x64.AppImage" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-bundled-linux-x64.AppImage" class="external-link">download</a></td>
+</tr>
+<tr class="even">
+<td>Python single app</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-shinylive-linux-x64.AppImage" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-bundled-linux-x64.AppImage" class="external-link">download</a></td>
+</tr>
+</tbody>
+</table></section><section class="level3"><h3 id="needs-a-runtime-or-tooling-6">Needs a runtime or tooling<a class="anchor" aria-label="anchor" href="#needs-a-runtime-or-tooling-6"></a>
+</h3>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Demo</th>
+<th><code>system</code></th>
+<th><code>auto-download</code></th>
+<th><code>container</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Python demo suite</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-system-linux-x64.AppImage" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-auto-download-linux-x64.AppImage" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-container-linux-x64.AppImage" class="external-link">download</a></td>
+</tr>
+<tr class="even">
+<td>Python single app</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-system-linux-x64.AppImage" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-auto-download-linux-x64.AppImage" class="external-link">download</a></td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-container-linux-x64.AppImage" class="external-link">download</a></td>
+</tr>
+</tbody>
+</table></section></section><section class="level2"><h2 id="r-3">R<a class="anchor" aria-label="anchor" href="#r-3"></a>
+</h2>
+<section class="level3"><h3 id="standalone-no-r-or-python-needed-7">Standalone (no R or Python needed)<a class="anchor" aria-label="anchor" href="#standalone-no-r-or-python-needed-7"></a>
+</h3>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Demo</th>
+<th><code>shinylive</code></th>
+<th><code>bundled</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>R demo suite</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-shinylive-linux-x64.AppImage" class="external-link">download</a></td>
+<td>–</td>
+</tr>
+<tr class="even">
+<td>R single app</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-shinylive-linux-x64.AppImage" class="external-link">download</a></td>
+<td>–</td>
+</tr>
+</tbody>
+</table></section><section class="level3"><h3 id="needs-a-runtime-or-tooling-7">Needs a runtime or tooling<a class="anchor" aria-label="anchor" href="#needs-a-runtime-or-tooling-7"></a>
+</h3>
+<table class="table caption-top">
+<thead><tr class="header">
+<th>Demo</th>
+<th><code>system</code></th>
+<th><code>auto-download</code></th>
+<th><code>container</code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>R demo suite</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-system-linux-x64.AppImage" class="external-link">download</a></td>
+<td>–</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-container-linux-x64.AppImage" class="external-link">download</a></td>
+</tr>
+<tr class="even">
+<td>R single app</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-system-linux-x64.AppImage" class="external-link">download</a></td>
+<td>–</td>
+<td><a href="https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-container-linux-x64.AppImage" class="external-link">download</a></td>
+</tr>
+</tbody>
+</table></section></section>
+</div>
+<style>
+.detected-platform { margin: 1rem 0 0.25rem; }
+details.more-downloads { margin-top: 1.5rem; }
+details.more-downloads > summary { cursor: pointer; font-weight: 600; }
+</style>
+<script>
+(function () {
+  function detectTarget() {
+    var ua = navigator.userAgent || "";
+    var uaData = navigator.userAgentData;
+    var platStr = ((uaData && uaData.platform) || navigator.platform || "") + " " + ua;
+    var os = /mac/i.test(platStr) ? "mac" : /win/i.test(platStr) ? "win" : /linux|x11/i.test(platStr) ? "linux" : null;
+    if (!os) return Promise.resolve(null);
+    if (os !== "mac") return Promise.resolve(os + "-x64");
+    if (uaData && uaData.getHighEntropyValues) {
+      return uaData.getHighEntropyValues(["architecture"]).then(function (h) {
+        return "mac-" + (h.architecture === "arm" ? "arm64" : "x64");
+      }).catch(function () { return "mac-arm64"; });
+    }
+    return Promise.resolve("mac-arm64");
+  }
+  function organize(targetId) {
+    var blocks = Array.prototype.slice.call(document.querySelectorAll(".platform-block"));
+    if (!blocks.length) return;
+    var target = targetId && document.querySelector('.platform-block[data-platform="' + targetId + '"]');
+    if (!target) return; // detection failed: leave every block visible
+    var label = target.getAttribute("data-label") || targetId;
+    var heading = document.createElement("p");
+    heading.className = "detected-platform";
+    heading.innerHTML = "Showing downloads for: <strong>" + label + "</strong>";
+    target.parentNode.insertBefore(heading, target);
+    var details = document.createElement("details");
+    details.className = "more-downloads";
+    var summary = document.createElement("summary");
+    summary.textContent = "More downloads (other platforms)";
+    details.appendChild(summary);
+    blocks.forEach(function (b) { if (b !== target) details.appendChild(b); });
+    target.parentNode.insertBefore(details, target.nextSibling);
+  }
+  document.addEventListener("DOMContentLoaded", function () { detectTarget().then(organize); });
+})();
+</script><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
@@ -734,7 +601,8 @@
       }
     }
   });
-  </script></main>
+  </script></main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside>
 </div>
 
 
