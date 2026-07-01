@@ -67,7 +67,7 @@ One call converts the demo to shinylive, wraps it in Electron, builds a distribu
 
 ## Try a prebuilt demo
 
-Prefer to see the result before building your own? Download a ready-to-run demo. These use the `shinylive` strategy, so they need nothing installed.
+Prefer to see the result before building your own? Grab a prebuilt demo. These are `shinylive` builds, so they need no R, Python, or internet. Download the installer for your platform, run it, and launch the app. On Linux the download is a portable AppImage you can run directly.
 
 ```{r}
 #| echo: false

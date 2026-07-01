@@ -53,9 +53,10 @@ for a small app.
 
 ## Try a prebuilt demo
 
-Download a demo and run it locally. These builds use the `shinylive`
-strategy, so they need nothing installed: download, open, and the app
-runs.
+Each demo is packaged as a desktop app. These are `shinylive` builds, so
+they need no R, Python, or internet: everything runs inside the app.
+Download the installer for your platform, run it, and launch the demo.
+On Linux the download is a portable AppImage you can run straight away.
 
 | Demo | macOS (Apple) | macOS (Intel) | Windows | Linux |
 |----|----|----|----|----|

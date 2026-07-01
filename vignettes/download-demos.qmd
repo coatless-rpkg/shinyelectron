@@ -15,14 +15,14 @@ knitr:
 library(shinyelectron)
 ```
 
-Every demo is built with every runtime strategy on each supported platform and published as a release asset. The only gap is the `bundled` and `auto-download` strategies for R on Linux, which have no portable runtime; those cells show `--`. Pick a row, check what it needs, and download.
+Every demo is built with every runtime strategy on each supported platform and published as a release asset. The only gap is the `bundled` and `auto-download` strategies for R on Linux, which have no portable runtime; those cells show `--`.
 
-What each strategy needs on the user's machine:
+Each download is a desktop installer: run it to install the app, then launch the demo. On Linux the download is a portable AppImage you can run directly, with no install step. What changes between strategies is what the app needs once it launches:
 
-- `shinylive`: nothing. The app runs in WebAssembly.
-- `bundled`: nothing. A runtime is embedded in the installer.
+- `shinylive`: no runtime at all. The app runs in WebAssembly, offline.
+- `bundled`: no runtime to install. A copy of R or Python is embedded in the app.
 - `system`: R or Python already installed and on the PATH.
-- `auto-download`: internet access on first launch to fetch the runtime.
+- `auto-download`: internet access on first launch to download the runtime, then cached.
 - `container`: Docker or Podman installed.
 
 Your platform's downloads are shown first. Use **More downloads** for every other platform.
@@ -41,7 +41,7 @@ platforms <- list(
 )
 languages <- list(list(name = "Python", lang = "py"), list(name = "R", lang = "r"))
 groups <- list(
-  list(title = "Standalone (no setup)", strategies = c("shinylive", "bundled")),
+  list(title = "Standalone (no R or Python needed)", strategies = c("shinylive", "bundled")),
   list(title = "Needs a runtime or tooling", strategies = c("system", "auto-download", "container"))
 )
 
