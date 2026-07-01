@@ -18,6 +18,13 @@ what the app needs once it launches:
   runtime, then cached.
 - `container`: Docker or Podman installed.
 
+On macOS these demo apps are ad-hoc signed but not notarized, so the
+first launch shows a warning that the developer cannot be verified.
+Right-click (or Control-click) the app, choose Open, and confirm. See
+the [Code
+Signing](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/code-signing.md)
+article for notarizing your own builds.
+
 Your platform’s downloads are shown first. Use **More downloads** for
 every other platform.
 
