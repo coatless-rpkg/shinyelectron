@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Troubleshooting Guide • shinyelectron</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
@@ -20,7 +20,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">shinyelectron</a>
 
@@ -91,11 +91,9 @@
 
 
     <p>shinyelectron problems break down into three phases: install, build, and runtime. The <code>sitrep_*</code> (situation report) functions check the environment first, so you can narrow the search before reading error messages. This guide covers the diagnostics, then walks through the common failures in each phase.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure><p><img src="../reference/figures/troubleshooting-phases.svg" style="width:100.0%" alt="Three columns side by side, labelled INSTALL, BUILD, and RUNTIME. The INSTALL column has an amber stripe and the heading Before any build, with the diagnostic functions sitrep_electron_system, sitrep_electron_dependencies, and sitrep_electron_build_tools, plus four error pills: Node.js not found, R package missing, Build tools missing, and Python or shinylive CLI. The BUILD column has a blue stripe and the heading During export(), with the diagnostic function sitrep_electron_project (checks package.json, main.js, node_modules, build scripts) and four error pills: package.json or node_modules, Container pull failure, tar or EBUSY (Windows), and Slow npm install. The RUNTIME column has a green stripe and the heading After packaging, when the app launches, noting that there is no sitrep at this stage and the only diagnostic is launching the app with SHINYELECTRON_DEBUG=1 to read its own log output, plus four error pills: Gatekeeper (macOS), SmartScreen (Windows), R not on PATH (Windows), and App crashes on launch. A caption at the bottom reads: Run the matching sitrep first. If every check is green, scroll to the phase that contains your error."></p>
-<figcaption>Three-phase troubleshooting map. Each phase lists the matching sitrep functions and the common errors users hit there.</figcaption></figure>
-</div>
-<section class="level2"><h2 id="start-with-a-full-report">Start with a full report<a class="anchor" aria-label="anchor" href="#start-with-a-full-report"></a>
+<figure><picture><source srcset="../reference/figures/troubleshooting-phases-dark.svg" media="(prefers-color-scheme: dark)"><img src="../reference/figures/troubleshooting-phases.svg" alt="Three columns side by side, labelled INSTALL, BUILD, and RUNTIME. The INSTALL column has an amber stripe and the heading Before any build, with the diagnostic functions sitrep_electron_system, sitrep_electron_dependencies, and sitrep_electron_build_tools, plus four error pills: Node.js not found, R package missing, Build tools missing, and Python or shinylive CLI. The BUILD column has a blue stripe and the heading During export(), with the diagnostic function sitrep_electron_project (checks package.json, main.js, node_modules, build scripts) and four error pills: package.json or node_modules, Container pull failure, tar or EBUSY (Windows), and Slow npm install. The RUNTIME column has a green stripe and the heading After packaging, when the app launches, noting that there is no sitrep at this stage and the only diagnostic is launching the app with SHINYELECTRON_DEBUG=1 to read its own log output, plus four error pills: Gatekeeper (macOS), SmartScreen (Windows), R not on PATH (Windows), and App crashes on launch. A caption at the bottom reads: Run the matching sitrep first. If every check is green, scroll to the phase that contains your error." style="width: 100%;"></source></picture><figcaption>
+Three-phase troubleshooting map. Each phase lists the matching sitrep functions and the common errors users hit there.
+</figcaption></figure><section class="level2"><h2 id="start-with-a-full-report">Start with a full report<a class="anchor" aria-label="anchor" href="#start-with-a-full-report"></a>
 </h2>
 <p>When you hit a problem, run the full diagnostic first.</p>
 <div class="cell">

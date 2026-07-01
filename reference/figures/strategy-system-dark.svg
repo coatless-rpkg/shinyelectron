@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 240" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="System strategy: ships only an Electron shell with the app source; on first launch it locates Rscript or python3 on PATH and fails with a clear message if missing; when running it spawns the user's own system runtime to serve Shiny over localhost">
+  <defs>
+    <filter id="sy-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
+    </filter>
+    <marker id="sy-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+    </marker>
+    <clipPath id="sy-card-clip"><rect width="220" height="188" rx="8"/></clipPath>
+    <clipPath id="sy-card-narrow-clip"><rect width="188" height="188" rx="8"/></clipPath>
+  </defs>
+
+  <!-- Column headers -->
+  <text x="130" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">SHIPS</text>
+  <text x="380" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">FIRST LAUNCH</text>
+  <text x="630" y="20" text-anchor="middle" font-size="10" font-weight="600" fill="#94a3b8" letter-spacing="1.2">RUNNING</text>
+
+  <!-- Column 1: Ships -->
+  <g transform="translate(20,34)" filter="url(#sy-shadow)">
+    <rect width="220" height="188" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <rect width="220" height="3" fill="#f59e0b" clip-path="url(#sy-card-clip)"/>
+
+    <text x="110" y="24" text-anchor="middle" font-size="11" font-weight="600" fill="#e2e8f0">Electron shell</text>
+    <text x="110" y="38" text-anchor="middle" font-size="9" fill="#94a3b8">smallest possible, ~5 MB</text>
+
+    <!-- App source -->
+    <g transform="translate(16,54)">
+      <rect width="188" height="50" rx="4" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+      <text x="94" y="18" text-anchor="middle" font-size="10" font-weight="500" fill="#cbd5e1">App source</text>
+      <text x="94" y="34" text-anchor="middle" font-size="8" fill="#94a3b8">app.R or app.py</text>
+    </g>
+
+    <!-- No runtime -->
+    <g transform="translate(16,114)">
+      <rect width="188" height="56" rx="4" fill="#422006" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,2"/>
+      <text x="94" y="18" text-anchor="middle" font-size="10" font-weight="600" fill="#fbbf24">No runtime embedded</text>
+      <text x="94" y="34" text-anchor="middle" font-size="9" fill="#f59e0b">relies on user's install</text>
+      <text x="94" y="48" text-anchor="middle" font-size="8" fill="#cbd5e1">R or Python on PATH</text>
+    </g>
+  </g>
+
+  <!-- Arrow 1 -->
+  <g>
+    <path d="M 244 128 L 282 128" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,3" fill="none" marker-end="url(#sy-arrow)"/>
+  </g>
+
+  <!-- Column 2: First launch -->
+  <g transform="translate(286,34)" filter="url(#sy-shadow)">
+    <rect width="188" height="188" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <rect width="188" height="3" fill="#f59e0b" clip-path="url(#sy-card-narrow-clip)"/>
+
+    <text x="94" y="26" text-anchor="middle" font-size="10" font-weight="600" fill="#e2e8f0">Locate on PATH</text>
+
+    <!-- Found -->
+    <g transform="translate(14,40)">
+      <rect width="160" height="46" rx="4" fill="#052e16" stroke="#22c55e" stroke-width="1"/>
+      <g transform="translate(10,14)">
+        <circle cx="8" cy="9" r="8" fill="#14532d" stroke="#22c55e" stroke-width="1"/>
+        <path d="M 4 9 L 7 12 L 12 6" stroke="#16a34a" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+      <text x="34" y="22" font-size="9" font-weight="600" fill="#86efac">Found</text>
+      <text x="34" y="35" font-size="8" fill="#4ade80">spawn and continue</text>
+    </g>
+
+    <text x="94" y="104" text-anchor="middle" font-size="9" fill="#94a3b8">or</text>
+
+    <!-- Missing -->
+    <g transform="translate(14,112)">
+      <rect width="160" height="56" rx="4" fill="#431407" stroke="#c2410c" stroke-width="1"/>
+      <g transform="translate(10,14)">
+        <circle cx="8" cy="9" r="8" fill="#451a03" stroke="#f59e0b" stroke-width="1"/>
+        <text x="8" y="13" text-anchor="middle" font-size="12" font-weight="700" fill="#fbbf24">!</text>
+      </g>
+      <text x="34" y="22" font-size="9" font-weight="600" fill="#fbbf24">Missing</text>
+      <text x="34" y="36" font-size="8" fill="#fbbf24">clear error message</text>
+      <text x="34" y="48" font-size="8" fill="#fbbf24">install instructions shown</text>
+    </g>
+  </g>
+
+  <!-- Arrow 2 -->
+  <g>
+    <path d="M 478 128 L 516 128" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,3" fill="none" marker-end="url(#sy-arrow)"/>
+  </g>
+
+  <!-- Column 3: Running -->
+  <g transform="translate(520,34)" filter="url(#sy-shadow)">
+    <rect width="220" height="188" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <rect width="220" height="3" fill="#f59e0b" clip-path="url(#sy-card-clip)"/>
+
+    <text x="110" y="22" text-anchor="middle" font-size="10" font-weight="600" fill="#e2e8f0">Electron window</text>
+
+    <!-- Window chrome / browser tile -->
+    <g transform="translate(16,32)">
+      <rect width="188" height="50" rx="4" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+      <rect width="188" height="14" rx="4" fill="#0f172a"/>
+      <circle cx="8" cy="7" r="2" fill="#f87171"/>
+      <circle cx="15" cy="7" r="2" fill="#fbbf24"/>
+      <circle cx="22" cy="7" r="2" fill="#34d399"/>
+      <text x="94" y="10" text-anchor="middle" font-size="7" fill="#94a3b8">localhost:port</text>
+      <text x="94" y="34" text-anchor="middle" font-size="9" fill="#cbd5e1">Shiny UI</text>
+    </g>
+
+    <!-- Arrow -->
+    <g transform="translate(110,86)">
+      <line x1="0" y1="0" x2="0" y2="10" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,2"/>
+      <polygon points="-3,10 0,15 3,10" fill="#94a3b8"/>
+    </g>
+
+    <!-- System runtime -->
+    <g transform="translate(16,104)">
+      <rect width="188" height="66" rx="4" fill="#422006" stroke="#f59e0b" stroke-width="1"/>
+      <text x="94" y="16" text-anchor="middle" font-size="10" font-weight="600" fill="#fbbf24">User's Rscript / python3</text>
+      <text x="94" y="32" text-anchor="middle" font-size="9" fill="#f59e0b">spawned from PATH</text>
+      <text x="94" y="48" text-anchor="middle" font-size="8" fill="#cbd5e1">whatever version and</text>
+      <text x="94" y="58" text-anchor="middle" font-size="8" fill="#cbd5e1">packages the user has</text>
+    </g>
+  </g>
+</svg>

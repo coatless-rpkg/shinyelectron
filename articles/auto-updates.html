@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Automatic Updates • shinyelectron</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
@@ -20,7 +20,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">shinyelectron</a>
 
@@ -91,11 +91,9 @@
 
 
     <p>Auto-updates ship by publishing a signed artifact and a matching <code>latest.yml</code> to a place the app knows to check. shinyelectron wires your project up to <a href="https://www.electron.build/auto-update" class="external-link">electron-updater</a>, which does the checking, downloading, and swap-on-quit.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure><p><img src="../reference/figures/update-flow.svg" alt="Three panels. A version 1.0.0 app on the left requests latest.yml from a publish host in the middle, which lists a manifest and signed installers. An arrow on the right shows the app updated to version 1.1.0."></p>
-<figcaption>Update flow: the installed app reads a manifest, fetches a signed artifact, then swaps in on the next quit.</figcaption></figure>
-</div>
-<section class="level2"><h2 id="pick-a-publish-host">Pick a publish host<a class="anchor" aria-label="anchor" href="#pick-a-publish-host"></a>
+<figure><picture><source srcset="../reference/figures/update-flow-dark.svg" media="(prefers-color-scheme: dark)"><img src="../reference/figures/update-flow.svg" alt="Three panels. A version 1.0.0 app on the left requests latest.yml from a publish host in the middle, which lists a manifest and signed installers. An arrow on the right shows the app updated to version 1.1.0."></source></picture><figcaption>
+Update flow: the installed app reads a manifest, fetches a signed artifact, then swaps in on the next quit.
+</figcaption></figure><section class="level2"><h2 id="pick-a-publish-host">Pick a publish host<a class="anchor" aria-label="anchor" href="#pick-a-publish-host"></a>
 </h2>
 <p>GitHub Releases is the only provider currently supported. S3 and Generic HTTP are planned for a future release and are not yet wired into the build.</p>
 <table class="table caption-top">

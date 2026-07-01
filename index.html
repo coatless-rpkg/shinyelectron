@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Export Shiny Applications as Desktop Applications using Electron • shinyelectron</title>
-<script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="lightswitch.js"></script><script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/Inter-0.4.10/font.css" rel="stylesheet">
 <link href="deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
@@ -20,7 +20,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="index.html">shinyelectron</a>
 
@@ -81,7 +81,7 @@
 <!-- badges: start -->
 
 <p>Turn any Shiny app (R or Python) into a standalone desktop application that runs on macOS, Windows, and Linux. No web server, no browser tab, no deployment infrastructure. Just an <code>.app</code>, <code>.exe</code>, or AppImage your users double-click to open.</p>
-<p><img src="reference/figures/pipeline-overview.svg"></p>
+<p><picture><source srcset="reference/figures/pipeline-overview-dark.svg" media="(prefers-color-scheme: dark)"></source><img src="reference/figures/pipeline-overview.svg" alt="pipeline overview"></picture></p>
 <blockquote>
 <p>[!IMPORTANT]</p>
 <p>This package is currently in the prototype/experimental stage. It is not yet on CRAN and may have rough edges. <strong>Not recommended for production applications at this time.</strong></p>

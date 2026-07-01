@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Security Considerations • shinyelectron</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
@@ -20,7 +20,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">shinyelectron</a>
 
@@ -111,11 +111,9 @@
 <strong>Renderer process.</strong> Chromium displaying your Shiny UI. Treat it as hostile territory.</li>
 </ul>
 <p>The rule is unconditional: <strong>the renderer never touches Node.js directly</strong>. With <code>nodeIntegration: true</code>, any script in the renderer, including one injected through an XSS bug or a transitive HTML widget, runs arbitrary OS commands. The defense is to give the renderer the narrowest possible gate to the main process, and to keep that gate auditable.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure><p><img src="../reference/figures/security-trust-boundary.svg" alt="Diagram of the Electron trust boundary. On the left, the renderer process hosts Chromium with the Shiny UI, treated as an untrusted zone with nodeIntegration false, contextIsolation true, sandbox true, and webSecurity true. In the middle, a preload script using contextBridge exposes only a narrow IPC surface: lifecycle.onStatus, lifecycle.retry, and lifecycle.quit. On the right, the trusted main process runs Node.js with full OS access and spawns R via shiny runApp, Python via shiny run, container backends via docker run, or the Express server for Shinylive."></p>
-<figcaption>Electron’s trust boundary: the renderer runs untrusted web content, the preload script exposes a small IPC surface, the main process holds full OS access.</figcaption></figure>
-</div>
-<p>The full picture lives in the <a href="https://www.electronjs.org/docs/latest/tutorial/security" class="external-link">Electron Security Checklist</a>. The rest of this section explains how shinyelectron implements each item.</p>
+<figure><picture><source srcset="../reference/figures/security-trust-boundary-dark.svg" media="(prefers-color-scheme: dark)"><img src="../reference/figures/security-trust-boundary.svg" alt="Diagram of the Electron trust boundary. On the left, the renderer process hosts Chromium with the Shiny UI, treated as an untrusted zone with nodeIntegration false, contextIsolation true, sandbox true, and webSecurity true. In the middle, a preload script using contextBridge exposes only a narrow IPC surface: lifecycle.onStatus, lifecycle.retry, and lifecycle.quit. On the right, the trusted main process runs Node.js with full OS access and spawns R via shiny runApp, Python via shiny run, container backends via docker run, or the Express server for Shinylive."></source></picture><figcaption>
+Electron’s trust boundary: the renderer runs untrusted web content, the preload script exposes a small IPC surface, the main process holds full OS access.
+</figcaption></figure><p>The full picture lives in the <a href="https://www.electronjs.org/docs/latest/tutorial/security" class="external-link">Electron Security Checklist</a>. The rest of this section explains how shinyelectron implements each item.</p>
 </section><section class="level2"><h2 id="what-shinyelectron-locks-down">What shinyelectron locks down<a class="anchor" aria-label="anchor" href="#what-shinyelectron-locks-down"></a>
 </h2>
 <p>The generated <code>BrowserWindow</code> ships with the safe choice for every webPreferences flag that has one. The block below is read live from the template at <code>inst/electron/shared/main.js</code>:</p>

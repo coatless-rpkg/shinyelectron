@@ -5,7 +5,7 @@ that runs on macOS, Windows, and Linux. No web server, no browser tab,
 no deployment infrastructure. Just an `.app`, `.exe`, or AppImage your
 users double-click to open.
 
-![](reference/figures/pipeline-overview.svg)
+![pipeline overview](reference/figures/pipeline-overview.svg)
 
 > \[!IMPORTANT\]
 >

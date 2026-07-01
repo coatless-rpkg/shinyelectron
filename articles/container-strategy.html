@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Container Strategy • shinyelectron</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
@@ -20,7 +20,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">shinyelectron</a>
 
@@ -91,11 +91,9 @@
 
 
     <p>A container holds your app, its runtime, and every system library it needs. Electron is the window onto that container. The user installs Docker or Podman; you ship an image.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure><p><img src="../reference/figures/container-anatomy.svg" style="width:100.0%" alt="Diagram showing the runtime layout of a shinyelectron container app on the user's machine. A dashed outer frame labeled USER'S MACHINE encloses three components. On the left, an Electron app card with traffic-light window controls and a viewport that says WebView pointing to http://localhost:3838. Below it, an App files on disk card showing a folder icon, the path path/to/my-app/, and a list of files (app.R, server.R, ui.R, dependencies.json). On the right, a sky-blue Container Engine card labeled Docker or Podman wraps a Container Instance card containing two layers: an Image layer with a purple stripe describing OS base plus R or Python plus Shiny sourced from rocker/r-ver, python:3.14-slim, your Dockerfile, or a registry; and a /app bind mount layer with an amber stripe describing your app code mounted from disk, with edits visible inside the container live, and noting that extra volumes such as /data and /models attach the same way. Two arrows connect the host components to the container: an HTTP arrow labeled localhost:3838 from the Electron card to the Image layer, and a bind mount arrow from the App files card to the /app layer."></p>
-<figcaption>Anatomy of a containerized shinyelectron app on the user’s machine. Electron talks to a Shiny server inside a container over <code>http://localhost:3838</code>, and your app code on disk is bind-mounted into the container at <code>/app</code> so the running container reads your files live.</figcaption></figure>
-</div>
-<section class="level2"><h2 id="when-to-reach-for-a-container">When to reach for a container<a class="anchor" aria-label="anchor" href="#when-to-reach-for-a-container"></a>
+<figure><picture><source srcset="../reference/figures/container-anatomy-dark.svg" media="(prefers-color-scheme: dark)"><img src="../reference/figures/container-anatomy.svg" alt="Diagram showing the runtime layout of a shinyelectron container app on the user's machine. A dashed outer frame labeled USER'S MACHINE encloses three components. On the left, an Electron app card with traffic-light window controls and a viewport that says WebView pointing to http://localhost:3838. Below it, an App files on disk card showing a folder icon, the path path/to/my-app/, and a list of files (app.R, server.R, ui.R, dependencies.json). On the right, a sky-blue Container Engine card labeled Docker or Podman wraps a Container Instance card containing two layers: an Image layer with a purple stripe describing OS base plus R or Python plus Shiny sourced from rocker/r-ver, python:3.14-slim, your Dockerfile, or a registry; and a /app bind mount layer with an amber stripe describing your app code mounted from disk, with edits visible inside the container live, and noting that extra volumes such as /data and /models attach the same way. Two arrows connect the host components to the container: an HTTP arrow labeled localhost:3838 from the Electron card to the Image layer, and a bind mount arrow from the App files card to the /app layer." style="width: 100%;"></source></picture><figcaption>
+Anatomy of a containerized shinyelectron app on the user’s machine. Electron talks to a Shiny server inside a container over <code>http://localhost:3838</code>, and your app code on disk is bind-mounted into the container at <code>/app</code> so the running container reads your files live.
+</figcaption></figure><section class="level2"><h2 id="when-to-reach-for-a-container">When to reach for a container<a class="anchor" aria-label="anchor" href="#when-to-reach-for-a-container"></a>
 </h2>
 <p>Pick the container strategy when any of these are true:</p>
 <ul>
@@ -124,11 +122,9 @@
 </section><section class="level2"><h2 id="the-launch-flow">The launch flow<a class="anchor" aria-label="anchor" href="#the-launch-flow"></a>
 </h2>
 <p>When a user opens the packaged app, shinyelectron walks four phases:</p>
-<div class="quarto-figure quarto-figure-center">
-<figure><p><img src="../reference/figures/container-launch-flow.svg" style="width:100.0%" alt="Horizontal flow diagram with four phase cards connected by arrows under the title What happens when the user opens the app. Phase 1, Engine, blue, covers steps 1 to 3 to find and pick: Electron splash starts, locate the engine socket, pick Docker or Podman. Phase 2, Image, purple, covers step 4 to make available: pull from registry, or build the embedded Dockerfile locally; cached after first launch. Phase 3, Run, green, covers steps 5 to 7 to start and connect: docker run -d, poll Shiny for up to 120 seconds, WebView loads the URL. Phase 4, Quit, amber, covers step 8 cleanup: stop the container, remove it; the image stays cached for the next launch."></p>
-<figcaption>Four phases of launching a containerized shinyelectron app. Each phase groups one or more of the eight low-level steps and is colored consistently with later sections of this guide.</figcaption></figure>
-</div>
-<p>The eight underlying steps:</p>
+<figure><picture><source srcset="../reference/figures/container-launch-flow-dark.svg" media="(prefers-color-scheme: dark)"><img src="../reference/figures/container-launch-flow.svg" alt="Horizontal flow diagram with four phase cards connected by arrows under the title What happens when the user opens the app. Phase 1, Engine, blue, covers steps 1 to 3 to find and pick: Electron splash starts, locate the engine socket, pick Docker or Podman. Phase 2, Image, purple, covers step 4 to make available: pull from registry, or build the embedded Dockerfile locally; cached after first launch. Phase 3, Run, green, covers steps 5 to 7 to start and connect: docker run -d, poll Shiny for up to 120 seconds, WebView loads the URL. Phase 4, Quit, amber, covers step 8 cleanup: stop the container, remove it; the image stays cached for the next launch." style="width: 100%;"></source></picture><figcaption>
+Four phases of launching a containerized shinyelectron app. Each phase groups one or more of the eight low-level steps and is colored consistently with later sections of this guide.
+</figcaption></figure><p>The eight underlying steps:</p>
 <ol type="1">
 <li>
 <strong>Electron starts</strong> and shows the lifecycle splash.</li>
@@ -165,11 +161,9 @@
 </section><section class="level2"><h2 id="where-the-image-comes-from">Where the image comes from<a class="anchor" aria-label="anchor" href="#where-the-image-comes-from"></a>
 </h2>
 <p>There are three paths. The first two are generated automatically; the third is for when you need more than the built-ins offer.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure><p><img src="../reference/figures/container-image-sources.svg" style="width:100.0%" alt="Three-card horizontal layout under the title Where the image comes from. Card one, blue, Built-in R, generated when type is r-shiny, configured with type r-shiny and image null, uses rocker/r-ver as base, and installs dependencies as P3M binary packages plus apt system requirements baked into the image at build. Card two, green, Built-in Python, generated when type is py-shiny, configured with type py-shiny and image null, uses python:3.14-slim as base, and pip-installs dependencies at first launch via the entrypoint script. Card three, amber, Registry pull, any image you publish, configured with image set to a reference like ghcr.io/org/app and a tag, base is whatever you built, dependencies are already inside the image, and shinyelectron does no Dockerfile generation."></p>
-<figcaption>Three ways an image is sourced for a containerized shinyelectron app. Each card shows the configuration, the base image, and when extra dependencies install.</figcaption></figure>
-</div>
-<section class="level3"><h3 id="built-in-r-image">Built-in R image<a class="anchor" aria-label="anchor" href="#built-in-r-image"></a>
+<figure><picture><source srcset="../reference/figures/container-image-sources-dark.svg" media="(prefers-color-scheme: dark)"><img src="../reference/figures/container-image-sources.svg" alt="Three-card horizontal layout under the title Where the image comes from. Card one, blue, Built-in R, generated when type is r-shiny, configured with type r-shiny and image null, uses rocker/r-ver as base, and installs dependencies as P3M binary packages plus apt system requirements baked into the image at build. Card two, green, Built-in Python, generated when type is py-shiny, configured with type py-shiny and image null, uses python:3.14-slim as base, and pip-installs dependencies at first launch via the entrypoint script. Card three, amber, Registry pull, any image you publish, configured with image set to a reference like ghcr.io/org/app and a tag, base is whatever you built, dependencies are already inside the image, and shinyelectron does no Dockerfile generation." style="width: 100%;"></source></picture><figcaption>
+Three ways an image is sourced for a containerized shinyelectron app. Each card shows the configuration, the base image, and when extra dependencies install.
+</figcaption></figure><section class="level3"><h3 id="built-in-r-image">Built-in R image<a class="anchor" aria-label="anchor" href="#built-in-r-image"></a>
 </h3>
 <p>The built-in R Dockerfile is based on <a href="https://github.com/rocker-org/rocker-versioned2" class="external-link"><code>rocker/r-ver</code></a>, tagged to the resolved R version (for example, <code>rocker/r-ver:4.6.1</code>). This image pre-wires the <a href="https://packagemanager.posit.co/" class="external-link">Posit Public Package Manager</a> binary repository, so <code><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages()</a></code> retrieves pre-compiled binaries without needing a C compiler in the image.</p>
 <p>The base image tag tracks <code>dependencies.r.version</code> from <code>_shinyelectron.yml</code>. Leave it <code>null</code> to use the maintained pin; set it to <code>"4.6.1"</code> (or any version string) to pin exactly; set it to <code>"latest"</code> to query the upstream source at build time.</p>

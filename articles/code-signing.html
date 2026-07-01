@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Code Signing and Distribution • shinyelectron</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
@@ -20,7 +20,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">shinyelectron</a>
 
@@ -91,11 +91,9 @@
 
 
     <p>Signing tells the operating system who built this. Notarization tells the OS that Apple has seen it. Without either, macOS Gatekeeper blocks your app as an “unidentified developer” and Windows SmartScreen warns on every download. This guide covers what you need, what it costs, and how to wire it up. For the wider security picture, see <a href="security.html">Security Considerations</a>.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure><p><img src="../reference/figures/signing-chain.svg" style="width:100.0%" alt="Four-stage horizontal flow diagram. Stage 1 is a blue Certificate card noting the certificate is issued by a CA such as Apple, DigiCert, Sectigo, GlobalSign, or a GPG key. A trusts arrow points to Stage 2, a purple Signing card labeled export(sign = TRUE) where electron-builder stamps the app and notarizes on macOS. A produces arrow points to Stage 3, a green Signed Build card containing a .app, .exe, or AppImage with an embedded cryptographic signature. A verified-by arrow leads to Stage 4, an amber User OS card noting the operating system verifies and launches the app cleanly. A platform strip below repeats the summary for macOS, Windows, and Linux, with certificate type, representative cost, the CSC_LINK or GPG_KEY environment variable, and what happens without signing."></p>
-<figcaption>The code signing chain of trust: a certificate from a trusted authority signs the app during export, the signed build is distributed, and the end user’s OS verifies the signature before launching. The bottom strip summarises what each stage looks like on macOS, Windows, and Linux.</figcaption></figure>
-</div>
-<section class="level2"><h2 id="when-signing-matters">When signing matters<a class="anchor" aria-label="anchor" href="#when-signing-matters"></a>
+<figure><picture><source srcset="../reference/figures/signing-chain-dark.svg" media="(prefers-color-scheme: dark)"><img src="../reference/figures/signing-chain.svg" alt="Four-stage horizontal flow diagram. Stage 1 is a blue Certificate card noting the certificate is issued by a CA such as Apple, DigiCert, Sectigo, GlobalSign, or a GPG key. A trusts arrow points to Stage 2, a purple Signing card labeled export(sign = TRUE) where electron-builder stamps the app and notarizes on macOS. A produces arrow points to Stage 3, a green Signed Build card containing a .app, .exe, or AppImage with an embedded cryptographic signature. A verified-by arrow leads to Stage 4, an amber User OS card noting the operating system verifies and launches the app cleanly. A platform strip below repeats the summary for macOS, Windows, and Linux, with certificate type, representative cost, the CSC_LINK or GPG_KEY environment variable, and what happens without signing." style="width: 100%;"></source></picture><figcaption>
+The code signing chain of trust: a certificate from a trusted authority signs the app during export, the signed build is distributed, and the end user’s OS verifies the signature before launching. The bottom strip summarises what each stage looks like on macOS, Windows, and Linux.
+</figcaption></figure><section class="level2"><h2 id="when-signing-matters">When signing matters<a class="anchor" aria-label="anchor" href="#when-signing-matters"></a>
 </h2>
 <p>Users can click past warnings, but the friction is real. Three reasons to sign anyway:</p>
 <ul>
@@ -107,11 +105,9 @@
 <strong>Auto-updates.</strong> <code>electron-updater</code> verifies signatures on macOS and Windows before applying an update, so unsigned builds lose the update path entirely.</li>
 </ul>
 <p>The concrete outcomes differ per platform:</p>
-<div class="quarto-figure quarto-figure-center">
-<figure><p><img src="../reference/figures/signing-outcomes.svg" style="width:100.0%" alt="Three-row comparison table showing what happens on launch without and with signing on each platform. macOS row: without signing the app is blocked by Gatekeeper with an error message that the app can't be opened because Apple cannot check it for malicious software; with signing the app opens cleanly after Apple verifies the Developer ID and notarization ticket. Windows row: without signing SmartScreen warns that Windows protected your PC and prevented the unrecognized app from starting; with signing the app opens cleanly, with EV certificates trusted immediately and OV certificates building reputation over weeks. Linux row: without signing the app opens without any OS warning; GPG signing is planned but not yet implemented, so no signature is produced today."></p>
-<figcaption>Side-by-side comparison of launch behaviour with and without signing on macOS, Windows, and Linux. macOS and Windows block or warn on unsigned builds, while Linux has no OS-level enforcement and GPG signing is not yet implemented in shinyelectron.</figcaption></figure>
-</div>
-<table class="table caption-top">
+<figure><picture><source srcset="../reference/figures/signing-outcomes-dark.svg" media="(prefers-color-scheme: dark)"><img src="../reference/figures/signing-outcomes.svg" alt="Three-row comparison table showing what happens on launch without and with signing on each platform. macOS row: without signing the app is blocked by Gatekeeper with an error message that the app can't be opened because Apple cannot check it for malicious software; with signing the app opens cleanly after Apple verifies the Developer ID and notarization ticket. Windows row: without signing SmartScreen warns that Windows protected your PC and prevented the unrecognized app from starting; with signing the app opens cleanly, with EV certificates trusted immediately and OV certificates building reputation over weeks. Linux row: without signing the app opens without any OS warning; GPG signing is planned but not yet implemented, so no signature is produced today." style="width: 100%;"></source></picture><figcaption>
+Side-by-side comparison of launch behaviour with and without signing on macOS, Windows, and Linux. macOS and Windows block or warn on unsigned builds, while Linux has no OS-level enforcement and GPG signing is not yet implemented in shinyelectron.
+</figcaption></figure><table class="table caption-top">
 <colgroup>
 <col style="width: 25%">
 <col style="width: 25%">

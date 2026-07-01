@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 220" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Auto-update flow: installed app checks a published manifest, downloads a signed artifact, then installs on quit">
+  <defs>
+    <filter id="update-shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
+    </filter>
+    <clipPath id="update-card1-clip"><rect width="170" height="124" rx="8"/></clipPath>
+    <clipPath id="update-card2-clip"><rect width="220" height="180" rx="8"/></clipPath>
+    <clipPath id="update-card3-clip"><rect width="194" height="124" rx="8"/></clipPath>
+  </defs>
+
+  <!-- Step 1: Installed App -->
+  <g transform="translate(20,48)" filter="url(#update-shadow)">
+    <rect width="170" height="124" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <rect width="170" height="3" fill="#3b82f6" clip-path="url(#update-card1-clip)"/>
+    <text x="85" y="36" text-anchor="middle" font-size="14" font-weight="600" fill="#e2e8f0">Installed App</text>
+    <text x="85" y="58" text-anchor="middle" font-size="12" fill="#cbd5e1">version 1.0.0</text>
+    <line x1="28" y1="74" x2="142" y2="74" stroke="#334155" stroke-width="1"/>
+    <text x="85" y="94" text-anchor="middle" font-size="11" fill="#94a3b8">checks on startup</text>
+    <text x="85" y="110" text-anchor="middle" font-size="11" fill="#94a3b8">via electron-updater</text>
+  </g>
+
+  <!-- Arrow 1 -->
+  <g transform="translate(200,108)">
+    <line x1="0" y1="0" x2="50" y2="0" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <polygon points="50,-4 58,0 50,4" fill="#cbd5e1"/>
+    <text x="29" y="-8" text-anchor="middle" font-size="10" fill="#94a3b8">GET latest.yml</text>
+  </g>
+
+  <!-- Step 2: Publish host -->
+  <g transform="translate(268,20)" filter="url(#update-shadow)">
+    <rect width="220" height="180" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <rect width="220" height="3" fill="#8b5cf6" clip-path="url(#update-card2-clip)"/>
+    <text x="110" y="32" text-anchor="middle" font-size="14" font-weight="600" fill="#e2e8f0">Publish Host</text>
+    <text x="110" y="50" text-anchor="middle" font-size="11" fill="#94a3b8">GitHub Releases (S3, HTTP planned)</text>
+
+    <!-- manifest row -->
+    <g transform="translate(18,62)">
+      <rect width="184" height="30" rx="5" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+      <text x="12" y="19" font-size="11" font-weight="600" fill="#e2e8f0">latest.yml</text>
+      <text x="176" y="19" text-anchor="end" font-size="10" fill="#cbd5e1">version + sha512</text>
+    </g>
+
+    <!-- artifact rows -->
+    <g transform="translate(18,100)">
+      <rect width="184" height="24" rx="5" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+      <circle cx="14" cy="12" r="3" fill="#10b981"/>
+      <text x="26" y="16" font-size="11" fill="#e2e8f0">MyApp-1.1.0.dmg</text>
+    </g>
+    <g transform="translate(18,128)">
+      <rect width="184" height="24" rx="5" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+      <circle cx="14" cy="12" r="3" fill="#10b981"/>
+      <text x="26" y="16" font-size="11" fill="#e2e8f0">MyApp-Setup-1.1.0.exe</text>
+    </g>
+    <g transform="translate(18,156)">
+      <rect width="184" height="16" rx="4" fill="transparent"/>
+      <text x="92" y="12" text-anchor="middle" font-size="10" fill="#94a3b8">signed + hashed</text>
+    </g>
+  </g>
+
+  <!-- Arrow 2 -->
+  <g transform="translate(498,108)">
+    <line x1="0" y1="0" x2="50" y2="0" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <polygon points="50,-4 58,0 50,4" fill="#cbd5e1"/>
+    <text x="29" y="-8" text-anchor="middle" font-size="10" fill="#94a3b8">download</text>
+  </g>
+
+  <!-- Step 3: Installed, updated -->
+  <g transform="translate(566,48)" filter="url(#update-shadow)">
+    <rect width="194" height="124" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <rect width="194" height="3" fill="#10b981" clip-path="url(#update-card3-clip)"/>
+    <text x="97" y="36" text-anchor="middle" font-size="14" font-weight="600" fill="#e2e8f0">Installed App</text>
+    <text x="97" y="58" text-anchor="middle" font-size="12" fill="#cbd5e1">version 1.1.0</text>
+    <line x1="36" y1="74" x2="158" y2="74" stroke="#334155" stroke-width="1"/>
+    <text x="97" y="94" text-anchor="middle" font-size="11" fill="#94a3b8">swaps in on quit</text>
+    <text x="97" y="110" text-anchor="middle" font-size="11" fill="#94a3b8">signature verified</text>
+  </g>
+</svg>
