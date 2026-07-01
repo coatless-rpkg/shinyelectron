@@ -89,7 +89,7 @@
 
 
 
-      <small class="dont-index">Source: <a href="https://github.com/coatless-rpkg/shinyelectron/blob/v0.2.0/vignettes/code-signing.qmd" class="external-link"><code>vignettes/code-signing.qmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/coatless-rpkg/shinyelectron/blob/main/vignettes/code-signing.qmd" class="external-link"><code>vignettes/code-signing.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
     </div>
 
@@ -240,26 +240,26 @@ Side-by-side comparison of launch behaviour with and without signing on macOS, W
 <p><strong>Without signing:</strong> nothing visibly changes. AppImage files do not require a signature to run, so users can open the app without any additional steps.</p>
 </section><section class="level2"><h2 id="signing-in-ci">Signing in CI<a class="anchor" aria-label="anchor" href="#signing-in-ci"></a>
 </h2>
-<p>CI is where signing usually lives in the long run: no human holds the keys on a laptop, and every tagged release is signed automatically. Store credentials as GitHub Actions secrets (<strong>Settings → Secrets and variables → Actions</strong>) and reference them from your workflow:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Build Electron app</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">env</span><span class="kw">:</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co">    # macOS</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">CSC_LINK</span><span class="kw">:</span><span class="at"> ${{ secrets.MAC_CERTIFICATE }}</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">CSC_KEY_PASSWORD</span><span class="kw">:</span><span class="at"> ${{ secrets.MAC_CERTIFICATE_PASSWORD }}</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">APPLE_ID</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_ID }}</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">APPLE_APP_SPECIFIC_PASSWORD</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">APPLE_TEAM_ID</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_TEAM_ID }}</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co">    # Windows (set in the Windows job instead)</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co">    # CSC_LINK: ${{ secrets.WIN_CERTIFICATE }}</span></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co">    # CSC_KEY_PASSWORD: ${{ secrets.WIN_CERTIFICATE_PASSWORD }}</span></span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="fu">  run</span><span class="kw">: </span><span class="ch">|</span></span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    Rscript -e "</span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>      shinyelectron::export(</span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>        appdir = 'app',</span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>        destdir = 'build',</span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>        sign = TRUE</span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>      )</span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>    "</span></code></pre></div>
+<p>CI is where signing usually lives in the long run: no human holds the keys on a laptop, and every tagged release is signed automatically. Store credentials as GitHub Actions secrets (<strong>Settings → Secrets and variables → Actions</strong>), then pass them to the <a href="https://github.com/coatless-actions/shiny-to-electron" class="external-link"><code>coatless-actions/shiny-to-electron</code></a> action and flip <code>sign</code> on. The action reads credentials from the <strong>job</strong> environment, so set them on the job, not on the step:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">jobs</span><span class="kw">:</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">build</span><span class="kw">:</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ${{ matrix.os }}</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">env</span><span class="kw">:</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">CSC_LINK</span><span class="kw">:</span><span class="at"> ${{ secrets.CSC_LINK }}</span><span class="co">                                  # base64 .p12 certificate</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">CSC_KEY_PASSWORD</span><span class="kw">:</span><span class="at"> ${{ secrets.CSC_KEY_PASSWORD }}</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">APPLE_ID</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_ID }}</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">APPLE_APP_SPECIFIC_PASSWORD</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">APPLE_TEAM_ID</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_TEAM_ID }}</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v7</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> coatless-actions/shiny-to-electron@v1</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">appdir</span><span class="kw">:</span><span class="at"> app</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">app-name</span><span class="kw">:</span><span class="at"> MyApp</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">platform</span><span class="kw">:</span><span class="at"> ${{ matrix.platform }}</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">arch</span><span class="kw">:</span><span class="at"> ${{ matrix.arch }}</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">sign</span><span class="kw">:</span><span class="at"> </span><span class="st">'true'</span></span></code></pre></div>
+<p>With <code>sign: 'true'</code> and those secrets present, macOS builds are signed with your Developer ID and notarized, taking the team id from <code>APPLE_TEAM_ID</code>.</p>
 <div>
 <blockquote>
 <p><strong>Important</strong></p>

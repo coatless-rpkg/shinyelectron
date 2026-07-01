@@ -233,29 +233,35 @@ additional steps.
 CI is where signing usually lives in the long run: no human holds the
 keys on a laptop, and every tagged release is signed automatically.
 Store credentials as GitHub Actions secrets (**Settings → Secrets and
-variables → Actions**) and reference them from your workflow:
+variables → Actions**), then pass them to the
+[`coatless-actions/shiny-to-electron`](https://github.com/coatless-actions/shiny-to-electron)
+action and flip `sign` on. The action reads credentials from the **job**
+environment, so set them on the job, not on the step:
 
 ``` yaml
-- name: Build Electron app
-  env:
-    # macOS
-    CSC_LINK: ${{ secrets.MAC_CERTIFICATE }}
-    CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
-    APPLE_ID: ${{ secrets.APPLE_ID }}
-    APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-    APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-    # Windows (set in the Windows job instead)
-    # CSC_LINK: ${{ secrets.WIN_CERTIFICATE }}
-    # CSC_KEY_PASSWORD: ${{ secrets.WIN_CERTIFICATE_PASSWORD }}
-  run: |
-    Rscript -e "
-      shinyelectron::export(
-        appdir = 'app',
-        destdir = 'build',
-        sign = TRUE
-      )
-    "
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    env:
+      CSC_LINK: ${{ secrets.CSC_LINK }}                                  # base64 .p12 certificate
+      CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: coatless-actions/shiny-to-electron@v1
+        with:
+          appdir: app
+          app-name: MyApp
+          platform: ${{ matrix.platform }}
+          arch: ${{ matrix.arch }}
+          sign: 'true'
 ```
+
+With `sign: 'true'` and those secrets present, macOS builds are signed
+with your Developer ID and notarized, taking the team id from
+`APPLE_TEAM_ID`.
 
 > **Important**
 >

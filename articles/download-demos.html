@@ -89,7 +89,7 @@
 
 
 
-      <small class="dont-index">Source: <a href="https://github.com/coatless-rpkg/shinyelectron/blob/v0.2.0/vignettes/download-demos.qmd" class="external-link"><code>vignettes/download-demos.qmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/coatless-rpkg/shinyelectron/blob/main/vignettes/download-demos.qmd" class="external-link"><code>vignettes/download-demos.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
     </div>
 
@@ -112,7 +112,7 @@
 <li>
 <code>container</code>: Docker or Podman installed.</li>
 </ul>
-<p>On macOS these demo apps are ad-hoc signed but not notarized, so the first launch shows a warning that the developer cannot be verified. Right-click (or Control-click) the app, choose Open, and confirm. See the <a href="code-signing.html">Code Signing</a> article for notarizing your own builds.</p>
+<p>On macOS these demos are signed with a Developer ID certificate and notarized by Apple, so they launch without a warning. Windows demos are unsigned, so the first launch shows a SmartScreen prompt; choose <strong>More info</strong>, then <strong>Run anyway</strong>. When you build your own apps for distribution, sign and notarize them so users never see these prompts. The <a href="code-signing.html">Code Signing</a> article covers the setup.</p>
 <p>Your platform’s downloads are shown first. Use <strong>More downloads</strong> for every other platform.</p>
 <section class="level2 platform-block" data-platform="mac-arm64" data-label="macOS (Apple Silicon)"><h2 id="macos-apple-silicon">macOS (Apple Silicon)<a class="anchor" aria-label="anchor" href="#macos-apple-silicon"></a>
 </h2>
