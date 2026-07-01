@@ -151,77 +151,9 @@ The build matrix: one push fans out across platform runners, each producing an i
 └── README.md</code></pre>
 </section><section class="level2"><h2 id="use-the-bundled-workflow">Use the bundled workflow<a class="anchor" aria-label="anchor" href="#use-the-bundled-workflow"></a>
 </h2>
-<p>shinyelectron ships a ready-to-run workflow at <code>inst/templates/github-actions-build.yml</code>. It leans on the <a href="https://github.com/coatless-actions/shiny-to-electron" class="external-link"><code>coatless-actions/shiny-to-electron</code></a> action, which sets up R and Node.js, installs shinyelectron, runs <code><a href="../reference/export.html">export()</a></code>, and uploads the installer. That keeps the workflow itself short:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># GitHub Actions workflow for building shinyelectron apps</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Builds your Shiny app as an Electron desktop installer for macOS, Windows,</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># and Linux with the coatless-actions/shiny-to-electron action, then attaches</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># the installers to a GitHub Release on version tags.</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Usage:</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Copy this file to .github/workflows/build-electron.yml in your repository.</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Set `appdir` (path to your Shiny app) and `app-name` in the build step.</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Push to build; push a tag like v1.0.0 to also cut a release.</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co"># https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/github-actions.html</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> Build Electron App</span></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="fu">on</span><span class="kw">:</span></span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">branches</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">main</span><span class="kw">,</span><span class="at"> master</span><span class="kw">]</span></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">tags</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">'v*'</span><span class="kw">]</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">pull_request</span><span class="kw">:</span></span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">branches</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">main</span><span class="kw">,</span><span class="at"> master</span><span class="kw">]</span></span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">workflow_dispatch</span><span class="kw">:</span></span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="fu">jobs</span><span class="kw">:</span></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">build</span><span class="kw">:</span></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Build (${{ matrix.platform }}-${{ matrix.arch }})</span></span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ${{ matrix.os }}</span></span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">strategy</span><span class="kw">:</span></span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">fail-fast</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">matrix</span><span class="kw">:</span></span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">include</span><span class="kw">:</span></span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="kw">{</span><span class="at"> </span><span class="fu">os</span><span class="kw">:</span><span class="at"> macos-latest</span><span class="kw">,</span><span class="at">   </span><span class="fu">platform</span><span class="kw">:</span><span class="at"> mac</span><span class="kw">,</span><span class="at">   </span><span class="fu">arch</span><span class="kw">:</span><span class="at"> arm64 </span><span class="kw">}</span></span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="kw">{</span><span class="at"> </span><span class="fu">os</span><span class="kw">:</span><span class="at"> macos-15-intel</span><span class="kw">,</span><span class="at"> </span><span class="fu">platform</span><span class="kw">:</span><span class="at"> mac</span><span class="kw">,</span><span class="at">   </span><span class="fu">arch</span><span class="kw">:</span><span class="at"> x64 </span><span class="kw">}</span></span>
-<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="kw">{</span><span class="at"> </span><span class="fu">os</span><span class="kw">:</span><span class="at"> windows-latest</span><span class="kw">,</span><span class="at"> </span><span class="fu">platform</span><span class="kw">:</span><span class="at"> win</span><span class="kw">,</span><span class="at">   </span><span class="fu">arch</span><span class="kw">:</span><span class="at"> x64 </span><span class="kw">}</span></span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="kw">{</span><span class="at"> </span><span class="fu">os</span><span class="kw">:</span><span class="at"> ubuntu-latest</span><span class="kw">,</span><span class="at">  </span><span class="fu">platform</span><span class="kw">:</span><span class="at"> linux</span><span class="kw">,</span><span class="at"> </span><span class="fu">arch</span><span class="kw">:</span><span class="at"> x64 </span><span class="kw">}</span></span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
-<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v7</span></span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Build the Electron app</span></span>
-<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> coatless-actions/shiny-to-electron@v1</span></span>
-<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">appdir</span><span class="kw">:</span><span class="at"> app</span><span class="co">                       # Directory containing your Shiny app</span></span>
-<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">app-name</span><span class="kw">:</span><span class="at"> MyApp</span><span class="co">                   # Display name of the application</span></span>
-<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">platform</span><span class="kw">:</span><span class="at"> ${{ matrix.platform }}</span></span>
-<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">arch</span><span class="kw">:</span><span class="at"> ${{ matrix.arch }}</span></span>
-<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a><span class="co">          # runtime-strategy: shinylive     # shinylive | bundled | system | auto-download | container</span></span>
-<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a><span class="co">          # sign: 'false'                   # 'true' with signing secrets to sign and notarize</span></span>
-<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">release</span><span class="kw">:</span></span>
-<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Create Release</span></span>
-<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">needs</span><span class="kw">:</span><span class="at"> build</span></span>
-<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">if</span><span class="kw">:</span><span class="at"> startsWith(github.ref, 'refs/tags/v')</span></span>
-<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ubuntu-latest</span></span>
-<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">permissions</span><span class="kw">:</span></span>
-<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">contents</span><span class="kw">:</span><span class="at"> write</span></span>
-<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
-<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Download all build artifacts</span></span>
-<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/download-artifact@v8</span></span>
-<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">path</span><span class="kw">:</span><span class="at"> artifacts</span></span>
-<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Create GitHub Release</span></span>
-<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> softprops/action-gh-release@v3</span></span>
-<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">files</span><span class="kw">:</span><span class="at"> artifacts/**/*</span></span>
-<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">generate_release_notes</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">prerelease</span><span class="kw">:</span><span class="at"> ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') }}</span></span></code></pre></div>
-<p>Copy it into your repo:</p>
+<p>shinyelectron ships a ready-to-run workflow at <code>inst/templates/github-actions-build.yml</code>. Copy it into your repo:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">template</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
 <span>  <span class="st">"templates"</span>, <span class="st">"github-actions-build.yml"</span>,</span>
 <span>  package <span class="op">=</span> <span class="st">"shinyelectron"</span></span>
@@ -234,10 +166,17 @@ The build matrix: one push fans out across platform runners, each producing an i
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>Or grab it directly from <a href="https://github.com/coatless-rpkg/shinyelectron/blob/main/inst/templates/github-actions-build.yml" class="external-link">GitHub</a>.</p>
-<p>Two jobs run: a build matrix across four platform runners, and a release job gated on tag pushes.</p>
-<section class="level3"><h3 id="configure-it">Configure it<a class="anchor" aria-label="anchor" href="#configure-it"></a>
+<p>The workflow runs three jobs in sequence: a build matrix, a release step gated on tag pushes, and a summary recap.</p>
+<section class="level3"><h3 id="configure-the-env-vars">Configure the env vars<a class="anchor" aria-label="anchor" href="#configure-the-env-vars"></a>
 </h3>
-<p>Set two things in the build step’s <code>with:</code> block: <code>appdir</code> (the path to your Shiny app inside the repo) and <code>app-name</code> (the installer’s display name). Everything else has a sensible default. Uncomment <code>runtime-strategy</code> to pick a strategy other than <code>shinylive</code>, and <code>sign</code> to sign builds (see <a href="#signing-in-ci">Signing in CI</a>).</p>
+<p>Edit four variables at the top of the workflow. They are the only fields most projects need to change:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">env</span><span class="kw">:</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">  # Configure these for your project</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">APP_DIR</span><span class="kw">:</span><span class="at"> </span><span class="st">'app'</span><span class="co">           # Directory containing your Shiny app</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">APP_NAME</span><span class="kw">:</span><span class="at"> </span><span class="st">'MyApp'</span><span class="co">        # Name of your application</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">NODE_VERSION</span><span class="kw">:</span><span class="at"> </span><span class="st">'22'</span><span class="co">       # Node.js version</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">R_VERSION</span><span class="kw">:</span><span class="at"> </span><span class="st">'release'</span><span class="co">     # R version (release, devel, or specific version)</span></span></code></pre></div>
+<p><code>APP_DIR</code> is the path to your Shiny app inside the repo. <code>APP_NAME</code> becomes the installer’s display name. <code>NODE_VERSION</code> and <code>R_VERSION</code> pin the toolchain; leave them at the defaults unless you have a reason to deviate.</p>
 </section><section class="level3"><h3 id="what-the-matrix-builds">What the matrix builds<a class="anchor" aria-label="anchor" href="#what-the-matrix-builds"></a>
 </h3>
 <p>The matrix spreads installers across four runners. Each runner starts from a clean image:</p>
@@ -276,7 +215,16 @@ The build matrix: one push fans out across platform runners, each producing an i
 </tbody>
 </table>
 <p>CPU and RAM allocations come from GitHub’s hosted-runner specs, which evolve over time; check <a href="https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners" class="external-link">the GitHub-hosted runners documentation</a> for current numbers.</p>
-<p>Each runner does the same two things: check out the repo, then run the action, which sets up R and Node.js, installs shinyelectron, runs <code><a href="../reference/export.html">export()</a></code> for that platform, and uploads the installer as a run artifact. On a tag push, the release job downloads every artifact and attaches them to a fresh GitHub Release.</p>
+<p>Every runner steps through the same recipe:</p>
+<ol type="1">
+<li>Checkout the repo.</li>
+<li>Set up R with <code>r-lib/actions/setup-r</code>.</li>
+<li>Set up Node.js (version from <code>NODE_VERSION</code>).</li>
+<li>Install <code>shinyelectron</code> and dependencies.</li>
+<li>Run <code><a href="../reference/export.html">shinyelectron::export()</a></code>.</li>
+<li>Upload the build output as a run artifact.</li>
+</ol>
+<p>A release job runs after the matrix when the trigger is a tag push, downloading every artifact and attaching them to a fresh GitHub Release.</p>
 </section><section class="level3"><h3 id="push-and-tag">Push and tag<a class="anchor" aria-label="anchor" href="#push-and-tag"></a>
 </h3>
 <p>Commit and push to fire the workflow on <code>main</code> or <code>master</code>:</p>
@@ -293,151 +241,151 @@ The build matrix: one push fans out across platform runners, each producing an i
 <div class="sourceCode" id="cb6"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">[</span><span class="al">![Release](https://github.com/YOUR-USERNAME/YOUR-REPO/actions/workflows/build-electron.yml/badge.svg)</span><span class="co">](https://github.com/YOUR-USERNAME/YOUR-REPO/actions/workflows/build-electron.yml)</span></span></code></pre></div>
 </section></section><section class="level2"><h2 id="customising">Customising<a class="anchor" aria-label="anchor" href="#customising"></a>
 </h2>
-<p>The action exposes an input for most things a project changes. Set them in the build step’s <code>with:</code> block; anything not listed there falls back to <code>_shinyelectron.yml</code> or the defaults.</p>
+<p>The bundled workflow expects most projects to adjust four things: where the app lives, which platforms to ship, what icons to use, and whether to cache R packages aggressively. Each can be edited in place.</p>
 <section class="level3"><h3 id="app-in-a-different-folder">App in a different folder<a class="anchor" aria-label="anchor" href="#app-in-a-different-folder"></a>
 </h3>
-<p>Point <code>appdir</code> at your app:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> coatless-actions/shiny-to-electron@v1</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">appdir</span><span class="kw">:</span><span class="at"> src/shiny-app</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">app-name</span><span class="kw">:</span><span class="at"> MyApp</span></span></code></pre></div>
+<p>Override <code>APP_DIR</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">env</span><span class="kw">:</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">APP_DIR</span><span class="kw">:</span><span class="at"> </span><span class="st">'src/shiny-app'</span></span></code></pre></div>
 </section><section class="level3"><h3 id="narrower-platform-list">Narrower platform list<a class="anchor" aria-label="anchor" href="#narrower-platform-list"></a>
 </h3>
 <p>Trim the matrix to what you ship. Each entry corresponds to one runner; remove the rest:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">strategy</span><span class="kw">:</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">matrix</span><span class="kw">:</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">include</span><span class="kw">:</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="kw">{</span><span class="at"> </span><span class="fu">os</span><span class="kw">:</span><span class="at"> macos-latest</span><span class="kw">,</span><span class="at">   </span><span class="fu">platform</span><span class="kw">:</span><span class="at"> mac</span><span class="kw">,</span><span class="at"> </span><span class="fu">arch</span><span class="kw">:</span><span class="at"> arm64 </span><span class="kw">}</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="kw">{</span><span class="at"> </span><span class="fu">os</span><span class="kw">:</span><span class="at"> windows-latest</span><span class="kw">,</span><span class="at"> </span><span class="fu">platform</span><span class="kw">:</span><span class="at"> win</span><span class="kw">,</span><span class="at"> </span><span class="fu">arch</span><span class="kw">:</span><span class="at"> x64 </span><span class="kw">}</span></span></code></pre></div>
-</section><section class="level3"><h3 id="runtime-strategy">Runtime strategy<a class="anchor" aria-label="anchor" href="#runtime-strategy"></a>
+<div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">strategy</span><span class="kw">:</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">matrix</span><span class="kw">:</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">include</span><span class="kw">:</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">os</span><span class="kw">:</span><span class="at"> macos-latest</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">platform</span><span class="kw">:</span><span class="at"> mac</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">arch</span><span class="kw">:</span><span class="at"> arm64</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">os</span><span class="kw">:</span><span class="at"> windows-latest</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">platform</span><span class="kw">:</span><span class="at"> win</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">arch</span><span class="kw">:</span><span class="at"> x64</span></span></code></pre></div>
+</section><section class="level3"><h3 id="custom-icons">Custom icons<a class="anchor" aria-label="anchor" href="#custom-icons"></a>
 </h3>
-<p>The default is <code>shinylive</code>. Choose another with the <code>runtime-strategy</code> input, or set it in <code>_shinyelectron.yml</code>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> coatless-actions/shiny-to-electron@v1</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">appdir</span><span class="kw">:</span><span class="at"> app</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">app-name</span><span class="kw">:</span><span class="at"> MyApp</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">runtime-strategy</span><span class="kw">:</span><span class="at"> bundled</span></span></code></pre></div>
-</section><section class="level3"><h3 id="icons-and-other-options">Icons and other options<a class="anchor" aria-label="anchor" href="#icons-and-other-options"></a>
+<p>Ship icons from the repo and pass them to <code><a href="../reference/export.html">export()</a></code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Build Electron app</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">  run</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    Rscript -e "</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>      shinyelectron::export(</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>        appdir = '${{ env.APP_DIR }}',</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>        destdir = 'build',</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>        icon = 'assets/icon.icns'</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    "</span></code></pre></div>
+<div>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>Icon requirements: macOS uses <code>.icns</code> (build with <code>iconutil</code>), Windows uses <code>.ico</code> (multi-resolution recommended), Linux uses <code>.png</code> at 512x512.</p>
+</blockquote>
+</div>
+</section><section class="level3"><h3 id="caching-r-packages">Caching R packages<a class="anchor" aria-label="anchor" href="#caching-r-packages"></a>
 </h3>
-<p>The action does not take an icon input. Put project settings like the icon in a <code>_shinyelectron.yml</code> next to your app; <code><a href="../reference/export.html">export()</a></code> reads it automatically. See the <a href="configuration.html">Configuration Guide</a> for every option.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"My Shiny Dashboard"</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"1.0.0"</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"shinylive"</span></span></code></pre></div>
-</section><section class="level3"><h3 id="config-file-wins-action-inputs-override">Config file wins, action inputs override<a class="anchor" aria-label="anchor" href="#config-file-wins-action-inputs-override"></a>
+<p><code>npm</code> caching is on by default. R packages are worth caching too:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Setup R</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-r@v2</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">r-version</span><span class="kw">:</span><span class="at"> ${{ env.R_VERSION }}</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">use-public-rspm</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Cache R packages</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/cache@v5</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">path</span><span class="kw">:</span><span class="at"> ${{ env.R_LIBS_USER }}</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">key</span><span class="kw">:</span><span class="at"> ${{ runner.os }}-r-${{ hashFiles('**/DESCRIPTION') }}</span></span></code></pre></div>
+</section><section class="level3"><h3 id="config-file-wins-workflow-overrides">Config file wins, workflow overrides<a class="anchor" aria-label="anchor" href="#config-file-wins-workflow-overrides"></a>
 </h3>
-<p>A <code>_shinyelectron.yml</code> in the app directory is picked up automatically. Action inputs override its values when they are set, so you can keep shared settings in the config and vary only the CI-specific ones in the workflow.</p>
+<p>A <code>_shinyelectron.yml</code> in the app directory is picked up automatically. Workflow parameters passed to <code><a href="../reference/export.html">shinyelectron::export()</a></code> override its values when set.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"My Shiny Dashboard"</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"1.0.0"</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="fu">window</span><span class="kw">:</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">width</span><span class="kw">:</span><span class="at"> </span><span class="dv">1400</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">height</span><span class="kw">:</span><span class="at"> </span><span class="dv">900</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"r-shiny"</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"shinylive"</span></span></code></pre></div>
 </section></section><section class="level2"><h2 id="signing-in-ci">Signing in CI<a class="anchor" aria-label="anchor" href="#signing-in-ci"></a>
 </h2>
-<p>Signing uses the same <code>electron-builder</code> credentials as a local build, stored as GitHub Secrets. Add each under Settings, Secrets and variables, Actions, then pass them to the build job’s <code>env</code> and flip <code>sign</code> on:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">build</span><span class="kw">:</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ${{ matrix.os }}</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">env</span><span class="kw">:</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">CSC_LINK</span><span class="kw">:</span><span class="at"> ${{ secrets.CSC_LINK }}</span><span class="co">                                  # base64 .p12 signing certificate</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">CSC_KEY_PASSWORD</span><span class="kw">:</span><span class="at"> ${{ secrets.CSC_KEY_PASSWORD }}</span></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">APPLE_ID</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_ID }}</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">APPLE_APP_SPECIFIC_PASSWORD</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">APPLE_TEAM_ID</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_TEAM_ID }}</span></span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v7</span></span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> coatless-actions/shiny-to-electron@v1</span></span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">appdir</span><span class="kw">:</span><span class="at"> app</span></span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">app-name</span><span class="kw">:</span><span class="at"> MyApp</span></span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">platform</span><span class="kw">:</span><span class="at"> ${{ matrix.platform }}</span></span>
-<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">arch</span><span class="kw">:</span><span class="at"> ${{ matrix.arch }}</span></span>
-<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">sign</span><span class="kw">:</span><span class="at"> </span><span class="st">'true'</span></span></code></pre></div>
-<p>With <code>sign: 'true'</code> and those variables present, macOS builds are signed with your Developer ID and notarized, taking the team id from <code>APPLE_TEAM_ID</code>. Leave the credentials out and macOS still falls back to an ad-hoc signature, so the app launches through the standard unidentified-developer prompt rather than reading as damaged.</p>
+<p>Signing keeps the same <code>electron-builder</code> environment variables as a local build, just stored as GitHub Secrets instead. Open Settings, Secrets and variables, Actions, and add each value by name. Reference them from the build job’s <code>env</code>:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Build Electron app</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">env</span><span class="kw">:</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co">    # macOS</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">CSC_LINK</span><span class="kw">:</span><span class="at"> ${{ secrets.MAC_CERTIFICATE }}</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">CSC_KEY_PASSWORD</span><span class="kw">:</span><span class="at"> ${{ secrets.MAC_CERTIFICATE_PASSWORD }}</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">APPLE_ID</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_ID }}</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">APPLE_APP_SPECIFIC_PASSWORD</span><span class="kw">:</span><span class="at"> ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="co">    # Windows</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">WIN_CSC_LINK</span><span class="kw">:</span><span class="at"> ${{ secrets.WIN_CERTIFICATE }}</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">WIN_CSC_KEY_PASSWORD</span><span class="kw">:</span><span class="at"> ${{ secrets.WIN_CERTIFICATE_PASSWORD }}</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="fu">  run</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    Rscript -e "</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>      shinyelectron::export(</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>        appdir = '${{ env.APP_DIR }}',</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>        destdir = 'build',</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>        sign = TRUE</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    "</span></code></pre></div>
 <div>
 <blockquote>
 <p><strong>Warning</strong></p>
-<p>Certificates come from Apple (macOS) and a commercial CA (Windows). Unsigned apps trigger Gatekeeper and SmartScreen warnings on end-user machines. Storing a signing key in CI means it is decrypted into the runner during the build, so weigh that against how the apps are distributed. See <a href="code-signing.html">Code Signing and Distribution</a> for the full setup.</p>
+<p>Certificates come from Apple (macOS) and a commercial CA (Windows). Unsigned apps trigger Gatekeeper and SmartScreen warnings on end-user machines. See <a href="code-signing.html">Code Signing and Distribution</a> for the full setup.</p>
 </blockquote>
 </div>
-</section><section class="level2"><h2 id="roll-your-own">Roll your own<a class="anchor" aria-label="anchor" href="#roll-your-own"></a>
+</section><section class="level2"><h2 id="coming-soon-a-composite-action">Coming soon: a composite action<a class="anchor" aria-label="anchor" href="#coming-soon-a-composite-action"></a>
 </h2>
-<p>If you need full control, custom steps, bespoke signing, or extra tooling, skip the action and drive <code><a href="../reference/export.html">shinyelectron::export()</a></code> yourself. The action is a thin wrapper around exactly this recipe:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">jobs</span><span class="kw">:</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">build</span><span class="kw">:</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Build (${{ matrix.platform }}-${{ matrix.arch }})</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ${{ matrix.os }}</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">strategy</span><span class="kw">:</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">fail-fast</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">matrix</span><span class="kw">:</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">include</span><span class="kw">:</span></span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="kw">{</span><span class="at"> </span><span class="fu">os</span><span class="kw">:</span><span class="at"> macos-latest</span><span class="kw">,</span><span class="at">   </span><span class="fu">platform</span><span class="kw">:</span><span class="at"> mac</span><span class="kw">,</span><span class="at">   </span><span class="fu">arch</span><span class="kw">:</span><span class="at"> arm64 </span><span class="kw">}</span></span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="kw">{</span><span class="at"> </span><span class="fu">os</span><span class="kw">:</span><span class="at"> macos-15-intel</span><span class="kw">,</span><span class="at"> </span><span class="fu">platform</span><span class="kw">:</span><span class="at"> mac</span><span class="kw">,</span><span class="at">   </span><span class="fu">arch</span><span class="kw">:</span><span class="at"> x64 </span><span class="kw">}</span></span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="kw">{</span><span class="at"> </span><span class="fu">os</span><span class="kw">:</span><span class="at"> windows-latest</span><span class="kw">,</span><span class="at"> </span><span class="fu">platform</span><span class="kw">:</span><span class="at"> win</span><span class="kw">,</span><span class="at">   </span><span class="fu">arch</span><span class="kw">:</span><span class="at"> x64 </span><span class="kw">}</span></span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="kw">{</span><span class="at"> </span><span class="fu">os</span><span class="kw">:</span><span class="at"> ubuntu-latest</span><span class="kw">,</span><span class="at">  </span><span class="fu">platform</span><span class="kw">:</span><span class="at"> linux</span><span class="kw">,</span><span class="at"> </span><span class="fu">arch</span><span class="kw">:</span><span class="at"> x64 </span><span class="kw">}</span></span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v7</span></span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-r@v2</span></span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">r-version</span><span class="kw">:</span><span class="at"> release</span></span>
-<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">use-public-rspm</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/setup-node@v6</span></span>
-<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">node-version</span><span class="kw">:</span><span class="at"> </span><span class="st">'22'</span></span>
-<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Install system dependencies (Linux)</span></span>
-<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">if</span><span class="kw">:</span><span class="at"> runner.os == 'Linux'</span></span>
-<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">run</span><span class="kw">:</span><span class="at"> sudo apt-get update &amp;&amp; sudo apt-get install -y libcurl4-openssl-dev</span></span>
-<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-r-dependencies@v2</span></span>
-<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a><span class="fu">          extra-packages</span><span class="kw">: </span><span class="ch">|</span></span>
-<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>            github::coatless-rpkg/shinyelectron</span>
-<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>            any::shinylive</span>
-<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">needs</span><span class="kw">:</span><span class="at"> build</span></span>
-<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Build the Electron app</span></span>
-<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">shell</span><span class="kw">:</span><span class="at"> Rscript {0}</span></span>
-<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a><span class="fu">        run</span><span class="kw">: </span><span class="ch">|</span></span>
-<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>          library(shinyelectron)</span>
-<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>          export(</span>
-<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>            appdir  = "app",</span>
-<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>            destdir = "build",</span>
-<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>            app_name = "MyApp",</span>
-<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>            platform = "${{ matrix.platform }}",</span>
-<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a>            arch     = "${{ matrix.arch }}",</span>
-<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a>            overwrite = TRUE,</span>
-<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a>            verbose   = TRUE</span>
-<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>          )</span>
-<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/upload-artifact@v7</span></span>
-<span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">name</span><span class="kw">:</span><span class="at"> MyApp-${{ matrix.platform }}-${{ matrix.arch }}</span></span>
-<span id="cb12-53"><a href="#cb12-53" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">path</span><span class="kw">:</span><span class="at"> build/electron-app/dist/**</span></span></code></pre></div>
-<p>Drive signing from the same <code>export(sign = TRUE)</code> call with the <code>CSC_*</code> and <code>APPLE_*</code> variables in the step’s <code>env</code>, exactly as above. This is the path to reach for when you want to split building from signing, add caching, or run steps the action does not expose.</p>
+<p>A composite GitHub Action at <a href="https://github.com/coatless-actions/shiny-to-electron" class="external-link"><code>coatless-actions/shiny-to-electron</code></a> is in development. The goal is to wrap the whole build pipeline so a workflow shrinks to a few lines:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">on</span><span class="kw">:</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">tags</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">'v*'</span><span class="kw">]</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="fu">jobs</span><span class="kw">:</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">build</span><span class="kw">:</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ${{ matrix.os }}</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">strategy</span><span class="kw">:</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">matrix</span><span class="kw">:</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">os</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">ubuntu-latest</span><span class="kw">,</span><span class="at"> macos-latest</span><span class="kw">,</span><span class="at"> windows-latest</span><span class="kw">]</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v6</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> coatless-actions/shiny-to-electron@v1</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">appdir</span><span class="kw">:</span><span class="at"> app</span></span></code></pre></div>
+<p>The action does not have a published release yet, so the bundled template above is the path to use today. Once the action ships, this section will become the recommended quickstart.</p>
 </section><section class="level2"><h2 id="ci-specific-troubleshooting">CI-specific troubleshooting<a class="anchor" aria-label="anchor" href="#ci-specific-troubleshooting"></a>
 </h2>
 <p>The general guide in <a href="troubleshooting.html">Troubleshooting</a> covers symptoms that show up on any machine. The items below are CI-only or turn up much more often on hosted runners than on a developer laptop.</p>
-<section class="level3"><h3 id="appdir-points-at-the-wrong-directory">
+<section class="level3"><h3 id="linux-build-fails-on-missing-libraries">Linux build fails on missing libraries<a class="anchor" aria-label="anchor" href="#linux-build-fails-on-missing-libraries"></a>
+</h3>
+<p>Hosted Ubuntu runners are minimal. Install whatever system packages your R or Python dependencies need before the build:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Install system dependencies (Linux)</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">if</span><span class="kw">:</span><span class="at"> runner.os == 'Linux'</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">  run</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    sudo apt-get update</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    sudo apt-get install -y libcurl4-openssl-dev libxml2-dev</span></code></pre></div>
+</section><section class="level3"><h3 id="appdir-points-at-the-wrong-directory">
 <code>appdir</code> points at the wrong directory<a class="anchor" aria-label="anchor" href="#appdir-points-at-the-wrong-directory"></a>
 </h3>
-<p>A build fails with <code>App directory 'app' not found</code> when your Shiny code lives somewhere other than <code>app/</code>. Set the <code>appdir</code> input to the actual path.</p>
-</section><section class="level3"><h3 id="linux-build-fails-on-missing-libraries">Linux build fails on missing libraries<a class="anchor" aria-label="anchor" href="#linux-build-fails-on-missing-libraries"></a>
+<p>A workflow that hardcodes <code>appdir: app</code> will fail with <code>App directory 'app' not found</code> if your repo puts the Shiny code somewhere else. Update <code>APP_DIR</code> to match the actual path.</p>
+</section><section class="level3"><h3 id="r-package-install-fails-on-a-runner-but-not-locally">R package install fails on a runner but not locally<a class="anchor" aria-label="anchor" href="#r-package-install-fails-on-a-runner-but-not-locally"></a>
 </h3>
-<p>Hosted Ubuntu runners are minimal. If your R or Python dependencies need system packages that the build does not install, add them in your own workflow (the roll-your-own recipe above) before the build step:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Install system dependencies (Linux)</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">if</span><span class="kw">:</span><span class="at"> runner.os == 'Linux'</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">  run</span><span class="kw">: </span><span class="ch">|</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    sudo apt-get update</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    sudo apt-get install -y libcurl4-openssl-dev libxml2-dev</span></code></pre></div>
-</section><section class="level3"><h3 id="pin-the-shinyelectron-version">Pin the shinyelectron version<a class="anchor" aria-label="anchor" href="#pin-the-shinyelectron-version"></a>
-</h3>
-<p>By default the action installs shinyelectron from GitHub. Pin a tag or branch with the <code>shinyelectron-source</code> input so a build is reproducible:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> coatless-actions/shiny-to-electron@v1</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">appdir</span><span class="kw">:</span><span class="at"> app</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">shinyelectron-source</span><span class="kw">:</span><span class="at"> github::coatless-rpkg/shinyelectron@v0.2.0</span></span></code></pre></div>
+<p>Most often the package is not on CRAN and the workflow never told <code>setup-r-dependencies</code> where to find it. Add the repo or the GitHub source explicitly:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Install R dependencies</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> r-lib/actions/setup-r-dependencies@v2</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="fu">    extra-packages</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>      any::shinyelectron</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>      github::user/package</span></code></pre></div>
 </section><section class="level3"><h3 id="job-hits-the-six-hour-limit">Job hits the six-hour limit<a class="anchor" aria-label="anchor" href="#job-hits-the-six-hour-limit"></a>
 </h3>
-<p>GitHub-hosted runners cap individual jobs at six hours. If a build comes close, shrink the matrix or split the build into separate workflows that run in parallel.</p>
+<p>GitHub-hosted runners cap individual jobs at six hours. If a build comes close, shrink the matrix, cache packages more aggressively, or split the build into separate workflows that run in parallel.</p>
+</section><section class="level3"><h3 id="run-sitrep-on-the-runner">Run sitrep on the runner<a class="anchor" aria-label="anchor" href="#run-sitrep-on-the-runner"></a>
+</h3>
+<p>When a build is failing in CI but works on your laptop, run the diagnostic on the runner itself to compare environments:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Run diagnostics</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">  run</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    Rscript -e "</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>      library(shinyelectron)</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>      sitrep_shinyelectron()</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    "</span></code></pre></div>
 </section></section><section class="level2"><h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>
 <ul>
@@ -445,8 +393,6 @@ The build matrix: one push fans out across platform runners, each producing an i
 <a href="getting-started.html">Getting Started</a>: local development workflow.</li>
 <li>
 <a href="configuration.html">Configuration</a>: customize with <code>_shinyelectron.yml</code>.</li>
-<li>
-<a href="code-signing.html">Code Signing</a>: sign and notarize for distribution.</li>
 <li>
 <a href="troubleshooting.html">Troubleshooting</a>: diagnose build issues.</li>
 </ul></section><script id="quarto-html-after-body" type="application/javascript">
