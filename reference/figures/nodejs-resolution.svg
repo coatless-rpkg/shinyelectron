@@ -30,8 +30,9 @@
     <text x="90" y="54" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">shinyelectron</text>
     <text x="90" y="72" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">managed</text>
     <line x1="20" y1="88" x2="160" y2="88" stroke="#f1f5f9" stroke-width="1"/>
-    <text x="90" y="110" text-anchor="middle" font-size="10" fill="#64748b">~/.shinyelectron/</text>
-    <text x="90" y="124" text-anchor="middle" font-size="10" fill="#64748b">cache/assets/nodejs/</text>
+    <text x="90" y="108" text-anchor="middle" font-size="10" fill="#64748b">&lt;user cache dir&gt;/</text>
+    <text x="90" y="122" text-anchor="middle" font-size="10" fill="#64748b">shinyelectron/assets/nodejs/</text>
+    <text x="90" y="135" text-anchor="middle" font-size="8" fill="#94a3b8">(platform-specific)</text>
     <text x="90" y="150" text-anchor="middle" font-size="11" fill="#3b82f6" font-weight="500">install_nodejs()</text>
     <text x="90" y="168" text-anchor="middle" font-size="10" fill="#94a3b8">preferred when present</text>
   </g>

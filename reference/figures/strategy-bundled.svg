@@ -27,7 +27,7 @@
     <g transform="translate(16,54)">
       <rect width="188" height="58" rx="4" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1"/>
       <text x="94" y="16" text-anchor="middle" font-size="10" font-weight="600" fill="#7c3aed">Portable runtime</text>
-      <text x="94" y="32" text-anchor="middle" font-size="9" fill="#8b5cf6">resources/r/ or resources/python/</text>
+      <text x="94" y="32" text-anchor="middle" font-size="9" fill="#8b5cf6">runtime/R or runtime/Python</text>
       <text x="94" y="46" text-anchor="middle" font-size="8" fill="#64748b">+ packages in private library</text>
     </g>
 
@@ -97,7 +97,7 @@
       <rect width="188" height="58" rx="4" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="1"/>
       <text x="94" y="16" text-anchor="middle" font-size="10" font-weight="600" fill="#7c3aed">Bundled Rscript / python3</text>
       <text x="94" y="32" text-anchor="middle" font-size="9" fill="#8b5cf6">spawned as child process</text>
-      <text x="94" y="46" text-anchor="middle" font-size="8" fill="#64748b">from resources/ directory</text>
+      <text x="94" y="46" text-anchor="middle" font-size="8" fill="#64748b">from runtime/ directory</text>
     </g>
   </g>
 </svg>

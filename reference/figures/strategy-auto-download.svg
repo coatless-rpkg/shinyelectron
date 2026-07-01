@@ -78,7 +78,7 @@
     <g transform="translate(14,142)">
       <rect width="160" height="34" rx="4" fill="#fff" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3,2"/>
       <text x="80" y="14" text-anchor="middle" font-size="8" font-weight="500" fill="#64748b">Cache path</text>
-      <text x="80" y="26" text-anchor="middle" font-size="7" fill="#94a3b8">~/.shinyelectron/cache/</text>
+      <text x="80" y="26" text-anchor="middle" font-size="7" fill="#94a3b8">~/.shinyelectron/runtimes/</text>
     </g>
   </g>
 

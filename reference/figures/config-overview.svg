@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 440" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Hierarchical overview of _shinyelectron.yml, grouping the nine sections into five domains: metadata, build targets, runtime, user interface, and multi-app suite">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1224 440" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Hierarchical overview of _shinyelectron.yml, grouping its seventeen top-level sections into seven domains: metadata (app), build targets (build), runtime (dependencies, container, nodejs), user interface (window, server, icons), lifecycle and UI (splash, preloader, tray, menu, lifecycle), distribution (signing, updates, installer), and multi-app suite (apps)">
   <defs>
     <filter id="co-shadow">
       <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
@@ -8,7 +8,7 @@
   </defs>
 
   <!-- Root node: the config file -->
-  <g transform="translate(320, 20)" filter="url(#co-shadow)">
+  <g transform="translate(492, 20)" filter="url(#co-shadow)">
     <rect width="240" height="56" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
     <rect width="240" height="4" fill="#1e293b" clip-path="url(#co-root-clip)"/>
     <circle cx="24" cy="32" r="5" fill="#64748b"/>
@@ -17,13 +17,15 @@
 
   <!-- Connectors from root to each category. A horizontal bus line, then vertical drops. -->
   <g stroke="#cbd5e1" stroke-width="1.5" fill="none">
-    <path d="M 440 76 L 440 98"/>
-    <path d="M 96 98 L 784 98"/>
+    <path d="M 612 76 L 612 98"/>
+    <path d="M 96 98 L 1128 98"/>
     <path d="M 96 98 L 96 120"/>
     <path d="M 268 98 L 268 120"/>
     <path d="M 440 98 L 440 120"/>
     <path d="M 612 98 L 612 120"/>
     <path d="M 784 98 L 784 120"/>
+    <path d="M 956 98 L 956 120"/>
+    <path d="M 1128 98 L 1128 120"/>
   </g>
 
   <!-- Category nodes -->
@@ -53,6 +55,18 @@
 
   <g transform="translate(708, 120)" filter="url(#co-shadow)">
     <rect width="152" height="44" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="152" height="3" fill="#ec4899" clip-path="url(#co-card-clip)"/>
+    <text x="76" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">LIFECYCLE &amp; UI</text>
+  </g>
+
+  <g transform="translate(880, 120)" filter="url(#co-shadow)">
+    <rect width="152" height="44" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="152" height="3" fill="#14b8a6" clip-path="url(#co-card-clip)"/>
+    <text x="76" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">DISTRIBUTION</text>
+  </g>
+
+  <g transform="translate(1052, 120)" filter="url(#co-shadow)">
+    <rect width="152" height="44" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
     <rect width="152" height="3" fill="#f59e0b" clip-path="url(#co-card-clip)"/>
     <text x="76" y="28" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">MULTI-APP SUITE</text>
   </g>
@@ -64,6 +78,8 @@
     <path d="M 440 164 L 440 188"/>
     <path d="M 612 164 L 612 188"/>
     <path d="M 784 164 L 784 188"/>
+    <path d="M 956 164 L 956 188"/>
+    <path d="M 1128 164 L 1128 188"/>
   </g>
 
   <!-- Leaf keys for each category -->
@@ -100,7 +116,7 @@
     </g>
     <g transform="translate(0, 28)">
       <circle cx="8" cy="10" r="3" fill="#0ea5e9"/>
-      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">r, python</text>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">dependencies</text>
     </g>
     <g transform="translate(0, 56)">
       <circle cx="8" cy="10" r="3" fill="#0ea5e9"/>
@@ -128,8 +144,48 @@
     </g>
   </g>
 
-  <!-- MULTI-APP SUITE -->
+  <!-- LIFECYCLE & UI -->
   <g transform="translate(708, 188)">
+    <g>
+      <circle cx="8" cy="10" r="3" fill="#ec4899"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">splash</text>
+    </g>
+    <g transform="translate(0, 28)">
+      <circle cx="8" cy="10" r="3" fill="#ec4899"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">preloader</text>
+    </g>
+    <g transform="translate(0, 56)">
+      <circle cx="8" cy="10" r="3" fill="#ec4899"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">tray</text>
+    </g>
+    <g transform="translate(0, 84)">
+      <circle cx="8" cy="10" r="3" fill="#ec4899"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">menu</text>
+    </g>
+    <g transform="translate(0, 112)">
+      <circle cx="8" cy="10" r="3" fill="#ec4899"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">lifecycle</text>
+    </g>
+  </g>
+
+  <!-- DISTRIBUTION -->
+  <g transform="translate(880, 188)">
+    <g>
+      <circle cx="8" cy="10" r="3" fill="#14b8a6"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">signing</text>
+    </g>
+    <g transform="translate(0, 28)">
+      <circle cx="8" cy="10" r="3" fill="#14b8a6"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">updates</text>
+    </g>
+    <g transform="translate(0, 56)">
+      <circle cx="8" cy="10" r="3" fill="#14b8a6"/>
+      <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">installer</text>
+    </g>
+  </g>
+
+  <!-- MULTI-APP SUITE -->
+  <g transform="translate(1052, 188)">
     <g>
       <circle cx="8" cy="10" r="3" fill="#f59e0b"/>
       <text x="22" y="14" font-size="12" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, 'Courier New', monospace">apps</text>
@@ -139,13 +195,15 @@
 
   <!-- Annotation strip at the bottom -->
   <g transform="translate(20, 332)" filter="url(#co-shadow)">
-    <rect width="840" height="92" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+    <rect width="1184" height="92" rx="10" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
 
     <!-- Column dividers -->
     <line x1="172" y1="16" x2="172" y2="76" stroke="#f1f5f9" stroke-width="1"/>
     <line x1="344" y1="16" x2="344" y2="76" stroke="#f1f5f9" stroke-width="1"/>
     <line x1="516" y1="16" x2="516" y2="76" stroke="#f1f5f9" stroke-width="1"/>
     <line x1="688" y1="16" x2="688" y2="76" stroke="#f1f5f9" stroke-width="1"/>
+    <line x1="860" y1="16" x2="860" y2="76" stroke="#f1f5f9" stroke-width="1"/>
+    <line x1="1032" y1="16" x2="1032" y2="76" stroke="#f1f5f9" stroke-width="1"/>
 
     <!-- METADATA -->
     <text x="14" y="30" font-size="10" font-weight="700" fill="#3b82f6">METADATA</text>
@@ -171,10 +229,22 @@
     <text x="530" y="64" font-size="10" fill="#475569">server port, and the</text>
     <text x="530" y="78" font-size="10" fill="#475569">application icon.</text>
 
+    <!-- LIFECYCLE & UI -->
+    <text x="702" y="30" font-size="10" font-weight="700" fill="#ec4899">LIFECYCLE &amp; UI</text>
+    <text x="702" y="50" font-size="10" fill="#475569">Splash and preloader,</text>
+    <text x="702" y="64" font-size="10" fill="#475569">tray icon and menus,</text>
+    <text x="702" y="78" font-size="10" fill="#475569">plus lifecycle hooks.</text>
+
+    <!-- DISTRIBUTION -->
+    <text x="874" y="30" font-size="10" font-weight="700" fill="#14b8a6">DISTRIBUTION</text>
+    <text x="874" y="50" font-size="10" fill="#475569">Code signing, auto-</text>
+    <text x="874" y="64" font-size="10" fill="#475569">updates, and installer</text>
+    <text x="874" y="78" font-size="10" fill="#475569">packaging output.</text>
+
     <!-- MULTI-APP SUITE -->
-    <text x="702" y="30" font-size="10" font-weight="700" fill="#f59e0b">MULTI-APP SUITE</text>
-    <text x="702" y="50" font-size="10" fill="#475569">Optional. Bundle two</text>
-    <text x="702" y="64" font-size="10" fill="#475569">or more apps behind</text>
-    <text x="702" y="78" font-size="10" fill="#475569">one Electron launcher.</text>
+    <text x="1046" y="30" font-size="10" font-weight="700" fill="#f59e0b">MULTI-APP SUITE</text>
+    <text x="1046" y="50" font-size="10" fill="#475569">Optional. Bundle two</text>
+    <text x="1046" y="64" font-size="10" fill="#475569">or more apps behind</text>
+    <text x="1046" y="78" font-size="10" fill="#475569">one Electron launcher.</text>
   </g>
 </svg>

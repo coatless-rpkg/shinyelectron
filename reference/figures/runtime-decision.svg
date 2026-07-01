@@ -39,8 +39,8 @@
     <rect width="240" height="74" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
     <rect width="240" height="3" fill="#3b82f6" clip-path="url(#rs-clip-240x74)"/>
     <text x="120" y="26" text-anchor="middle" font-size="13" font-weight="600" fill="#2563eb">Shinylive</text>
-    <text x="120" y="46" text-anchor="middle" font-size="11" fill="#64748b">r-shinylive or py-shinylive</text>
-    <text x="120" y="62" text-anchor="middle" font-size="10" fill="#94a3b8">No runtime_strategy needed</text>
+    <text x="120" y="46" text-anchor="middle" font-size="11" fill="#64748b">app type autodetected</text>
+    <text x="120" y="62" text-anchor="middle" font-size="10" fill="#94a3b8">runtime_strategy = "shinylive" (default)</text>
   </g>
 
   <!-- Second question: audience -->

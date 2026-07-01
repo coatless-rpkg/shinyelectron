@@ -31,7 +31,7 @@
     <rect width="220" height="180" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
     <rect width="220" height="3" fill="#8b5cf6" clip-path="url(#update-card2-clip)"/>
     <text x="110" y="32" text-anchor="middle" font-size="14" font-weight="600" fill="#1e293b">Publish Host</text>
-    <text x="110" y="50" text-anchor="middle" font-size="11" fill="#94a3b8">GitHub | S3 | generic HTTP</text>
+    <text x="110" y="50" text-anchor="middle" font-size="11" fill="#94a3b8">GitHub Releases (S3, HTTP planned)</text>
 
     <!-- manifest row -->
     <g transform="translate(18,62)">

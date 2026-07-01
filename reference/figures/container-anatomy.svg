@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 420" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Anatomy of a containerized shinyelectron app on the user's machine. The Electron app communicates over HTTP at localhost:3838 with a Shiny server running inside a container managed by Docker or Podman, and the user's app files on disk are bind-mounted into the container at /app.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 420" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="Anatomy of a containerized shinyelectron app on the user's machine. The Electron app communicates over HTTP at localhost:&lt;port&gt; with a Shiny server running inside a container managed by Docker or Podman, and the user's app files on disk are bind-mounted into the container at /app.">
   <defs>
     <filter id="ca-shadow">
       <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
@@ -32,7 +32,7 @@
     <!-- Mock viewport -->
     <rect x="16" y="62" width="228" height="56" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
     <text x="130" y="84" text-anchor="middle" font-size="11" fill="#64748b">WebView pointing to</text>
-    <text x="130" y="102" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, monospace">http://localhost:3838</text>
+    <text x="130" y="102" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b" font-family="'SF Mono', Menlo, Consolas, monospace">http://localhost:&lt;port&gt;</text>
   </g>
 
   <!-- App files on disk card -->
@@ -71,7 +71,7 @@
         <rect width="3" height="76" fill="#8b5cf6" clip-path="url(#ca-image-clip)"/>
         <text x="14" y="22" font-size="11" font-weight="700" fill="#7c3aed" letter-spacing="0.5">IMAGE</text>
         <text x="14" y="44" font-size="12" font-weight="600" fill="#1e293b">OS base + R or Python + Shiny</text>
-        <text x="14" y="62" font-size="11" fill="#475569">From rocker/r-ver, python:3.14-slim, your Dockerfile, or a registry.</text>
+        <text x="14" y="62" font-size="11" fill="#475569">From rocker/r-ver, python:3.14-slim, or a registry image you publish.</text>
       </g>
 
       <!-- /app bind mount layer -->
@@ -89,7 +89,7 @@
   <!-- HTTP arrow: Electron right edge to Image layer -->
   <g>
     <text x="367" y="178" text-anchor="middle" font-size="10" font-weight="700" fill="#475569" letter-spacing="0.5">HTTP</text>
-    <text x="367" y="191" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="'SF Mono', Menlo, Consolas, monospace">localhost:3838</text>
+    <text x="367" y="191" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="'SF Mono', Menlo, Consolas, monospace">localhost:&lt;port&gt;</text>
     <path d="M 314 200 L 446 200" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#ca-arrow)"/>
   </g>
 

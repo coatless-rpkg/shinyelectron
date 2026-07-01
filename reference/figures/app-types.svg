@@ -62,7 +62,7 @@
     </g>
 
     <!-- Types -->
-    <text x="124" y="340" text-anchor="middle" font-size="10" fill="#64748b">r-shinylive | py-shinylive</text>
+    <text x="124" y="340" text-anchor="middle" font-size="10" fill="#64748b">r-shiny | py-shiny</text>
 
     <!-- Size indicator -->
     <g transform="translate(44,356)">

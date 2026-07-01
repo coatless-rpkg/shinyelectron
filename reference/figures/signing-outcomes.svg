@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="What the end user sees when opening a signed versus unsigned shinyelectron app on macOS, Windows, and Linux. On macOS, unsigned apps are blocked by Gatekeeper; signed and notarized apps open cleanly. On Windows, unsigned installers trigger SmartScreen warnings; signed installers open cleanly. On Linux, neither signed nor unsigned apps trigger OS warnings, though GPG signatures let users verify authenticity manually.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 420" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" role="img" aria-label="What the end user sees when opening a signed versus unsigned shinyelectron app on macOS, Windows, and Linux. On macOS, unsigned apps are blocked by Gatekeeper; signed and notarized apps open cleanly. On Windows, unsigned installers trigger SmartScreen warnings; signed installers open cleanly. On Linux, apps open without OS warnings whether signed or not; GPG signing is reserved for a future release and has no effect today, so no signature is produced.">
   <defs>
     <filter id="so-shadow">
       <feDropShadow dx="0" dy="1" stdDeviation="3" flood-opacity="0.07"/>
@@ -108,8 +108,8 @@
     <rect width="300" height="3" fill="#10b981" clip-path="url(#so-card-clip)"/>
     <circle cx="28" cy="46" r="14" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
     <path d="M 22 46 L 27 51 L 35 41" stroke="#10b981" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="54" y="40" font-size="12" font-weight="700" fill="#166534">Opens, verifiable</text>
-    <text x="54" y="58" font-size="11" fill="#475569">GPG signature lets security-minded</text>
-    <text x="54" y="74" font-size="11" fill="#475569">users verify authenticity manually.</text>
+    <text x="54" y="40" font-size="12" font-weight="700" fill="#166534">Opens, same as unsigned</text>
+    <text x="54" y="58" font-size="11" fill="#475569">GPG signing is reserved for a future</text>
+    <text x="54" y="74" font-size="11" fill="#475569">release; no signature is produced yet.</text>
   </g>
 </svg>
