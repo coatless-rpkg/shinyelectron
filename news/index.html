@@ -100,6 +100,7 @@
 <h3 id="bug-fixes-0-2-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-2-0"></a></h3>
 <ul><li>
 <code>auto_download</code> and <code>auto_install</code> were rendered as R-style <code>TRUE</code> / <code>FALSE</code> in the generated <code>main.js</code>, which is invalid JavaScript. Booleans now render through mustache sections so the auto-updater wiring is valid.</li>
+<li>Fixed the Python <code>shinylive</code> CLI failing with <code>No module named shinylive</code> on Linux. R prepends its own library directory to <code>LD_LIBRARY_PATH</code>; a spawned Python inherited it, loaded a system <code>libpython</code>, and lost its <code>site-packages</code>, so pip-installed packages became unimportable. Python subprocesses are now spawned without <code>LD_LIBRARY_PATH</code>.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="code-signing-0-2-0">Code signing<a class="anchor" aria-label="anchor" href="#code-signing-0-2-0"></a></h3>
@@ -118,9 +119,13 @@
 <code><a href="../reference/sitrep_shinyelectron.html">sitrep_shinyelectron()</a></code> now checks Python shinylive CLI and shiny package availability.</li>
 </ul></div>
 <div class="section level3">
+<h3 id="demos-0-2-0">Demos<a class="anchor" aria-label="anchor" href="#demos-0-2-0"></a></h3>
+<ul><li>Prebuilt desktop installers of the bundled demo apps are published for every runtime strategy on macOS, Windows, and Linux. The new Download Prebuilt Demos article lists them and highlights the download for the visitor’s own platform.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="windows-compatibility-0-2-0">Windows compatibility<a class="anchor" aria-label="anchor" href="#windows-compatibility-0-2-0"></a></h3>
 <ul><li>Fixed <code><a href="https://fs.r-lib.org/reference/copy.html" class="external-link">fs::dir_copy()</a></code> creating nested subdirectories on Windows by introducing <code><a href="../reference/copy_dir_contents.html">copy_dir_contents()</a></code> with consistent cross-platform semantics.</li>
-<li>Fixed GNU tar (from Git for Windows) misinterpreting drive letters as remote hosts by resolving to <code>%SystemRoot%\System32\tar.exe</code> (bsdtar) explicitly.</li>
+<li>Portable runtime archives extract with the native bsdtar (<code>%SystemRoot%\System32\tar.exe</code>) on Windows. It handles the PAX and long-name records in python-build-standalone archives that R’s internal tar cannot (those failed with <code>embedded nul in string</code>), and it does not misread <code>C:\</code> paths the way a Git-for-Windows GNU tar does.</li>
 <li>Fixed Python download URL: <code>python-build-standalone</code> ships <code>.tar.gz</code> on all platforms, not <code>.zip</code> on Windows.</li>
 <li>Fixed bundled R package installation: packages are installed into a sibling <code>runtime/library</code> directory alongside the portable R, not into the portable R’s own library. This avoids macOS hardened-runtime segfaults that occurred when installing unsigned CRAN binaries directly into the bundled R tree.</li>
 <li>Added post-copy entrypoint validation to catch file layout issues at build time instead of inside a running Electron app.</li>

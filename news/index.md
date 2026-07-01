@@ -85,6 +85,12 @@
   `FALSE` in the generated `main.js`, which is invalid JavaScript.
   Booleans now render through mustache sections so the auto-updater
   wiring is valid.
+- Fixed the Python `shinylive` CLI failing with
+  `No module named shinylive` on Linux. R prepends its own library
+  directory to `LD_LIBRARY_PATH`; a spawned Python inherited it, loaded
+  a system `libpython`, and lost its `site-packages`, so pip-installed
+  packages became unimportable. Python subprocesses are now spawned
+  without `LD_LIBRARY_PATH`.
 
 ### Code signing
 
@@ -109,15 +115,25 @@
 - [`sitrep_shinyelectron()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_shinyelectron.md)
   now checks Python shinylive CLI and shiny package availability.
 
+### Demos
+
+- Prebuilt desktop installers of the bundled demo apps are published for
+  every runtime strategy on macOS, Windows, and Linux. The new Download
+  Prebuilt Demos article lists them and highlights the download for the
+  visitor’s own platform.
+
 ### Windows compatibility
 
 - Fixed [`fs::dir_copy()`](https://fs.r-lib.org/reference/copy.html)
   creating nested subdirectories on Windows by introducing
   [`copy_dir_contents()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/copy_dir_contents.md)
   with consistent cross-platform semantics.
-- Fixed GNU tar (from Git for Windows) misinterpreting drive letters as
-  remote hosts by resolving to `%SystemRoot%\System32\tar.exe` (bsdtar)
-  explicitly.
+- Portable runtime archives extract with the native bsdtar
+  (`%SystemRoot%\System32\tar.exe`) on Windows. It handles the PAX and
+  long-name records in python-build-standalone archives that R’s
+  internal tar cannot (those failed with `embedded nul in string`), and
+  it does not misread `C:\` paths the way a Git-for-Windows GNU tar
+  does.
 - Fixed Python download URL: `python-build-standalone` ships `.tar.gz`
   on all platforms, not `.zip` on Windows.
 - Fixed bundled R package installation: packages are installed into a
