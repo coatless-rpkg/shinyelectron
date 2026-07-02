@@ -60,6 +60,9 @@ strategies, and multi-app suites.
 - A configurable lifecycle splash and preloader report startup progress,
   and a system tray and application menu are set through
   `_shinyelectron.yml`.
+- The Electron shell streams the renderer console (webR, Pyodide, and
+  Shiny output) into the app log, so browser-side messages and errors
+  appear alongside the main-process logs.
 - [`app_check()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_check.md)
   validates an app before building,
   [`wizard()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/wizard.md)
@@ -76,16 +79,21 @@ strategies, and multi-app suites.
 
 ### Minor improvements and fixes
 
+- The `runtime_strategy` argument overrides a suite’s
+  `build.runtime_strategy` for apps that set no per-app strategy, so a
+  suite built as `shinylive` really is shinylive rather than falling
+  back to the config default.
+- A `_brand.yml` that names palette colors (for example `primary: plum`)
+  resolves those references before theming the shell.
+- Error screens allow selecting and copying the message and log details.
 - [`build_electron_app()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/build_electron_app.md)
   refuses to overwrite protected directories such as `~`, `/`, and
   [`R.home()`](https://rdrr.io/r/base/Rhome.html).
 - [`convert_shiny_to_shinylive()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/convert_shiny_to_shinylive.md)
   removes its temporary copy on every exit path.
 - [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
-  and
-  [`export_multi_app()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export_multi_app.md)
-  clean up partial output when a build fails, so a retry no longer needs
-  `overwrite = TRUE`.
+  cleans up partial output when a build fails, so a retry no longer
+  needs `overwrite = TRUE`, for single apps and multi-app suites alike.
 - [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
   no longer aborts or deletes a finished build when a `run_after` or
   `open_after` step fails; those steps now only warn.

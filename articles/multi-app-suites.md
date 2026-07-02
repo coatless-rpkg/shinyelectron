@@ -66,7 +66,6 @@ app:
 
 build:
   type: "r-shiny"
-  runtime_strategy: "system"
 
 window:
   width: 1100
@@ -101,7 +100,6 @@ app:
 
 build:
   type: "py-shiny"
-  runtime_strategy: "system"
 
 window:
   width: 1100

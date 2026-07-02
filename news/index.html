@@ -86,6 +86,7 @@
 <code>dependencies.r.version</code>, <code>dependencies.python.version</code>, and <code>dependencies.electron.version</code> pin the versions a build uses; each accepts <code>null</code>, <code>"latest"</code>, or an exact version.</li>
 <li>App dependencies are detected automatically for native, bundled, and container builds, from <code><a href="https://rdrr.io/r/base/library.html" class="external-link">library()</a></code> and <code><a href="https://rdrr.io/r/base/library.html" class="external-link">require()</a></code> calls for R and <code>requirements.txt</code> or <code>pyproject.toml</code> for Python.</li>
 <li>A configurable lifecycle splash and preloader report startup progress, and a system tray and application menu are set through <code>_shinyelectron.yml</code>.</li>
+<li>The Electron shell streams the renderer console (webR, Pyodide, and Shiny output) into the app log, so browser-side messages and errors appear alongside the main-process logs.</li>
 <li>
 <code><a href="../reference/app_check.html">app_check()</a></code> validates an app before building, <code><a href="../reference/wizard.html">wizard()</a></code> generates a config interactively, <code><a href="../reference/show_config.html">show_config()</a></code> prints the merged configuration, and <code><a href="../reference/available_examples.html">available_examples()</a></code> and <code><a href="../reference/example_app.html">example_app()</a></code> browse the bundled demos.</li>
 <li>Apps can supply a Posit <code>_brand.yml</code> for theming.</li>
@@ -93,12 +94,15 @@
 </ul></div>
 <div class="section level3">
 <h3 id="minor-improvements-and-fixes-0-2-0">Minor improvements and fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-fixes-0-2-0"></a></h3>
-<ul><li>
+<ul><li>The <code>runtime_strategy</code> argument overrides a suite’s <code>build.runtime_strategy</code> for apps that set no per-app strategy, so a suite built as <code>shinylive</code> really is shinylive rather than falling back to the config default.</li>
+<li>A <code>_brand.yml</code> that names palette colors (for example <code>primary: plum</code>) resolves those references before theming the shell.</li>
+<li>Error screens allow selecting and copying the message and log details.</li>
+<li>
 <code><a href="../reference/build_electron_app.html">build_electron_app()</a></code> refuses to overwrite protected directories such as <code>~</code>, <code>/</code>, and <code><a href="https://rdrr.io/r/base/Rhome.html" class="external-link">R.home()</a></code>.</li>
 <li>
 <code><a href="../reference/convert_shiny_to_shinylive.html">convert_shiny_to_shinylive()</a></code> removes its temporary copy on every exit path.</li>
 <li>
-<code><a href="../reference/export.html">export()</a></code> and <code><a href="../reference/export_multi_app.html">export_multi_app()</a></code> clean up partial output when a build fails, so a retry no longer needs <code>overwrite = TRUE</code>.</li>
+<code><a href="../reference/export.html">export()</a></code> cleans up partial output when a build fails, so a retry no longer needs <code>overwrite = TRUE</code>, for single apps and multi-app suites alike.</li>
 <li>
 <code><a href="../reference/export.html">export()</a></code> no longer aborts or deletes a finished build when a <code>run_after</code> or <code>open_after</code> step fails; those steps now only warn.</li>
 <li>
