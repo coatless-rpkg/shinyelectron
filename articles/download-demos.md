@@ -27,6 +27,18 @@ The [Code
 Signing](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/code-signing.md)
 article covers the setup.
 
+> **Help sign the Windows builds**
+>
+> Our development happens on macOS and Linux, so the Windows demos ship
+> unsigned to spare the ongoing cost of a code-signing certificate. That
+> is why the SmartScreen prompt appears; choose **More info**, then
+> **Run anyway** to launch the demo. If you would like to help remove
+> the prompt for everyone, sponsorship toward a Windows certificate is
+> very welcome, whether that is [Azure Trusted
+> Signing](https://learn.microsoft.com/azure/trusted-signing/), an EV
+> certificate, or an OV certificate. You can sponsor the project at
+> [github.com/sponsors/coatless](https://github.com/sponsors/coatless).
+
 Your platform’s downloads are shown first. Use **More downloads** for
 every other platform.
 
