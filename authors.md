@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/coatless-rpkg/shinyelectron/blob/v0.2.0/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/coatless-rpkg/shinyelectron/blob/main/DESCRIPTION)
 
 Balamuta J (2026). *shinyelectron: Export Shiny Applications as Desktop
 Applications using Electron*. R package version 0.2.0,
