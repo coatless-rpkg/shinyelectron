@@ -64,13 +64,15 @@ page](https://github.com/coatless-rpkg/shinyelectron/releases/latest).
 
 > \[!NOTE\]
 >
-> The macOS demos are signed and notarized with our Apple Developer
-> Program membership (\$99/year), so they launch without a warning. The
-> Windows demos are not code signed, so the first launch shows a
-> Microsoft Defender SmartScreen prompt; choose **More info**, then
-> **Run anyway** to start the app. Our development is on macOS and
-> Linux, so if you would like to help fund a Windows certificate,
-> sponsorship is welcome at
+> The macOS demos are signed and notarized under our Apple Developer
+> Program membership (\$99/year), so they open cleanly. The Windows
+> demos are unsigned, so the first launch shows a Microsoft Defender
+> SmartScreen prompt: choose **More info**, then **Run anyway**. If you
+> distribute your own apps, you will need to pay for code signing on
+> each platform to avoid these prompts, a recurring budget line item for
+> organizations. Our development is on macOS and Linux, so if you would
+> like to help fund a Windows certificate for these demos, sponsorship
+> is welcome at
 > [github.com/sponsors/coatless](https://github.com/sponsors/coatless).
 
 ## What you can export
