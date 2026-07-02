@@ -21,6 +21,7 @@
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/CONFIG_FILENAME.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/SHINYELECTRON_DEFAULTS.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_check.html</loc></url>
+<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_dependencies.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_entrypoints.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/assert_safe_to_overwrite.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/available_examples.html</loc></url>
@@ -128,6 +129,7 @@
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/resolve_app_strategy.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/resolve_app_type.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/resolve_backend_module.html</loc></url>
+<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/resolve_brand_palette.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/resolve_brand_yml.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/resolve_python_pbs.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/resolve_runtime_version.html</loc></url>

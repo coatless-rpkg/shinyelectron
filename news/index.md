@@ -73,6 +73,9 @@ strategies, and multi-app suites.
   and
   [`example_app()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/example_app.md)
   browse the bundled demos.
+- [`app_dependencies()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_dependencies.md)
+  reports the R or Python packages a Shiny app or multi-app suite uses,
+  which helps install an app’s dependencies before a shinylive build.
 - Apps can supply a Posit `_brand.yml` for theming.
 - Prebuilt demo installers are published for every strategy and
   platform, listed in the new Download Prebuilt Demos article.
@@ -86,6 +89,10 @@ strategies, and multi-app suites.
 - A `_brand.yml` that names palette colors (for example `primary: plum`)
   resolves those references before theming the shell.
 - Error screens allow selecting and copying the message and log details.
+- Building with the shinylive strategy checks that the app’s R packages
+  are installed and names any that are missing, since
+  [`shinylive::export()`](https://posit-dev.github.io/r-shinylive/reference/export.html)
+  compiles the WebAssembly bundle from installed packages.
 - [`build_electron_app()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/build_electron_app.md)
   refuses to overwrite protected directories such as `~`, `/`, and
   [`R.home()`](https://rdrr.io/r/base/Rhome.html).

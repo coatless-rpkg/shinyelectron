@@ -298,6 +298,8 @@ Pre-flight checks, examples, and diagnostics
 
 - [`app_check()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_check.md)
   : Check Shiny Application Readiness for Export
+- [`app_dependencies()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_dependencies.md)
+  : Detect an app's package dependencies
 - [`available_examples()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/available_examples.md)
   : List Available Examples
 - [`example_app()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/example_app.md)

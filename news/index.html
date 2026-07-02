@@ -59,7 +59,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/coatless-rpkg/shinyelectron/blob/v0.2.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/coatless-rpkg/shinyelectron/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
     <div class="section level2">
@@ -89,6 +89,8 @@
 <li>The Electron shell streams the renderer console (webR, Pyodide, and Shiny output) into the app log, so browser-side messages and errors appear alongside the main-process logs.</li>
 <li>
 <code><a href="../reference/app_check.html">app_check()</a></code> validates an app before building, <code><a href="../reference/wizard.html">wizard()</a></code> generates a config interactively, <code><a href="../reference/show_config.html">show_config()</a></code> prints the merged configuration, and <code><a href="../reference/available_examples.html">available_examples()</a></code> and <code><a href="../reference/example_app.html">example_app()</a></code> browse the bundled demos.</li>
+<li>
+<code><a href="../reference/app_dependencies.html">app_dependencies()</a></code> reports the R or Python packages a Shiny app or multi-app suite uses, which helps install an app’s dependencies before a shinylive build.</li>
 <li>Apps can supply a Posit <code>_brand.yml</code> for theming.</li>
 <li>Prebuilt demo installers are published for every strategy and platform, listed in the new Download Prebuilt Demos article.</li>
 </ul></div>
@@ -97,6 +99,7 @@
 <ul><li>The <code>runtime_strategy</code> argument overrides a suite’s <code>build.runtime_strategy</code> for apps that set no per-app strategy, so a suite built as <code>shinylive</code> really is shinylive rather than falling back to the config default.</li>
 <li>A <code>_brand.yml</code> that names palette colors (for example <code>primary: plum</code>) resolves those references before theming the shell.</li>
 <li>Error screens allow selecting and copying the message and log details.</li>
+<li>Building with the shinylive strategy checks that the app’s R packages are installed and names any that are missing, since <code><a href="https://posit-dev.github.io/r-shinylive/reference/export.html" class="external-link">shinylive::export()</a></code> compiles the WebAssembly bundle from installed packages.</li>
 <li>
 <code><a href="../reference/build_electron_app.html">build_electron_app()</a></code> refuses to overwrite protected directories such as <code>~</code>, <code>/</code>, and <code><a href="https://rdrr.io/r/base/Rhome.html" class="external-link">R.home()</a></code>.</li>
 <li>
