@@ -394,24 +394,33 @@ The build matrix: one push fans out across platform runners, each producing an i
 <span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>            any::shinylive</span>
 <span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">needs</span><span class="kw">:</span><span class="at"> build</span></span>
 <span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Build the Electron app</span></span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Install the app's R dependencies</span></span>
 <span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">shell</span><span class="kw">:</span><span class="at"> Rscript {0}</span></span>
 <span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a><span class="fu">        run</span><span class="kw">: </span><span class="ch">|</span></span>
-<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>          library(shinyelectron)</span>
-<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>          export(</span>
-<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>            appdir  = "app",</span>
-<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>            destdir = "build",</span>
-<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>            app_name = "MyApp",</span>
-<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>            platform = "${{ matrix.platform }}",</span>
-<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a>            arch     = "${{ matrix.arch }}",</span>
-<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a>            overwrite = TRUE,</span>
-<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a>            verbose   = TRUE</span>
-<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>          )</span>
-<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/upload-artifact@v7</span></span>
-<span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
-<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">name</span><span class="kw">:</span><span class="at"> MyApp-${{ matrix.platform }}-${{ matrix.arch }}</span></span>
-<span id="cb12-53"><a href="#cb12-53" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">path</span><span class="kw">:</span><span class="at"> build/electron-app/dist/**</span></span></code></pre></div>
+<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>          # shinylive compiles the WebAssembly bundle from installed packages,</span>
+<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>          # so the packages your app uses must be present before building.</span>
+<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>          pkgs &lt;- shinyelectron::app_dependencies("app", app_type = "r-shiny")</span>
+<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>          pkgs &lt;- setdiff(pkgs, rownames(installed.packages()))</span>
+<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>          if (length(pkgs)) install.packages(pkgs)</span>
+<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Build the Electron app</span></span>
+<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">shell</span><span class="kw">:</span><span class="at"> Rscript {0}</span></span>
+<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a><span class="fu">        run</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>          library(shinyelectron)</span>
+<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a>          export(</span>
+<span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a>            appdir  = "app",</span>
+<span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a>            destdir = "build",</span>
+<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a>            app_name = "MyApp",</span>
+<span id="cb12-53"><a href="#cb12-53" aria-hidden="true" tabindex="-1"></a>            platform = "${{ matrix.platform }}",</span>
+<span id="cb12-54"><a href="#cb12-54" aria-hidden="true" tabindex="-1"></a>            arch     = "${{ matrix.arch }}",</span>
+<span id="cb12-55"><a href="#cb12-55" aria-hidden="true" tabindex="-1"></a>            overwrite = TRUE,</span>
+<span id="cb12-56"><a href="#cb12-56" aria-hidden="true" tabindex="-1"></a>            verbose   = TRUE</span>
+<span id="cb12-57"><a href="#cb12-57" aria-hidden="true" tabindex="-1"></a>          )</span>
+<span id="cb12-58"><a href="#cb12-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-59"><a href="#cb12-59" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/upload-artifact@v7</span></span>
+<span id="cb12-60"><a href="#cb12-60" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb12-61"><a href="#cb12-61" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">name</span><span class="kw">:</span><span class="at"> MyApp-${{ matrix.platform }}-${{ matrix.arch }}</span></span>
+<span id="cb12-62"><a href="#cb12-62" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">path</span><span class="kw">:</span><span class="at"> build/electron-app/dist/**</span></span></code></pre></div>
 <p>Drive signing from the same <code>export(sign = TRUE)</code> call with the <code>CSC_*</code> and <code>APPLE_*</code> variables in the step’s <code>env</code>, exactly as above. This is the path to reach for when you want to split building from signing, add caching, or run steps the action does not expose.</p>
 </section><section class="level2"><h2 id="ci-specific-troubleshooting">CI-specific troubleshooting<a class="anchor" aria-label="anchor" href="#ci-specific-troubleshooting"></a>
 </h2>
@@ -428,6 +437,9 @@ The build matrix: one push fans out across platform runners, each producing an i
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">  run</span><span class="kw">: </span><span class="ch">|</span></span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    sudo apt-get update</span>
 <span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    sudo apt-get install -y libcurl4-openssl-dev libxml2-dev</span></code></pre></div>
+</section><section class="level3"><h3 id="shinylive-build-stops-with-there-is-no-package-called">shinylive build stops with “there is no package called …”<a class="anchor" aria-label="anchor" href="#shinylive-build-stops-with-there-is-no-package-called"></a>
+</h3>
+<p><code><a href="https://posit-dev.github.io/r-shinylive/reference/export.html" class="external-link">shinylive::export()</a></code> compiles the WebAssembly bundle from the packages installed on the runner, so a shinylive R app whose packages are not installed stops with, for example, <code>there is no package called 'bsicons'</code>. The action installs an app’s detected packages for you. In a hand-rolled workflow, add the step from the roll-your-own recipe above (<code><a href="../reference/app_dependencies.html">shinyelectron::app_dependencies()</a></code> then <code><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages()</a></code>). If detection misses a package your code loads dynamically, add it to that <code><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages()</a></code> call yourself.</p>
 </section><section class="level3"><h3 id="pin-the-shinyelectron-version">Pin the shinyelectron version<a class="anchor" aria-label="anchor" href="#pin-the-shinyelectron-version"></a>
 </h3>
 <p>By default the action installs shinyelectron from GitHub. Pin a tag or branch with the <code>shinyelectron-source</code> input so a build is reproducible:</p>

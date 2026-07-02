@@ -364,6 +364,15 @@ jobs:
             any::shinylive
           needs: build
 
+      - name: Install the app's R dependencies
+        shell: Rscript {0}
+        run: |
+          # shinylive compiles the WebAssembly bundle from installed packages,
+          # so the packages your app uses must be present before building.
+          pkgs <- shinyelectron::app_dependencies("app", app_type = "r-shiny")
+          pkgs <- setdiff(pkgs, rownames(installed.packages()))
+          if (length(pkgs)) install.packages(pkgs)
+
       - name: Build the Electron app
         shell: Rscript {0}
         run: |
@@ -415,6 +424,22 @@ workflow (the roll-your-own recipe above) before the build step:
     sudo apt-get update
     sudo apt-get install -y libcurl4-openssl-dev libxml2-dev
 ```
+
+### shinylive build stops with “there is no package called …”
+
+[`shinylive::export()`](https://posit-dev.github.io/r-shinylive/reference/export.html)
+compiles the WebAssembly bundle from the packages installed on the
+runner, so a shinylive R app whose packages are not installed stops
+with, for example, `there is no package called 'bsicons'`. The action
+installs an app’s detected packages for you. In a hand-rolled workflow,
+add the step from the roll-your-own recipe above
+([`shinyelectron::app_dependencies()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_dependencies.md)
+then
+[`install.packages()`](https://rdrr.io/r/utils/install.packages.html)).
+If detection misses a package your code loads dynamically, add it to
+that
+[`install.packages()`](https://rdrr.io/r/utils/install.packages.html)
+call yourself.
 
 ### Pin the shinyelectron version
 
