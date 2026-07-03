@@ -7,7 +7,7 @@
 #' @return Invisibly returns a list with build tools information.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' # Check build tools
 #' sitrep_electron_build_tools()
 #' }

@@ -16,7 +16,7 @@ Invisibly returns a list with build tools information.
 Checks platform-specific build tools required for creating Electron distributables.
 }
 \examples{
-\dontrun{
+\donttest{
 # Check build tools
 sitrep_electron_build_tools()
 }

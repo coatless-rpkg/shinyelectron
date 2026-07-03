@@ -19,14 +19,14 @@
 #'   \item{info}{Character vector of informational notes.}
 #'
 #' @examples
+#' \donttest{
+#' # Check a bundled example app
+#' app_check(example_app("r"))
+#' }
+#'
 #' \dontrun{
-#' # Check current directory
-#' app_check()
-#'
-#' # Check specific app
+#' # Check your own app, with optional overrides
 #' app_check("path/to/my/app")
-#'
-#' # Check with overrides
 #' app_check("my-app", app_type = "r-shiny", runtime_strategy = "system")
 #' }
 #'

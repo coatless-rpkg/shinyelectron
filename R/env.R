@@ -48,6 +48,52 @@ get_npm_command <- function(prefer_local = TRUE) {
   }
 }
 
+#' Environment for Node.js and npm child processes
+#'
+#' npm can be launched by its absolute path, but package lifecycle scripts
+#' invoke `node` by name. When shinyelectron manages a Node.js install that is
+#' not already on `PATH`, this makes that directory discoverable to npm and
+#' every process it starts.
+#'
+#' The result uses processx's special `"current"` entry so the child inherits
+#' the full parent environment with `PATH` extended, rather than replacing it.
+#' Replacing it would drop variables that npm and electron-builder depend on
+#' (for example `APPDATA` and `LOCALAPPDATA` on Windows, or `HOME` elsewhere).
+#'
+#' @return A character vector for the `env` argument of [processx::run()] and
+#'   [run_command_safe()], or `NULL` when Node.js is already on `PATH` or cannot
+#'   be resolved (the inherited environment is then used unchanged).
+#' @keywords internal
+nodejs_subprocess_env <- function() {
+  node_cmd <- get_node_command(prefer_local = TRUE)
+  # get_node_command() returns either an absolute path (a managed Node.js) or a
+  # bare command name. Only treat an absolute path as a file; a bare name is
+  # resolved on PATH via Sys.which() rather than matching a same-named file in
+  # the working directory.
+  node_path <- if (fs::is_absolute_path(node_cmd) && fs::file_exists(node_cmd)) {
+    node_cmd
+  } else {
+    Sys.which(node_cmd)
+  }
+
+  if (!nzchar(node_path)) return(NULL)
+
+  node_dir <- dirname(fs::path_abs(node_path))
+  current_path <- Sys.getenv("PATH")
+  path_entries <- strsplit(current_path, .Platform$path.sep, fixed = TRUE)[[1]]
+
+  if (node_dir %in% path_entries) return(NULL)
+
+  # Avoid a trailing separator when PATH is empty; on POSIX that would add an
+  # empty entry, interpreted as the working directory.
+  new_path <- if (nzchar(current_path)) {
+    paste(node_dir, current_path, sep = .Platform$path.sep)
+  } else {
+    node_dir
+  }
+  c("current", PATH = new_path)
+}
+
 #' Set development environment variables
 #'
 #' @param port Integer port number

@@ -4,7 +4,7 @@
 \alias{run_command_safe}
 \title{Run a command safely and return the result}
 \usage{
-run_command_safe(command, args = character(), timeout = 30)
+run_command_safe(command, args = character(), timeout = 30, env = NULL)
 }
 \arguments{
 \item{command}{Character command to run.}
@@ -12,13 +12,26 @@ run_command_safe(command, args = character(), timeout = 30)
 \item{args}{Character vector of arguments.}
 
 \item{timeout}{Numeric timeout in seconds. Default 30.}
+
+\item{env}{Environment for the child process. \code{NULL} (the default) inherits
+the current environment; otherwise the supplied value is used, where the
+special \code{"current"} entry extends rather than replaces it. In every case
+\code{NODE_COMPILE_CACHE} is added so Node's compile cache is written to a
+temporary directory that is removed when the call returns.}
 }
 \value{
 List with status, stdout, stderr.
 }
 \description{
-Wraps processx::run with consistent error handling. Returns a list
-with status, stdout, and stderr. Never throws; failures are
-indicated by a non-zero status.
+Wraps \code{\link[processx:run]{processx::run()}} with consistent error handling. Returns a list
+with status, stdout, and stderr. Never throws: a command that cannot be
+started, fails, or times out is reported as a non-zero status, so a
+diagnostic probe cannot abort the calling session.
+}
+\details{
+processx is used rather than \code{\link[base:system2]{base::system2()}} because a modified \code{env} is
+honored on every platform (system2's \code{env} is a no-op on Windows for programs
+like node and python), and arguments are passed as an argv array without
+shell quoting.
 }
 \keyword{internal}

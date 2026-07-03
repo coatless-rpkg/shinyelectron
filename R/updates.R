@@ -68,19 +68,16 @@
 #' environment variables (see `?validate_signing_config`).
 #'
 #' @examples
-#' \dontrun{
-#' # Enable GitHub-based updates
-#' enable_auto_updates(
-#'   "path/to/app",
-#'   provider = "github",
-#'   owner = "myusername",
-#'   repo = "myapp"
-#' )
+#' # Enable GitHub-based updates on a temporary app
+#' app <- file.path(tempdir(), "enable-updates-demo")
+#' dir.create(app, showWarnings = FALSE)
+#' writeLines("library(shiny)", file.path(app, "app.R"))
+#' enable_auto_updates(app, owner = "myusername", repo = "myapp")
 #'
-#' # Enable with automatic download
+#' \dontrun{
+#' # Enable with automatic download for your own app
 #' enable_auto_updates(
 #'   "path/to/app",
-#'   provider = "github",
 #'   owner = "myorg",
 #'   repo = "dashboard",
 #'   auto_download = TRUE
@@ -181,9 +178,12 @@ enable_auto_updates <- function(appdir,
 #' @return Invisibly returns the path to the updated config file.
 #'
 #' @examples
-#' \dontrun{
-#' disable_auto_updates("path/to/app")
-#' }
+#' # Disable updates on a temporary app
+#' app <- file.path(tempdir(), "disable-updates-demo")
+#' dir.create(app, showWarnings = FALSE)
+#' writeLines("library(shiny)", file.path(app, "app.R"))
+#' enable_auto_updates(app, owner = "myusername", repo = "myapp", verbose = FALSE)
+#' disable_auto_updates(app)
 #'
 #' @export
 disable_auto_updates <- function(appdir, verbose = TRUE) {
@@ -228,9 +228,12 @@ disable_auto_updates <- function(appdir, verbose = TRUE) {
 #'   with `owner`, `repo`, `private`).
 #'
 #' @examples
-#' \dontrun{
-#' check_auto_update_status("path/to/app")
-#' }
+#' # Check update configuration on a temporary app
+#' app <- file.path(tempdir(), "check-updates-demo")
+#' dir.create(app, showWarnings = FALSE)
+#' writeLines("library(shiny)", file.path(app, "app.R"))
+#' enable_auto_updates(app, owner = "myusername", repo = "myapp", verbose = FALSE)
+#' check_auto_update_status(app)
 #'
 #' @export
 check_auto_update_status <- function(appdir) {

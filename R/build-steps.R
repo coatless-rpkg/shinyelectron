@@ -12,6 +12,7 @@ install_npm_dependencies <- function(output_dir, verbose = TRUE) {
   result <- processx::run(
     command = get_npm_command(),
     args = c("install"),
+    env = nodejs_subprocess_env(),
     wd = output_dir,
     echo = verbose,
     spinner = verbose,
@@ -130,6 +131,7 @@ build_for_platforms <- function(output_dir, platform, arch, sign = FALSE, verbos
         result <- processx::run(
           command = get_npm_command(),
           args = c("run", build_script),
+          env = nodejs_subprocess_env(),
           wd = output_dir,
           echo = FALSE,
           spinner = verbose,
@@ -187,6 +189,7 @@ build_for_platforms <- function(output_dir, platform, arch, sign = FALSE, verbos
         fallback_result <- processx::run(
           command = get_npm_command(),
           args = c("run", platform_script),
+          env = nodejs_subprocess_env(),
           wd = output_dir,
           echo = FALSE,
           spinner = verbose,

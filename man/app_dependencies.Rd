@@ -24,8 +24,11 @@ WebAssembly bundle from the packages installed in the current session, so an
 app's dependencies must be installed before conversion.
 }
 \examples{
+# Detect the packages a bundled example app uses
+app_dependencies(example_app("r"))
+
 \dontrun{
-# Install an app's R dependencies before a shinylive build
+# Install an app's dependencies before a shinylive build
 pkgs <- app_dependencies("path/to/app")
 install.packages(pkgs)
 }

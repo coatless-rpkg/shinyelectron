@@ -96,20 +96,41 @@ validate_slug <- function(slug) {
 }
 #' Run a command safely and return the result
 #'
-#' Wraps processx::run with consistent error handling. Returns a list
-#' with status, stdout, and stderr. Never throws; failures are
-#' indicated by a non-zero status.
+#' Wraps [processx::run()] with consistent error handling. Returns a list
+#' with status, stdout, and stderr. Never throws: a command that cannot be
+#' started, fails, or times out is reported as a non-zero status, so a
+#' diagnostic probe cannot abort the calling session.
+#'
+#' processx is used rather than [base::system2()] because a modified `env` is
+#' honored on every platform (system2's `env` is a no-op on Windows for programs
+#' like node and python), and arguments are passed as an argv array without
+#' shell quoting.
 #'
 #' @param command Character command to run.
 #' @param args Character vector of arguments.
 #' @param timeout Numeric timeout in seconds. Default 30.
+#' @param env Environment for the child process. `NULL` (the default) inherits
+#'   the current environment; otherwise the supplied value is used, where the
+#'   special `"current"` entry extends rather than replaces it. In every case
+#'   `NODE_COMPILE_CACHE` is added so Node's compile cache is written to a
+#'   temporary directory that is removed when the call returns.
 #' @return List with status, stdout, stderr.
 #' @keywords internal
-run_command_safe <- function(command, args = character(), timeout = 30) {
-  tryCatch(
-    processx::run(command, args, error_on_status = FALSE, timeout = timeout),
-    error = function(e) list(status = 1L, stdout = "", stderr = e$message)
-  )
+run_command_safe <- function(command, args = character(), timeout = 30,
+                             env = NULL) {
+  tryCatch({
+    # npm enables Node's V8 compile cache by default, which otherwise writes a
+    # "node-compile-cache" directory into the session temp dir. Point it at a
+    # directory removed when this call returns, threaded into whatever
+    # environment the child receives, so a diagnostic probe leaves no detritus
+    # behind (builds keep the default cache for speed).
+    compile_cache <- withr::local_tempdir("node-compile-cache-")
+    env <- c(if (is.null(env)) "current" else env,
+             NODE_COMPILE_CACHE = compile_cache)
+
+    processx::run(command, args, env = env,
+                  error_on_status = FALSE, timeout = timeout)
+  }, error = function(e) list(status = 1L, stdout = "", stderr = conditionMessage(e)))
 }
 #' Locate Rscript inside a bundled portable-R runtime directory
 #'

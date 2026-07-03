@@ -19,15 +19,17 @@ Runs all diagnostic checks and provides a comprehensive report of your
 shinyelectron setup.
 }
 \examples{
-\dontrun{
-# Complete diagnostic check
+\donttest{
+# Complete diagnostic check of the current setup
 sitrep_shinyelectron()
 
-# Check specific project
-sitrep_shinyelectron("path/to/project")
-
-# Get results without printing
+# Get results as a list, without printing
 results <- sitrep_shinyelectron(verbose = FALSE)
+}
+
+\dontrun{
+# Check a specific project directory
+sitrep_shinyelectron("path/to/project")
 }
 
 }

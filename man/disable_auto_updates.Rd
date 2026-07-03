@@ -18,8 +18,11 @@ Invisibly returns the path to the updated config file.
 Disables automatic update checking in the configuration file.
 }
 \examples{
-\dontrun{
-disable_auto_updates("path/to/app")
-}
+# Disable updates on a temporary app
+app <- file.path(tempdir(), "disable-updates-demo")
+dir.create(app, showWarnings = FALSE)
+writeLines("library(shiny)", file.path(app, "app.R"))
+enable_auto_updates(app, owner = "myusername", repo = "myapp", verbose = FALSE)
+disable_auto_updates(app)
 
 }

@@ -17,7 +17,7 @@ Checks system requirements for shinyelectron including Node.js, npm,
 operating system, and architecture.
 }
 \examples{
-\dontrun{
+\donttest{
 # Check system requirements
 sitrep_electron_system()
 

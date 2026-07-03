@@ -20,7 +20,10 @@ validate_node_npm <- function() {
     ))
   }
 
-  npm_result <- run_command_safe(npm_cmd, "--version")
+  npm_result <- run_command_safe(
+    npm_cmd, "--version",
+    env = nodejs_subprocess_env()
+  )
 
   if (npm_result$status != 0) {
     cli::cli_abort(c(

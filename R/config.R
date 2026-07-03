@@ -363,12 +363,15 @@ validate_config <- function(config) {
 #'   [show_config()] to display the merged effective configuration.
 #'
 #' @examples
-#' \dontrun{
-#' # Create config in app directory
-#' init_config("path/to/my/app")
+#' # Create a config for a temporary app
+#' app <- file.path(tempdir(), "init-config-demo")
+#' dir.create(app, showWarnings = FALSE)
+#' writeLines("library(shiny)", file.path(app, "app.R"))
+#' init_config(app, app_name = "My App")
 #'
-#' # Create with custom name
-#' init_config("path/to/app", app_name = "My Amazing App")
+#' \dontrun{
+#' # Create a config for your own app
+#' init_config("path/to/my/app")
 #' }
 #'
 #' @export
@@ -649,6 +652,9 @@ validate_config_file <- function(config_path) {
 #' @return Invisibly returns the merged configuration list.
 #'
 #' @examples
+#' # Show the merged configuration for a bundled example app
+#' show_config(example_app("r"))
+#'
 #' \dontrun{
 #' show_config("path/to/my/app")
 #' }

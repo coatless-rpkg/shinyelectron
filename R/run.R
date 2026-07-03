@@ -87,6 +87,7 @@ run_electron_app <- function(app_dir, port = 3000, open_devtools = TRUE, verbose
     processx::run(
       command = get_npm_command(),
       args = c("run", "electron"),
+      env = nodejs_subprocess_env(),
       wd = app_dir,
       echo = verbose,
       echo_cmd = verbose,

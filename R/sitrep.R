@@ -24,15 +24,17 @@ new_sitrep_results <- function(extra = list()) {
 #' @return Invisibly returns a list with all diagnostic information.
 #'
 #' @examples
-#' \dontrun{
-#' # Complete diagnostic check
+#' \donttest{
+#' # Complete diagnostic check of the current setup
 #' sitrep_shinyelectron()
 #'
-#' # Check specific project
-#' sitrep_shinyelectron("path/to/project")
-#'
-#' # Get results without printing
+#' # Get results as a list, without printing
 #' results <- sitrep_shinyelectron(verbose = FALSE)
+#' }
+#'
+#' \dontrun{
+#' # Check a specific project directory
+#' sitrep_shinyelectron("path/to/project")
 #' }
 #'
 #' @export

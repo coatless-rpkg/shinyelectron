@@ -20,7 +20,7 @@ Checks R package dependencies required for shinyelectron functionality.
 deps <- sitrep_electron_dependencies(verbose = FALSE)
 length(deps$missing_required)
 
-\dontrun{
+\donttest{
 # Pretty-printed report
 sitrep_electron_dependencies()
 }

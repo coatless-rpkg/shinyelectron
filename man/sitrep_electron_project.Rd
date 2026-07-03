@@ -19,11 +19,13 @@ Checks if the current directory contains a valid Electron project and
 diagnoses common project-related issues.
 }
 \examples{
-\dontrun{
-# Check current directory
+\donttest{
+# Check the current directory for a shinyelectron project
 sitrep_electron_project()
+}
 
-# Check specific directory
+\dontrun{
+# Check a specific directory
 sitrep_electron_project("path/to/electron/project")
 }
 

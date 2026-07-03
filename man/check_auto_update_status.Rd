@@ -21,8 +21,11 @@ with \code{owner}, \code{repo}, \code{private}).
 Reports the current auto-update configuration status.
 }
 \examples{
-\dontrun{
-check_auto_update_status("path/to/app")
-}
+# Check update configuration on a temporary app
+app <- file.path(tempdir(), "check-updates-demo")
+dir.create(app, showWarnings = FALSE)
+writeLines("library(shiny)", file.path(app, "app.R"))
+enable_auto_updates(app, owner = "myusername", repo = "myapp", verbose = FALSE)
+check_auto_update_status(app)
 
 }
