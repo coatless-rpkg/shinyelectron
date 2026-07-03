@@ -69,3 +69,16 @@ test_that("nodejs_subprocess_env ignores a same-named file in the working direct
   path <- if (is.null(env)) "" else env[["PATH"]]
   expect_false(grepl(tmp, path, fixed = TRUE))
 })
+
+test_that("nodejs_subprocess_env does not leave a trailing PATH separator when PATH is empty", {
+  tmp <- withr::local_tempdir()
+  node <- make_fake_node(tmp)
+  node_dir <- dirname(fs::path_abs(node))
+  withr::local_envvar(PATH = "")
+  local_mocked_bindings(get_node_command = function(...) node)
+
+  env <- nodejs_subprocess_env()
+  # A trailing separator would add an empty (working-directory) entry on POSIX.
+  expect_equal(env[["PATH"]], node_dir)
+  expect_false(endsWith(env[["PATH"]], .Platform$path.sep))
+})

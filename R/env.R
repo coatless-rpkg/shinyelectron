@@ -84,7 +84,14 @@ nodejs_subprocess_env <- function() {
 
   if (node_dir %in% path_entries) return(NULL)
 
-  c("current", PATH = paste(node_dir, current_path, sep = .Platform$path.sep))
+  # Avoid a trailing separator when PATH is empty; on POSIX that would add an
+  # empty entry, interpreted as the working directory.
+  new_path <- if (nzchar(current_path)) {
+    paste(node_dir, current_path, sep = .Platform$path.sep)
+  } else {
+    node_dir
+  }
+  c("current", PATH = new_path)
 }
 
 #' Set development environment variables
