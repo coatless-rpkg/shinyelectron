@@ -116,11 +116,17 @@ validate_slug <- function(slug) {
 #' @keywords internal
 run_command_safe <- function(command, args = character(), timeout = 30,
                              env = NULL) {
-  tryCatch(
+  tryCatch({
+    # npm enables Node's V8 compile cache by default, which otherwise writes a
+    # "node-compile-cache" directory into the session temp dir. Point it at a
+    # directory removed when this call returns, so a diagnostic probe leaves no
+    # detritus behind (builds keep the default cache for speed).
+    compile_cache <- withr::local_tempdir("node-compile-cache-")
+    withr::local_envvar(NODE_COMPILE_CACHE = compile_cache)
+
     processx::run(command, args, env = env,
-                  error_on_status = FALSE, timeout = timeout),
-    error = function(e) list(status = 1L, stdout = "", stderr = conditionMessage(e))
-  )
+                  error_on_status = FALSE, timeout = timeout)
+  }, error = function(e) list(status = 1L, stdout = "", stderr = conditionMessage(e)))
 }
 #' Locate Rscript inside a bundled portable-R runtime directory
 #'
