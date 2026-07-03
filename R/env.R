@@ -66,7 +66,15 @@ get_npm_command <- function(prefer_local = TRUE) {
 #' @keywords internal
 nodejs_subprocess_env <- function() {
   node_cmd <- get_node_command(prefer_local = TRUE)
-  node_path <- if (fs::file_exists(node_cmd)) node_cmd else Sys.which(node_cmd)
+  # get_node_command() returns either an absolute path (a managed Node.js) or a
+  # bare command name. Only treat an absolute path as a file; a bare name is
+  # resolved on PATH via Sys.which() rather than matching a same-named file in
+  # the working directory.
+  node_path <- if (fs::is_absolute_path(node_cmd) && fs::file_exists(node_cmd)) {
+    node_cmd
+  } else {
+    Sys.which(node_cmd)
+  }
 
   if (!nzchar(node_path)) return(NULL)
 

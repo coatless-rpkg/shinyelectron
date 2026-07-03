@@ -53,3 +53,19 @@ test_that("run_command_safe reports a missing command as failure without throwin
   expect_true(is.list(res))
   expect_false(res$status == 0)
 })
+
+test_that("nodejs_subprocess_env ignores a same-named file in the working directory", {
+  # A bare command name must resolve via PATH, not a decoy file in the CWD.
+  tmp <- withr::local_tempdir()
+  decoy <- file.path(tmp, if (.Platform$OS.type == "windows") "node.exe" else "node")
+  writeLines("not really node", decoy)
+  withr::local_dir(tmp)
+  local_mocked_bindings(
+    get_node_command = function(...) if (.Platform$OS.type == "windows") "node.exe" else "node"
+  )
+
+  env <- nodejs_subprocess_env()
+  # Resolving a bare name must not prepend the working directory to PATH.
+  path <- if (is.null(env)) "" else env[["PATH"]]
+  expect_false(grepl(tmp, path, fixed = TRUE))
+})

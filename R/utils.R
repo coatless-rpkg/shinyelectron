@@ -119,10 +119,12 @@ run_command_safe <- function(command, args = character(), timeout = 30,
   tryCatch({
     # npm enables Node's V8 compile cache by default, which otherwise writes a
     # "node-compile-cache" directory into the session temp dir. Point it at a
-    # directory removed when this call returns, so a diagnostic probe leaves no
-    # detritus behind (builds keep the default cache for speed).
+    # directory removed when this call returns, threaded into whatever
+    # environment the child receives, so a diagnostic probe leaves no detritus
+    # behind (builds keep the default cache for speed).
     compile_cache <- withr::local_tempdir("node-compile-cache-")
-    withr::local_envvar(NODE_COMPILE_CACHE = compile_cache)
+    env <- c(if (is.null(env)) "current" else env,
+             NODE_COMPILE_CACHE = compile_cache)
 
     processx::run(command, args, env = env,
                   error_on_status = FALSE, timeout = timeout)
