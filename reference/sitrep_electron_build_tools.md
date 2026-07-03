@@ -22,8 +22,13 @@ Invisibly returns a list with build tools information.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 # Check build tools
 sitrep_electron_build_tools()
-} # }
+#> 
+#> ── Build Tools Report ──────────────────────────────────────────────────────────
+#> ℹ Checking build tools for platform: linux
+#> ✔ Build tools (gcc, make): Found
+#> ✔ Build tools ready
+# }
 ```

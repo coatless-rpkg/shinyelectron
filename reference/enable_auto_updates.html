@@ -188,19 +188,23 @@ environment variables (see <code><a href="validate_signing_config.html">?validat
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Enable GitHub-based updates</span></span></span>
-<span class="r-in"><span><span class="fu">enable_auto_updates</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="st">"path/to/app"</span>,</span></span>
-<span class="r-in"><span>  provider <span class="op">=</span> <span class="st">"github"</span>,</span></span>
-<span class="r-in"><span>  owner <span class="op">=</span> <span class="st">"myusername"</span>,</span></span>
-<span class="r-in"><span>  repo <span class="op">=</span> <span class="st">"myapp"</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Enable GitHub-based updates on a temporary app</span></span></span>
+<span class="r-in"><span><span class="va">app</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"enable-updates-demo"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">app</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/writeLines.html" class="external-link">writeLines</a></span><span class="op">(</span><span class="st">"library(shiny)"</span>, <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">app</span>, <span class="st">"app.R"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">enable_auto_updates</span><span class="op">(</span><span class="va">app</span>, owner <span class="op">=</span> <span class="st">"myusername"</span>, repo <span class="op">=</span> <span class="st">"myapp"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> No config file found, creating one...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Auto-updates enabled with <span style="color: #0000BB;">"github"</span> provider</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Updates will be published to: <span style="color: #0000BB; font-style: italic;">&lt;https://github.com/myusername/myapp/releases&gt;</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Settings:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> Check on startup: <span style="color: #0000BB;">TRUE</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> Auto-download: <span style="color: #0000BB;">FALSE</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> Auto-install on quit: <span style="color: #0000BB;">FALSE</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Enable with automatic download</span></span></span>
+<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="co"># Enable with automatic download for your own app</span></span></span>
 <span class="r-in"><span><span class="fu">enable_auto_updates</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="st">"path/to/app"</span>,</span></span>
-<span class="r-in"><span>  provider <span class="op">=</span> <span class="st">"github"</span>,</span></span>
 <span class="r-in"><span>  owner <span class="op">=</span> <span class="st">"myorg"</span>,</span></span>
 <span class="r-in"><span>  repo <span class="op">=</span> <span class="st">"dashboard"</span>,</span></span>
 <span class="r-in"><span>  auto_download <span class="op">=</span> <span class="cn">TRUE</span></span></span>

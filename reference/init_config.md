@@ -40,11 +40,16 @@ to display the merged effective configuration.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Create config in app directory
-init_config("path/to/my/app")
+# Create a config for a temporary app
+app <- file.path(tempdir(), "init-config-demo")
+dir.create(app, showWarnings = FALSE)
+writeLines("library(shiny)", file.path(app, "app.R"))
+init_config(app, app_name = "My App")
+#> ✔ Created configuration file: /tmp/RtmpeTb9Jg/init-config-demo/_shinyelectron.yml
+#> ℹ Edit this file to customize your Electron app settings
 
-# Create with custom name
-init_config("path/to/app", app_name = "My Amazing App")
+if (FALSE) { # \dontrun{
+# Create a config for your own app
+init_config("path/to/my/app")
 } # }
 ```

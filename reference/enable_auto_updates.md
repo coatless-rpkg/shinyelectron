@@ -146,19 +146,23 @@ for creating initial configuration
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Enable GitHub-based updates
-enable_auto_updates(
-  "path/to/app",
-  provider = "github",
-  owner = "myusername",
-  repo = "myapp"
-)
+# Enable GitHub-based updates on a temporary app
+app <- file.path(tempdir(), "enable-updates-demo")
+dir.create(app, showWarnings = FALSE)
+writeLines("library(shiny)", file.path(app, "app.R"))
+enable_auto_updates(app, owner = "myusername", repo = "myapp")
+#> ℹ No config file found, creating one...
+#> ✔ Auto-updates enabled with "github" provider
+#> ℹ Updates will be published to: <https://github.com/myusername/myapp/releases>
+#> ℹ Settings:
+#> • Check on startup: TRUE
+#> • Auto-download: FALSE
+#> • Auto-install on quit: FALSE
 
-# Enable with automatic download
+if (FALSE) { # \dontrun{
+# Enable with automatic download for your own app
 enable_auto_updates(
   "path/to/app",
-  provider = "github",
   owner = "myorg",
   repo = "dashboard",
   auto_download = TRUE

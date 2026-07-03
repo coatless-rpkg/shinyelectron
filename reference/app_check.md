@@ -67,14 +67,30 @@ Invisible list with:
 ## Examples
 
 ``` r
+# \donttest{
+# Check a bundled example app
+app_check(example_app("r"))
+#> 
+#> ── App Check: demo-single ──────────────────────────────────────────────────────
+#> ℹ Config: no _shinyelectron.yml (using defaults)
+#> ℹ Type: "r-shiny"
+#> ℹ Runtime strategy: "shinylive"
+#> ℹ Platform(s): "linux"
+#> ✔ App structure: app.R found
+#> ✔ Node.js: 22.23.1 + npm 10.9.8
+#> ✔ shinylive R package: installed
+#> ✔ Dependencies: bslib, shiny
+#> ℹ Code signing: "disabled"
+#> ℹ Icon: not configured (default Electron icon)
+#> 
+#> ── Result ──
+#> 
+#> ✔ Ready to build! Run: `export("/home/runner/work/_temp/Library/shinyelectron/demos/demo-single", "output")`
+# }
+
 if (FALSE) { # \dontrun{
-# Check current directory
-app_check()
-
-# Check specific app
+# Check your own app, with optional overrides
 app_check("path/to/my/app")
-
-# Check with overrides
 app_check("my-app", app_type = "r-shiny", runtime_strategy = "system")
 } # }
 ```
