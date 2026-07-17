@@ -2,14 +2,8 @@
 
 0 errors | 0 warnings | 1 note
 
-* This is a new submission.
-
-## Notes explained
-
-* The note "Package has a VignetteBuilder field but no prebuilt vignette index"
-  is a known artifact of the quarto vignette engine (quarto::html). The
-  vignettes are built into inst/doc and re-build cleanly under R CMD check; the
-  engine simply does not register a build/vignette.rds index.
+* This is a new submission. The only note reports the maintainer and
+  "New submission", which is standard for a first submission.
 
 ## Test environments
 
