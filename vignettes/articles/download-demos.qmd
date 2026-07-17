@@ -1,9 +1,5 @@
 ---
 title: "Download Prebuilt Demos"
-vignette: >
-  %\VignetteIndexEntry{Download Prebuilt Demos}
-  %\VignetteEngine{quarto::html}
-  %\VignetteEncoding{UTF-8}
 knitr:
   opts_chunk:
     collapse: true

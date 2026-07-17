@@ -27,4 +27,5 @@
 ^\.superpowers$
 ^e2e-tests$
 ^vignettes/\.quarto$
+^vignettes/articles$
 ^README\.qmd$
