@@ -35,7 +35,13 @@
 #' }
 #'
 #' @export
-convert_shiny_to_shinylive <- function(appdir, output_dir, subdir = NULL, overwrite = FALSE, verbose = TRUE) {
+convert_shiny_to_shinylive <- function(
+  appdir,
+  output_dir,
+  subdir = NULL,
+  overwrite = FALSE,
+  verbose = TRUE
+) {
   validate_directory_exists(appdir, "Application directory")
   validate_shiny_app_structure(appdir)
 
@@ -55,7 +61,11 @@ convert_shiny_to_shinylive <- function(appdir, output_dir, subdir = NULL, overwr
         "i" = "Use {.code overwrite = TRUE} to overwrite existing directory"
       ))
     } else {
-      if (verbose) cli::cli_alert_warning("Overwriting existing directory: {.path {output_dir}}")
+      if (verbose) {
+        cli::cli_alert_warning(
+          "Overwriting existing directory: {.path {output_dir}}"
+        )
+      }
       unlink(output_dir, recursive = TRUE)
     }
   }
@@ -78,48 +88,74 @@ convert_shiny_to_shinylive <- function(appdir, output_dir, subdir = NULL, overwr
   # error.
   core_pkgs <- c("shiny", "bslib", "renv")
   app_deps <- setdiff(detect_r_dependencies(appdir), core_pkgs)
-  missing <- setdiff(app_deps, rownames(utils::installed.packages()))
+  installed <- vapply(
+    app_deps,
+    function(pkg) length(find.package(pkg, quiet = TRUE)) > 0,
+    logical(1)
+  )
+  missing <- app_deps[!installed]
   if (length(missing) > 0) {
-    install_hint <- sprintf("install.packages(c(%s))",
-                            paste0('"', missing, '"', collapse = ", "))
-    cli::cli_abort(c(
-      "Cannot convert to shinylive: required packages are not installed.",
-      "x" = "Not installed: {.pkg {missing}}",
-      "i" = "shinylive compiles the WebAssembly bundle from your installed packages, so they must be present here first.",
-      "i" = "Install them, then export again: {.code {install_hint}}"
-    ), class = "shinyelectron_shinylive_missing_deps")
+    install_hint <- sprintf(
+      "install.packages(c(%s))",
+      paste0('"', missing, '"', collapse = ", ")
+    )
+    cli::cli_abort(
+      c(
+        "Cannot convert to shinylive: required packages are not installed.",
+        "x" = "Not installed: {.pkg {missing}}",
+        "i" = "shinylive compiles the WebAssembly bundle from your installed packages, so they must be present here first.",
+        "i" = "Install them, then export again: {.code {install_hint}}"
+      ),
+      class = "shinyelectron_shinylive_missing_deps"
+    )
   }
 
   if (verbose) {
     pb <- cli::cli_progress_bar("Converting to shinylive", total = 4)
   }
 
-  tryCatch({
-    if (verbose) cli::cli_progress_update(id = pb, set = 1)
-    temp_app_dir <- tempfile("shinyelectron-app-")
-    on.exit(unlink(temp_app_dir, recursive = TRUE), add = TRUE)
-    copy_dir_contents(appdir, temp_app_dir)
+  tryCatch(
+    {
+      if (verbose) {
+        cli::cli_progress_update(id = pb, set = 1)
+      }
+      temp_app_dir <- tempfile("shinyelectron-app-")
+      on.exit(unlink(temp_app_dir, recursive = TRUE), add = TRUE)
+      copy_dir_contents(appdir, temp_app_dir)
 
-    if (verbose) cli::cli_progress_update(id = pb, set = 2)
-    shinylive::export(appdir = temp_app_dir, destdir = output_dir,
-                      subdir = subdir %||% "", quiet = TRUE)
+      if (verbose) {
+        cli::cli_progress_update(id = pb, set = 2)
+      }
+      shinylive::export(
+        appdir = temp_app_dir,
+        destdir = output_dir,
+        subdir = subdir %||% "",
+        quiet = TRUE
+      )
 
-    if (verbose) cli::cli_progress_update(id = pb, set = 3)
+      if (verbose) {
+        cli::cli_progress_update(id = pb, set = 3)
+      }
 
-    if (verbose) cli::cli_progress_update(id = pb, set = 4)
-    validate_shinylive_output(output_dir, subdir = subdir)
+      if (verbose) {
+        cli::cli_progress_update(id = pb, set = 4)
+      }
+      validate_shinylive_output(output_dir, subdir = subdir)
 
-    if (verbose) {
-      cli::cli_progress_done(id = pb)
-      cli::cli_alert_success("Successfully converted to shinylive: {.path {output_dir}}")
+      if (verbose) {
+        cli::cli_progress_done(id = pb)
+        cli::cli_alert_success(
+          "Successfully converted to shinylive: {.path {output_dir}}"
+        )
+      }
+
+      return(fs::path_abs(output_dir))
+    },
+    error = function(e) {
+      cli::cli_abort(c(
+        "Failed to convert Shiny app to shinylive",
+        "x" = "Error: {e$message}"
+      ))
     }
-
-    return(fs::path_abs(output_dir))
-
-  }, error = function(e) {
-    cli::cli_abort(c(
-      "Failed to convert Shiny app to shinylive",
-      "x" = "Error: {e$message}"
-    ))
-  })
+  )
 }
