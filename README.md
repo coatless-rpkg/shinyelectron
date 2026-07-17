@@ -26,6 +26,14 @@ users double-click to open.
 
 ## Install
 
+Install the released version from CRAN:
+
+``` r
+install.packages("shinyelectron")
+```
+
+Or the development version from GitHub:
+
 ``` r
 # install.packages("pak")
 pak::pak("coatless-rpkg/shinyelectron")
