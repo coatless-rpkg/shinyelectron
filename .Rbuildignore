@@ -29,3 +29,4 @@
 ^vignettes/\.quarto$
 ^vignettes/articles$
 ^README\.qmd$
+^CRAN-SUBMISSION$
