@@ -1,6 +1,6 @@
 Package: shinyelectron
 Title: Export 'Shiny' Applications as Desktop Apps using 'Electron'
-Version: 0.2.0
+Version: 0.2.1
 Authors@R: c(
     person("James Joseph", "Balamuta",
             email = "james.balamuta@gmail.com", 

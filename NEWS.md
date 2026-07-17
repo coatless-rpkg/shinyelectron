@@ -1,3 +1,9 @@
+# shinyelectron 0.2.1
+
+* Documentation fixes: refreshed external links and published the Download
+  Prebuilt Demos guide on the package website instead of shipping it as a
+  vignette.
+
 # shinyelectron 0.2.0
 
 This release grows shinyelectron from an R shinylive exporter into a general
