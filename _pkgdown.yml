@@ -78,7 +78,7 @@ articles:
     contents:
       - nodejs-management
       - troubleshooting
-      - download-demos
+      - articles/download-demos
 
 reference:
   - title: "Export & Build"
