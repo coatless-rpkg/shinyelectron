@@ -91,10 +91,8 @@ cache_r_path <- function(version, platform, arch) {
 #' df <- cache_info(quiet = TRUE)
 #' nrow(df)  # number of cached runtimes
 #'
-#' \dontrun{
 #' # Pretty-print the cache contents
 #' cache_info()
-#' }
 #'
 #' @seealso [cache_clear()] to remove cached assets, [cache_dir()] for
 #'   the cache location.

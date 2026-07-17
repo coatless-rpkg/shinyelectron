@@ -26,10 +26,8 @@ platforms, architectures, and disk usage. Modeled after
 df <- cache_info(quiet = TRUE)
 nrow(df)  # number of cached runtimes
 
-\dontrun{
 # Pretty-print the cache contents
 cache_info()
-}
 
 }
 \seealso{
