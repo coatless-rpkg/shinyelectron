@@ -9,10 +9,10 @@ Authors@R: c(
            )
     )
 Description: Provides tools to export 'Shiny' applications written in 'R' or
-    'Python' as standalone desktop applications using 'Electron'. Applications
-    run natively on Windows, macOS, and Linux; depending on the runtime
-    strategy chosen, end users do not need 'R' or 'Python' installed on their
-    machine.
+    'Python' as standalone desktop applications using 'Electron'. The
+    applications run as native, cross-platform programs. Depending on the
+    runtime strategy chosen, end users do not need 'R' or 'Python' installed on
+    their machine.
 License: AGPL (>= 3)
 URL: https://r-pkg.thecoatlessprofessor.com/shinyelectron/, https://github.com/coatless-rpkg/shinyelectron
 BugReports: https://github.com/coatless-rpkg/shinyelectron/issues

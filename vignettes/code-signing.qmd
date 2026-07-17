@@ -114,7 +114,7 @@ Or right-click the app in Finder and choose **Open** to bypass Gatekeeper once.
 
 **What you need:** An OV or EV code signing certificate from a commercial CA. Common options:
 
-- [DigiCert](https://www.digicert.com/signing/code-signing-certificates)
+- DigiCert
 - [Sectigo](https://www.sectigo.com/ssl-certificates-tls/code-signing)
 - [GlobalSign](https://www.globalsign.com/en/code-signing-certificate)
 - [SSL.com](https://www.ssl.com/products/software-integrity/code-signing/)
