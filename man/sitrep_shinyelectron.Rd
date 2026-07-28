@@ -25,11 +25,9 @@ sitrep_shinyelectron()
 
 # Get results as a list, without printing
 results <- sitrep_shinyelectron(verbose = FALSE)
-}
 
-\dontrun{
 # Check a specific project directory
-sitrep_shinyelectron("path/to/project")
+sitrep_shinyelectron(tempdir())
 }
 
 }

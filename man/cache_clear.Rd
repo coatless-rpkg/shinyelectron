@@ -30,21 +30,21 @@ If the cache directory doesn't exist, a message is shown and nothing is done.
 }
 
 \examples{
-\dontrun{
-# Clear everything in the cache
-cache_clear()
+if (interactive()) {
+  # Clear everything in the cache
+  cache_clear()
 
-# Clear only R installations
-cache_clear("r")
+  # Clear only R installations
+  cache_clear("r")
 
-# Clear only npm packages
-cache_clear("npm")
+  # Clear only npm packages
+  cache_clear("npm")
 
-# Clear only Node.js installations
-cache_clear("nodejs")
+  # Clear only Node.js installations
+  cache_clear("nodejs")
 
-# Clear only Python installations
-cache_clear("python")
+  # Clear only Python installations
+  cache_clear("python")
 }
 
 }

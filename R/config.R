@@ -369,11 +369,6 @@ validate_config <- function(config) {
 #' writeLines("library(shiny)", file.path(app, "app.R"))
 #' init_config(app, app_name = "My App")
 #'
-#' \dontrun{
-#' # Create a config for your own app
-#' init_config("path/to/my/app")
-#' }
-#'
 #' @export
 init_config <- function(appdir, app_name = NULL, overwrite = FALSE, verbose = TRUE) {
   validate_directory_exists(appdir, "Application directory")
@@ -654,10 +649,6 @@ validate_config_file <- function(config_path) {
 #' @examples
 #' # Show the merged configuration for a bundled example app
 #' show_config(example_app("r"))
-#'
-#' \dontrun{
-#' show_config("path/to/my/app")
-#' }
 #'
 #' @export
 show_config <- function(appdir = ".") {

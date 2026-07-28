@@ -3,19 +3,19 @@
 #' Walks through setup questions and generates a _shinyelectron.yml
 #' configuration file for your Shiny app.
 #'
-#' @param appdir Character string. Path to the app directory. Default ".".
+#' @param appdir Character string. Path to the app directory.
 #' @return Invisible path to the generated config file.
 #'
 #' @seealso [init_config()] to create a template config file;
 #'   [show_config()] to display the merged effective configuration.
 #'
 #' @examples
-#' \dontrun{
-#' wizard("path/to/my/app")
+#' if (interactive()) {
+#'   wizard(tempdir())
 #' }
 #'
 #' @export
-wizard <- function(appdir = ".") {
+wizard <- function(appdir) {
   if (!interactive()) {
     cli::cli_abort("wizard() must be run interactively")
   }

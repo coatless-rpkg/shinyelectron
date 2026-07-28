@@ -28,11 +28,6 @@ dir.create(app, showWarnings = FALSE)
 writeLines("library(shiny)", file.path(app, "app.R"))
 init_config(app, app_name = "My App")
 
-\dontrun{
-# Create a config for your own app
-init_config("path/to/my/app")
-}
-
 }
 \seealso{
 \code{\link[=wizard]{wizard()}} for an interactive configuration generator;

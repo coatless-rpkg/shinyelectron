@@ -34,15 +34,15 @@ Downloads and installs Node.js to the shinyelectron cache directory.
 This allows using Node.js/npm without requiring system-wide installation.
 }
 \examples{
-\dontrun{
-# Install latest LTS version
-install_nodejs()
+if (interactive()) {
+  # Install latest LTS version
+  install_nodejs()
 
-# Install specific version
-install_nodejs(version = "20.0.0")
+  # Install specific version
+  install_nodejs(version = "20.0.0")
 
-# Force reinstall
-install_nodejs(force = TRUE)
+  # Force reinstall
+  install_nodejs(force = TRUE)
 }
 
 }

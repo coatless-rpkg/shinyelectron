@@ -21,10 +21,10 @@ path as the \code{appdir} argument to \code{\link[=export]{export()}}.
 example_app("r")
 example_app("python")
 
-\dontrun{
-# Pass the path to export() to build a desktop app
-path <- example_app("r")
-export(path, "output", app_type = "r-shiny", runtime_strategy = "system")
+if (interactive()) {
+  # Pass the path to export() to build a desktop app
+  path <- example_app("r")
+  export(path, "output", app_type = "r-shiny", runtime_strategy = "system")
 }
 
 }

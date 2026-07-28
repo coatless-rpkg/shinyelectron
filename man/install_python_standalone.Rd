@@ -32,12 +32,12 @@ Character string. Path to the installed Python directory.
 Downloads and caches a portable Python build from python-build-standalone.
 }
 \examples{
-\dontrun{
-# Install default Python version
-install_python_standalone()
+if (interactive()) {
+  # Install default Python version
+  install_python_standalone()
 
-# Install specific version
-install_python_standalone(version = "3.12.0")
+  # Install specific version
+  install_python_standalone(version = "3.12.0")
 }
 
 }

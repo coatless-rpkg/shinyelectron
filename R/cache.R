@@ -229,15 +229,15 @@ format_dir_size <- function(path) {
 #' @return Invisibly returns TRUE if removed, FALSE if not found.
 #'
 #' @examples
-#' \dontrun{
-#' # Remove a specific R version
-#' cache_remove("r", "4.4.0", "mac", "arm64")
+#' if (interactive()) {
+#'   # Remove a specific R version
+#'   cache_remove("r", "4.4.0", "mac", "arm64")
 #'
-#' # Remove a cached Python version
-#' cache_remove("python", "3.14.6", "win", "x64")
+#'   # Remove a cached Python version
+#'   cache_remove("python", "3.14.6", "win", "x64")
 #'
-#' # Remove one platform/arch slot of a Node.js version
-#' cache_remove("nodejs", "v22.11.0", "mac", "arm64")
+#'   # Remove one platform/arch slot of a Node.js version
+#'   cache_remove("nodejs", "v22.11.0", "mac", "arm64")
 #' }
 #'
 #' @seealso [cache_info()] to list cached versions, [cache_clear()] to
@@ -301,21 +301,21 @@ cache_remove <- function(runtime, version, platform = NULL, arch = NULL) {
 #' If the cache directory doesn't exist, a message is shown and nothing is done.
 #'
 #' @examples
-#' \dontrun{
-#' # Clear everything in the cache
-#' cache_clear()
+#' if (interactive()) {
+#'   # Clear everything in the cache
+#'   cache_clear()
 #'
-#' # Clear only R installations
-#' cache_clear("r")
+#'   # Clear only R installations
+#'   cache_clear("r")
 #'
-#' # Clear only npm packages
-#' cache_clear("npm")
+#'   # Clear only npm packages
+#'   cache_clear("npm")
 #'
-#' # Clear only Node.js installations
-#' cache_clear("nodejs")
+#'   # Clear only Node.js installations
+#'   cache_clear("nodejs")
 #'
-#' # Clear only Python installations
-#' cache_clear("python")
+#'   # Clear only Python installations
+#'   cache_clear("python")
 #' }
 #'
 #' @export

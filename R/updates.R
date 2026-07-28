@@ -74,15 +74,9 @@
 #' writeLines("library(shiny)", file.path(app, "app.R"))
 #' enable_auto_updates(app, owner = "myusername", repo = "myapp")
 #'
-#' \dontrun{
-#' # Enable with automatic download for your own app
-#' enable_auto_updates(
-#'   "path/to/app",
-#'   owner = "myorg",
-#'   repo = "dashboard",
-#'   auto_download = TRUE
-#' )
-#' }
+#' # Enable with automatic download
+#' enable_auto_updates(app, owner = "myorg", repo = "dashboard",
+#'                     auto_download = TRUE)
 #'
 #' @seealso [init_config()] for creating initial configuration
 #' @export

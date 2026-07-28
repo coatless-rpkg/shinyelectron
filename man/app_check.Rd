@@ -43,12 +43,9 @@ and signing credentials. Reports issues without aborting.
 \donttest{
 # Check a bundled example app
 app_check(example_app("r"))
-}
 
-\dontrun{
-# Check your own app, with optional overrides
-app_check("path/to/my/app")
-app_check("my-app", app_type = "r-shiny", runtime_strategy = "system")
+# Check with explicit overrides
+app_check(example_app("r"), app_type = "r-shiny", runtime_strategy = "system")
 }
 
 }

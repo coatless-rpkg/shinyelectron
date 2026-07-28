@@ -4,10 +4,10 @@
 \alias{wizard}
 \title{Interactive Configuration Wizard}
 \usage{
-wizard(appdir = ".")
+wizard(appdir)
 }
 \arguments{
-\item{appdir}{Character string. Path to the app directory. Default ".".}
+\item{appdir}{Character string. Path to the app directory.}
 }
 \value{
 Invisible path to the generated config file.
@@ -17,8 +17,8 @@ Walks through setup questions and generates a _shinyelectron.yml
 configuration file for your Shiny app.
 }
 \examples{
-\dontrun{
-wizard("path/to/my/app")
+if (interactive()) {
+  wizard(tempdir())
 }
 
 }

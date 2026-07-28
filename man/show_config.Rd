@@ -20,8 +20,4 @@ for a shinyelectron app directory. Useful for debugging and verifying settings.
 # Show the merged configuration for a bundled example app
 show_config(example_app("r"))
 
-\dontrun{
-show_config("path/to/my/app")
-}
-
 }

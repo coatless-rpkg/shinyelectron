@@ -31,12 +31,12 @@ Downloads and caches a portable R build. Follows the same pattern
 as \code{\link[=install_nodejs]{install_nodejs()}}.
 }
 \examples{
-\dontrun{
-# Install latest R release
-install_r_portable()
+if (interactive()) {
+  # Install latest R release
+  install_r_portable()
 
-# Install specific version for a target platform
-install_r_portable(version = "4.4.0", platform = "win", arch = "x64")
+  # Install specific version for a target platform
+  install_r_portable(version = "4.4.0", platform = "win", arch = "x64")
 }
 
 }

@@ -267,12 +267,12 @@ python_executable <- function(version, platform = NULL, arch = NULL) {
 #'   [python_executable()] to find the installed Python path.
 #'
 #' @examples
-#' \dontrun{
-#' # Install default Python version
-#' install_python_standalone()
+#' if (interactive()) {
+#'   # Install default Python version
+#'   install_python_standalone()
 #'
-#' # Install specific version
-#' install_python_standalone(version = "3.12.0")
+#'   # Install specific version
+#'   install_python_standalone(version = "3.12.0")
 #' }
 #'
 #' @export

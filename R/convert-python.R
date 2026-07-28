@@ -24,11 +24,11 @@
 #' }
 #'
 #' @examples
-#' \dontrun{
-#' convert_py_to_shinylive(
-#'   appdir = "path/to/python/shiny/app",
-#'   output_dir = "path/to/shinylive/output"
-#' )
+#' if (interactive()) {
+#'   convert_py_to_shinylive(
+#'     appdir = "path/to/python/shiny/app",
+#'     output_dir = "path/to/shinylive/output"
+#'   )
 #' }
 #'
 #' @export

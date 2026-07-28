@@ -27,9 +27,9 @@ app's dependencies must be installed before conversion.
 # Detect the packages a bundled example app uses
 app_dependencies(example_app("r"))
 
-\dontrun{
-# Install an app's dependencies before a shinylive build
-pkgs <- app_dependencies("path/to/app")
-install.packages(pkgs)
+if (interactive()) {
+  # Install an app's dependencies before a shinylive build
+  pkgs <- app_dependencies("path/to/app")
+  install.packages(pkgs)
 }
 }

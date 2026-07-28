@@ -47,12 +47,12 @@ the application to run entirely in the browser using WebR. The conversion proces
 }
 
 \examples{
-\dontrun{
-# Convert a Shiny app to shinylive
-convert_shiny_to_shinylive(
-  appdir = "path/to/shiny/app",
-  output_dir = "path/to/shinylive/output"
-)
+if (interactive()) {
+  # Convert a Shiny app to shinylive
+  convert_shiny_to_shinylive(
+    appdir = "path/to/shiny/app",
+    output_dir = "path/to/shinylive/output"
+  )
 }
 
 }

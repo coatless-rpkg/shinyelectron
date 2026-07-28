@@ -30,11 +30,9 @@ new_sitrep_results <- function(extra = list()) {
 #'
 #' # Get results as a list, without printing
 #' results <- sitrep_shinyelectron(verbose = FALSE)
-#' }
 #'
-#' \dontrun{
 #' # Check a specific project directory
-#' sitrep_shinyelectron("path/to/project")
+#' sitrep_shinyelectron(tempdir())
 #' }
 #'
 #' @export

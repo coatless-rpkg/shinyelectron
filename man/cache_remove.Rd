@@ -29,15 +29,15 @@ Removes a single cached runtime version instead of clearing the
 entire cache. Use \code{\link[=cache_info]{cache_info()}} to see what's available.
 }
 \examples{
-\dontrun{
-# Remove a specific R version
-cache_remove("r", "4.4.0", "mac", "arm64")
+if (interactive()) {
+  # Remove a specific R version
+  cache_remove("r", "4.4.0", "mac", "arm64")
 
-# Remove a cached Python version
-cache_remove("python", "3.14.6", "win", "x64")
+  # Remove a cached Python version
+  cache_remove("python", "3.14.6", "win", "x64")
 
-# Remove one platform/arch slot of a Node.js version
-cache_remove("nodejs", "v22.11.0", "mac", "arm64")
+  # Remove one platform/arch slot of a Node.js version
+  cache_remove("nodejs", "v22.11.0", "mac", "arm64")
 }
 
 }

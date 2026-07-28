@@ -12,11 +12,9 @@
 #' \donttest{
 #' # Check the current directory for a shinyelectron project
 #' sitrep_electron_project()
-#' }
 #'
-#' \dontrun{
 #' # Check a specific directory
-#' sitrep_electron_project("path/to/electron/project")
+#' sitrep_electron_project(tempdir())
 #' }
 #'
 #' @export
