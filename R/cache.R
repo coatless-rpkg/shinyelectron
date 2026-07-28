@@ -36,8 +36,8 @@
 #' cache_dir(create = FALSE)
 #'
 #' # Get or create the cache directory (writes to the user cache dir)
-#' \donttest{
-#' cache_dir()
+#' if (interactive()) {
+#'   cache_dir()
 #' }
 #'
 #' @seealso [cache_info()] to see what's cached, [cache_clear()] to

@@ -47,8 +47,8 @@ Use \code{\link[=cache_info]{cache_info()}} to see what's actually installed wit
 cache_dir(create = FALSE)
 
 # Get or create the cache directory (writes to the user cache dir)
-\donttest{
-cache_dir()
+if (interactive()) {
+  cache_dir()
 }
 
 }
