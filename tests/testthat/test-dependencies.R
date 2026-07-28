@@ -288,6 +288,8 @@ test_that("merge_py_dependencies combines detected and declared", {
 # --- Manifest generation ---
 
 test_that("generate_dependency_manifest creates valid JSON for R", {
+  # Keep the system-requirements lookup offline (no network during checks).
+  local_mocked_bindings(query_sysreqs = function(...) character(0))
   manifest <- generate_dependency_manifest(
     packages = c("shiny", "ggplot2"),
     language = "r",
