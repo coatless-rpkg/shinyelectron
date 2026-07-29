@@ -286,17 +286,15 @@ nodejs_list_installed <- function() {
 #'
 #' @seealso [install_r_portable()], [install_python_standalone()] for other runtime installers.
 #'
-#' @examples
-#' if (interactive()) {
-#'   # Install latest LTS version
-#'   install_nodejs()
+#' @examplesIf interactive()
+#' # Install latest LTS version
+#' install_nodejs()
 #'
-#'   # Install specific version
-#'   install_nodejs(version = "20.0.0")
+#' # Install specific version
+#' install_nodejs(version = "20.0.0")
 #'
-#'   # Force reinstall
-#'   install_nodejs(force = TRUE)
-#' }
+#' # Force reinstall
+#' install_nodejs(force = TRUE)
 #'
 #' @export
 install_nodejs <- function(version = NULL, platform = NULL, arch = NULL,

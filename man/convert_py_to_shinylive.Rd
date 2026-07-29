@@ -45,11 +45,10 @@ using Pyodide (Python compiled to WebAssembly).
 }
 
 \examples{
-if (interactive()) {
-  convert_py_to_shinylive(
-    appdir = "path/to/python/shiny/app",
-    output_dir = "path/to/shinylive/output"
-  )
-}
-
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+convert_py_to_shinylive(
+  appdir = "path/to/python/shiny/app",
+  output_dir = "path/to/shinylive/output"
+)
+\dontshow{\}) # examplesIf}
 }

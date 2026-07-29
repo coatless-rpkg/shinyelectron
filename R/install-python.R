@@ -266,14 +266,12 @@ python_executable <- function(version, platform = NULL, arch = NULL) {
 #' @seealso [install_r_portable()], [install_nodejs()] for other runtime installers;
 #'   [python_executable()] to find the installed Python path.
 #'
-#' @examples
-#' if (interactive()) {
-#'   # Install default Python version
-#'   install_python_standalone()
+#' @examplesIf interactive()
+#' # Install default Python version
+#' install_python_standalone()
 #'
-#'   # Install specific version
-#'   install_python_standalone(version = "3.12.0")
-#' }
+#' # Install specific version
+#' install_python_standalone(version = "3.12.0")
 #'
 #' @export
 install_python_standalone <- function(version = NULL, platform = NULL, arch = NULL,

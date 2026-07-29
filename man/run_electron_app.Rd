@@ -38,16 +38,15 @@ This function starts the Electron application for testing, which:
 }
 
 \examples{
-if (interactive()) {
-  # Run a previously exported Electron app in development mode
-  run_electron_app("path/to/electron/app")
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+# Run a previously exported Electron app in development mode
+run_electron_app("path/to/electron/app")
 
-  # Run with custom port and no dev tools
-  run_electron_app(
-    app_dir = "path/to/app",
-    port = 8080,
-    open_devtools = FALSE
-  )
-}
-
+# Run with custom port and no dev tools
+run_electron_app(
+  app_dir = "path/to/app",
+  port = 8080,
+  open_devtools = FALSE
+)
+\dontshow{\}) # examplesIf}
 }

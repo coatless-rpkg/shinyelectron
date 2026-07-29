@@ -9,10 +9,8 @@
 #' @seealso [init_config()] to create a template config file;
 #'   [show_config()] to display the merged effective configuration.
 #'
-#' @examples
-#' if (interactive()) {
-#'   wizard(tempdir())
-#' }
+#' @examplesIf interactive()
+#' wizard(tempdir())
 #'
 #' @export
 wizard <- function(appdir) {

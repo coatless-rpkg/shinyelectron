@@ -23,13 +23,11 @@
 #'   \item The app directory must contain an `app.py` file
 #' }
 #'
-#' @examples
-#' if (interactive()) {
-#'   convert_py_to_shinylive(
-#'     appdir = "path/to/python/shiny/app",
-#'     output_dir = "path/to/shinylive/output"
-#'   )
-#' }
+#' @examplesIf interactive()
+#' convert_py_to_shinylive(
+#'   appdir = "path/to/python/shiny/app",
+#'   output_dir = "path/to/shinylive/output"
+#' )
 #'
 #' @export
 convert_py_to_shinylive <- function(appdir, output_dir, subdir = NULL, overwrite = FALSE, verbose = TRUE) {

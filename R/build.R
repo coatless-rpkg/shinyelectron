@@ -37,25 +37,23 @@
 #'   \item Building platform-specific distributables
 #' }
 #'
-#' @examples
-#' if (interactive()) {
-#'   # Build Electron app for current platform
-#'   build_electron_app(
-#'     app_dir = "path/to/shinylive/app",
-#'     output_dir = "path/to/electron/build",
-#'     app_name = "My Shiny App",
-#'     app_type = "r-shiny"
-#'   )
+#' @examplesIf interactive()
+#' # Build Electron app for current platform
+#' build_electron_app(
+#'   app_dir = "path/to/shinylive/app",
+#'   output_dir = "path/to/electron/build",
+#'   app_name = "My Shiny App",
+#'   app_type = "r-shiny"
+#' )
 #'
-#'   # Build for multiple platforms
-#'   build_electron_app(
-#'     app_dir = "path/to/app",
-#'     output_dir = "path/to/build",
-#'     app_name = "My App",
-#'     app_type = "r-shiny",
-#'     platform = c("win", "mac", "linux")
-#'   )
-#' }
+#' # Build for multiple platforms
+#' build_electron_app(
+#'   app_dir = "path/to/app",
+#'   output_dir = "path/to/build",
+#'   app_name = "My App",
+#'   app_type = "r-shiny",
+#'   platform = c("win", "mac", "linux")
+#' )
 #'
 #' @export
 build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = "r-shiny",

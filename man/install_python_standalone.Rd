@@ -32,14 +32,13 @@ Character string. Path to the installed Python directory.
 Downloads and caches a portable Python build from python-build-standalone.
 }
 \examples{
-if (interactive()) {
-  # Install default Python version
-  install_python_standalone()
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+# Install default Python version
+install_python_standalone()
 
-  # Install specific version
-  install_python_standalone(version = "3.12.0")
-}
-
+# Install specific version
+install_python_standalone(version = "3.12.0")
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=install_r_portable]{install_r_portable()}}, \code{\link[=install_nodejs]{install_nodejs()}} for other runtime installers;

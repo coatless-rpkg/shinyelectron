@@ -34,17 +34,16 @@ Downloads and installs Node.js to the shinyelectron cache directory.
 This allows using Node.js/npm without requiring system-wide installation.
 }
 \examples{
-if (interactive()) {
-  # Install latest LTS version
-  install_nodejs()
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+# Install latest LTS version
+install_nodejs()
 
-  # Install specific version
-  install_nodejs(version = "20.0.0")
+# Install specific version
+install_nodejs(version = "20.0.0")
 
-  # Force reinstall
-  install_nodejs(force = TRUE)
-}
-
+# Force reinstall
+install_nodejs(force = TRUE)
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=install_r_portable]{install_r_portable()}}, \code{\link[=install_python_standalone]{install_python_standalone()}} for other runtime installers.

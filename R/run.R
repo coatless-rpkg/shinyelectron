@@ -23,18 +23,16 @@
 #'   \item Does NOT build distributable packages (use `export(build = TRUE)` for that)
 #' }
 #'
-#' @examples
-#' if (interactive()) {
-#'   # Run a previously exported Electron app in development mode
-#'   run_electron_app("path/to/electron/app")
+#' @examplesIf interactive()
+#' # Run a previously exported Electron app in development mode
+#' run_electron_app("path/to/electron/app")
 #'
-#'   # Run with custom port and no dev tools
-#'   run_electron_app(
-#'     app_dir = "path/to/app",
-#'     port = 8080,
-#'     open_devtools = FALSE
-#'   )
-#' }
+#' # Run with custom port and no dev tools
+#' run_electron_app(
+#'   app_dir = "path/to/app",
+#'   port = 8080,
+#'   open_devtools = FALSE
+#' )
 #'
 #' @export
 run_electron_app <- function(app_dir, port = 3000, open_devtools = TRUE, verbose = TRUE) {

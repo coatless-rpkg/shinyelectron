@@ -140,12 +140,6 @@ resolve_app_dependencies <- function(appdir, app_type, runtime_strategy, config)
 #' @examples
 #' # Detect the packages a bundled example app uses
 #' app_dependencies(example_app("r"))
-#'
-#' if (interactive()) {
-#'   # Install an app's dependencies before a shinylive build
-#'   pkgs <- app_dependencies("path/to/app")
-#'   install.packages(pkgs)
-#' }
 #' @export
 app_dependencies <- function(appdir, app_type = NULL) {
   if (is.null(app_type)) {

@@ -88,27 +88,26 @@ Two languages, five delivery strategies.
 }
 
 \examples{
-if (interactive()) {
-  # Simplest call: app_type autodetects, runtime_strategy defaults to shinylive
-  export(
-    appdir = "path/to/shiny/app",
-    destdir = "path/to/electron/output"
-  )
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+# Simplest call: app_type autodetects, runtime_strategy defaults to shinylive
+export(
+  appdir = "path/to/shiny/app",
+  destdir = "path/to/electron/output"
+)
 
-  # Run against a real R process instead of shinylive
-  export(
-    appdir = "path/to/shiny/app",
-    destdir = "path/to/output",
-    runtime_strategy = "bundled"
-  )
+# Run against a real R process instead of shinylive
+export(
+  appdir = "path/to/shiny/app",
+  destdir = "path/to/output",
+  runtime_strategy = "bundled"
+)
 
-  # Pin language explicitly when autodetection is ambiguous
-  export(
-    appdir = "path/to/shiny/app",
-    destdir = "path/to/output",
-    app_type = "r-shiny",
-    runtime_strategy = "system"
-  )
-}
-
+# Pin language explicitly when autodetection is ambiguous
+export(
+  appdir = "path/to/shiny/app",
+  destdir = "path/to/output",
+  app_type = "r-shiny",
+  runtime_strategy = "system"
+)
+\dontshow{\}) # examplesIf}
 }

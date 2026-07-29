@@ -73,23 +73,22 @@ This function creates a complete Electron application by:
 }
 
 \examples{
-if (interactive()) {
-  # Build Electron app for current platform
-  build_electron_app(
-    app_dir = "path/to/shinylive/app",
-    output_dir = "path/to/electron/build",
-    app_name = "My Shiny App",
-    app_type = "r-shiny"
-  )
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+# Build Electron app for current platform
+build_electron_app(
+  app_dir = "path/to/shinylive/app",
+  output_dir = "path/to/electron/build",
+  app_name = "My Shiny App",
+  app_type = "r-shiny"
+)
 
-  # Build for multiple platforms
-  build_electron_app(
-    app_dir = "path/to/app",
-    output_dir = "path/to/build",
-    app_name = "My App",
-    app_type = "r-shiny",
-    platform = c("win", "mac", "linux")
-  )
-}
-
+# Build for multiple platforms
+build_electron_app(
+  app_dir = "path/to/app",
+  output_dir = "path/to/build",
+  app_name = "My App",
+  app_type = "r-shiny",
+  platform = c("win", "mac", "linux")
+)
+\dontshow{\}) # examplesIf}
 }

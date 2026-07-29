@@ -17,10 +17,9 @@ Walks through setup questions and generates a _shinyelectron.yml
 configuration file for your Shiny app.
 }
 \examples{
-if (interactive()) {
-  wizard(tempdir())
-}
-
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+wizard(tempdir())
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=init_config]{init_config()}} to create a template config file;

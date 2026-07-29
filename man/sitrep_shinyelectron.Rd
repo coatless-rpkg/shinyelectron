@@ -19,15 +19,14 @@ Runs all diagnostic checks and provides a comprehensive report of your
 shinyelectron setup.
 }
 \examples{
-if (interactive()) {
-  # Complete diagnostic check of the current setup
-  sitrep_shinyelectron()
+\dontshow{if (interactive()) withAutoprint(\{ # examplesIf}
+# Complete diagnostic check of the current setup
+sitrep_shinyelectron()
 
-  # Get results as a list, without printing
-  results <- sitrep_shinyelectron(verbose = FALSE)
+# Get results as a list, without printing
+results <- sitrep_shinyelectron(verbose = FALSE)
 
-  # Check a specific project directory
-  sitrep_shinyelectron(tempdir())
-}
-
+# Check a specific project directory
+sitrep_shinyelectron(tempdir())
+\dontshow{\}) # examplesIf}
 }
