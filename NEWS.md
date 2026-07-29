@@ -1,8 +1,13 @@
 # shinyelectron 0.2.1
 
-* Documentation fixes: refreshed external links and published the Download
-  Prebuilt Demos guide on the package website instead of shipping it as a
-  vignette.
+* Examples for functions that install a runtime, launch an app, or clear the
+  cache now run only in interactive sessions.
+
+* The Download Prebuilt Demos guide moved from a bundled vignette to the
+  package website, and outdated external documentation links were refreshed.
+
+* `wizard()` now requires the `appdir` argument instead of defaulting to the
+  working directory.
 
 # shinyelectron 0.2.0
 
