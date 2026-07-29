@@ -112,8 +112,9 @@ server <- function(input, output, session) {
     req(input$xvar, input$yvar)
     d <- df()
     col <- plot_colors()
-    par(mar = c(4, 4, 1, 1), bg = col$bg, fg = col$fg,
-        col.axis = col$fg, col.lab = col$fg, family = "sans")
+    oldpar <- par(mar = c(4, 4, 1, 1), bg = col$bg, fg = col$fg,
+                  col.axis = col$fg, col.lab = col$fg, family = "sans")
+    on.exit(par(oldpar))
 
     if (input$plot_type == "scatter") {
       plot(d[[input$xvar]], d[[input$yvar]],

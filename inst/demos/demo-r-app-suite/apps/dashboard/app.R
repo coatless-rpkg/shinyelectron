@@ -98,8 +98,9 @@ server <- function(input, output, session) {
   output$trend <- renderPlot({
     d <- ts()
     col <- plot_colors()
-    par(mar = c(3, 4, 0.5, 1), bg = col$bg, fg = col$fg,
-        col.axis = col$fg, col.lab = col$fg, family = "sans")
+    oldpar <- par(mar = c(3, 4, 0.5, 1), bg = col$bg, fg = col$fg,
+                  col.axis = col$fg, col.lab = col$fg, family = "sans")
+    on.exit(par(oldpar))
     if (input$chart_type == "bar") {
       barplot(tail(d$vals, 14), col = adjustcolor(col$accent, 0.6),
               border = NA, las = 1, axes = FALSE, space = 0.3)
@@ -125,8 +126,9 @@ server <- function(input, output, session) {
     set.seed(99)
     cats <- c("Organic", "Paid", "Referral", "Direct", "Social")
     vals <- sort(sample(50:300, 5), decreasing = TRUE)
-    par(mar = c(3, 6, 0.5, 2), bg = col$bg, fg = col$fg,
-        col.axis = col$fg, family = "sans")
+    oldpar <- par(mar = c(3, 6, 0.5, 2), bg = col$bg, fg = col$fg,
+                  col.axis = col$fg, family = "sans")
+    on.exit(par(oldpar))
     bp <- barplot(vals, horiz = TRUE, col = adjustcolor(col$bars, 0.6),
                   border = NA, las = 1, names.arg = cats, axes = FALSE)
     axis(1, col = col$axis, col.ticks = col$axis)

@@ -84,7 +84,8 @@ server <- function(input, output, session) {
   output$plot <- renderPlot({
     set.seed(42)
     x <- rnorm(input$n); y <- x + rnorm(input$n, sd = 0.5)
-    par(mar = c(3, 3, 1, 1))
+    oldpar <- par(mar = c(3, 3, 1, 1))
+    on.exit(par(oldpar))
     plot(x, y, pch = 19, col = rgb(0.05, 0.43, 0.99, 0.5), cex = 1.2,
          bty = "n", las = 1, xlab = "", ylab = "")
     abline(lm(y ~ x), col = "#0d6efd", lwd = 2)
