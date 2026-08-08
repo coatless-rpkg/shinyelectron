@@ -5,7 +5,7 @@ Build for target platforms
 ## Usage
 
 ``` r
-build_for_platforms(output_dir, platform, arch, sign = FALSE, verbose = TRUE)
+build_for_platforms(output_dir, platform, arch, verbose = TRUE)
 ```
 
 ## Arguments
@@ -21,10 +21,6 @@ build_for_platforms(output_dir, platform, arch, sign = FALSE, verbose = TRUE)
 - arch:
 
   Character vector of target architectures
-
-- sign:
-
-  Logical whether to code-sign the build
 
 - verbose:
 

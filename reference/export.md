@@ -11,9 +11,7 @@ export(
   appdir,
   destdir,
   app_name = NULL,
-  app_type = NULL,
-  runtime_strategy = NULL,
-  sign = FALSE,
+  app_type = "r-shinylive",
   platform = NULL,
   arch = NULL,
   icon = NULL,
@@ -44,25 +42,8 @@ export(
 
 - app_type:
 
-  Character string or NULL. Language of the Shiny app: `"r-shiny"` or
-  `"py-shiny"`. If NULL (default), the type is autodetected from files
-  in `appdir`. The legacy values `"r-shinylive"` and `"py-shinylive"`
-  are accepted with a deprecation warning and translate to the canonical
-  language plus `runtime_strategy = "shinylive"`.
-
-- runtime_strategy:
-
-  Character string or NULL. How R or Python reaches the end user:
-  `"shinylive"`, `"bundled"`, `"system"`, `"auto-download"`, or
-  `"container"`. Default `"shinylive"` when neither argument nor config
-  sets one.
-
-- sign:
-
-  Logical. Whether to enable code signing for the built application.
-  When TRUE, electron-builder will attempt to sign the app using
-  credentials from environment variables or the config file. Default is
-  FALSE.
+  Character string. Type of application: "r-shinylive" (default),
+  "r-shiny", "py-shinylive", or "py-shiny".
 
 - platform:
 
@@ -123,41 +104,44 @@ process:
 
 - Optionally runs the application for testing
 
-## Supported Combinations
+## Supported Application Types
 
-Two languages, five delivery strategies.
+- `r-shinylive`: R Shiny app converted to run entirely in browser
+  (recommended)
 
-- `r-shiny` or `py-shiny` plus `runtime_strategy = "shinylive"`: app
-  compiles to WebAssembly and runs inside the Electron window with no
-  runtime on disk.
+- `r-shiny`: R Shiny app with embedded R runtime
 
-- `r-shiny` or `py-shiny` plus `"auto-download"`, `"bundled"`,
-  `"system"`, or `"container"`: app runs against a real R or Python
-  process supplied by the chosen strategy.
+- `py-shinylive`: Python Shiny app converted to run entirely in browser
+
+- `py-shiny`: Python Shiny app with embedded Python runtime
 
 ## Examples
 
 ``` r
-if (FALSE) { # interactive()
-# Simplest call: app_type autodetects, runtime_strategy defaults to shinylive
+if (FALSE) { # \dontrun{
+# Basic export to shinylive Electron app
 export(
   appdir = "path/to/shiny/app",
   destdir = "path/to/electron/output"
 )
 
-# Run against a real R process instead of shinylive
+# Export with custom settings
 export(
   appdir = "path/to/shiny/app",
   destdir = "path/to/output",
-  runtime_strategy = "bundled"
+  app_name = "My Amazing App",
+  app_type = "r-shinylive",
+  platform = c("win", "mac"),
+  icon = "path/to/icon.ico",
+  overwrite = TRUE,
+  run_after = TRUE
 )
 
-# Pin language explicitly when autodetection is ambiguous
+# Export regular Shiny app (with R runtime)
 export(
   appdir = "path/to/shiny/app",
   destdir = "path/to/output",
-  app_type = "r-shiny",
-  runtime_strategy = "system"
+  app_type = "r-shiny"
 )
-}
+} # }
 ```

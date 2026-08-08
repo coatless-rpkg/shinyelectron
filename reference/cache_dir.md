@@ -1,9 +1,7 @@
-# Get or create the cache directory path
+# Get or create cache directory path
 
-Returns the path where shinyelectron stores downloaded runtimes (R,
-Python, Node.js) and other cached assets. By default, the directory is
-created if it doesn't already exist. Pass `create = FALSE` to query the
-path without side effects.
+Determines the path to the cache directory for shinyelectron assets and
+optionally creates the directory if it doesn't exist.
 
 ## Usage
 
@@ -20,49 +18,29 @@ cache_dir(create = TRUE)
 
 ## Value
 
-Character string. Absolute path to the cache directory, typically
-`~/.cache/shinyelectron/assets` on Linux,
-`~/Library/Caches/shinyelectron/assets` on macOS, or
-`\%LOCALAPPDATA\%/shinyelectron/shinyelectron/Cache/assets` on Windows.
+Character string. The absolute path to the cache directory.
 
-## Cache Layout
+## Details
 
-Cached runtimes are organized by type, platform, architecture, and
-version:
+The cache directory is located at
+`rappdirs::user_cache_dir("shinyelectron")/assets`. This function
+centralizes path management for all cached assets used by the package.
+
+## Cache Structure
+
+The cache directory structure (typically at
+~/.shinyelectron/cache/assets/):
+
 
     assets/
     |-- r/
-    |   |-- win/x64/4.5.3/
-    |   |-- mac/arm64/4.5.3/
-    |-- python/
-    |   |-- win/x64/3.14.6/
-    |   |-- mac/arm64/3.14.6/
-    |-- nodejs/
-    |   |-- v22.11.0/darwin-arm64/
-    |   |-- v22.11.0/win-x64/
-
-Use
-[`cache_info()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_info.md)
-to see what's actually installed with disk usage.
-
-## See also
-
-[`cache_info()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_info.md)
-to see what's cached,
-[`cache_clear()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_clear.md)
-to remove cached assets,
-[`cache_remove()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/cache_remove.md)
-to remove a specific version.
-
-## Examples
-
-``` r
-# Query the cache path without creating it
-cache_dir(create = FALSE)
-#> [1] "/home/runner/.cache/shinyelectron/assets"
-
-# Get or create the cache directory (writes to the user cache dir)
-if (interactive()) {
-  cache_dir()
-}
-```
+    |   |-- win/
+    |   |   |-- x64/
+    |   |   |-- arm64/
+    |   |-- mac/
+    |   |   |-- x64/
+    |   |   |-- arm64/
+    |   |-- linux/
+    |       |-- x64/
+    |       |-- arm64/
+    |-- npm/

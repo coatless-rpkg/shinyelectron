@@ -5,13 +5,7 @@ Copy application files to Electron project
 ## Usage
 
 ``` r
-copy_app_files(
-  app_dir,
-  output_dir,
-  app_type,
-  runtime_strategy = NULL,
-  verbose = TRUE
-)
+copy_app_files(app_dir, output_dir, app_type, verbose = TRUE)
 ```
 
 ## Arguments
@@ -27,12 +21,6 @@ copy_app_files(
 - app_type:
 
   Character application type
-
-- runtime_strategy:
-
-  Character resolved runtime strategy. When `"shinylive"` the source is
-  already a WebAssembly bundle, so the Shiny entrypoint sanity check is
-  skipped.
 
 - verbose:
 

@@ -1,21 +1,8 @@
 pandoc: 3.8.3
 pkgdown: 2.2.1
 pkgdown_sha: ~
-articles:
-  auto-updates: auto-updates.html
-  code-signing: code-signing.html
-  configuration: configuration.html
-  container-strategy: container-strategy.html
-  customizations: customizations.html
-  articles/download-demos: download-demos.html
-  getting-started: getting-started.html
-  github-actions: github-actions.html
-  multi-app-suites: multi-app-suites.html
-  nodejs-management: nodejs-management.html
-  runtime-strategies: runtime-strategies.html
-  security: security.html
-  troubleshooting: troubleshooting.html
-last_built: 2026-08-08T18:42Z
+articles: {}
+last_built: 2026-08-08T18:45Z
 urls:
   reference: https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference
   article: https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles

@@ -10,13 +10,10 @@ build_electron_app(
   app_dir,
   output_dir,
   app_name = NULL,
-  app_type = "r-shiny",
-  runtime_strategy = "shinylive",
-  sign = FALSE,
+  app_type = "r-shinylive",
   platform = NULL,
   arch = NULL,
   icon = NULL,
-  config = NULL,
   overwrite = FALSE,
   verbose = TRUE
 )
@@ -39,26 +36,8 @@ build_electron_app(
 
 - app_type:
 
-  Character string. Language of the Shiny app: `"r-shiny"` (default) or
-  `"py-shiny"`. Unlike
-  [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md),
-  this function does **not** autodetect the language from source files –
-  the default `"r-shiny"` is used when `app_type` is not supplied.
-  Supply `"py-shiny"` explicitly for Python Shiny applications. The
-  legacy values `"r-shinylive"` / `"py-shinylive"` are accepted with a
-  deprecation warning and translate to the canonical language plus
-  `runtime_strategy = "shinylive"`.
-
-- runtime_strategy:
-
-  Character string. Runtime strategy: `"shinylive"`, `"bundled"`,
-  `"system"`, `"auto-download"`, or `"container"`. Default
-  `"shinylive"`.
-
-- sign:
-
-  Logical. Whether to enable code signing for the built application.
-  Default is FALSE.
+  Character string. Type of application: "r-shinylive", "r-shiny",
+  "py-shinylive", or "py-shiny".
 
 - platform:
 
@@ -74,11 +53,6 @@ build_electron_app(
 
   Character string. Path to application icon file. Platform-specific
   format required.
-
-- config:
-
-  List. Configuration from \_shinyelectron.yml file (optional). Used for
-  template variables like window dimensions, port, and app version.
 
 - overwrite:
 
@@ -109,13 +83,13 @@ This function creates a complete Electron application by:
 ## Examples
 
 ``` r
-if (FALSE) { # interactive()
+if (FALSE) { # \dontrun{
 # Build Electron app for current platform
 build_electron_app(
   app_dir = "path/to/shinylive/app",
   output_dir = "path/to/electron/build",
   app_name = "My Shiny App",
-  app_type = "r-shiny"
+  app_type = "r-shinylive"
 )
 
 # Build for multiple platforms
@@ -123,8 +97,8 @@ build_electron_app(
   app_dir = "path/to/app",
   output_dir = "path/to/build",
   app_name = "My App",
-  app_type = "r-shiny",
+  app_type = "r-shinylive",
   platform = c("win", "mac", "linux")
 )
-}
+} # }
 ```
