@@ -52,11 +52,11 @@ to find the installed Rscript path.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (FALSE) { # interactive()
 # Install latest R release
 install_r_portable()
 
 # Install specific version for a target platform
 install_r_portable(version = "4.4.0", platform = "win", arch = "x64")
-} # }
+}
 ```

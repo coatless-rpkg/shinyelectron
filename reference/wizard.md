@@ -6,14 +6,14 @@ configuration file for your Shiny app.
 ## Usage
 
 ``` r
-wizard(appdir = ".")
+wizard(appdir)
 ```
 
 ## Arguments
 
 - appdir:
 
-  Character string. Path to the app directory. Default ".".
+  Character string. Path to the app directory.
 
 ## Value
 
@@ -29,7 +29,7 @@ to display the merged effective configuration.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-wizard("path/to/my/app")
-} # }
+if (FALSE) { # interactive()
+wizard(tempdir())
+}
 ```

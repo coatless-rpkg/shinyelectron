@@ -56,8 +56,8 @@ This function starts the Electron application for testing, which:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Run Electron app in development mode
+if (FALSE) { # interactive()
+# Run a previously exported Electron app in development mode
 run_electron_app("path/to/electron/app")
 
 # Run with custom port and no dev tools
@@ -66,5 +66,5 @@ run_electron_app(
   port = 8080,
   open_devtools = FALSE
 )
-} # }
+}
 ```

@@ -40,7 +40,7 @@ done.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (FALSE) { # interactive()
 # Clear everything in the cache
 cache_clear()
 
@@ -55,5 +55,5 @@ cache_clear("nodejs")
 
 # Clear only Python installations
 cache_clear("python")
-} # }
+}
 ```

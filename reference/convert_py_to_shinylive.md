@@ -67,10 +67,10 @@ in the browser using Pyodide (Python compiled to WebAssembly).
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (FALSE) { # interactive()
 convert_py_to_shinylive(
   appdir = "path/to/python/shiny/app",
   output_dir = "path/to/shinylive/output"
 )
-} # }
+}
 ```

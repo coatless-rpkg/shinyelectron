@@ -11,7 +11,7 @@ providers are planned and will be added in a future release."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">shinyelectron</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -201,15 +201,15 @@ environment variables (see <code><a href="validate_signing_config.html">?validat
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> Auto-download: <span style="color: #0000BB;">FALSE</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> Auto-install on quit: <span style="color: #0000BB;">FALSE</span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Enable with automatic download for your own app</span></span></span>
-<span class="r-in"><span><span class="fu">enable_auto_updates</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="st">"path/to/app"</span>,</span></span>
-<span class="r-in"><span>  owner <span class="op">=</span> <span class="st">"myorg"</span>,</span></span>
-<span class="r-in"><span>  repo <span class="op">=</span> <span class="st">"dashboard"</span>,</span></span>
-<span class="r-in"><span>  auto_download <span class="op">=</span> <span class="cn">TRUE</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span><span class="co"># Enable with automatic download</span></span></span>
+<span class="r-in"><span><span class="fu">enable_auto_updates</span><span class="op">(</span><span class="va">app</span>, owner <span class="op">=</span> <span class="st">"myorg"</span>, repo <span class="op">=</span> <span class="st">"dashboard"</span>,</span></span>
+<span class="r-in"><span>                    auto_download <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Auto-updates enabled with <span style="color: #0000BB;">"github"</span> provider</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Updates will be published to: <span style="color: #0000BB; font-style: italic;">&lt;https://github.com/myorg/dashboard/releases&gt;</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Settings:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> Check on startup: <span style="color: #0000BB;">TRUE</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> Auto-download: <span style="color: #0000BB;">TRUE</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">•</span> Auto-install on quit: <span style="color: #0000BB;">FALSE</span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
@@ -222,7 +222,7 @@ environment variables (see <code><a href="validate_signing_config.html">?validat
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

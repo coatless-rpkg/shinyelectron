@@ -86,11 +86,24 @@ app_check(example_app("r"))
 #> ── Result ──
 #> 
 #> ✔ Ready to build! Run: `export("/home/runner/work/_temp/Library/shinyelectron/demos/demo-single", "output")`
-# }
 
-if (FALSE) { # \dontrun{
-# Check your own app, with optional overrides
-app_check("path/to/my/app")
-app_check("my-app", app_type = "r-shiny", runtime_strategy = "system")
-} # }
+# Check with explicit overrides
+app_check(example_app("r"), app_type = "r-shiny", runtime_strategy = "system")
+#> 
+#> ── App Check: demo-single ──────────────────────────────────────────────────────
+#> ℹ Config: no _shinyelectron.yml (using defaults)
+#> ℹ Type: "r-shiny"
+#> ℹ Runtime strategy: "system"
+#> ℹ Platform(s): "linux"
+#> ✔ App structure: app.R found
+#> ✔ Node.js: 22.23.1 + npm 10.9.8
+#> ✔ R: available at /usr/local/bin/Rscript
+#> ✔ Dependencies: bslib, shiny
+#> ℹ Code signing: "disabled"
+#> ℹ Icon: not configured (default Electron icon)
+#> 
+#> ── Result ──
+#> 
+#> ✔ Ready to build! Run: `export("/home/runner/work/_temp/Library/shinyelectron/demos/demo-single", "output")`
+# }
 ```

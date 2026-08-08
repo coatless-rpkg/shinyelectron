@@ -54,11 +54,11 @@ to find the installed Python path.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (FALSE) { # interactive()
 # Install default Python version
 install_python_standalone()
 
 # Install specific version
 install_python_standalone(version = "3.12.0")
-} # }
+}
 ```

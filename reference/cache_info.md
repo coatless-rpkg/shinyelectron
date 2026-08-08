@@ -38,8 +38,7 @@ df <- cache_info(quiet = TRUE)
 nrow(df)  # number of cached runtimes
 #> [1] 0
 
-if (FALSE) { # \dontrun{
 # Pretty-print the cache contents
 cache_info()
-} # }
+#> ℹ No cached assets found
 ```

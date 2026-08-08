@@ -138,7 +138,7 @@ Two languages, five delivery strategies.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (FALSE) { # interactive()
 # Simplest call: app_type autodetects, runtime_strategy defaults to shinylive
 export(
   appdir = "path/to/shiny/app",
@@ -159,5 +159,5 @@ export(
   app_type = "r-shiny",
   runtime_strategy = "system"
 )
-} # }
+}
 ```

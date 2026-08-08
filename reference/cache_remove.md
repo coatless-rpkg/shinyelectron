@@ -48,7 +48,7 @@ to remove all cached assets of a type.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (FALSE) { # interactive()
 # Remove a specific R version
 cache_remove("r", "4.4.0", "mac", "arm64")
 
@@ -57,5 +57,5 @@ cache_remove("python", "3.14.6", "win", "x64")
 
 # Remove one platform/arch slot of a Node.js version
 cache_remove("nodejs", "v22.11.0", "mac", "arm64")
-} # }
+}
 ```

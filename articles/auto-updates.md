@@ -3,8 +3,8 @@
 Auto-updates ship by publishing a signed artifact and a matching
 `latest.yml` to a place the app knows to check. shinyelectron wires your
 project up to
-[electron-updater](https://www.electron.build/auto-update), which does
-the checking, downloading, and swap-on-quit.
+[electron-updater](https://www.electron.build/docs/features/auto-update/),
+which does the checking, downloading, and swap-on-quit.
 
 ![Three panels. A version 1.0.0 app on the left requests latest.yml from
 a publish host in the middle, which lists a manifest and signed

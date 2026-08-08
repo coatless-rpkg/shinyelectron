@@ -30,9 +30,9 @@ example_app("r")
 example_app("python")
 #> [1] "/home/runner/work/_temp/Library/shinyelectron/demos/demo-py-single"
 
-if (FALSE) { # \dontrun{
-# Pass the path to export() to build a desktop app
-path <- example_app("r")
-export(path, "output", app_type = "r-shiny", runtime_strategy = "system")
-} # }
+if (interactive()) {
+  # Pass the path to export() to build a desktop app
+  path <- example_app("r")
+  export(path, "output", app_type = "r-shiny", runtime_strategy = "system")
+}
 ```

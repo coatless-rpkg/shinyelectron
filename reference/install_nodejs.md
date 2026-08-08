@@ -54,7 +54,7 @@ for other runtime installers.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (FALSE) { # interactive()
 # Install latest LTS version
 install_nodejs()
 
@@ -63,5 +63,5 @@ install_nodejs(version = "20.0.0")
 
 # Force reinstall
 install_nodejs(force = TRUE)
-} # }
+}
 ```

@@ -170,10 +170,10 @@ warnings.
 **What you need:** An OV or EV code signing certificate from a
 commercial CA. Common options:
 
-- [DigiCert](https://www.digicert.com/signing/code-signing-certificates)
+- DigiCert
 - [Sectigo](https://www.sectigo.com/ssl-certificates-tls/code-signing)
 - [GlobalSign](https://www.globalsign.com/en/code-signing-certificate)
-- [SSL.com](https://www.ssl.com/certificates/code-signing/)
+- [SSL.com](https://www.ssl.com/products/software-integrity/code-signing/)
 
 EV certificates ship on a hardware token (USB dongle or HSM) and require
 a different signing workflow when used from CI; plan for that up front.

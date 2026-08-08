@@ -159,13 +159,13 @@ enable_auto_updates(app, owner = "myusername", repo = "myapp")
 #> • Auto-download: FALSE
 #> • Auto-install on quit: FALSE
 
-if (FALSE) { # \dontrun{
-# Enable with automatic download for your own app
-enable_auto_updates(
-  "path/to/app",
-  owner = "myorg",
-  repo = "dashboard",
-  auto_download = TRUE
-)
-} # }
+# Enable with automatic download
+enable_auto_updates(app, owner = "myorg", repo = "dashboard",
+                    auto_download = TRUE)
+#> ✔ Auto-updates enabled with "github" provider
+#> ℹ Updates will be published to: <https://github.com/myorg/dashboard/releases>
+#> ℹ Settings:
+#> • Check on startup: TRUE
+#> • Auto-download: TRUE
+#> • Auto-install on quit: FALSE
 ```

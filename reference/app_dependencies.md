@@ -36,10 +36,4 @@ Character vector of detected package names, excluding base R packages
 # Detect the packages a bundled example app uses
 app_dependencies(example_app("r"))
 #> [1] "bslib" "shiny"
-
-if (FALSE) { # \dontrun{
-# Install an app's dependencies before a shinylive build
-pkgs <- app_dependencies("path/to/app")
-install.packages(pkgs)
-} # }
 ```

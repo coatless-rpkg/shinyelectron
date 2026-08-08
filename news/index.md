@@ -1,5 +1,20 @@
 # Changelog
 
+## shinyelectron 0.2.1
+
+CRAN release: 2026-08-07
+
+- Examples for functions that install a runtime, launch an app, or clear
+  the cache now run only in interactive sessions.
+
+- The Download Prebuilt Demos guide moved from a bundled vignette to the
+  package website, and outdated external documentation links were
+  refreshed.
+
+- [`wizard()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/wizard.md)
+  now requires the `appdir` argument instead of defaulting to the
+  working directory.
+
 ## shinyelectron 0.2.0
 
 This release grows shinyelectron from an R shinylive exporter into a

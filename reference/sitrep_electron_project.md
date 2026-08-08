@@ -43,10 +43,21 @@ sitrep_electron_project()
 #> ── Recommendations ──
 #> 
 #> ℹ Run 'npm install' to install dependencies
-# }
 
-if (FALSE) { # \dontrun{
 # Check a specific directory
-sitrep_electron_project("path/to/electron/project")
-} # }
+sitrep_electron_project(tempdir())
+#> 
+#> ── Project Report ──────────────────────────────────────────────────────────────
+#> ℹ Checking directory: /tmp/RtmpENsQDT
+#> ✖ package.json: Not found
+#> ! main.js: Not found
+#> ✖ App files: Not found in src/app or app/
+#> ℹ node_modules: Not found (run 'npm install')
+#> ℹ This does not appear to be an Electron project
+#> ! Found 3 issues
+#> 
+#> ── Recommendations ──
+#> 
+#> ℹ Run 'npm install' to install dependencies
+# }
 ```

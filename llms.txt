@@ -15,6 +15,15 @@ users double-click to open.
 
 ## Install
 
+Install the released version from CRAN:
+
+``` r
+
+install.packages("shinyelectron")
+```
+
+Or the development version from GitHub:
+
 ``` r
 
 # install.packages("pak")
@@ -44,23 +53,15 @@ for a small app.
 
 ## Try a prebuilt demo
 
-Each demo is packaged as a desktop app. These are `shinylive` builds, so
-they need no R, Python, or internet: everything runs inside the app.
-Download the installer for your platform, run it, and launch the demo.
-On Linux the download is a portable AppImage you can run straight away.
-
-| Demo | macOS (Apple) | macOS (Intel) | Windows | Linux |
-|----|----|----|----|----|
-| Python demo suite | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-shinylive-mac-arm64.dmg) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-shinylive-mac-x64.dmg) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-shinylive-win-x64.exe) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-app-suite-shinylive-linux-x64.AppImage) |
-| Python single app | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-shinylive-mac-arm64.dmg) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-shinylive-mac-x64.dmg) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-shinylive-win-x64.exe) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-py-single-shinylive-linux-x64.AppImage) |
-| R demo suite | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-shinylive-mac-arm64.dmg) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-shinylive-mac-x64.dmg) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-shinylive-win-x64.exe) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-r-app-suite-shinylive-linux-x64.AppImage) |
-| R single app | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-shinylive-mac-arm64.dmg) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-shinylive-mac-x64.dmg) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-shinylive-win-x64.exe) | [download](https://github.com/coatless-rpkg/shinyelectron/releases/latest/download/demo-single-shinylive-linux-x64.AppImage) |
-
-Other strategies (bundled, system, auto-download, container) are
-published too. See the [download-demos
+Each demo is packaged as a desktop app you can download, install, and
+launch. The [Download Prebuilt Demos
 guide](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/download-demos.html)
-for the full set and what each one needs, or browse the [releases
-page](https://github.com/coatless-rpkg/shinyelectron/releases/latest).
+has a build of every demo, for every runtime strategy, on each platform,
+with a one-click installer for yours; or browse the [releases
+page](https://github.com/coatless-rpkg/shinyelectron/releases/latest)
+directly. The simplest are the `shinylive` builds: they need no R,
+Python, or internet, since everything runs inside the app. On Linux each
+download is a portable AppImage you can run straight away.
 
 > \[!NOTE\]
 >
@@ -202,7 +203,7 @@ larger community of contributors experimenting in this space.
 
 ### Upstream projects
 
-- [Electron](https://electronjs.org/docs/latest/tutorial/application-distribution):
+- [Electron](https://www.electronjs.org/docs/latest/tutorial/application-distribution):
   the desktop framework.
 - [electron-builder](https://www.electron.build/): the packaging
   pipeline that produces platform installers.
@@ -246,7 +247,7 @@ AGPL (\>= 3)
   talk)](https://www.youtube.com/watch?v=ARrbbviGvjc) ([slides and
   code](https://github.com/ksasso/useR_electron_meet_shiny/))
 - [Electron
-  documentation](https://electronjs.org/docs/latest/tutorial/application-distribution)
+  documentation](https://www.electronjs.org/docs/latest/tutorial/application-distribution)
 - [electron-builder documentation](https://www.electron.build/)
 - [shinylive (R)](https://github.com/posit-dev/r-shinylive)
 - [py-shinylive (Python)](https://github.com/posit-dev/py-shinylive)

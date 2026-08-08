@@ -60,8 +60,4 @@ show_config(example_app("r"))
 #> • Prompt before install: FALSE
 #> • Prompt runtime version: FALSE
 #> • Custom splash: FALSE
-
-if (FALSE) { # \dontrun{
-show_config("path/to/my/app")
-} # }
 ```

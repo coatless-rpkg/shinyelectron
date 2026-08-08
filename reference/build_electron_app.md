@@ -109,7 +109,7 @@ This function creates a complete Electron application by:
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (FALSE) { # interactive()
 # Build Electron app for current platform
 build_electron_app(
   app_dir = "path/to/shinylive/app",
@@ -126,5 +126,5 @@ build_electron_app(
   app_type = "r-shiny",
   platform = c("win", "mac", "linux")
 )
-} # }
+}
 ```
