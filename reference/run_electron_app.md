@@ -1,8 +1,10 @@
-# Run Electron Application in Development Mode
+# Run Electron Application for Testing
 
-Runs the Electron application in development mode for testing and
-debugging. This allows you to test your application before building
-distributable packages.
+Launches a previously exported Electron application for testing and
+debugging without building distributable packages. Pass the
+`electron-app` directory from a prior
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+call.
 
 ## Usage
 
@@ -14,7 +16,9 @@ run_electron_app(app_dir, port = 3000, open_devtools = TRUE, verbose = TRUE)
 
 - app_dir:
 
-  Character string. Path to the Electron application directory.
+  Character string. Path to the Electron application directory (the
+  `electron-app` subdirectory from
+  [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)).
 
 - port:
 
@@ -22,7 +26,7 @@ run_electron_app(app_dir, port = 3000, open_devtools = TRUE, verbose = TRUE)
 
 - open_devtools:
 
-  Logical. Whether to open developer tools automatically. Default is
+  Logical. Whether to open Chromium DevTools automatically. Default is
   TRUE.
 
 - verbose:
@@ -32,26 +36,28 @@ run_electron_app(app_dir, port = 3000, open_devtools = TRUE, verbose = TRUE)
 
 ## Value
 
-Invisibly returns the process object for the running application.
+Invisibly returns the completed
+[`processx::run()`](http://processx.r-lib.org/reference/run.md) result
+list (with `status`, `stdout`, and `stderr`) after Electron exits, or
+`NULL` if the run is interrupted. Note that this call blocks until the
+Electron window is closed.
 
 ## Details
 
-This function starts the Electron application in development mode,
-which:
-
-- Starts a local development server
+This function starts the Electron application for testing, which:
 
 - Opens the application in an Electron window
 
-- Enables hot reloading for development
+- Optionally opens Chromium DevTools for debugging
 
-- Provides access to developer tools for debugging
+- Does NOT build distributable packages (use `export(build = TRUE)` for
+  that)
 
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-# Run Electron app in development mode
+if (FALSE) { # interactive()
+# Run a previously exported Electron app in development mode
 run_electron_app("path/to/electron/app")
 
 # Run with custom port and no dev tools
@@ -60,5 +66,5 @@ run_electron_app(
   port = 8080,
   open_devtools = FALSE
 )
-} # }
+}
 ```

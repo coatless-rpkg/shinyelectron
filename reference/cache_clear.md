@@ -6,14 +6,15 @@ directory.
 ## Usage
 
 ``` r
-cache_clear(what = c("all", "r", "npm"))
+cache_clear(what = c("all", "r", "npm", "nodejs", "python"))
 ```
 
 ## Arguments
 
 - what:
 
-  Character string. What to clear: "all" (default), "r", or "npm".
+  Character string specifying what to clear. One of `"all"`, `"r"`,
+  `"npm"`, `"nodejs"`, or `"python"`.
 
 ## Value
 
@@ -27,7 +28,11 @@ Use this function to free disk space or force re-downloading of assets:
 
 - `"npm"`: Removes only cached npm packages
 
-- `"all"`: Removes both R installations and npm packages
+- `"nodejs"`: Removes only cached Node.js installations
+
+- `"python"`: Removes only cached Python installations
+
+- `"all"`: Removes all cached assets
 
 If the cache directory doesn't exist, a message is shown and nothing is
 done.
@@ -35,7 +40,7 @@ done.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (FALSE) { # interactive()
 # Clear everything in the cache
 cache_clear()
 
@@ -44,5 +49,11 @@ cache_clear("r")
 
 # Clear only npm packages
 cache_clear("npm")
-} # }
+
+# Clear only Node.js installations
+cache_clear("nodejs")
+
+# Clear only Python installations
+cache_clear("python")
+}
 ```
