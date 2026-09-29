@@ -371,3 +371,49 @@ test_that("a config passed to build_electron_app() uses the working directory", 
   )
   expect_false(fs::file_exists(fs::path(output_dir, "assets", "missing.png")))
 })
+
+# --- app_check() ---
+
+test_that("app_check() looks up configured files in the app directory", {
+  appdir <- local_config_app(list(
+    icon = "branding/icon.png",
+    splash = list(image = "branding/logo.png"),
+    tray = list(icon = "branding/missing.png")
+  ))
+  write_png(fs::path(appdir, "branding", "icon.png"))
+  write_png(fs::path(appdir, "branding", "logo.png"))
+  wd <- withr::local_tempdir()
+  write_png(fs::path(wd, "branding", "missing.png"))
+  withr::local_dir(wd)
+
+  result <- app_check(appdir, verbose = FALSE)
+  expect_false(any(grepl("icon file not found", result$errors, fixed = TRUE)))
+  expect_false(any(grepl("splash.image", result$warnings, fixed = TRUE)))
+  expect_true(any(grepl("tray.icon file not found", result$warnings, fixed = TRUE)))
+  expect_true(any(grepl(basename(appdir), result$warnings, fixed = TRUE)))
+})
+
+test_that("app_check() fails when the configured icon does not exist", {
+  appdir <- local_config_app(list(icons = list(linux = "icons/missing.png")))
+  wd <- withr::local_tempdir()
+  write_png(fs::path(wd, "icons", "missing.png"))
+  withr::local_dir(wd)
+
+  result <- app_check(appdir, platform = "linux", verbose = FALSE)
+  expect_false(result$pass)
+  expect_true(any(grepl("icons.linux file not found", result$errors, fixed = TRUE)))
+})
+
+test_that("app_check() reports a missing certificate when signing Windows builds", {
+  appdir <- local_config_app(list(
+    signing = list(win = list(certificate_file = "certs/missing.pfx"))
+  ))
+  withr::local_envvar(CSC_LINK = NA, CSC_KEY_PASSWORD = "secret")
+
+  unsigned <- app_check(appdir, platform = "win", verbose = FALSE)
+  expect_false(any(grepl("certificate_file", unsigned$warnings, fixed = TRUE)))
+
+  signed <- app_check(appdir, platform = "win", sign = TRUE, verbose = FALSE)
+  expect_true(any(grepl("signing.win.certificate_file file not found",
+                        signed$warnings, fixed = TRUE)))
+})
