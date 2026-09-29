@@ -128,13 +128,15 @@ test_that("a git archive tarball is read with R's own tar", {
   skip_if(!nzchar(git), "git is not available")
   parent <- withr::local_tempdir()
   repo <- write_local_pkg(parent, "GitPkg")
+  # Work on the temporary repository only, whatever git settings are around.
+  withr::local_envvar(GIT_DIR = NA, GIT_WORK_TREE = NA, GIT_INDEX_FILE = NA)
   run_git <- function(...) {
     processx::run(git, c("-c", "user.name=Test", "-c", "user.email=test@example.com",
                          "-c", "commit.gpgsign=false", ...), wd = repo)
   }
   run_git("init", "-q")
   run_git("add", "-A")
-  run_git("commit", "-q", "-m", "Add package")
+  run_git("commit", "-q", "--no-verify", "-m", "Add package")
   archive <- file.path(parent, "GitPkg_0.0.1.tar.gz")
   run_git("archive", "--format=tar.gz", "--prefix=GitPkg-main/", "-o", archive, "HEAD")
   # git archive writes a pax global header, which R's own tar warns about.
