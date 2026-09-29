@@ -413,15 +413,14 @@ Controls where and how the app writes its log files.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `log_dir` | string | `null` | Directory for log files; `null` writes to the Electron app's `userData/logs` directory |
+| `log_dir` | string | `null` | Directory for log files; `null` writes to the Electron app's `userData/logs` directory. Any other value should be an absolute path that the app's user can write to: a relative path, including one that starts with `~`, resolves against the process working directory, and if the directory cannot be created no log file is written |
 | `log_level` | string | `"info"` | Logging verbosity: `"debug"`, `"info"`, `"warn"`, or `"error"` |
 
 **Example:**
 
 ```yaml
 logging:
-  log_dir: "/var/log/my-app"
-  log_level: "debug"
+  log_level: "debug"        # log_dir is unset, so logs go to userData/logs
 ```
 
 The same two keys are also accepted under `app` as `app.log_dir` and `app.log_level`, which is where earlier versions of `init_config()` put them. If both places set a key to different values, the `logging` value wins and shinyelectron warns.

@@ -7,10 +7,13 @@
   without notice.
 
 * The top-level `logging` section documented in the Configuration Guide now
-  takes effect; its `log_dir` and `log_level` were previously ignored.
+  takes effect; its `log_dir` and `log_level` were previously ignored. If you
+  copied the guide's earlier example, drop its `log_dir: "/var/log/my-app"`
+  line: `log_dir` should be an absolute path that the app's user can write
+  to, and without it logs go to the app's `userData/logs` folder.
   `app.log_dir` and `app.log_level` still work. When both set a key to
   different values, `logging` wins and shinyelectron warns. `init_config()`
-  now writes the `logging` form.
+  now suggests the `logging` form.
 
 * `init_config()` no longer suggests `nodejs.auto_install`, which has no effect
   yet.
