@@ -36,3 +36,10 @@ test_that("config_flag names the key in its messages", {
   expect_warning(config_flag("false", "installer.per_machine"),
                  "installer.per_machine")
 })
+
+test_that("config_flag describes a value that is not a single value", {
+  expect_error(config_flag(c(TRUE, FALSE), "dependencies.r.prune"),
+               "logical vector of length 2")
+  expect_error(config_flag(list(a = 1), "dependencies.r.prune"),
+               "list of length 1")
+})
