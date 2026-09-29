@@ -4,17 +4,14 @@
 \alias{alert_missing_slug}
 \title{Ask for an app slug when none could be derived}
 \usage{
-alert_missing_slug(app_name)
-}
-\arguments{
-\item{app_name}{Character. The app name.}
+alert_missing_slug()
 }
 \value{
 Called for its message.
 }
 \description{
-\code{init_config()} and \code{wizard()} write the slug into the new configuration.
-When neither the app name nor the directory name gives one, they leave it
-out and say so with this alert.
+\code{init_config()} and \code{wizard()} write the slug, which comes from the
+directory name, into the new configuration. When the directory name has
+no ASCII letters or digits, they leave it out and say so with this alert.
 }
 \keyword{internal}

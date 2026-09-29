@@ -7,8 +7,9 @@
 #' @param destdir Character string. Path to the destination directory where the Electron app will be created.
 #' @param app_name Character string. Display name of the application. If NULL,
 #'   uses `app.name` from `_shinyelectron.yml`, then the base name of appdir.
-#'   Unless `app.slug` is set, the name also gives the app's slug, its
-#'   identity for installed copies and updates.
+#'   Unless `app.slug` is set, this argument also gives the app's slug, its
+#'   identity for installed copies and updates; without it the slug comes
+#'   from the base name of appdir, never from `app.name`.
 #' @param app_type Character string or NULL. Language of the Shiny app:
 #'   `"r-shiny"` or `"py-shiny"`. If NULL (default), the type is autodetected
 #'   from files in `appdir`. The legacy values `"r-shinylive"` and
@@ -96,6 +97,8 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
 
   # App display name: explicit argument > config app.name > directory basename
   # (mirrors export_multi_app(), so app.name is honored for single apps too).
+  # The slug below still comes from the argument or the directory only.
+  app_name_arg <- app_name
   name_from_config <- is.null(app_name) && !is.null(config$app$name)
   app_name <- app_name %||% config$app$name %||% basename(appdir)
   validate_app_name(app_name, field = if (name_from_config) "app.name" else "app_name")
@@ -132,8 +135,11 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
 
   # Settle the slug, the app's identity, here where the app directory is
   # known, and check it before any conversion or runtime download;
-  # process_templates() takes it from the config.
-  config$app$slug <- resolve_app_slug(config, app_name, appdir, name_from_config)
+  # process_templates() takes it from the config. It comes from app.slug,
+  # else the app_name argument, else the directory name, as in earlier
+  # releases, so editing app.name never changes an installed app's identity.
+  slug_pinned <- !is.null(config$app$slug)
+  config$app$slug <- resolve_app_slug(config, app_name_arg, appdir)
   if (build) check_app_slug(config$app$slug)
 
   # The Windows installer cannot hold a $ in the app's name or metadata; stop
@@ -151,7 +157,7 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
                             sign = sign, platform = platform, arch = arch,
                             icon = icon, overwrite = overwrite, build = build,
                             run_after = run_after, open_after = open_after,
-                            verbose = verbose))
+                            verbose = verbose, slug_pinned = slug_pinned))
   }
 
   # Resolve app_type: function arg > config (normalized) > autodetect
@@ -220,7 +226,7 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
 
   if (verbose) {
     cli::cli_h1("Exporting Shiny application to Electron")
-    cli::cli_alert_info("Application: {.val {app_name}}")
+    alert_app_identity("Application", app_name, config$app$slug, slug_pinned)
     cli::cli_alert_info("Type: {.val {app_type}}")
     cli::cli_alert_info("Runtime: {.val {runtime_strategy}}")
     cli::cli_alert_info("Source: {.path {appdir}}")

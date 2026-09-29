@@ -4,19 +4,18 @@
 \alias{resolve_app_slug}
 \title{Resolve the app slug}
 \usage{
-resolve_app_slug(config, app_name, appdir, name_from_config = FALSE)
+resolve_app_slug(config, name, appdir)
 }
 \arguments{
 \item{config}{List. The effective configuration.}
 
-\item{app_name}{Character string. The resolved display name.}
+\item{name}{Character string or \code{NULL}. The name the slug comes from when
+\code{app.slug} is unset, such as the \code{app_name} argument of \code{export()}.}
 
 \item{appdir}{Character string. The app directory.}
-
-\item{name_from_config}{Logical. Whether \code{app_name} came from \code{app.name}.}
 }
 \value{
-The slug, or \code{NULL} when neither the name nor the directory gives
+The slug, or \code{NULL} when neither \code{name} nor the directory gives
 one. It is not validated here; \code{\link[=check_app_slug]{check_app_slug()}} does that before a
 build.
 }
@@ -25,14 +24,14 @@ The slug is the app's identity. It names the package in \code{package.json},
 the user data folder, the per-app caches under \verb{~/.shinyelectron}, and the
 installer files, and unless \code{installer.app_id} is set it also gives the
 app ID, which Windows installers and macOS use to recognize an installed
-copy. \code{app.slug} wins when set. Otherwise the slug comes from the app
-name, or, when the name has no ASCII letters or digits, from the name of
-the app directory, with a message.
+copy. \code{app.slug} wins when set. Otherwise the slug comes from \code{name}, and
+then from the name of the app directory: when \code{name} is \code{NULL}, or, with a
+message, when it has no ASCII letters or digits.
 }
 \details{
-Earlier releases derived the slug from the directory name whenever no
-\code{app_name} argument was given. So when the name came from \code{app.name}
-(\code{name_from_config}) and gives a different slug than the directory, this
-warns: the rebuilt app would no longer update installed copies.
+\code{export()} passes its \code{app_name} argument as \code{name}, so \code{app.name} in the
+configuration sets only the display name and never the slug, as in
+earlier releases: editing the display name never changes the app's
+identity.
 }
 \keyword{internal}

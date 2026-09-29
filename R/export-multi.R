@@ -1,4 +1,12 @@
 #' Export multi-app Shiny suite as Electron application
+#'
+#' `export()` settles the suite's slug before it calls this function. When
+#' called directly without `app.slug`, the slug comes from the resolved
+#' suite name, as it did in earlier releases.
+#'
+#' @param slug_pinned Logical. Whether the configuration sets `app.slug`, for
+#'   the progress output; `export()` passes it because it fills in the slug
+#'   before the call.
 #' @keywords internal
 export_multi_app <- function(appdir, destdir, config,
                               app_name = NULL,
@@ -6,13 +14,14 @@ export_multi_app <- function(appdir, destdir, config,
                               platform = NULL, arch = NULL, icon = NULL,
                               overwrite = FALSE, build = TRUE,
                               run_after = FALSE, open_after = FALSE,
-                              verbose = TRUE) {
+                              verbose = TRUE,
+                              slug_pinned = !is.null(config$app$slug)) {
+  force(slug_pinned)
 
   name_from_config <- is.null(app_name) && !is.null(config$app$name)
   app_name <- app_name %||% config$app$name %||% basename(appdir)
   validate_app_name(app_name, field = if (name_from_config) "app.name" else "app_name")
-  # Same slug rules as export(), which has usually settled the slug already.
-  config$app$slug <- resolve_app_slug(config, app_name, appdir, name_from_config)
+  config$app$slug <- resolve_app_slug(config, app_name, appdir)
   if (build) check_app_slug(config$app$slug)
 
   # Validate the icon up front, matching the single-app path.
@@ -33,7 +42,7 @@ export_multi_app <- function(appdir, destdir, config,
 
   if (verbose) {
     cli::cli_h1("Exporting multi-app Shiny suite to Electron")
-    cli::cli_alert_info("Suite: {.val {app_name}}")
+    alert_app_identity("Suite", app_name, config$app$slug, slug_pinned)
     cli::cli_alert_info("Apps: {length(config$apps)}")
     cli::cli_alert_info("Default type: {.val {app_type}}")
   }

@@ -438,11 +438,13 @@ init_config <- function(appdir, app_name = NULL, overwrite = FALSE, verbose = TR
   app_name_safe <- gsub('"', '\\"', app_name_safe, fixed = TRUE)
 
   # Write the slug out, so the app keeps its identity when the name changes.
+  # As export() does without an app_name argument, it comes from the
+  # directory name; app_name only sets the display name.
   dir_path <- normalizePath(appdir, mustWork = FALSE)
-  slug <- resolve_app_slug(list(), app_name, dir_path)
+  slug <- resolve_app_slug(list(), NULL, dir_path)
 
   # The slug of the config being replaced: its app.slug or, without one,
-  # the directory's, which earlier releases used.
+  # the directory's, which export() used for it.
   old_slug <- NULL
   if (fs::file_exists(config_path)) {
     old <- tryCatch(yaml::read_yaml(config_path), error = function(e) NULL)
@@ -647,13 +649,13 @@ nodejs:
     cli::cli_warn(c(
       "The new configuration gives the app the slug {.val {slug}}; the one it replaced gave {.val {old_slug}}.",
       "i" = "Copies installed from builds with the old slug will not update to builds with the new one. To keep them updating, set {.code slug: \"{old_slug}\"} in {.path {config_path}}."
-    ), class = "shinyelectron_slug_changed")
+    ), class = "shinyelectron_config_slug_changed")
   }
 
   if (verbose) {
     cli::cli_alert_success("Created configuration file: {.path {config_path}}")
     cli::cli_alert_info("Edit this file to customize your Electron app settings")
-    if (is.null(slug)) alert_missing_slug(app_name)
+    if (is.null(slug)) alert_missing_slug()
   }
 
   validate_config_file(config_path)
@@ -751,9 +753,10 @@ show_config <- function(appdir = ".") {
 
   cat("\n")
 
-  # App section. The slug follows the same rules as export().
+  # App section. The slug follows the same rules as export() without an
+  # app_name argument: app.slug, else the directory name.
   app_name <- config$app$name %||% basename(appdir)
-  slug <- resolve_app_slug(config, app_name, appdir)
+  slug <- resolve_app_slug(config, NULL, appdir)
   cli::cli_h2("Application")
   cli::cli_bullets(c(
     "*" = "Name: {.val {app_name}}",

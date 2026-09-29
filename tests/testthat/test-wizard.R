@@ -223,13 +223,14 @@ test_that("wizard advanced path records github as the update provider", {
 # Slug
 # ---------------------------------------------------------------------------
 
-test_that("wizard writes the slug derived from the app name", {
-  tmp <- withr::local_tempdir()
+test_that("wizard writes the directory's slug, whatever the app name", {
+  tmp <- file.path(withr::local_tempdir(), "dash-app")
+  dir.create(tmp)
   run_wizard_quiet(tmp, c("Sales Dashboard", rep("", 8L)))
 
   config <- yaml::read_yaml(file.path(tmp, "_shinyelectron.yml"))
   expect_equal(config$app$name, "Sales Dashboard")
-  expect_equal(config$app$slug, "sales-dashboard")
+  expect_equal(config$app$slug, "dash-app")
   expect_equal(names(config$app), c("name", "slug", "version"))
 })
 

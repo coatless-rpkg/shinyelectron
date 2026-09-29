@@ -31,12 +31,14 @@ non_ascii_name <- "\u6570\u636e\u5206\u6790"
 
 # --- resolve_app_slug() ---
 
-test_that("resolve_app_slug prefers app.slug, then the name", {
+test_that("resolve_app_slug prefers app.slug, then the given name, then the directory", {
   expect_equal(
     resolve_app_slug(list(app = list(slug = "pinned")), "Sales Dashboard", "/x/dash-app"),
     "pinned"
   )
   expect_equal(resolve_app_slug(list(), "Sales Dashboard", "/x/dash-app"), "sales-dashboard")
+  expect_equal(resolve_app_slug(list(), NULL, "/x/dash-app"), "dash-app")
+  expect_null(resolve_app_slug(list(), NULL, paste0("/x/", non_ascii_name)))
 })
 
 test_that("resolve_app_slug falls back to the directory for a name without ASCII letters", {
@@ -48,63 +50,78 @@ test_that("resolve_app_slug falls back to the directory for a name without ASCII
   expect_null(resolve_app_slug(list(), non_ascii_name, paste0("/x/", non_ascii_name)))
 })
 
-test_that("resolve_app_slug warns only when app.name moves the slug", {
-  expect_warning(
-    resolve_app_slug(list(), "Sales Dashboard", "/x/dash-app", name_from_config = TRUE),
-    class = "shinyelectron_slug_changed"
-  )
-  expect_no_warning(
-    resolve_app_slug(list(), "Sales Dashboard", "/x/sales-dashboard", name_from_config = TRUE)
-  )
-  expect_no_warning(resolve_app_slug(list(), "Sales Dashboard", "/x/dash-app"))
-  expect_no_warning(resolve_app_slug(
-    list(app = list(slug = "dash-app")), "Sales Dashboard", "/x/dash-app",
-    name_from_config = TRUE
-  ))
-})
-
 # --- export() ---
 
-test_that("export() warns when app.name changes the slug and names both slugs", {
+test_that("export() takes the display name from app.name and the slug from the directory", {
   appdir <- local_app("dash-app", list(app = list(name = "Sales Dashboard")))
-  warning <- expect_warning(
-    args <- export_args(appdir),
-    class = "shinyelectron_slug_changed"
-  )
-  expect_equal(args$app_name, "Sales Dashboard")
-  expect_equal(args$config$app$slug, "sales-dashboard")
-  message <- conditionMessage(warning)
-  expect_match(message, "sales-dashboard", fixed = TRUE)
-  expect_match(message, 'slug: "dash-app"', fixed = TRUE)
-})
-
-test_that("export() keeps quiet when app.slug is set or the slugs agree", {
-  pinned <- local_app("dash-app", list(app = list(name = "Sales Dashboard", slug = "dash-app")))
-  expect_no_warning(args <- export_args(pinned))
+  expect_no_warning(args <- export_args(appdir))
   expect_equal(args$app_name, "Sales Dashboard")
   expect_equal(args$config$app$slug, "dash-app")
 
+  # A directory whose name matches gives the matching slug.
   same <- local_app("sales-dashboard", list(app = list(name = "Sales Dashboard")))
-  expect_no_warning(args <- export_args(same))
-  expect_equal(args$config$app$slug, "sales-dashboard")
+  expect_equal(export_args(same)$config$app$slug, "sales-dashboard")
 })
 
-test_that("export() takes the slug from an app_name argument without a warning", {
+test_that("export() takes the slug from app.slug when it is set", {
+  appdir <- local_app("dash-app", list(app = list(name = "Sales Dashboard", slug = "sales")))
+  args <- export_args(appdir)
+  expect_equal(args$app_name, "Sales Dashboard")
+  expect_equal(args$config$app$slug, "sales")
+})
+
+test_that("export() takes the slug from an app_name argument", {
   appdir <- local_app("dash-app", list(app = list(name = "Sales Dashboard")))
-  expect_no_warning(args <- export_args(appdir, app_name = "Custom Name"))
+  args <- export_args(appdir, app_name = "Custom Name")
   expect_equal(args$app_name, "Custom Name")
   expect_equal(args$config$app$slug, "custom-name")
 })
 
-test_that("export() falls back to the directory slug for a non-ASCII app.name", {
-  appdir <- local_app("dash-app", list(app = list(name = non_ascii_name)))
-  expect_message(args <- export_args(appdir), "directory name")
+test_that("export() falls back to the directory slug for a non-ASCII app_name argument", {
+  appdir <- local_app("dash-app")
+  expect_message(args <- export_args(appdir, app_name = non_ascii_name), "directory name")
   expect_equal(args$app_name, non_ascii_name)
   expect_equal(args$config$app$slug, "dash-app")
 })
 
+test_that("a non-ASCII app.name sets only the display name", {
+  appdir <- local_app("dash-app", list(app = list(name = non_ascii_name)))
+  expect_no_message(args <- export_args(appdir))
+  expect_equal(args$app_name, non_ascii_name)
+  expect_equal(args$config$app$slug, "dash-app")
+})
+
+# The messages export() prints with verbose = TRUE, with the build replaced.
+export_messages <- function(appdir) {
+  messages <- character(0)
+  mockery::stub(export, "convert_app_to_shinylive", function(...) tempdir())
+  mockery::stub(export, "build_electron_app", function(...) tempdir())
+  withCallingHandlers(
+    export(appdir, withr::local_tempdir(), overwrite = TRUE, verbose = TRUE),
+    message = function(m) {
+      messages <<- c(messages, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+  messages
+}
+
+test_that("export() shows the slug, and how to change it when the folder gives it", {
+  from_folder <- export_messages(local_app("dash-app", list(app = list(name = "Sales Dashboard"))))
+  expect_true(any(grepl('Application: "Sales Dashboard" (slug: "dash-app")', from_folder, fixed = TRUE)))
+  expect_true(any(grepl("app.slug", from_folder, fixed = TRUE)))
+
+  pinned <- export_messages(local_app("dash-app", list(app = list(name = "Sales Dashboard", slug = "sales"))))
+  expect_true(any(grepl('Application: "Sales Dashboard" (slug: "sales")', pinned, fixed = TRUE)))
+  expect_false(any(grepl("app.slug", pinned, fixed = TRUE)))
+
+  # Without app.name the display name gives the same slug, so no note.
+  plain <- export_messages(local_app("dash-app"))
+  expect_true(any(grepl('Application: "dash-app" (slug: "dash-app")', plain, fixed = TRUE)))
+  expect_false(any(grepl("app.slug", plain, fixed = TRUE)))
+})
+
 test_that("export() builds package.json from the resolved name and slug", {
-  appdir <- local_app("dash-app", list(app = list(name = "Sales Dashboard", slug = "dash-app")))
   local_mocked_bindings(
     convert_app_to_shinylive = function(appdir, destdir, ...) {
       out <- fs::path(destdir, "shinylive-app")
@@ -117,15 +134,24 @@ test_that("export() builds package.json from the resolved name and slug", {
     build_for_platforms = function(...) invisible(TRUE),
     validate_build_output = function(...) invisible(TRUE)
   )
-  result <- export(appdir, withr::local_tempdir(), overwrite = TRUE, verbose = FALSE)
-  pkg <- jsonlite::fromJSON(fs::path(result$electron_app, "package.json"))
+  package_json_for <- function(config) {
+    appdir <- local_app("dash-app", config)
+    result <- export(appdir, withr::local_tempdir(), overwrite = TRUE, verbose = FALSE)
+    jsonlite::fromJSON(fs::path(result$electron_app, "package.json"))
+  }
+
+  pkg <- package_json_for(list(app = list(name = "Sales Dashboard")))
   expect_equal(pkg$name, "dash-app")
   expect_equal(pkg$build$appId, "com.shinyelectron.dash-app")
   expect_equal(pkg$build$productName, "Sales Dashboard")
   expect_equal(pkg$build$win$executableName, "dash-app")
+
+  pinned <- package_json_for(list(app = list(name = "Sales Dashboard", slug = "sales")))
+  expect_equal(pinned$name, "sales")
+  expect_equal(pinned$build$appId, "com.shinyelectron.sales")
 })
 
-test_that("a suite follows the same slug rules and warns once", {
+test_that("a suite takes its display name from app.name and its slug from the directory", {
   appdir <- local_app("suite-dir", list(
     app = list(name = "Sales Tools"),
     build = list(type = "r-shiny", runtime_strategy = "shinylive"),
@@ -154,45 +180,32 @@ test_that("a suite follows the same slug rules and warns once", {
     build_for_platforms = function(...) invisible(TRUE),
     validate_build_output = function(...) invisible(TRUE)
   )
-  changes <- 0L
-  withCallingHandlers(
-    export(appdir, withr::local_tempdir(), overwrite = TRUE, verbose = FALSE),
-    shinyelectron_slug_changed = function(w) {
-      changes <<- changes + 1L
-      invokeRestart("muffleWarning")
-    }
+  expect_no_warning(
+    export(appdir, withr::local_tempdir(), overwrite = TRUE, verbose = FALSE)
   )
-  expect_equal(changes, 1L)
   expect_equal(captured$app_name, "Sales Tools")
-  expect_equal(captured$slug, "sales-tools")
+  expect_equal(captured$slug, "suite-dir")
 })
 
 # --- init_config() and show_config() ---
 
-test_that("init_config() writes an explicit slug", {
+test_that("init_config() writes the directory's slug", {
   appdir <- local_app("dash-app")
   init_config(appdir, app_name = "Sales Dashboard", verbose = FALSE)
   lines <- readLines(file.path(appdir, "_shinyelectron.yml"))
-  expect_true('  slug: "sales-dashboard"' %in% lines)
-  expect_equal(read_config(appdir)$app$slug, "sales-dashboard")
-})
-
-test_that("init_config() takes the directory slug for a non-ASCII name", {
-  appdir <- local_app("dash-app")
-  expect_message(
-    init_config(appdir, app_name = non_ascii_name, verbose = FALSE),
-    "directory name"
-  )
+  expect_true('  name: "Sales Dashboard"' %in% lines)
+  expect_true('  slug: "dash-app"' %in% lines)
   expect_equal(read_config(appdir)$app$slug, "dash-app")
 })
 
 test_that("show_config() reports the slug that export() would use", {
   appdir <- local_app("dash-app", list(app = list(name = non_ascii_name)))
-  expect_message(
-    output <- cli::cli_fmt(show_config(appdir)),
-    "directory name"
-  )
+  output <- cli::cli_fmt(show_config(appdir))
   expect_true(any(grepl("Slug: \"dash-app\"", output, fixed = TRUE)))
+
+  pinned <- local_app("dash-app", list(app = list(name = "Sales", slug = "sales")))
+  output <- cli::cli_fmt(show_config(pinned))
+  expect_true(any(grepl("Slug: \"sales\"", output, fixed = TRUE)))
 })
 
 # --- app.name and app.slug values ---
@@ -240,7 +253,7 @@ test_that("export() rejects an invalid app.slug before converting the app", {
   )
 })
 
-test_that("export() stops early when neither the name nor the directory gives a slug", {
+test_that("export() stops early when the directory gives no slug", {
   appdir <- local_app(non_ascii_name)
   mockery::stub(export, "convert_app_to_shinylive", function(...) stop("converted"))
   expect_error(
@@ -284,16 +297,17 @@ test_that("init_config() says to set app.slug when none can be derived", {
 })
 
 test_that("init_config() warns when replacing a config changes the slug", {
-  # A config from before slug: was written out, which shipped under the
-  # directory's slug.
-  appdir <- local_app("dash-app", list(app = list(name = "dash-app")))
+  # The replaced config pinned a slug that is not the directory's.
+  appdir <- local_app("dash-app", list(app = list(name = "Sales", slug = "sales")))
   expect_warning(
-    init_config(appdir, app_name = "Sales Dashboard", overwrite = TRUE, verbose = FALSE),
-    "dash-app", class = "shinyelectron_slug_changed"
+    init_config(appdir, app_name = "Sales", overwrite = TRUE, verbose = FALSE),
+    '"sales"', class = "shinyelectron_config_slug_changed"
   )
-  # The slug the replaced config pinned is kept, so no warning.
+  # Without app.slug the replaced config gave the directory's slug, which the
+  # new one keeps, whatever the name.
+  unpinned <- local_app("dash-app", list(app = list(name = "Sales Dashboard")))
   expect_no_warning(
-    init_config(appdir, app_name = "Sales Dashboard", overwrite = TRUE, verbose = FALSE)
+    init_config(unpinned, app_name = "Sales Dashboard", overwrite = TRUE, verbose = FALSE)
   )
   # A fresh config has nothing to compare with.
   expect_no_warning(init_config(local_app("new-app"), app_name = "Sales Dashboard", verbose = FALSE))
