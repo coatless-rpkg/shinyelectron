@@ -57,7 +57,8 @@ const READY_PROBE_PATH = '/__shinyelectron_ready__';
  * @param {number} options.timeout - Max wait time in ms (default 30000).
  * @param {number} options.interval - Pause between attempts in ms (default 500).
  * @param {number} options.attemptTimeout - Cap on one attempt in ms
- *   (default 8000), never more than the time left but at least 1000.
+ *   (default 8000). Near the deadline an attempt gets the time left, or
+ *   1000 ms if less remains.
  * @param {function} [options.isCancelled] - Checked before every attempt;
  *   once it returns true, polling stops and the promise rejects.
  * @returns {Promise<void>} Resolves when server responds, rejects on timeout
