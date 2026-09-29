@@ -51,6 +51,15 @@ test_that("sitrep_electron_dependencies required list contains cli entry", {
   expect_true(isTRUE(result$required$cli$installed))
 })
 
+test_that("sitrep_electron_dependencies checks every non-base package in Imports", {
+  imports <- utils::packageDescription("shinyelectron", fields = "Imports")
+  imports <- trimws(sub("\\(.*$", "", strsplit(imports, ",")[[1]]))
+
+  result <- sitrep_electron_dependencies(verbose = FALSE)
+
+  expect_contains(names(result$required), setdiff(imports, BASE_R_PACKAGES))
+})
+
 # ---------------------------------------------------------------------------
 # sitrep_electron_project
 # ---------------------------------------------------------------------------

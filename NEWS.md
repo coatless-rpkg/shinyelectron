@@ -1,3 +1,10 @@
+# shinyelectron (development version)
+
+* shinyelectron now imports rlang. cli builds `cli_abort()` and `cli_warn()` on
+  rlang but only suggests it, so without rlang installed every shinyelectron
+  error and warning surfaced as "there is no package called 'rlang'" instead of
+  its own message.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the
