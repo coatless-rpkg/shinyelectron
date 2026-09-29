@@ -10,12 +10,17 @@ build_nsis_config(config)
 \item{config}{List. The effective configuration.}
 }
 \value{
-A named list for the package.json \code{build.nsis} field.
+A named list for the package.json \code{build.nsis} field, empty when
+no installer option is set.
 }
 \description{
-\code{one_click = TRUE} keeps the silent one-click install to the default
-per-user location. \code{one_click = FALSE} uses the assisted wizard, where
-\code{allow_to_change_installation_directory} (defaulting to TRUE in wizard
-mode) lets the user choose where the application is installed.
+Maps \code{installer.one_click}, \code{installer.allow_to_change_installation_directory}
+and \code{installer.per_machine} onto electron-builder's \code{oneClick},
+\code{allowToChangeInstallationDirectory} and \code{perMachine}. Each option is
+emitted only when the config sets it, so electron-builder's own defaults
+apply otherwise: the one-click installer installs for the current user,
+and the wizard (\code{one_click: false}) asks whether to install for all users
+and does not offer a directory page. \code{\link[=validate_config]{validate_config()}} has already
+checked the values.
 }
 \keyword{internal}

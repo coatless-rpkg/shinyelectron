@@ -175,3 +175,61 @@ test_that("validate_config accepts a character vector for system_packages", {
   expect_no_warning(out <- validate_config(cfg))
   expect_equal(out$dependencies$system_packages, c("libfoo-dev", "libbar-dev"))
 })
+
+# --- validate_config: Windows installer flags ---
+
+test_that("validate_config accepts unset and logical installer flags", {
+  expect_no_warning(out <- validate_config(default_config()))
+  expect_equal(out$installer, default_config()$installer)
+
+  cfg <- list(installer = list(
+    one_click = FALSE,
+    allow_to_change_installation_directory = TRUE,
+    per_machine = TRUE
+  ))
+  expect_no_warning(out <- validate_config(cfg))
+  expect_equal(out$installer, cfg$installer)
+})
+
+test_that("validate_config rejects non-logical installer flags", {
+  keys <- c("one_click", "allow_to_change_installation_directory", "per_machine")
+  bad_values <- list("true", "false", 1L, NA, c(TRUE, FALSE))
+  for (key in keys) {
+    for (bad in bad_values) {
+      cfg <- list(installer = list(one_click = FALSE))
+      cfg$installer[key] <- list(bad)
+      expect_error(validate_config(cfg), paste0("installer.", key), fixed = TRUE)
+    }
+  }
+})
+
+test_that("validate_config requires the wizard for a directory page", {
+  cfg <- list(installer = list(
+    one_click = TRUE,
+    allow_to_change_installation_directory = TRUE
+  ))
+  expect_error(validate_config(cfg), "requires\\s+installer\\.one_click")
+
+  # An unset one_click falls back to electron-builder's one-click default.
+  cfg$installer$one_click <- NULL
+  expect_error(validate_config(cfg), "requires\\s+installer\\.one_click")
+})
+
+test_that("read_config aborts on installer settings electron-builder would reject", {
+  tmp <- withr::local_tempdir()
+  config_path <- file.path(tmp, "_shinyelectron.yml")
+
+  writeLines(c("installer:", "  allow_to_change_installation_directory: true"),
+             config_path)
+  expect_error(read_config(tmp), "requires\\s+installer\\.one_click")
+
+  writeLines(c("installer:", "  one_click: \"false\""), config_path)
+  expect_error(read_config(tmp), "installer.one_click", fixed = TRUE)
+
+  writeLines(c("installer:", "  one_click: false",
+               "  allow_to_change_installation_directory: true"),
+             config_path)
+  cfg <- read_config(tmp)
+  expect_false(cfg$installer$one_click)
+  expect_true(cfg$installer$allow_to_change_installation_directory)
+})

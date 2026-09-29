@@ -147,7 +147,11 @@ merge_config_deep <- function(defaults, config) {
 
 #' Validate configuration values
 #'
-#' Checks configuration values and warns about invalid entries.
+#' Checks configuration values and warns about invalid entries. Invalid
+#' Windows installer flags abort instead, as does
+#' `installer.allow_to_change_installation_directory: true` without
+#' `installer.one_click: false`, because falling back to a default would
+#' build a different installer than the one requested.
 #'
 #' @param config List of configuration values
 #' @return List of validated configuration
@@ -343,6 +347,34 @@ validate_config <- function(config) {
       "i" = "Dropping to {.val NULL}"
     ))
     config$dependencies$system_packages <- NULL
+  }
+
+  # Validate the Windows installer flags: each must be a single true/false or
+  # unset. Quoted values abort instead of being coerced, since isTRUE("true")
+  # is FALSE and would silently turn a one-click installer into the wizard.
+  for (key in c("one_click", "allow_to_change_installation_directory",
+                "per_machine")) {
+    value <- config$installer[[key]]
+    if (!is.null(value) &&
+        !(is.logical(value) && length(value) == 1L && !is.na(value))) {
+      cli::cli_abort(c(
+        "Invalid {.field installer.{key}} in config: {.val {value}}",
+        "i" = "Must be {.code true} or {.code false} without quotes, or left unset",
+        "i" = "Edit {.field installer.{key}} in {.file _shinyelectron.yml}"
+      ))
+    }
+  }
+
+  # electron-builder only lets the wizard installer change the installation
+  # directory, and it rejects the combination only while building the Windows
+  # installer, after the runtime download. An unset one_click means one-click.
+  if (isTRUE(config$installer$allow_to_change_installation_directory) &&
+      !isFALSE(config$installer$one_click)) {
+    cli::cli_abort(c(
+      "{.field installer.allow_to_change_installation_directory} requires {.field installer.one_click} to be {.code false}",
+      "i" = "Only the wizard installer can ask where to install the app",
+      "i" = "Set {.field installer.one_click} to {.code false} in {.file _shinyelectron.yml}, or remove {.field installer.allow_to_change_installation_directory}"
+    ))
   }
 
   config
@@ -551,8 +583,11 @@ nodejs:
 #   app_id: null                  # null = "com.shinyelectron.<slug>"
 #   license_file: null            # Path to license file (shown during install)
 #   one_click: true               # Windows: true = silent install, false = wizard
-#   allow_to_change_installation_directory: null  # null = true when one_click is false
-#   per_machine: null             # null = per-user (default); true = all users (needs admin)
+#   # true adds a page for choosing the install directory; requires one_click: false
+#   allow_to_change_installation_directory: null
+#   # true = install for all users (admin prompt on every update). When unset,
+#   # the one-click installer installs per user and the wizard lets the user choose.
+#   per_machine: null
 
 ## Lifecycle UI
 ## Controls the startup, loading, error, and shutdown experience.

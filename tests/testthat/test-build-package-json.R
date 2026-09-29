@@ -143,19 +143,63 @@ test_that("generate_package_json respects config electron version override", {
 test_that("build_nsis_config maps installer options", {
   expect_equal(
     build_nsis_config(list(installer = list(one_click = TRUE))),
-    list(oneClick = TRUE, allowToChangeInstallationDirectory = FALSE)
+    list(oneClick = TRUE)
   )
   expect_equal(
     build_nsis_config(list(installer = list(one_click = FALSE))),
-    list(oneClick = FALSE, allowToChangeInstallationDirectory = TRUE)
+    list(oneClick = FALSE)
   )
   expect_equal(
     build_nsis_config(list(installer = list(
-      one_click = TRUE,
+      one_click = FALSE,
       allow_to_change_installation_directory = TRUE,
       per_machine = FALSE
     ))),
-    list(oneClick = TRUE, allowToChangeInstallationDirectory = TRUE,
+    list(oneClick = FALSE, allowToChangeInstallationDirectory = TRUE,
          perMachine = FALSE)
   )
+})
+
+test_that("build_nsis_config passes explicit per_machine through", {
+  expect_equal(
+    build_nsis_config(list(installer = list(one_click = TRUE, per_machine = TRUE))),
+    list(oneClick = TRUE, perMachine = TRUE)
+  )
+  expect_equal(
+    build_nsis_config(list(installer = list(
+      one_click = FALSE,
+      allow_to_change_installation_directory = FALSE,
+      per_machine = TRUE
+    ))),
+    list(oneClick = FALSE, allowToChangeInstallationDirectory = FALSE,
+         perMachine = TRUE)
+  )
+})
+
+test_that("build_nsis_config is empty without installer options", {
+  expect_equal(build_nsis_config(list()), list())
+
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "native-r", list()),
+    simplifyVector = FALSE
+  )
+  expect_null(parsed$build$nsis)
+})
+
+test_that("generate_package_json emits only oneClick for the default installer", {
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "native-r", default_config()),
+    simplifyVector = FALSE
+  )
+  expect_equal(parsed$build$nsis, list(oneClick = TRUE))
+})
+
+test_that("generate_package_json adds no directory page to the wizard by default", {
+  cfg <- default_config()
+  cfg$installer$one_click <- FALSE
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "native-r", cfg),
+    simplifyVector = FALSE
+  )
+  expect_equal(parsed$build$nsis, list(oneClick = FALSE))
 })

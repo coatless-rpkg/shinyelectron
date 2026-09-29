@@ -174,30 +174,31 @@ generate_package_json <- function(app_slug, app_version, backend, config,
 
 #' Build the electron-builder `nsis` block from installer config
 #'
-#' `one_click = TRUE` keeps the silent one-click install to the default
-#' per-user location. `one_click = FALSE` uses the assisted wizard, where
-#' `allow_to_change_installation_directory` (defaulting to TRUE in wizard
-#' mode) lets the user choose where the application is installed.
+#' Maps `installer.one_click`, `installer.allow_to_change_installation_directory`
+#' and `installer.per_machine` onto electron-builder's `oneClick`,
+#' `allowToChangeInstallationDirectory` and `perMachine`. Each option is
+#' emitted only when the config sets it, so electron-builder's own defaults
+#' apply otherwise: the one-click installer installs for the current user,
+#' and the wizard (`one_click: false`) asks whether to install for all users
+#' and does not offer a directory page. [validate_config()] has already
+#' checked the values.
 #'
 #' @param config List. The effective configuration.
-#' @return A named list for the package.json `build.nsis` field.
+#' @return A named list for the package.json `build.nsis` field, empty when
+#'   no installer option is set.
 #' @keywords internal
 build_nsis_config <- function(config) {
-  one_click <- config$installer$one_click
+  installer <- config$installer
   nsis <- list()
-  if (!is.null(one_click)) {
-    nsis$oneClick <- isTRUE(one_click)
+  if (!is.null(installer$one_click)) {
+    nsis$oneClick <- installer$one_click
   }
-  change_dir <- config$installer$allow_to_change_installation_directory
-  if (is.null(change_dir)) {
-    change_dir <- isFALSE(one_click)
+  if (!is.null(installer$allow_to_change_installation_directory)) {
+    nsis$allowToChangeInstallationDirectory <-
+      installer$allow_to_change_installation_directory
   }
-  if (is.logical(change_dir) && length(change_dir) == 1L && !is.na(change_dir)) {
-    nsis$allowToChangeInstallationDirectory <- change_dir
-  }
-  per_machine <- config$installer$per_machine
-  if (is.logical(per_machine) && length(per_machine) == 1L && !is.na(per_machine)) {
-    nsis$perMachine <- per_machine
+  if (!is.null(installer$per_machine)) {
+    nsis$perMachine <- installer$per_machine
   }
   nsis
 }
