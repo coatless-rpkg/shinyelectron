@@ -6,8 +6,8 @@ const path = require('path');
 const os = require('os');
 const {
   waitForServer, findAvailablePort, killProcessTree, isProcessRunning, waitForExit,
-  startSupersededError, sortCandidatesByVersion, reportRuntimeCandidates,
-  meetsMinimumVersion, logDebug, resolveRuntimeManifestPath
+  startSupersededError, startupTimeoutMs, formatSeconds, sortCandidatesByVersion,
+  reportRuntimeCandidates, meetsMinimumVersion, logDebug, resolveRuntimeManifestPath
 } = require('./utils');
 
 class NativePyBackend extends EventEmitter {
@@ -549,8 +549,9 @@ class NativePyBackend extends EventEmitter {
         }
       });
 
+      const startupTimeout = startupTimeoutMs(config);
       waitForServer(actualPort, {
-        timeout: 60000,
+        timeout: startupTimeout,
         interval: 500,
         isCancelled: () => settled || superseded()
       })
@@ -577,7 +578,7 @@ class NativePyBackend extends EventEmitter {
           if (this.pyProcess === child) this.pyProcess = null;
           if (isProcessRunning(child)) killProcessTree(child);
           const error = new Error(
-            `Python Shiny server failed to start within 60 seconds.\n\n` +
+            `Python Shiny server failed to start within ${formatSeconds(startupTimeout)}.\n\n` +
             `Python stderr output:\n${stderr}\n\n` +
             `Possible causes:\n` +
             `- Python is not installed or not on PATH\n` +

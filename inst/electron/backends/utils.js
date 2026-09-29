@@ -16,6 +16,31 @@ function logDebug(...args) {
   if (DEBUG_ENABLED) console.log('[shinyelectron]', ...args);
 }
 
+// Default for lifecycle.startup_timeout. Keep in sync with
+// SHINYELECTRON_DEFAULTS$lifecycle$startup_timeout in R/constants.R.
+const DEFAULT_STARTUP_TIMEOUT_MS = 180000;
+
+/**
+ * How long a backend waits for its server to answer before reporting a
+ * failed start: lifecycle.startup_timeout, passed in the backend config.
+ * @param {object} config - Backend configuration.
+ * @returns {number} Milliseconds.
+ */
+function startupTimeoutMs(config) {
+  const ms = config && config.startup_timeout;
+  return Number.isFinite(ms) && ms > 0 ? ms : DEFAULT_STARTUP_TIMEOUT_MS;
+}
+
+/**
+ * Describe a duration for messages, e.g. 180000 -> "180 seconds".
+ * @param {number} ms - Milliseconds.
+ * @returns {string}
+ */
+function formatSeconds(ms) {
+  const seconds = Math.round(ms / 100) / 10;
+  return `${seconds} second${seconds === 1 ? '' : 's'}`;
+}
+
 /**
  * Wait for a server to be ready on localhost.
  * @param {number} port - Port to poll.
@@ -310,6 +335,8 @@ function resolveRuntimeManifestPath(appPath) {
 }
 
 module.exports = {
+  startupTimeoutMs,
+  formatSeconds,
   waitForServer,
   isPortAvailable,
   findAvailablePort,

@@ -433,7 +433,8 @@ Controls the lifecycle window that fills the gap between launch and app readines
 |-----|------|---------|-------------|
 | `show_phase_details` | boolean | `true` | Show the phase-detail line under the preloader headline |
 | `error_show_logs` | boolean | `true` | Show the collapsible error-log block in the error state |
-| `shutdown_timeout` | integer (ms) | `10000` | Maximum milliseconds to wait for backend teardown before force-quitting |
+| `startup_timeout` | integer (ms) | `180000` | Maximum milliseconds to wait for the R, Python, or container server to answer before showing a startup error |
+| `shutdown_timeout` | integer (ms) | `10000` | Maximum milliseconds to wait for backend teardown before force-quitting or installing an update |
 | `custom_splash_html` | string | `null` | Raw HTML replacing the entire splash state; `null` uses the built-in splash |
 | `custom_error_html` | string | `null` | Raw HTML replacing the entire error state; `null` uses the built-in error view |
 | `prompt_before_install` | boolean | `false` | Prompt the user before installing missing R or Python packages |

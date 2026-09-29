@@ -4,7 +4,7 @@ const { spawn, execFileSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { waitForServer, logDebug } = require('./utils');
+const { waitForServer, startupTimeoutMs, formatSeconds, logDebug } = require('./utils');
 
 class ContainerBackend extends EventEmitter {
   constructor() {
@@ -489,8 +489,9 @@ class ContainerBackend extends EventEmitter {
           } catch { /* ignore */ }
         });
 
-        // Wait for the server to be ready (longer timeout for container startup)
-        waitForServer(hostPort, { timeout: 120000, interval: 1000 })
+        // Wait for the server to be ready (lifecycle.startup_timeout)
+        const startupTimeout = startupTimeoutMs(config);
+        waitForServer(hostPort, { timeout: startupTimeout, interval: 1000 })
           .then(() => {
             logProc.kill();
             logDebug(`Container server ready on http://localhost:${hostPort}`);
@@ -507,7 +508,7 @@ class ContainerBackend extends EventEmitter {
 
             this.stop();
             const startErr = new Error(
-              `Container server failed to start within 120 seconds.\n\n` +
+              `Container server failed to start within ${formatSeconds(startupTimeout)}.\n\n` +
               `Container ID: ${this.containerId}\n` +
               `Image: ${image}\n\n` +
               `Possible causes:\n` +

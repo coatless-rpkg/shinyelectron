@@ -6,13 +6,9 @@ const path = require('path');
 const os = require('os');
 const {
   waitForServer, findAvailablePort, killProcessTree, isProcessRunning, waitForExit,
-  startSupersededError, sortCandidatesByVersion, reportRuntimeCandidates,
-  meetsMinimumVersion, logDebug, resolveRuntimeManifestPath
+  startSupersededError, startupTimeoutMs, formatSeconds, sortCandidatesByVersion,
+  reportRuntimeCandidates, meetsMinimumVersion, logDebug, resolveRuntimeManifestPath
 } = require('./utils');
-
-// Total time allowed for the R Shiny server to become reachable. Single
-// source of truth so the wait and the error messages cannot drift apart.
-const R_READY_TIMEOUT_MS = 180000;
 
 class NativeRBackend extends EventEmitter {
   constructor() {
@@ -529,8 +525,9 @@ class NativeRBackend extends EventEmitter {
         }
       });
 
+      const startupTimeout = startupTimeoutMs(config);
       waitForServer(actualPort, {
-        timeout: R_READY_TIMEOUT_MS,
+        timeout: startupTimeout,
         interval: 500,
         isCancelled: () => settled || superseded()
       })
@@ -556,13 +553,14 @@ class NativeRBackend extends EventEmitter {
           // start, and report a shutdown for an app that never came up.
           if (this.rProcess === child) this.rProcess = null;
           if (isProcessRunning(child)) killProcessTree(child);
+          const waited = formatSeconds(startupTimeout);
           this.emit('status', {
             phase: 'error',
-            message: `R Shiny server failed to start within ${R_READY_TIMEOUT_MS / 1000} seconds.`,
+            message: `R Shiny server failed to start within ${waited}.`,
             detail: { stderr }
           });
           settle(reject, new Error(
-            `R Shiny server failed to start within ${R_READY_TIMEOUT_MS / 1000} seconds.\n\n` +
+            `R Shiny server failed to start within ${waited}.\n\n` +
             `R stderr output:\n${stderr}\n\n` +
             `Possible causes:\n` +
             `- Rscript is not installed or not on PATH\n` +
