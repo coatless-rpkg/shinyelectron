@@ -228,3 +228,84 @@ test_that("installer_license_path renames .htm licenses to .html", {
   expect_equal(installer_license_path("terms.htm"), "build/installer-license.html")
   expect_equal(installer_license_path("TERMS.HTM"), "build/installer-license.html")
 })
+
+test_that("generate_package_json honours custom display name, description and author", {
+  cfg <- list(app = list(description = "Custom desc", author = "Jane <j@x.org>"))
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("myapp", "0.1.9", "native-r", cfg, app_name = "My App"),
+    simplifyVector = FALSE
+  )
+
+  expect_equal(parsed$name, "myapp")
+  expect_equal(parsed$version, "0.1.9")
+  expect_equal(parsed$description, "Custom desc")
+  expect_equal(parsed$author, list(name = "Jane", email = "j@x.org"))
+  expect_equal(parsed$build$productName, "My App")
+})
+
+test_that("generate_package_json uses the slug as productName without a display name", {
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("myapp", "1.0.0", "native-r", list()),
+    simplifyVector = FALSE
+  )
+  expect_equal(parsed$build$productName, "myapp")
+})
+
+test_that("generate_package_json falls back to slug description and name product", {
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("myapp", "1.0.0", "native-r", list(),
+                          app_name = "Display Name"),
+    simplifyVector = FALSE
+  )
+
+  expect_equal(parsed$description, "myapp - Shiny Electron App")
+  expect_equal(parsed$author, "")
+  expect_equal(parsed$build$productName, "Display Name")
+})
+
+test_that("installer file names come from the slug and include the architecture", {
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "native-r", list(), app_name = "My App"),
+    simplifyVector = FALSE
+  )
+  expect_equal(parsed$build$artifactName, "${name}-${version}-${arch}.${ext}")
+  expect_equal(parsed$build$win$artifactName, "${name}-Setup-${version}-${arch}.${ext}")
+  for (pattern in c(parsed$build$artifactName, parsed$build$win$artifactName)) {
+    expect_match(pattern, "${name}", fixed = TRUE)
+    expect_match(pattern, "${arch}", fixed = TRUE)
+  }
+})
+
+test_that("the Windows executable keeps the slug while productName shows the app name", {
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "native-r", list(), app_name = "My App"),
+    simplifyVector = FALSE
+  )
+  expect_equal(parsed$build$productName, "My App")
+  expect_equal(parsed$build$win$executableName, "my-app")
+  expect_equal(parsed$build$win$target, "nsis")
+})
+
+test_that("the Linux desktop entry names the slug as the window class", {
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "native-r", list(), app_name = "My App"),
+    simplifyVector = FALSE
+  )
+  expect_equal(parsed$build$linux$target, "AppImage")
+  expect_equal(parsed$build$linux$desktop$entry$StartupWMClass, "my-app")
+})
+
+test_that("productName stays under build, so the user data folder follows the slug", {
+  # Electron names the app, and with it the user data folder, after a
+  # top-level productName when package.json has one, else after name.
+  # electron-builder drops the build block from the packaged package.json
+  # and adds only what build.extraMetadata holds.
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "native-r", list(), app_name = "My App"),
+    simplifyVector = FALSE
+  )
+  expect_false("productName" %in% names(parsed))
+  expect_false("extraMetadata" %in% names(parsed$build))
+  expect_equal(parsed$name, "my-app")
+  expect_equal(parsed$build$productName, "My App")
+})

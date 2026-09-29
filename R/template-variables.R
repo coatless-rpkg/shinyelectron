@@ -59,6 +59,10 @@ generate_template_variables <- function(app_name, app_slug, app_type,
   # container_image becoming {} instead of being absent).
   backend_config <- Filter(Negate(is.null), backend_config)
 
+  # The About dialog shows the app metadata; its Visit Website button opens
+  # the homepage, and its Email button writes to the author's email.
+  metadata <- app_metadata(config)
+
   # Config strings that main.js or the lifecycle page script places inside
   # single-quoted JavaScript literals. Each one also gets a js_str()-escaped
   # `*_js` entry below.
@@ -81,6 +85,22 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     app_type = app_type,
     app_version = app_version,
     app_version_js = js_str(app_version),
+
+    # About dialog metadata. main.js renders each value only when its flag
+    # is set, so a blank setting leaves out its line or button.
+    app_description_js = js_str(metadata$description),
+    has_app_description = is_nonempty_string(metadata$description),
+    app_author_js = js_str(metadata$author$name),
+    has_app_author = is_nonempty_string(metadata$author$name),
+    app_email_js = js_str(metadata$author$email),
+    has_app_email = is_nonempty_string(metadata$author$email),
+    app_homepage_js = js_str(metadata$homepage),
+    has_app_homepage = is_nonempty_string(metadata$homepage),
+    app_copyright_js = js_str(metadata$copyright),
+    has_app_copyright = is_nonempty_string(metadata$copyright),
+    # The native About panel's credits hold the description and the author.
+    has_about_credits = is_nonempty_string(metadata$description) ||
+      is_nonempty_string(metadata$author$name),
     has_icon = !is.null(icon),
     # copy_brand_assets() preserves the icon's extension (icon.ico/.icns/.png);
     # carry the real filename so the BrowserWindow icon path is not broken.

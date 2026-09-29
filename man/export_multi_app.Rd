@@ -18,10 +18,18 @@ export_multi_app(
   build = TRUE,
   run_after = FALSE,
   open_after = FALSE,
-  verbose = TRUE
+  verbose = TRUE,
+  slug_pinned = !is.null(config$app$slug)
 )
 }
+\arguments{
+\item{slug_pinned}{Logical. Whether the configuration sets \code{app.slug}, for
+the progress output; \code{export()} passes it because it fills in the slug
+before the call.}
+}
 \description{
-Export multi-app Shiny suite as Electron application
+\code{export()} settles the suite's slug before it calls this function. When
+called directly without \code{app.slug}, the slug comes from the resolved
+suite name, as it did in earlier releases.
 }
 \keyword{internal}

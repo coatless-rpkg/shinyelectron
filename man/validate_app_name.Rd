@@ -4,10 +4,13 @@
 \alias{validate_app_name}
 \title{Validate application name}
 \usage{
-validate_app_name(app_name)
+validate_app_name(app_name, field = "app_name")
 }
 \arguments{
 \item{app_name}{Character application name}
+
+\item{field}{Character. Where the name came from, for the error message:
+\code{"app_name"} for the argument, or \code{"app.name"} for the config key.}
 }
 \description{
 Validate application name

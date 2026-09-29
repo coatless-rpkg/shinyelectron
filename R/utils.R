@@ -68,9 +68,132 @@ slugify <- function(name) {
   slug <- gsub("[^a-z0-9]+", "-", slug)
   slug <- gsub("^-|-$", "", slug)
   if (!nzchar(slug)) {
-    cli::cli_abort("Cannot create an empty slug from input: {.val {name}}")
+    cli::cli_abort(c(
+      "Cannot create an empty slug from input: {.val {name}}",
+      "i" = "Set {.field app.slug} in {.file _shinyelectron.yml} to a lowercase ASCII slug such as {.val my-app}."
+    ))
   }
   slug
+}
+
+#' Slugify a name, or return NULL when nothing usable is left
+#'
+#' @param name The name to slugify. Anything but a single non-empty string
+#'   gives `NULL`.
+#' @return The [slugify()] result, or `NULL` when the name has no ASCII
+#'   letters or digits.
+#' @keywords internal
+slug_or_null <- function(name) {
+  if (!is_nonempty_string(name)) return(NULL)
+  tryCatch(slugify(name), error = function(e) NULL)
+}
+
+#' Resolve the app slug
+#'
+#' The slug is the app's identity. It names the package in `package.json`,
+#' the user data folder, the per-app caches under `~/.shinyelectron`, and the
+#' installer files, and unless `installer.app_id` is set it also gives the
+#' app ID, which Windows installers and macOS use to recognize an installed
+#' copy. `app.slug` wins when set. Otherwise the slug comes from `name`, and
+#' then from the name of the app directory: when `name` is `NULL`, or, with a
+#' message, when it has no ASCII letters or digits.
+#'
+#' `export()` passes its `app_name` argument as `name`, so `app.name` in the
+#' configuration sets only the display name and never the slug, as in
+#' earlier releases: editing the display name never changes the app's
+#' identity.
+#'
+#' @param config List. The effective configuration.
+#' @param name Character string or `NULL`. The name the slug comes from when
+#'   `app.slug` is unset, such as the `app_name` argument of `export()`.
+#' @param appdir Character string. The app directory.
+#' @return The slug, or `NULL` when neither `name` nor the directory gives
+#'   one. It is not validated here; [check_app_slug()] does that before a
+#'   build.
+#' @keywords internal
+resolve_app_slug <- function(config, name, appdir) {
+  if (!is.null(config$app$slug)) {
+    return(config$app$slug)
+  }
+  dir_slug <- slug_or_null(basename(appdir))
+  if (is.null(name)) {
+    return(dir_slug)
+  }
+  slug <- slug_or_null(name)
+  if (is.null(slug) && !is.null(dir_slug)) {
+    cli::cli_inform(c(
+      "i" = "The app name {.val {name}} has no ASCII letters or digits, so the app slug comes from the directory name: {.val {dir_slug}}.",
+      " " = "Set {.field app.slug} in {.file _shinyelectron.yml} to choose another."
+    ))
+  }
+  slug %||% dir_slug
+}
+
+#' Report the app's display name and slug
+#'
+#' Prints the display name with the slug in `export()`'s progress output.
+#' When the slug came from the folder rather than from `app.slug` and differs
+#' from the slug the display name would give, it also says how to choose
+#' another and what changing it means for installed copies.
+#'
+#' @param label Character. What the name belongs to, such as `"Application"`.
+#' @param app_name Character. The display name.
+#' @param slug Character or `NULL`. The slug.
+#' @param pinned Logical. Whether the configuration sets `app.slug`.
+#' @return Called for its messages.
+#' @keywords internal
+alert_app_identity <- function(label, app_name, slug, pinned) {
+  cli::cli_alert_info("{label}: {.val {app_name}} (slug: {.val {slug %||% 'none'}})")
+  if (!isTRUE(pinned) && !is.null(slug) && !identical(slug_or_null(app_name), slug)) {
+    cli::cli_alert_info(
+      "The slug comes from the folder name. Set {.field app.slug} to choose another before the first release; a different slug makes installed copies treat new builds as another app."
+    )
+  }
+}
+
+#' Ask for an app slug when none could be derived
+#'
+#' `init_config()` and `wizard()` write the slug, which comes from the
+#' directory name, into the new configuration. When the directory name has
+#' no ASCII letters or digits, they leave it out and say so with this alert.
+#'
+#' @return Called for its message.
+#' @keywords internal
+alert_missing_slug <- function() {
+  cli::cli_alert_warning(
+    "Set {.field app.slug} in {.file _shinyelectron.yml}: the directory name gives no slug, since it has no ASCII letters or digits."
+  )
+}
+
+#' Check the app slug before a build starts
+#'
+#' The build uses the slug only when it assembles the Electron app, after the
+#' conversion and any runtime download. Checking it right after
+#' [resolve_app_slug()] reports an invalid `app.slug`, or a name and
+#' directory that give no slug, before that work.
+#'
+#' @param slug The resolved slug, or `NULL` when none could be derived.
+#' @return Invisible `TRUE`; aborts otherwise.
+#' @keywords internal
+check_app_slug <- function(slug) {
+  rule <- c(
+    "i" = "Set {.field app.slug} in {.file _shinyelectron.yml} to lowercase letters, digits, and hyphens that start and end with a letter or digit, such as {.val my-app}."
+  )
+  if (is.null(slug)) {
+    cli::cli_abort(
+      c("Cannot derive an app slug from the app name or the directory name.", rule),
+      class = "shinyelectron_invalid_slug"
+    )
+  }
+  valid <- is_nonempty_string(slug) &&
+    isTRUE(tryCatch(validate_slug(slug), error = function(e) FALSE))
+  if (!valid) {
+    cli::cli_abort(
+      c(if (is_nonempty_string(slug)) "Invalid {.field app.slug}: {.val {slug}}" else "Invalid {.field app.slug}", rule),
+      class = "shinyelectron_invalid_slug"
+    )
+  }
+  invisible(TRUE)
 }
 
 #' Validate a slug string

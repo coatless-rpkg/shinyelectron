@@ -117,6 +117,45 @@ test_that("app_check fails when the installer license file is missing", {
   expect_false(any(grepl("License file", res$errors)))
 })
 
+test_that("app_check fails on an app slug that export() rejects", {
+  appdir <- withr::local_tempdir()
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "app.R"))
+  writeLines(c("app:", "  slug: Bad Slug"), file.path(appdir, "_shinyelectron.yml"))
+
+  res <- app_check(appdir, verbose = FALSE)
+  expect_false(res$pass)
+  expect_true(any(grepl("app.slug", res$errors, fixed = TRUE)))
+})
+
+test_that("app_check checks installer text for a $ like export()", {
+  appdir <- withr::local_tempdir()
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "app.R"))
+  writeLines(c("app:", "  description: Costs $5 a month"),
+             file.path(appdir, "_shinyelectron.yml"))
+
+  # A Windows build stops on it; other builds only warn.
+  res <- app_check(appdir, platform = "win", verbose = FALSE)
+  expect_false(res$pass)
+  expect_true(any(grepl("app.description", res$errors, fixed = TRUE)))
+
+  res <- app_check(appdir, platform = "mac", verbose = FALSE)
+  expect_false(any(grepl("app.description", res$errors, fixed = TRUE)))
+  expect_true(any(grepl("app.description", res$warnings, fixed = TRUE)))
+})
+
+test_that("app_check takes the slug from the app directory's name", {
+  appdir <- file.path(withr::local_tempdir(), "sales-dashboard")
+  dir.create(appdir)
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "app.R"))
+  withr::local_dir(appdir)
+
+  res <- app_check(".", verbose = FALSE)
+  expect_false(any(grepl("slug", res$errors, fixed = TRUE)))
+})
+
 test_that("app_check returns correct structure", {
   tmpdir <- tempfile()
   dir.create(tmpdir)
