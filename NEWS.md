@@ -2,29 +2,23 @@
 
 ## Breaking changes
 
-* `export()` now takes the app name from `app.name` in `_shinyelectron.yml`
-  when no `app_name` is given, as documented, instead of from the directory
-  name. The name also gives the app's slug, which is its identity: the
-  package name, the user data folder, the installer file names, and the
-  default app ID that Windows installers and macOS use to recognize an
-  installed copy. When `app.name` gives an app without `app.slug` a
-  different slug than its directory, `export()` warns and shows the
-  `app: slug:` line that keeps updating existing installs. `init_config()`
-  and `wizard()` now write an explicit `slug:`, and `init_config()` warns
-  when a config it replaces gave a different slug.
-
 * Installer and artifact file names change. They now come from the slug and
   always include the architecture, as in `my-app-1.0.0-arm64.dmg`,
   `my-app-Setup-1.0.0-x64.exe`, and `my-app-1.0.0-x86_64.AppImage`, so
   building several architectures into one `dist/` no longer overwrites
   installers. Update release scripts that look for the old names.
 
-* The installed app now carries the display name (`app.name`) instead of the
-  slug: the macOS app bundle and App menu, the Windows Start Menu shortcut
-  and Apps & Features entry, and the installer window. The Windows
-  executable and install folder keep the slug, so pinned shortcuts and
-  existing installs carry over. On macOS, reinstalling from the disk image
-  leaves the old `<slug>.app` in Applications to delete by hand.
+* The installed app now carries the display name instead of the slug: the
+  macOS app bundle and App menu, the Windows Start Menu shortcut and Apps &
+  Features entry, and the installer window. `export()` now also takes the
+  display name from `app.name` in `_shinyelectron.yml` when no `app_name` is
+  given, as documented, instead of from the directory name. The slug, which
+  is the app's identity, keeps coming from `app.slug`, then the `app_name`
+  argument, then the directory name, so installed copies keep updating; the
+  Windows executable and install folder keep the slug as well, so pinned
+  shortcuts and existing installs carry over. On macOS, reinstalling from
+  the disk image leaves the old `<slug>.app` in Applications to delete by
+  hand.
 
 ## New features
 
@@ -43,6 +37,11 @@
 * With auto-updates enabled, Help > About offers Check for Updates on
   Windows and Linux. It reports that the app is up to date, offers to
   download a newer version, or explains why the check failed.
+
+* `export()` shows the app's slug next to its display name and says when
+  `app.slug` could choose another. `init_config()` and `wizard()` write the
+  slug into the new configuration, and `init_config()` warns when a
+  configuration it replaces gave a different slug.
 
 ## Minor improvements and fixes
 
@@ -65,9 +64,11 @@
 * With `updates.auto_download` on, the update notification now says the new
   version is downloading, instead of asking the user to click to download.
 
-* An app name with no ASCII letters or digits, such as one written only in
-  Chinese characters, no longer stops `export()` late in the build or breaks
-  `show_config()`; the slug comes from the directory name instead.
+* An `app_name` with no ASCII letters or digits, such as one written only in
+  Chinese characters, no longer stops `export()` late in the build; the slug
+  comes from the directory name instead. When no slug can be derived, or
+  `app.slug` is invalid, `export()` now stops before converting the app, and
+  `show_config()` no longer fails on a non-ASCII `app.name`.
 
 # shinyelectron 0.2.1
 

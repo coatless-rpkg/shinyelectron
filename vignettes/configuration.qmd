@@ -182,8 +182,8 @@ Application metadata.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `name` | string | Directory name | Display name: the window title, the About dialog, and the installed app (the macOS app, the Windows Start Menu entry) |
-| `slug` | string | Derived from `name` | The app's identity: lowercase letters, digits, and hyphens (see below) |
+| `name` | string | Directory name | Display name: the window title, the About dialog, and the installed app (the macOS app, the Windows Start Menu entry). It never sets the slug |
+| `slug` | string | Directory name | The app's identity: lowercase letters, digits, and hyphens (see below) |
 | `version` | string | `"1.0.0"` | Version number for the built application |
 | `description` | string | `null` | Shown in Help > About and written to the installer metadata; `null` uses `"<slug> - Shiny Electron App"` |
 | `author` | string or map | `null` | npm-style `"Name <email> (url)"`, where the email and URL are optional, or a map with `name`, `email`, and `url`. Help > About shows the name and, with an email, an Email button |
@@ -197,15 +197,17 @@ Line breaks in `description`, `author`, and `copyright` become spaces, because t
 
 `name` is what people see; `slug` is what the operating system tracks. The slug names the package, the user data folder (window size, logs, and browser storage), and the installer files. Unless `installer.app_id` is set, it also gives the app ID, `com.shinyelectron.<slug>`, which Windows installers and macOS use to recognize an installed copy and update it. A build with a different slug is a different app: on Windows it installs next to the old one instead of updating it.
 
-When `slug` is unset, it comes from the name, and `export()` takes the name from its `app_name` argument, then `app.name`, then the directory name. A name with no ASCII letters or digits, such as one written only in Chinese characters, takes the directory's slug instead. `init_config()` and `wizard()` write the slug into the file, so you can rename the app later without changing its identity.
+`app.name` sets only the display name. The slug comes from `app.slug`, else the `app_name` argument of `export()`, else the directory name, as in earlier releases, so renaming the app never changes its identity. An `app_name` argument with no ASCII letters or digits, such as one written only in Chinese characters, gives no slug, so the directory's is used. `export()` prints the slug next to the display name, and `init_config()` and `wizard()` write the directory's slug into the file, so the identity also survives a renamed or moved directory.
 
-Up to shinyelectron 0.2.1, `export()` ignored `app.name` and derived the slug from the directory name. If `app.name` now gives an app you already ship a different slug, `export()` warns. Add the old slug to keep updating installed copies:
+To give a new app a slug that matches its display name, set it before the first release:
 
 ```yaml
 app:
   name: "Sales Dashboard"
-  slug: "dash-app"      # the directory name the app shipped under
+  slug: "sales-dashboard"
 ```
+
+Once an app has shipped, keep its slug.
 :::
 
 ### `build`
@@ -489,7 +491,7 @@ installer:
 
 ## Common recipes
 
-Each recipe sets `slug` next to `name`. When you copy one, keep the slug your app already ships under, or set a new one before the first release.
+Each recipe sets `slug` next to `name`. When you copy one into an app that has already shipped, use the slug it shipped under, which is its directory name unless you set another.
 
 ### Development setup
 
