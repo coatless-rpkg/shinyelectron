@@ -1,3 +1,13 @@
+# shinyelectron (development version)
+
+* Signed builds no longer fail when `_shinyelectron.yml` sets
+  `signing.win.certificate_file`. The certificate settings were written where
+  electron-builder 26 no longer accepts them, so its configuration check
+  stopped the build for every platform, macOS and Linux included. They now go
+  under `win.signtoolOptions`, where electron-builder 26 reads them. The
+  certificate password still comes from `CSC_KEY_PASSWORD` and is never
+  written to `package.json`.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the
