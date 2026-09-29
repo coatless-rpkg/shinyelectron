@@ -146,12 +146,21 @@ embed_r_runtime <- function(output_dir, packages, repos, version,
         type_clause
       )
 
-      # Pre-session code didn't scrub env or pass --vanilla and worked
-      # fine -- the bundled library being a sibling (not the R's own
-      # library) means R_LIBS_USER contamination doesn't override our
-      # explicit lib_path argument to install.packages.
+      # Run from an empty working directory, so a project .Rprofile or
+      # .Renviron in the caller's directory (such as renv's autoloader) does
+      # not run in the portable R, and without inherited R_ENVIRON and
+      # R_PROFILE settings, so the portable R reads its own site files (see
+      # portable_r_env()). The user's ~/.Renviron and ~/.Rprofile, which may
+      # hold proxy settings, stay in effect. The bundled library is a sibling
+      # of the R's own library and is passed to install.packages()
+      # explicitly, so inherited R_LIBS_USER settings do not redirect it.
+      install_wd <- tempfile("shinyelectron-r-install-")
+      dir.create(install_wd)
+      on.exit(unlink(install_wd, recursive = TRUE), add = TRUE)
       result <- processx::run(
         bundled_rscript, c("-e", r_code),
+        wd = install_wd,
+        env = portable_r_env(),
         error_on_status = FALSE,
         echo = verbose,
         timeout = 600

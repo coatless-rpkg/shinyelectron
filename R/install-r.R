@@ -149,6 +149,25 @@ r_executable <- function(version, platform = NULL, arch = NULL) {
   NULL
 }
 
+#' Environment for processes of a portable R
+#'
+#' The caller's environment without `R_ENVIRON` and `R_PROFILE`, so a portable
+#' R reads its own site files instead of site files chosen for the calling R
+#' (callr sets both for the R it starts, and a user can set them too). On macOS
+#' the portable R's `Rprofile.site` rewrites the shared-library references of
+#' the binary packages it installs, which is what lets them load. The user's
+#' environ file and profile and every other variable are kept.
+#'
+#' @return Named character vector for the `env` argument of
+#'   [processx::run()].
+#' @keywords internal
+portable_r_env <- function() {
+  env <- Sys.getenv()
+  env <- stats::setNames(as.character(env), names(env))
+  key <- if (.Platform$OS.type == "windows") toupper else identity
+  env[!key(names(env)) %in% c("R_ENVIRON", "R_PROFILE")]
+}
+
 #' Install a portable R distribution
 #'
 #' Downloads and caches a portable R build. Follows the same pattern

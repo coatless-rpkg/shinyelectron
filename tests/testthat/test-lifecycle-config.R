@@ -79,3 +79,89 @@ test_that("init_config template documents r/python/electron version and system_p
   # "latest" opt-in should be mentioned
   expect_match(template_text, "latest", fixed = TRUE)
 })
+
+# --- lifecycle timeouts ---
+
+test_that("lifecycle.startup_timeout defaults to three minutes", {
+  expect_identical(SHINYELECTRON_DEFAULTS$lifecycle$startup_timeout, 180000L)
+  expect_identical(default_config()$lifecycle$startup_timeout, 180000L)
+})
+
+test_that("validate_config() keeps valid lifecycle timeouts", {
+  cfg <- default_config()
+  cfg$lifecycle$startup_timeout <- 300000L
+  cfg$lifecycle$shutdown_timeout <- 5e3
+  expect_no_warning(out <- validate_config(cfg))
+  expect_equal(out$lifecycle$startup_timeout, 300000L)
+  expect_equal(out$lifecycle$shutdown_timeout, 5000)
+})
+
+test_that("validate_config() resets invalid lifecycle timeouts to their defaults", {
+  invalid <- list("10s", 999, 1500.5, c(2000, 3000), TRUE, NA_real_, 3e9)
+  for (key in c("startup_timeout", "shutdown_timeout")) {
+    for (value in invalid) {
+      cfg <- default_config()
+      cfg$lifecycle[[key]] <- value
+      expect_warning(
+        out <- validate_config(cfg),
+        paste0("lifecycle.", key),
+        fixed = TRUE
+      )
+      expect_identical(
+        out$lifecycle[[key]],
+        SHINYELECTRON_DEFAULTS$lifecycle[[key]]
+      )
+    }
+  }
+})
+
+test_that("read_config() replaces a timeout written with a unit", {
+  tmp <- withr::local_tempdir()
+  writeLines(
+    c("lifecycle:", "  startup_timeout: 3m", "  shutdown_timeout: 10s"),
+    file.path(tmp, "_shinyelectron.yml")
+  )
+  expect_warning(
+    expect_warning(cfg <- read_config(tmp), "startup_timeout"),
+    "shutdown_timeout"
+  )
+  expect_identical(cfg$lifecycle$startup_timeout, 180000L)
+  expect_identical(cfg$lifecycle$shutdown_timeout, 10000L)
+})
+
+test_that("lifecycle timeouts reach the backend config and main.js", {
+  template_vars <- function(lifecycle, runtime_strategy = "system") {
+    generate_template_variables(
+      app_name = "Test App", app_slug = "test-app", app_type = "r-shiny",
+      runtime_strategy = runtime_strategy, icon = NULL,
+      backend_module = resolve_backend_module("r-shiny", runtime_strategy),
+      brand = NULL,
+      config = list(app = list(version = "1.0.0"), lifecycle = lifecycle)
+    )
+  }
+  backend_config <- function(vars) jsonlite::fromJSON(vars$backend_config_json)
+
+  defaults <- template_vars(list())
+  expect_identical(backend_config(defaults)$startup_timeout, 180000L)
+  expect_identical(defaults$shutdown_timeout, 10000L)
+
+  custom <- template_vars(list(startup_timeout = 3e5, shutdown_timeout = 5000))
+  expect_identical(backend_config(custom)$startup_timeout, 300000L)
+  expect_identical(custom$shutdown_timeout, 5000L)
+
+  container <- template_vars(list(startup_timeout = 60000L), "container")
+  expect_identical(backend_config(container)$startup_timeout, 60000L)
+
+  # A config that never went through validate_config() still yields numbers.
+  unchecked <- template_vars(list(startup_timeout = "3m", shutdown_timeout = "10s"))
+  expect_identical(backend_config(unchecked)$startup_timeout, 180000L)
+  expect_identical(unchecked$shutdown_timeout, 10000L)
+})
+
+test_that("init_config template documents both lifecycle timeouts", {
+  tmp <- withr::local_tempdir()
+  init_config(tmp, app_name = "TestApp", verbose = FALSE)
+  template_text <- paste(readLines(file.path(tmp, "_shinyelectron.yml")), collapse = "\n")
+  expect_match(template_text, "startup_timeout: 180000", fixed = TRUE)
+  expect_match(template_text, "shutdown_timeout: 10000", fixed = TRUE)
+})

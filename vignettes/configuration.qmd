@@ -130,7 +130,6 @@ icon: "branding/icon.png"    # Single high-res source; electron-builder fans out
 
 nodejs:
   version: null              # Node.js version (null = latest LTS)
-  # auto_install: false      # Planned: auto-install Node.js if not found (not yet implemented)
 
 container:                   # Used when runtime_strategy is "container"
   engine: "docker"           # "docker" or "podman"
@@ -264,7 +263,7 @@ Node.js installation behavior.
 ::: {.callout-note}
 ## `auto_install` is planned, not yet active
 
-An `auto_install` key is reserved for a future release. Today, a missing Node.js aborts the build with guidance to run `install_nodejs()` or install Node.js manually. Do not rely on `auto_install: true` having any effect.
+An `auto_install` key is planned for a future release. It is not read yet, so setting it has no effect and is reported as an unknown key. Today, a missing Node.js aborts the build with guidance to run `install_nodejs()` or install Node.js manually.
 :::
 
 ### `dependencies`
@@ -377,6 +376,8 @@ container:
     SHINY_LOG_LEVEL: "DEBUG"
 ```
 
+`env` values are written into the built app, so keep passwords and tokens out of them; see [Secrets and per-user credentials](security.html#secrets-and-per-user-credentials).
+
 ### `apps`
 
 Defines a multi-app suite: two or more Shiny apps packaged in one Electron shell with a launcher screen. At least two entries are required. Any entry can override `build.type` or `build.runtime_strategy`, which is how mixed-strategy suites work. One constraint applies: within a language, all native apps (`system`, `bundled`, `auto-download`) must share one strategy; `shinylive` and `container` apps combine freely. Export aborts on a conflict. See the [Multi-App Suites](multi-app-suites.html) vignette for details.
@@ -414,16 +415,17 @@ Controls where and how the app writes its log files.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `log_dir` | string | `null` | Directory for log files; `null` writes to the Electron app's `userData/logs` directory |
+| `log_dir` | string | `null` | Directory for log files; `null` writes to the Electron app's `userData/logs` directory. Any other value should be an absolute path that the app's user can write to: a relative path, including one that starts with `~`, resolves against the process working directory, and if the directory cannot be created no log file is written |
 | `log_level` | string | `"info"` | Logging verbosity: `"debug"`, `"info"`, `"warn"`, or `"error"` |
 
 **Example:**
 
 ```yaml
 logging:
-  log_dir: "/var/log/my-app"
-  log_level: "debug"
+  log_level: "debug"        # log_dir is unset, so logs go to userData/logs
 ```
+
+The same two keys are also accepted under `app` as `app.log_dir` and `app.log_level`, which is where earlier versions of `init_config()` put them. If both places set a key to different values, the `logging` value wins and shinyelectron warns.
 
 ### `lifecycle`
 
@@ -433,11 +435,25 @@ Controls the lifecycle window that fills the gap between launch and app readines
 |-----|------|---------|-------------|
 | `show_phase_details` | boolean | `true` | Show the phase-detail line under the preloader headline |
 | `error_show_logs` | boolean | `true` | Show the collapsible error-log block in the error state |
-| `shutdown_timeout` | integer (ms) | `10000` | Maximum milliseconds to wait for backend teardown before force-quitting |
+| `startup_timeout` | integer (ms) | `180000` | Maximum milliseconds to wait for the R, Python, or container server to answer before showing a startup error |
+| `shutdown_timeout` | integer (ms) | `10000` | Maximum milliseconds to wait for backend teardown before force-quitting or installing an update |
 | `custom_splash_html` | string | `null` | Raw HTML replacing the entire splash state; `null` uses the built-in splash |
 | `custom_error_html` | string | `null` | Raw HTML replacing the entire error state; `null` uses the built-in error view |
 | `prompt_before_install` | boolean | `false` | Prompt the user before installing missing R or Python packages |
 | `prompt_runtime_version` | boolean | `false` | Show a runtime-version picker when multiple R or Python installations are detected |
+
+### `signing`
+
+Code signing for release builds. Passwords and other credentials never go in this file; electron-builder reads them from environment variables. See [Code Signing and Distribution](code-signing.html) for the certificates, the variables, and the setup on each platform.
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `sign` | boolean | `false` | Sign the builds `export()` makes; `export(sign = TRUE)` signs even when this is `false` |
+| `mac.identity` | string | `null` | Signing identity, e.g. `"Developer ID Application: Your Name (TEAMID)"`; `null` lets electron-builder find one |
+| `mac.team_id` | string | `null` | Apple Team ID; notarization is skipped unless this or `APPLE_TEAM_ID` is set, and electron-builder reads the ID from `APPLE_TEAM_ID` |
+| `mac.notarize` | boolean | `false` | Notarize with Apple; signed builds also notarize when `APPLE_ID` and `APPLE_APP_SPECIFIC_PASSWORD` are set |
+| `win.certificate_file` | string | `null` | Path to a `.pfx` or `.p12` certificate; `null` uses `WIN_CSC_LINK` or `CSC_LINK` |
+| `linux.gpg_sign` | boolean | `false` | Reserved for GPG-signing the AppImage; has no effect yet |
 
 ### `installer`
 
@@ -574,6 +590,9 @@ shinyelectron validates values on read and degrades gracefully rather than abort
 - Invalid platforms and architectures are dropped with a warning.
 - Window dimensions under 100 pixels warn and use defaults.
 - Invalid port numbers warn and use `3838`.
+- A `lifecycle.startup_timeout` or `lifecycle.shutdown_timeout` that is not a whole number of milliseconds from 1000 to 2147483647 warns and uses the default.
+
+Keys that shinyelectron does not recognize, such as a misspelled `widht` or a key placed in the wrong section, are reported in a single warning that lists each one by its dotted path (for example `window.widht`), and the build goes on without them. Entries under `apps` and the contents of maps such as `container.env` are not checked.
 
 The `installer` settings are stricter. `one_click`, `allow_to_change_installation_directory`, and `per_machine` take `true` or `false`: a quoted `"true"` or `"false"` is read with a warning, and any other value stops the build. `allow_to_change_installation_directory: true` needs `one_click: false`, and a `license_file` that does not exist also stops the build. electron-builder would otherwise reject these late in the Windows build, after the runtime download.
 

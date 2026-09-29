@@ -23,8 +23,8 @@ sitrep_electron_dependencies <- function(verbose = TRUE) {
   }
 
   # Required packages (hard Imports from DESCRIPTION plus base utilities)
-  required_packages <- c("cli", "fs", "jsonlite", "rappdirs", "whisker",
-                         "processx", "yaml", "utils", "tools")
+  required_packages <- c("cli", "fs", "jsonlite", "rappdirs", "rlang",
+                         "whisker", "processx", "yaml", "utils", "tools")
 
   # Optional but recommended packages
   optional_packages <- c("shinylive", "DT", "ggplot2")
