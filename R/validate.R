@@ -12,19 +12,25 @@ validate_directory_exists <- function(dir, name = "Directory") {
 #' Validate application name
 #'
 #' @param app_name Character application name
+#' @param field Character. Where the name came from, for the error message:
+#'   `"app_name"` for the argument, or `"app.name"` for the config key.
 #' @keywords internal
-validate_app_name <- function(app_name) {
-  if (!is.character(app_name) || length(app_name) != 1) {
-    cli::cli_abort("app_name must be a single character string")
+validate_app_name <- function(app_name, field = "app_name") {
+  hint <- if (identical(field, "app.name")) {
+    c("i" = "Edit {.field app.name} in {.file _shinyelectron.yml}, quoting the name if YAML would read it as something else, as in {.code name: \"Yes\"}.")
+  }
+  if (!is.character(app_name) || length(app_name) != 1 || is.na(app_name)) {
+    cli::cli_abort(c("{.field {field}} must be a single character string", hint))
   }
   if (nchar(app_name) == 0) {
-    cli::cli_abort("app_name cannot be empty")
+    cli::cli_abort(c("{.field {field}} cannot be empty", hint))
   }
   # npm package names have a 214-character limit
   if (nchar(app_name) > 200) {
     cli::cli_abort(c(
-      "app_name is too long ({nchar(app_name)} characters)",
-      "i" = "Maximum 200 characters (npm limit is 214, slug adds overhead)"
+      "{.field {field}} is too long ({nchar(app_name)} characters)",
+      "i" = "Maximum 200 characters (npm limit is 214, slug adds overhead)",
+      hint
     ))
   }
   # Display names can contain spaces and special characters.

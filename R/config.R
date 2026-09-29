@@ -349,6 +349,15 @@ validate_config <- function(config) {
     config$dependencies$system_packages <- NULL
   }
 
+  # YAML reads an unquoted name or slug such as 2048 as a number; read a
+  # single number as text. export() checks both values before it builds.
+  for (key in c("name", "slug")) {
+    value <- config$app[[key]]
+    if (is.numeric(value) && length(value) == 1L && !is.na(value)) {
+      config$app[[key]] <- format(value, scientific = FALSE, trim = TRUE, digits = 15)
+    }
+  }
+
   # Validate the app metadata that fills package.json and the About dialog.
   for (key in c("description", "copyright")) {
     value <- config$app[[key]]

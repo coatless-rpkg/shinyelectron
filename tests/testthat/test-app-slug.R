@@ -194,3 +194,28 @@ test_that("show_config() reports the slug that export() would use", {
   )
   expect_true(any(grepl("Slug: \"dash-app\"", output, fixed = TRUE)))
 })
+
+# --- app.name and app.slug values ---
+
+test_that("read_config reads a numeric app.name or app.slug as text", {
+  appdir <- local_app("dash-app")
+  writeLines(c("app:", "  name: 2048", "  slug: 2048"), file.path(appdir, "_shinyelectron.yml"))
+  config <- read_config(appdir)
+  expect_identical(config$app$name, "2048")
+  expect_identical(config$app$slug, "2048")
+})
+
+test_that("export() takes a numeric app.name as the display name", {
+  appdir <- local_app("dash-app")
+  writeLines(c("app:", "  name: 2048", "  slug: dash-app"), file.path(appdir, "_shinyelectron.yml"))
+  expect_identical(export_args(appdir)$app_name, "2048")
+})
+
+test_that("an invalid app.name is reported under its config key", {
+  for (value in c('""', "yes", "[Sales, Dashboard]")) {
+    appdir <- local_app("dash-app")
+    writeLines(c("app:", paste("  name:", value)), file.path(appdir, "_shinyelectron.yml"))
+    error <- expect_error(export_args(appdir), "app.name", fixed = TRUE, info = value)
+    expect_no_match(conditionMessage(error), "app_name", fixed = TRUE)
+  }
+})

@@ -98,7 +98,7 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   # (mirrors export_multi_app(), so app.name is honored for single apps too).
   name_from_config <- is.null(app_name) && !is.null(config$app$name)
   app_name <- app_name %||% config$app$name %||% basename(appdir)
-  validate_app_name(app_name)
+  validate_app_name(app_name, field = if (name_from_config) "app.name" else "app_name")
 
   # Resolve the icon: function arg > config `icon:` > per-platform `icons:`.
   # Wiring the YAML keys here makes them effective for both single and

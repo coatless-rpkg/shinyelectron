@@ -10,7 +10,7 @@ export_multi_app <- function(appdir, destdir, config,
 
   name_from_config <- is.null(app_name) && !is.null(config$app$name)
   app_name <- app_name %||% config$app$name %||% basename(appdir)
-  validate_app_name(app_name)
+  validate_app_name(app_name, field = if (name_from_config) "app.name" else "app_name")
   # Same slug rules as export(), which has usually settled the slug already.
   config$app$slug <- resolve_app_slug(config, app_name, appdir, name_from_config)
 
