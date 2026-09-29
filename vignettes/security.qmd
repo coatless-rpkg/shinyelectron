@@ -202,7 +202,7 @@ The strongest isolation of any strategy. WebR or Pyodide run inside the browser'
 
 A real R or Python child process. Whatever is reachable from `system()` or `subprocess` is reachable from the app. The defense is the input-validation discipline from the previous section. None of these strategies adds additional sandboxing.
 
-### Container
+### Container {#container-strategy-security}
 
 Docker or Podman puts the app inside an OS-level container, which is a stronger boundary than process isolation but weaker than a virtual machine:
 
