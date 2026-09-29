@@ -439,6 +439,19 @@ Controls the lifecycle window that fills the gap between launch and app readines
 | `prompt_before_install` | boolean | `false` | Prompt the user before installing missing R or Python packages |
 | `prompt_runtime_version` | boolean | `false` | Show a runtime-version picker when multiple R or Python installations are detected |
 
+### `signing`
+
+Code signing for release builds. Passwords and other credentials never go in this file; electron-builder reads them from environment variables. See [Code Signing and Distribution](code-signing.html) for the certificates, the variables, and the setup on each platform.
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `sign` | boolean | `false` | Sign the builds `export()` makes; `export(sign = TRUE)` signs even when this is `false` |
+| `mac.identity` | string | `null` | Signing identity, e.g. `"Developer ID Application: Your Name (TEAMID)"`; `null` lets electron-builder find one |
+| `mac.team_id` | string | `null` | Apple Team ID; notarization is skipped unless this or `APPLE_TEAM_ID` is set, and electron-builder reads the ID from `APPLE_TEAM_ID` |
+| `mac.notarize` | boolean | `false` | Notarize with Apple; signed builds also notarize when `APPLE_ID` and `APPLE_APP_SPECIFIC_PASSWORD` are set |
+| `win.certificate_file` | string | `null` | Path to a `.pfx` or `.p12` certificate; `null` uses `WIN_CSC_LINK` or `CSC_LINK` |
+| `linux.gpg_sign` | boolean | `false` | Reserved for GPG-signing the AppImage; has no effect yet |
+
 ### `installer`
 
 Controls installer branding and behavior for the Windows (NSIS) installer produced by electron-builder.
