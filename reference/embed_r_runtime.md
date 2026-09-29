@@ -19,7 +19,8 @@ embed_r_runtime(
   version,
   platform,
   arch,
-  verbose = TRUE
+  verbose = TRUE,
+  prune = TRUE
 )
 ```
 
@@ -52,6 +53,13 @@ embed_r_runtime(
 - verbose:
 
   Logical. Whether to display progress.
+
+- prune:
+
+  Logical. Whether to remove the test and documentation files that
+  [`prune_bundled_r_runtime()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/prune_bundled_r_runtime.md)
+  allowlists once the packages are installed. Callers pass the validated
+  `dependencies.r.prune` setting.
 
 ## Value
 

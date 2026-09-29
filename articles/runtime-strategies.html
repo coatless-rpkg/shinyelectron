@@ -272,6 +272,7 @@ Bundled ships the Electron shell together with a portable R or Python runtime an
 <ol type="1">
 <li>During <code><a href="../reference/export.html">export()</a></code>, shinyelectron downloads a portable runtime and writes it into the Electron project’s <code>runtime/</code> directory.</li>
 <li>Your app dependencies are installed into that runtime’s library.</li>
+<li>For R, package test suites and R’s own tests, manuals, and news are then removed to keep the installer smaller. Set <code>dependencies.r.prune: false</code> in <code>_shinyelectron.yml</code> to keep them; see <a href="configuration.html#pruning-the-bundled-r-runtime">Pruning the bundled R runtime</a>.</li>
 <li>At launch, the Electron backend uses the bundled <code>Rscript</code> or <code>python3</code> instead of anything on the user’s system.</li>
 </ol></section><section class="level3"><h3 id="tradeoffs-2">Tradeoffs<a class="anchor" aria-label="anchor" href="#tradeoffs-2"></a>
 </h3>

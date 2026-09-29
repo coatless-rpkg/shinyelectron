@@ -94,7 +94,8 @@ the freshly-created <code>runtime/R/library</code>.</p>
 <span>  <span class="va">version</span>,</span>
 <span>  <span class="va">platform</span>,</span>
 <span>  <span class="va">arch</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  prune <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -128,6 +129,12 @@ the freshly-created <code>runtime/R/library</code>.</p>
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>Logical. Whether to display progress.</p></dd>
+
+
+<dt id="arg-prune">prune<a class="anchor" aria-label="anchor" href="#arg-prune"></a></dt>
+<dd><p>Logical. Whether to remove the test and documentation files
+that <code><a href="prune_bundled_r_runtime.html">prune_bundled_r_runtime()</a></code> allowlists once the packages are
+installed. Callers pass the validated <code>dependencies.r.prune</code> setting.</p></dd>
 
 </dl></div>
     <div class="section level2">

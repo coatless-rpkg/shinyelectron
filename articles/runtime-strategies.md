@@ -249,7 +249,12 @@ export(
     shinyelectron downloads a portable runtime and writes it into the
     Electron project’s `runtime/` directory.
 2.  Your app dependencies are installed into that runtime’s library.
-3.  At launch, the Electron backend uses the bundled `Rscript` or
+3.  For R, package test suites and R’s own tests, manuals, and news are
+    then removed to keep the installer smaller. Set
+    `dependencies.r.prune: false` in `_shinyelectron.yml` to keep them;
+    see [Pruning the bundled R
+    runtime](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/configuration.html#pruning-the-bundled-r-runtime).
+4.  At launch, the Electron backend uses the bundled `Rscript` or
     `python3` instead of anything on the user’s system.
 
 ### Tradeoffs

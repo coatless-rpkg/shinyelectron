@@ -113,6 +113,7 @@ build:
 dependencies:               # Runtime version pins and system packages
   r:
     version: null           # null = maintained pin; "latest" = live query; "4.6.1" = exact
+    prune: true             # Bundled only: remove package tests, R manuals and news
   python:
     version: null           # null = maintained pin; "latest" = live query; "3.12.0" = exact
   electron:
@@ -349,14 +350,51 @@ end user’s installed R or Python.
 
 #### R-specific dependency options
 
-These keys sit under `dependencies.r` and apply to the `bundled`,
-`auto-download`, and `system` strategies.
+These keys sit under `dependencies.r`. All but `prune` apply to the
+`bundled`, `auto-download`, and `system` strategies; `prune` applies to
+`bundled` only.
 
 | Key | Type | Default | Description |
 |----|----|----|----|
 | `r.packages` | list of strings | `[]` | R packages to install alongside the app |
 | `r.repos` | list of strings | `["https://cloud.r-project.org"]` | CRAN-compatible repository URLs to use when installing R packages |
 | `r.lib_path` | string | `null` | Custom library path where R packages are installed; `null` uses the default R library |
+| `r.prune` | boolean | `true` | Remove package test suites and R’s own tests, manuals, and news from the embedded runtime (see below) |
+
+#### Pruning the bundled R runtime
+
+With the `bundled` strategy, shinyelectron trims the embedded R runtime
+after installing your packages, leaving out files that a running app
+does not use:
+
+- the test suites (`tests/`, `testme/`, `tinytest/`) of every installed
+  package, including R’s base and recommended packages;
+- R’s own regression tests;
+- R’s PDF and HTML manuals and its news and FAQ files.
+
+Everything else stays. Package code, data, help pages, `examples/`,
+`demo/`, NEWS files, and `include/` headers are kept, because some
+packages and apps read them at runtime: `shinyjs::runExample()` reads
+its examples, a “What’s new” panel may show a package’s `NEWS.md`, and
+[`Rcpp::sourceCpp()`](https://rdrr.io/pkg/Rcpp/man/sourceCpp.html) needs
+the headers. R’s license files (`COPYING`, and `COPYRIGHTS` with the
+notices that binary distributions of R must include), its author list,
+and the mirror lists that
+[`utils::getCRANmirrors()`](https://rdrr.io/r/utils/chooseCRANmirror.html)
+reads are kept too.
+
+Pruning is on by default. To ship the runtime exactly as installed, turn
+it off:
+
+``` yaml
+dependencies:
+  r:
+    prune: false
+```
+
+Write `true` or `false` without quotes. A quoted `"true"` or `"false"`
+is read as the matching value with a warning; any other value stops the
+build before anything is downloaded.
 
 #### Python-specific dependency options
 
@@ -696,6 +734,11 @@ any other value stops the build.
 and a `license_file` that does not exist also stops the build.
 electron-builder would otherwise reject these late in the Windows build,
 after the runtime download.
+
+`dependencies.r.prune` is stricter. A quoted `"true"` or `"false"` is
+read as the matching value with a warning, but any other value stops the
+build with an error before anything is downloaded, because falling back
+to the default could remove files you meant to keep.
 
 If the YAML itself fails to parse, shinyelectron warns and uses all
 defaults. This is deliberate: a broken config file should never block
