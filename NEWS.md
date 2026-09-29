@@ -1,3 +1,11 @@
+# shinyelectron (development version)
+
+* Keys in `_shinyelectron.yml` that shinyelectron does not recognize, such as a
+  misspelled `widht` or a key placed in the wrong section, now trigger a
+  warning of class `shinyelectron_unknown_config_key` that names each one by
+  its dotted path (for example `window.widht`). They were previously ignored
+  without notice.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the

@@ -560,6 +560,8 @@ shinyelectron validates values on read and degrades gracefully rather than abort
 - Window dimensions under 100 pixels warn and use defaults.
 - Invalid port numbers warn and use `3838`.
 
+Keys that shinyelectron does not recognize, such as a misspelled `widht` or a key placed in the wrong section, are reported in a single warning that lists each one by its dotted path (for example `window.widht`), and the build goes on without them. Entries under `apps` and the contents of maps such as `container.env` are not checked.
+
 If the YAML itself fails to parse, shinyelectron warns and uses all defaults. This is deliberate: a broken config file should never block you from producing a build during development.
 
 ## Next steps

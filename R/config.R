@@ -108,9 +108,9 @@ read_config <- function(appdir) {
   unknown_keys <- collect_unknown_config_keys(config)
   if (length(unknown_keys) > 0) {
     cli::cli_warn(c(
-      "Unknown configuration key{?s} in {.file {CONFIG_FILENAME}}: {.val {unknown_keys}}",
-      "i" = "Unknown keys are ignored; check the spelling and nesting (see the documented sections)."
-    ))
+      "Unknown configuration {cli::qty(unknown_keys)}key{?s} in {.file {CONFIG_FILENAME}}: {.val {unknown_keys}}",
+      "i" = "Unknown keys are ignored. Check their spelling and nesting against {.url https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/configuration.html}."
+    ), class = "shinyelectron_unknown_config_key", keys = unknown_keys)
   }
 
   merged <- merge_config_deep(default_config(), config)
