@@ -626,8 +626,8 @@ nodejs:
 #   one_click: true               # Windows: true = silent install, false = wizard
 #   # true adds a page for choosing the install directory; requires one_click: false
 #   allow_to_change_installation_directory: null
-#   # true = install for all users (admin prompt on every update). When unset,
-#   # the one-click installer installs per user and the wizard lets the user choose.
+#   # true = install for all users (admin prompt on every update). Unset or
+#   # false: the one-click installer installs per user; the wizard lets the user choose.
 #   per_machine: null
 
 ## Lifecycle UI

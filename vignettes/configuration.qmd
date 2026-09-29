@@ -449,7 +449,7 @@ Controls installer branding and behavior for the Windows (NSIS) installer produc
 | `license_file` | string | `null` | Path to a license file, relative to the app directory, that the Windows installer shows before installing. Plain text (UTF-8), `.rtf`, or `.html` |
 | `one_click` | boolean | `true` | Use a one-click installer on Windows; set to `false` for a wizard-style installer |
 | `allow_to_change_installation_directory` | boolean | `null` | `true` adds a wizard page where users choose the installation folder. Requires `one_click: false` |
-| `per_machine` | boolean | `null` | `true` installs for all users, which needs administrator rights on every install and update. When unset, the one-click installer installs for the current user and the wizard lets the user choose |
+| `per_machine` | boolean | `null` | `true` installs for all users, which needs administrator rights on every install and update. `false` behaves like unset: the one-click installer installs for the current user, and the wizard still lets the user choose |
 
 **Example:**
 
@@ -464,7 +464,13 @@ installer:
 ::: {.callout-warning}
 ## Decide on `per_machine` before the first release
 
-A per-machine install goes to Program Files, and every later update shows an administrator prompt. Turning `per_machine` on for an app that has already shipped per-user moves the next install there too. A standard user who approves that prompt with an administrator's credentials can end up with the old per-user copy still installed next to the new one.
+A per-machine install goes to Program Files, and every later update shows an administrator prompt. Standard users cannot write to Program Files, and R Shiny runs an app with its own folder as the working directory, so an app that writes files next to `app.R` fails for them. Turning `per_machine` on for an app that has already shipped per-user moves the next install there too. A standard user who approves that prompt with an administrator's credentials can end up with the old per-user copy still installed next to the new one.
+:::
+
+::: {.callout-tip}
+## Build Windows installers on Windows
+
+Build the Windows installer on a Windows machine, as the [GitHub Actions](github-actions.html) workflow does. Installers built on macOS have been reported to cut `.txt` and `.rtf` license pages short.
 :::
 
 ## Common recipes
