@@ -77,3 +77,13 @@ The list is a superset: some entries are serialized into
 `backend_config_json` (and consumed by the backend modules rather than a
 template) or are reserved for future placeholders. Adding a new
 placeholder requires adding it here.
+
+A configuration string that a template's JavaScript (`main.js` or an
+inline `<script>` in an HTML template) places inside a single-quoted
+literal also has an escaped `*_js` entry (see
+[`js_str()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/js_str.md)),
+which the template renders with a triple mustache, as in
+`'{{{app_name_js}}}'`. JSON inlined into a script is built with
+[`json_for_script()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/json_for_script.md).
+The plain entries are HTML-escaped by a double mustache and belong in
+HTML markup.

@@ -146,6 +146,12 @@ The list is a superset: some entries are serialized into
 <code>backend_config_json</code> (and consumed by the backend modules rather than a
 template) or are reserved for future placeholders. Adding a new
 placeholder requires adding it here.</p>
+<p>A configuration string that a template's JavaScript (<code>main.js</code> or an
+inline <code>&lt;script&gt;</code> in an HTML template) places inside a single-quoted
+literal also has an escaped <code>*_js</code> entry (see <code><a href="js_str.html">js_str()</a></code>), which the
+template renders with a triple mustache, as in <code>'{{{app_name_js}}}'</code>.
+JSON inlined into a script is built with <code><a href="json_for_script.html">json_for_script()</a></code>. The plain
+entries are HTML-escaped by a double mustache and belong in HTML markup.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
