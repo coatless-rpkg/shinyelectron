@@ -520,6 +520,10 @@ class ContainerBackend extends EventEmitter {
           hostPort = null;
         }
         if (!hostPort) {
+          // Remove the container, as the timeout path does, so a Retry does
+          // not leave it running.
+          if (this.containerId === containerId) this.containerId = null;
+          if (containerId) this.removeContainer(containerId, engine, env);
           this.emit('status', { phase: 'error', message: 'Could not determine the container host port' });
           settle(reject, new Error('Could not determine the container host port'));
           return;
