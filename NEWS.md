@@ -1,5 +1,10 @@
 # shinyelectron (development version)
 
+* shinyelectron now requires R 4.5.0 or newer, since it verifies downloaded
+  runtimes with `tools::sha256sum()`, which was added in R 4.5.0. The README
+  and `sitrep_electron_system()` now report this minimum. Apps built with the
+  `system` strategy still accept R 4.4.0 or newer on the end user's machine.
+
 * shinyelectron now imports rlang. cli builds `cli_abort()` and `cli_warn()` on
   rlang but only suggests it, so without rlang installed every shinyelectron
   error and warning surfaced as "there is no package called 'rlang'" instead of
