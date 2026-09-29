@@ -106,21 +106,22 @@ test_that("a tarball's DESCRIPTION is read once until the file changes", {
   parent <- withr::local_tempdir()
   write_local_pkg(parent, "OncePkg")
   archive <- tar_local_pkg(parent, "OncePkg", "OncePkg_0.0.1.tar.gz")
-  listings <- 0
+  # Called once per listing of the archive.
+  listings <- mockery::mock()
   real_untar <- utils::untar
   mockery::stub(local_read_archive_description, "utils::untar", function(tarfile, ...) {
-    if (isTRUE(list(...)$list)) listings <<- listings + 1
+    if (isTRUE(list(...)$list)) listings()
     real_untar(tarfile, ...)
   })
 
   for (i in 1:3) {
     expect_equal(unname(local_read_archive_description(archive)[1, "Package"]), "OncePkg")
   }
-  expect_equal(listings, 1)
+  mockery::expect_called(listings, 1)
 
   Sys.setFileTime(archive, Sys.time() + 10)
   local_read_archive_description(archive)
-  expect_equal(listings, 2)
+  mockery::expect_called(listings, 2)
 })
 
 test_that("a git archive tarball is read with R's own tar", {
@@ -256,11 +257,11 @@ test_that("export() resolves local packages against the app directory", {
     dependencies = list(r = list(local_packages = list("../MyPkg")))
   ))
 
-  captured <- NULL
+  prep <- mockery::mock()
   local_mocked_bindings(
     prepare_native_app_files = function(appdir, destdir, app_type, runtime_strategy,
                                         platform, arch, config, verbose = TRUE) {
-      captured <<- config$dependencies$r$local_packages
+      prep(local_packages = config$dependencies$r$local_packages)
       list(converted_app = destdir, dependencies = NULL)
     }
   )
@@ -268,6 +269,7 @@ test_that("export() resolves local packages against the app directory", {
 
   export(appdir, file.path(root, "out"), build = FALSE, verbose = FALSE)
 
+  captured <- mockery::mock_args(prep)[[1]]$local_packages
   expect_equal(normalizePath(captured), normalizePath(file.path(root, "MyPkg")))
 })
 
@@ -292,18 +294,18 @@ test_that("export() resolves suite local packages against the suite root", {
   ))
   write_local_pkg(file.path(suite, "pkgs"), "MyPkg")
 
-  captured <- NULL
-  manifest_local <- NULL
+  manifest <- mockery::mock()
+  build <- mockery::mock()
   local_mocked_bindings(
     resolve_app_dependencies = function(appdir, app_type, runtime_strategy, config) {
       list(language = "r", packages = c("shiny", "MyPkg"), repos = list())
     },
     generate_dependency_manifest = function(...) {
-      manifest_local <<- list(...)$local_packages
+      manifest(local_packages = list(...)$local_packages)
       "{}"
     },
     build_multi_app = function(...) {
-      captured <<- list(...)$config$dependencies$r$local_packages
+      build(local_packages = list(...)$config$dependencies$r$local_packages)
       "electron-app"
     }
   )
@@ -312,21 +314,25 @@ test_that("export() resolves suite local packages against the suite root", {
   export(suite, file.path(withr::local_tempdir(), "out"),
          platform = "mac", arch = "arm64", verbose = FALSE)
 
+  captured <- mockery::mock_args(build)[[1]]$local_packages
   expect_equal(normalizePath(captured), normalizePath(file.path(suite, "pkgs", "MyPkg")))
   # Local package names are kept out of the system-requirements lookup.
-  expect_equal(manifest_local, "MyPkg")
+  # The manifest is generated more than once; check the last one.
+  manifest_args <- mockery::mock_args(manifest)
+  expect_equal(manifest_args[[length(manifest_args)]]$local_packages, "MyPkg")
 })
 
 test_that("generate_dependency_manifest keeps local packages out of the sysreqs lookup", {
-  queried <- list()
+  sysreqs <- mockery::mock()
   local_mocked_bindings(query_sysreqs = function(pkgs, distribution, release) {
-    queried[[length(queried) + 1]] <<- pkgs
+    sysreqs(pkgs = pkgs)
     character(0)
   })
 
   manifest <- jsonlite::fromJSON(generate_dependency_manifest(
     packages = c("shiny", "MyPkg"), language = "r", local_packages = "MyPkg"
   ))
+  queried <- lapply(mockery::mock_args(sysreqs), `[[`, "pkgs")
 
   expect_equal(manifest$packages, c("shiny", "MyPkg"))
   expect_length(queried, 2)
@@ -343,13 +349,14 @@ test_that("export() keeps local packages out of the sysreqs lookup", {
   ))
   writeLines(c("library(shiny)", "library(MyPkg)"), file.path(appdir, "app.R"))
 
-  queried <- list()
+  sysreqs <- mockery::mock()
   local_mocked_bindings(query_sysreqs = function(pkgs, distribution, release) {
-    queried[[length(queried) + 1]] <<- pkgs
+    sysreqs(pkgs = pkgs)
     character(0)
   })
 
   result <- export(appdir, file.path(root, "out"), build = FALSE, verbose = FALSE)
+  queried <- lapply(mockery::mock_args(sysreqs), `[[`, "pkgs")
 
   expect_true("MyPkg" %in% result$dependencies$packages)
   expect_true(length(queried) > 0)
@@ -362,9 +369,9 @@ test_that("export() keeps local packages out of the sysreqs lookup", {
 test_that("embed_r_runtime checks local packages before downloading R", {
   skip_if_not_installed("mockery")
   out <- withr::local_tempdir()
-  downloaded <- FALSE
+  download <- mockery::mock()
   mockery::stub(embed_r_runtime, "install_r_portable", function(...) {
-    downloaded <<- TRUE
+    download(...)
     fs::path(out, "cached-r")
   })
 
@@ -376,7 +383,7 @@ test_that("embed_r_runtime checks local packages before downloading R", {
     ),
     class = "shinyelectron_local_packages_missing"
   )
-  expect_false(downloaded)
+  mockery::expect_called(download, 0)
 })
 
 test_that("local_r_install_order installs local dependencies first", {
@@ -410,10 +417,10 @@ test_that("local_r_install_order rejects a dependency cycle", {
 test_that("check_local_r_package_loads trusts the sentinel line, not the exit status", {
   skip_if_not_installed("mockery")
   run_result <- NULL
-  run_args <- NULL
+  run <- mockery::mock()
   mockery::stub(check_local_r_package_loads, "processx::run",
                 function(command, args, ...) {
-                  run_args <<- args
+                  run(args = args)
                   run_result
                 })
 
@@ -422,7 +429,7 @@ test_that("check_local_r_package_loads trusts the sentinel line, not the exit st
                      stderr = "", timeout = FALSE)
   expect_true(check_local_r_package_loads("Rscript", "pkg", "lib", "current")$ok)
   # The marker is flushed before the process can crash on exit.
-  expect_match(run_args[[2]], "<<SE_LOAD_OK>>.*flush\\(stdout\\(\\)\\)")
+  expect_match(mockery::mock_args(run)[[1]]$args[[2]], "<<SE_LOAD_OK>>.*flush\\(stdout\\(\\)\\)")
 
   run_result <- list(status = 1L, stdout = "",
                      stderr = "Error: .onLoad failed", timeout = FALSE)
@@ -432,9 +439,9 @@ test_that("check_local_r_package_loads trusts the sentinel line, not the exit st
 test_that("local installs keep the caller's environment and use the unstaged install only on Windows", {
   skip_if_not_installed("mockery")
   lib <- withr::local_tempdir()
-  captured <- NULL
+  run <- mockery::mock()
   mockery::stub(install_local_r_package, "processx::run", function(command, args, ...) {
-    captured <<- list(command = command, args = args, env = list(...)$env)
+    run(command = command, args = args, env = list(...)$env)
     list(status = 0L, stdout = "", stderr = NULL, timeout = FALSE)
   })
   mockery::stub(install_local_r_package, "check_local_r_package_loads", function(...) {
@@ -443,12 +450,14 @@ test_that("local installs keep the caller's environment and use the unstaged ins
 
   mockery::stub(install_local_r_package, "detect_current_platform", function() "mac")
   install_local_r_package("Rscript", "pkg", "pkg_0.0.1.tar.gz", lib, verbose = FALSE)
+  captured <- mockery::mock_args(run)[[1]]
   expect_equal(captured$env[["PATH"]], Sys.getenv("PATH"))
   expect_equal(captured$env[["R_LIBS_SITE"]], lib)
   expect_false(grepl("--no-staged-install", captured$args[[2]], fixed = TRUE))
 
   mockery::stub(install_local_r_package, "detect_current_platform", function() "win")
   install_local_r_package("Rscript", "pkg", "pkg_0.0.1.tar.gz", lib, verbose = FALSE)
+  captured <- mockery::mock_args(run)[[2]]
   expect_match(captured$args[[2]], "--no-staged-install", fixed = TRUE)
   expect_match(captured$args[[2]], "--no-clean-on-error", fixed = TRUE)
 })
@@ -640,13 +649,11 @@ test_that("build_electron_app passes the configured local packages to embed_r_ru
   mockery::stub(build_electron_app, "build_for_platforms", function(...) invisible(TRUE))
   mockery::stub(build_electron_app, "validate_build_output", function(...) invisible(TRUE))
   mockery::stub(build_electron_app, "resolve_runtime_version", function(runtime, config) "4.6.1")
-  captured <- NULL
-  captured_prune <- NULL
+  embed <- mockery::mock()
   mockery::stub(build_electron_app, "embed_r_runtime",
                 function(output_dir, packages, repos, version, platform, arch,
                          verbose, prune, local_packages) {
-    captured <<- local_packages
-    captured_prune <<- prune
+    embed(local_packages = local_packages, prune = prune)
     invisible(fs::path(output_dir, "runtime", "R"))
   })
 
@@ -658,8 +665,9 @@ test_that("build_electron_app passes the configured local packages to embed_r_ru
     verbose = FALSE
   )
 
-  expect_equal(captured, local_packages)
-  expect_true(captured_prune)   # dependencies.r.prune defaults to TRUE
+  captured <- mockery::mock_args(embed)[[1]]
+  expect_equal(captured$local_packages, local_packages)
+  expect_true(captured$prune)   # dependencies.r.prune defaults to TRUE
 })
 
 test_that("build_multi_app passes the configured local packages to embed_r_runtime", {
@@ -677,13 +685,11 @@ test_that("build_multi_app passes the configured local packages to embed_r_runti
     list(id = "two", name = "Two", type = "r-shiny", runtime_strategy = "bundled")
   )
 
-  captured <- NULL
-  captured_prune <- NULL
+  embed <- mockery::mock()
   mockery::stub(build_multi_app, "embed_r_runtime",
                 function(output_dir, packages, repos, version, platform, arch,
                          verbose, prune, local_packages) {
-    captured <<- local_packages
-    captured_prune <<- prune
+    embed(local_packages = local_packages, prune = prune)
     invisible(TRUE)
   })
   mockery::stub(build_multi_app, "validate_node_npm", function() invisible(TRUE))
@@ -702,8 +708,9 @@ test_that("build_multi_app passes the configured local packages to embed_r_runti
     r_packages = "shiny"
   )
 
-  expect_equal(captured, "/abs/pkgs/MyPkg")
-  expect_true(captured_prune)   # dependencies.r.prune defaults to TRUE
+  captured <- mockery::mock_args(embed)[[1]]
+  expect_equal(captured$local_packages, "/abs/pkgs/MyPkg")
+  expect_true(captured$prune)   # dependencies.r.prune defaults to TRUE
 })
 
 test_that("build_multi_app falls back to the configured repositories", {
@@ -723,11 +730,11 @@ test_that("build_multi_app falls back to the configured repositories", {
     )
   }
 
-  captured <- NULL
+  embed <- mockery::mock()
   mockery::stub(build_multi_app, "embed_r_runtime",
                 function(output_dir, packages, repos, version, platform, arch,
                          verbose, prune, local_packages) {
-    captured <<- repos
+    embed(repos = repos)
     invisible(TRUE)
   })
   mockery::stub(build_multi_app, "validate_node_npm", function() invisible(TRUE))
@@ -748,8 +755,8 @@ test_that("build_multi_app falls back to the configured repositories", {
 
   # No app declared or detected packages, so there are no manifest repos.
   build(suite_config(repos = list("https://example.org/cran")))
-  expect_equal(unlist(captured), "https://example.org/cran")
+  expect_equal(unlist(mockery::mock_args(embed)[[1]]$repos), "https://example.org/cran")
 
   build(suite_config())
-  expect_equal(unlist(captured), "https://cloud.r-project.org")
+  expect_equal(unlist(mockery::mock_args(embed)[[2]]$repos), "https://cloud.r-project.org")
 })

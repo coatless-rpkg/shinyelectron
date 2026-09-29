@@ -61,13 +61,10 @@ test_that("assert_safe_to_overwrite refuses protected dirs", {
 # 4D-1: wizard platform validation
 test_that("wizard aborts for an invalid platform token", {
   tmp <- withr::local_tempdir()
+  # One reply per prompt, up to and including the platform prompt.
   responses <- c("", "", "1", "1", "badplatform")
-  idx <- 0L
   mockery::stub(wizard, "interactive", function() TRUE)
-  mockery::stub(wizard, "readline", function(...) {
-    idx <<- idx + 1L
-    if (idx <= length(responses)) responses[[idx]] else ""
-  })
+  mockery::stub(wizard, "readline", do.call(mockery::mock, as.list(responses)))
   expect_error(
     capture.output(suppressMessages(wizard(tmp)), type = "output"),
     "Invalid platform"
@@ -273,15 +270,15 @@ test_that("a quoted one_click warns once and still builds a wizard", {
   writeLines(c("installer:", "  one_click: \"false\""),
              file.path(tmp, "_shinyelectron.yml"))
 
-  quoted_warnings <- 0L
+  quoted_warning <- mockery::mock()
   cfg <- withCallingHandlers(
     read_config(tmp),
     shinyelectron_quoted_flag = function(w) {
-      quoted_warnings <<- quoted_warnings + 1L
+      quoted_warning(conditionMessage(w))
       invokeRestart("muffleWarning")
     }
   )
-  expect_equal(quoted_warnings, 1L)
+  mockery::expect_called(quoted_warning, 1L)
   expect_identical(cfg$installer$one_click, FALSE)
 
   # The stored logical reaches package.json without a second warning.

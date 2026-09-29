@@ -38,9 +38,10 @@ test_that("embed_r_runtime installs packages from an empty directory without sit
                 function(repos) matrix(nrow = 0, ncol = 0))
   mockery::stub(embed_r_runtime, "tools::package_dependencies", function(...) list())
   mockery::stub(embed_r_runtime, "detect_current_platform", function() "mac")
-  seen <- NULL
+  run_rec <- mockery::mock()
   mockery::stub(embed_r_runtime, "processx::run", function(command, args, ..., wd = NULL, env = NULL) {
-    seen <<- list(
+    # The working directory is inspected now, while it still exists.
+    run_rec(
       wd = wd, env = env, wd_exists = !is.null(wd) && dir.exists(wd),
       wd_files = if (!is.null(wd)) list.files(wd, all.files = TRUE, no.. = TRUE),
       wd_is_project = !is.null(wd) && identical(normalizePath(wd), normalizePath(project))
@@ -53,6 +54,8 @@ test_that("embed_r_runtime installs packages from an empty directory without sit
     output_dir = out, packages = "shiny", repos = "https://cloud.r-project.org",
     version = "4.6.1", platform = "mac", arch = "arm64", verbose = FALSE
   )
+  run_calls <- mockery::mock_args(run_rec)
+  seen <- run_calls[[length(run_calls)]]
 
   # An empty directory of its own, removed afterwards.
   expect_true(seen$wd_exists)

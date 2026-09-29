@@ -446,13 +446,13 @@ test_that("build_electron_app delegates bundled R embedding to embed_r_runtime w
     list(status = 0, stdout = "", stderr = "")
   })
 
-  embed_args <- NULL
+  embed_rec <- mockery::mock()
   mockery::stub(build_electron_app, "embed_r_runtime",
                 function(output_dir, packages, repos, version, platform, arch, verbose,
                          prune, local_packages) {
-    embed_args <<- list(packages = packages, repos = repos, version = version,
-                        platform = platform, arch = arch, prune = prune,
-                        local_packages = local_packages)
+    embed_rec(packages = packages, repos = repos, version = version,
+              platform = platform, arch = arch, prune = prune,
+              local_packages = local_packages)
     invisible(fs::path(output_dir, "runtime", "R"))
   })
 
@@ -460,6 +460,7 @@ test_that("build_electron_app delegates bundled R embedding to embed_r_runtime w
                      runtime_strategy = "bundled",
                      platform = "mac", arch = "arm64", verbose = FALSE)
 
+  embed_args <- mockery::mock_args(embed_rec)[[1]]
   expect_false(is.null(embed_args))
   expect_equal(embed_args$packages, c("shiny", "bslib"))
   expect_equal(embed_args$repos, "https://cloud.r-project.org")
@@ -486,13 +487,11 @@ test_that("build_electron_app passes dependencies.r.prune from config to embed_r
   mockery::stub(build_electron_app, "validate_build_output", function(...) invisible(TRUE))
   mockery::stub(build_electron_app, "resolve_runtime_version", function(runtime, config) "4.6.1")
 
-  forwarded <- NULL
-  forwarded_local <- NULL
+  embed_rec <- mockery::mock()
   mockery::stub(build_electron_app, "embed_r_runtime",
                 function(output_dir, packages, repos, version, platform, arch, verbose,
                          prune, local_packages) {
-    forwarded <<- prune
-    forwarded_local <<- local_packages
+    embed_rec(prune = prune, local_packages = local_packages)
     invisible(fs::path(output_dir, "runtime", "R"))
   })
 
@@ -500,25 +499,25 @@ test_that("build_electron_app passes dependencies.r.prune from config to embed_r
                      runtime_strategy = "bundled", platform = "mac", arch = "arm64",
                      config = list(dependencies = list(r = list(prune = FALSE))),
                      verbose = FALSE)
-  expect_false(forwarded)
-  expect_equal(forwarded_local, character(0))
+  expect_false(mockery::mock_args(embed_rec)[[1]]$prune)
+  expect_equal(mockery::mock_args(embed_rec)[[1]]$local_packages, character(0))
 
   # A quoted "false" in a config built in R also turns pruning off, with a
   # single warning from the up-front check.
-  forwarded <- NULL
-  n_quoted <- 0L
+  quoted_rec <- mockery::mock()
   withCallingHandlers(
     build_electron_app(app_dir, fs::path(tmp, "out2"), app_type = "r-shiny",
                        runtime_strategy = "bundled", platform = "mac", arch = "arm64",
                        config = list(dependencies = list(r = list(prune = "false"))),
                        verbose = FALSE),
     shinyelectron_quoted_flag = function(w) {
-      n_quoted <<- n_quoted + 1L
+      quoted_rec()
       invokeRestart("muffleWarning")
     }
   )
-  expect_equal(n_quoted, 1L)
-  expect_false(forwarded)
+  mockery::expect_called(quoted_rec, 1)
+  # The second build is the recorder's second call.
+  expect_false(mockery::mock_args(embed_rec)[[2]]$prune)
 })
 
 test_that("build_electron_app rejects a bad dependencies.r.prune before touching output or runtimes", {
@@ -530,11 +529,11 @@ test_that("build_electron_app rejects a bad dependencies.r.prune before touching
 
   # The real embed_r_runtime() runs; record whether it gets as far as
   # downloading or copying a runtime.
-  calls <- character(0)
+  calls_rec <- mockery::mock()
   record <- function(name, value = NULL) {
     force(value)
     function(...) {
-      calls <<- c(calls, name)
+      calls_rec(name)
       value
     }
   }
@@ -558,6 +557,7 @@ test_that("build_electron_app rejects a bad dependencies.r.prune before touching
     "dependencies.r.prune",
     class = "shinyelectron_invalid_flag"
   )
+  calls <- vapply(mockery::mock_args(calls_rec), `[[`, character(1), 1)
   expect_equal(calls, character(0))
   expect_true(fs::file_exists(fs::path(out, "previous.txt")))
 })
@@ -578,11 +578,11 @@ test_that("build_electron_app falls back to the configured repositories without 
   mockery::stub(build_electron_app, "validate_build_output", function(...) invisible(TRUE))
   mockery::stub(build_electron_app, "resolve_runtime_version", function(runtime, config) "4.4.1")
 
-  embed_repos <- NULL
+  embed_rec <- mockery::mock()
   mockery::stub(build_electron_app, "embed_r_runtime",
                 function(output_dir, packages, repos, version, platform, arch,
                          verbose, prune, local_packages) {
-    embed_repos <<- repos
+    embed_rec(repos = repos)
     invisible(fs::path(output_dir, "runtime", "R"))
   })
 
@@ -591,10 +591,10 @@ test_that("build_electron_app falls back to the configured repositories without 
                      app_type = "r-shiny", runtime_strategy = "bundled",
                      platform = "mac", arch = "arm64", config = config,
                      verbose = FALSE)
-  expect_equal(unlist(embed_repos), "https://example.org/cran")
+  expect_equal(unlist(mockery::mock_args(embed_rec)[[1]]$repos), "https://example.org/cran")
 
   build_electron_app(app_dir, fs::path(tmp, "out2"), app_name = "test",
                      app_type = "r-shiny", runtime_strategy = "bundled",
                      platform = "mac", arch = "arm64", verbose = FALSE)
-  expect_equal(unlist(embed_repos), "https://cloud.r-project.org")
+  expect_equal(unlist(mockery::mock_args(embed_rec)[[2]]$repos), "https://cloud.r-project.org")
 })

@@ -16,15 +16,17 @@ local_app <- function(dir = "dash-app", config = NULL, env = parent.frame()) {
 # Run export() with conversion and the Electron build replaced, returning the
 # arguments build_electron_app() received.
 export_args <- function(appdir, ...) {
-  captured <- NULL
+  rec <- mockery::mock()
   mockery::stub(export, "convert_app_to_shinylive", function(...) tempdir())
   mockery::stub(export, "build_electron_app", function(...) {
-    captured <<- list(...)
+    rec(...)
     tempdir()
   })
   export(appdir, withr::local_tempdir(), build = TRUE, overwrite = TRUE,
          verbose = FALSE, ...)
-  captured
+  # The arguments of the last call, or NULL when the build was never reached.
+  calls <- mockery::mock_args(rec)
+  if (length(calls) == 0) NULL else calls[[length(calls)]]
 }
 
 non_ascii_name <- "\u6570\u636e\u5206\u6790"
@@ -93,17 +95,11 @@ test_that("a non-ASCII app.name sets only the display name", {
 
 # The messages export() prints with verbose = TRUE, with the build replaced.
 export_messages <- function(appdir) {
-  messages <- character(0)
   mockery::stub(export, "convert_app_to_shinylive", function(...) tempdir())
   mockery::stub(export, "build_electron_app", function(...) tempdir())
-  withCallingHandlers(
-    export(appdir, withr::local_tempdir(), overwrite = TRUE, verbose = TRUE),
-    message = function(m) {
-      messages <<- c(messages, conditionMessage(m))
-      invokeRestart("muffleMessage")
-    }
+  testthat::capture_messages(
+    export(appdir, withr::local_tempdir(), overwrite = TRUE, verbose = TRUE)
   )
-  messages
 }
 
 test_that("export() shows the slug, and how to change it when the folder gives it", {
@@ -164,7 +160,7 @@ test_that("a suite takes its display name from app.name and its slug from the di
     dir.create(file.path(appdir, "apps", id), recursive = TRUE)
     file.copy(file.path(appdir, "app.R"), file.path(appdir, "apps", id))
   }
-  captured <- NULL
+  rec <- mockery::mock()
   local_mocked_bindings(
     convert_shiny_to_shinylive = function(appdir, output_dir, subdir = NULL, ...) {
       fs::dir_create(fs::path(output_dir, subdir), recurse = TRUE)
@@ -173,7 +169,7 @@ test_that("a suite takes its display name from app.name and its slug from the di
     },
     validate_node_npm = function(...) invisible(TRUE),
     process_templates = function(output_dir, app_name, app_type, ..., config = NULL) {
-      captured <<- list(app_name = app_name, slug = config$app$slug)
+      rec(app_name = app_name, slug = config$app$slug)
       invisible(TRUE)
     },
     install_npm_dependencies = function(...) invisible(TRUE),
@@ -183,6 +179,8 @@ test_that("a suite takes its display name from app.name and its slug from the di
   expect_no_warning(
     export(appdir, withr::local_tempdir(), overwrite = TRUE, verbose = FALSE)
   )
+  calls <- mockery::mock_args(rec)
+  captured <- if (length(calls) == 0) NULL else calls[[length(calls)]]
   expect_equal(captured$app_name, "Sales Tools")
   expect_equal(captured$slug, "suite-dir")
 })
@@ -282,14 +280,7 @@ test_that("export_multi_app() checks the slug before a build too", {
 
 test_that("init_config() says to set app.slug when none can be derived", {
   appdir <- local_app(non_ascii_name)
-  messages <- character(0)
-  withCallingHandlers(
-    init_config(appdir),
-    message = function(m) {
-      messages <<- c(messages, conditionMessage(m))
-      invokeRestart("muffleMessage")
-    }
-  )
+  messages <- testthat::capture_messages(init_config(appdir))
   expect_true(any(grepl("app.slug", messages, fixed = TRUE)))
   lines <- readLines(file.path(appdir, "_shinyelectron.yml"))
   expect_true(any(startsWith(lines, "  # slug: null")))

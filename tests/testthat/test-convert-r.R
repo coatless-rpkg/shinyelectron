@@ -48,11 +48,11 @@ test_that("convert_shiny_to_shinylive cleans up temp dir on export failure", {
   outdir <- tempfile("out-")
   on.exit(unlink(outdir, recursive = TRUE), add = TRUE)
 
-  recorded_temp_dir <- NULL
+  copy_rec <- mockery::mock()
 
   # Intercept the copy so we learn the temp path and create it on disk.
   mockery::stub(convert_shiny_to_shinylive, "copy_dir_contents", function(from, to) {
-    recorded_temp_dir <<- to
+    copy_rec(to = to)
     dir.create(to, recursive = TRUE, showWarnings = FALSE)
   })
 
@@ -70,6 +70,8 @@ test_that("convert_shiny_to_shinylive cleans up temp dir on export failure", {
   )
 
   # Temp dir must have been cleaned up (not just on success).
+  copy_calls <- mockery::mock_args(copy_rec)
+  recorded_temp_dir <- if (length(copy_calls)) copy_calls[[length(copy_calls)]]$to
   expect_false(is.null(recorded_temp_dir),
                label = "copy_dir_contents stub was called")
   expect_false(dir.exists(recorded_temp_dir),
@@ -91,12 +93,12 @@ test_that("convert_shiny_to_shinylive threads subdir to export, is additive, val
   dir.create(outdir, recursive = TRUE)
   writeLines("keep", file.path(outdir, "sentinel.txt"))
 
-  export_args <- NULL
+  export_rec <- mockery::mock()
   mockery::stub(convert_shiny_to_shinylive, "requireNamespace",
                 function(pkg, ...) TRUE)
   mockery::stub(convert_shiny_to_shinylive, "shinylive::export",
                 function(appdir, destdir, subdir = "", quiet = TRUE, ...) {
-                  export_args <<- list(destdir = destdir, subdir = subdir)
+                  export_rec(destdir = destdir, subdir = subdir)
                   dir.create(file.path(destdir, "shinylive"), showWarnings = FALSE)
                   dir.create(file.path(destdir, subdir), recursive = TRUE,
                              showWarnings = FALSE)
@@ -107,6 +109,8 @@ test_that("convert_shiny_to_shinylive threads subdir to export, is additive, val
 
   result <- convert_shiny_to_shinylive(appdir, outdir, subdir = "alpha",
                                        verbose = FALSE)
+  export_calls <- mockery::mock_args(export_rec)
+  export_args <- if (length(export_calls)) export_calls[[length(export_calls)]]
 
   expect_equal(export_args$subdir, "alpha")                 # subdir threaded
   expect_true(file.exists(file.path(outdir, "sentinel.txt"))) # additive, no unlink
@@ -127,18 +131,20 @@ test_that("convert_shiny_to_shinylive single-app (subdir=NULL) wipes and validat
   dir.create(outdir, recursive = TRUE)
   writeLines("old", file.path(outdir, "stale.txt"))
 
-  export_args <- NULL
+  export_rec <- mockery::mock()
   mockery::stub(convert_shiny_to_shinylive, "requireNamespace",
                 function(pkg, ...) TRUE)
   mockery::stub(convert_shiny_to_shinylive, "shinylive::export",
                 function(appdir, destdir, subdir = "", quiet = TRUE, ...) {
-                  export_args <<- list(subdir = subdir)
+                  export_rec(subdir = subdir)
                   writeLines("<html></html>", file.path(destdir, "index.html"))
                   dir.create(file.path(destdir, "shinylive"), showWarnings = FALSE)
                   invisible(destdir)
                 })
 
   convert_shiny_to_shinylive(appdir, outdir, overwrite = TRUE, verbose = FALSE)
+  export_calls <- mockery::mock_args(export_rec)
+  export_args <- if (length(export_calls)) export_calls[[length(export_calls)]]
 
   expect_equal(export_args$subdir, "")                       # NULL -> "" default kept
   expect_false(file.exists(file.path(outdir, "stale.txt")))  # overwrite still wipes

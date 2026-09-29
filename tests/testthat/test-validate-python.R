@@ -1,10 +1,10 @@
 test_that("validate_python_available delegates to validate_command_available with the Python resolver", {
-  captured <- NULL
+  rec <- mockery::mock()
   mockery::stub(
     validate_python_available,
     "validate_command_available",
     function(command_resolver, not_found, label, ...) {
-      captured <<- list(
+      rec(
         resolver = command_resolver,
         not_found = not_found,
         label = label
@@ -13,6 +13,7 @@ test_that("validate_python_available delegates to validate_command_available wit
     }
   )
   expect_silent(validate_python_available())
+  captured <- mockery::mock_args(rec)[[1]]
   expect_identical(captured$resolver, find_python_command)
   expect_equal(captured$label, "Python")
   expect_match(captured$not_found[[1]], "Python is required")

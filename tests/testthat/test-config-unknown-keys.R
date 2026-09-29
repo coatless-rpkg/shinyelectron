@@ -225,16 +225,17 @@ test_that("export reports unknown keys once for a single app", {
              file.path(dir, "app.R"))
   out <- file.path(withr::local_tempdir(), "out")
 
-  n <- 0L
+  # Count only the unknown-key warnings; any other warning still propagates.
+  rec <- mockery::mock()
   withCallingHandlers(
     export(dir, out, app_type = "r-shiny", runtime_strategy = "system",
            build = FALSE, verbose = FALSE),
     shinyelectron_unknown_config_key = function(w) {
-      n <<- n + 1L
+      rec()
       invokeRestart("muffleWarning")
     }
   )
-  expect_equal(n, 1L)
+  mockery::expect_called(rec, 1L)
 })
 
 test_that("export reports unknown keys once for a multi-app suite", {
@@ -255,13 +256,14 @@ test_that("export reports unknown keys once for a multi-app suite", {
   }
   out <- file.path(withr::local_tempdir(), "out")
 
-  n <- 0L
+  # Count only the unknown-key warnings; any other warning still propagates.
+  rec <- mockery::mock()
   withCallingHandlers(
     export(dir, out, build = FALSE, verbose = FALSE),
     shinyelectron_unknown_config_key = function(w) {
-      n <<- n + 1L
+      rec()
       invokeRestart("muffleWarning")
     }
   )
-  expect_equal(n, 1L)
+  mockery::expect_called(rec, 1L)
 })

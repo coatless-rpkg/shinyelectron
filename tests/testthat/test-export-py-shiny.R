@@ -38,17 +38,16 @@ test_that("export defaults runtime_strategy to shinylive for py-shiny when NULL"
   outdir <- tempfile()
   on.exit(unlink(c(tmpdir, outdir), recursive = TRUE))
 
-  captured_strategy <- NULL
+  build_rec <- mockery::mock()
   mockery::stub(export, "build_electron_app", function(...) {
-    args <- list(...)
-    captured_strategy <<- args$runtime_strategy
+    build_rec(...)
     tempdir()
   })
 
   export(appdir = tmpdir, destdir = outdir, app_type = "py-shiny",
          runtime_strategy = NULL, build = TRUE, verbose = FALSE)
 
-  expect_equal(captured_strategy, "shinylive")
+  expect_equal(mockery::mock_args(build_rec)[[1]]$runtime_strategy, "shinylive")
 })
 
 test_that("export passes system strategy for py-shiny", {
@@ -58,10 +57,9 @@ test_that("export passes system strategy for py-shiny", {
   outdir <- tempfile()
   on.exit(unlink(c(tmpdir, outdir), recursive = TRUE))
 
-  captured_strategy <- NULL
+  build_rec <- mockery::mock()
   mockery::stub(export, "build_electron_app", function(...) {
-    args <- list(...)
-    captured_strategy <<- args$runtime_strategy
+    build_rec(...)
     tempdir()
   })
   mockery::stub(export, "validate_python_available", function() invisible(TRUE))
@@ -73,7 +71,7 @@ test_that("export passes system strategy for py-shiny", {
     "requirements.txt"
   )
 
-  expect_equal(captured_strategy, "system")
+  expect_equal(mockery::mock_args(build_rec)[[1]]$runtime_strategy, "system")
 })
 
 test_that("write_runtime_manifest uses pin version and release when python config is unset", {
@@ -85,8 +83,7 @@ test_that("write_runtime_manifest uses pin version and release when python confi
 
   config <- list(dependencies = list())
 
-  captured_version <- NULL
-  captured_release <- NULL
+  manifest_rec <- mockery::mock()
 
   # The default pin matches the offline short-circuit in resolve_python_pbs;
   # no network stub needed. Stub only generate_python_runtime_manifest to
@@ -95,14 +92,14 @@ test_that("write_runtime_manifest uses pin version and release when python confi
   # Capture what generate_python_runtime_manifest receives
   mockery::stub(write_runtime_manifest, "generate_python_runtime_manifest",
     function(version, platform = NULL, arch = NULL, release_date = NULL) {
-      captured_version <<- version
-      captured_release <<- release_date
+      manifest_rec(version = version, release_date = release_date)
       '{"schema_version":"1.0"}'
     }
   )
 
   write_runtime_manifest(tmpdir, "py-shiny", "mac", "arm64", config, verbose = FALSE)
 
-  expect_equal(captured_version, SHINYELECTRON_DEFAULTS$runtime_versions$python$version)
-  expect_equal(captured_release, SHINYELECTRON_DEFAULTS$runtime_versions$python$release)
+  manifest_args <- mockery::mock_args(manifest_rec)[[1]]
+  expect_equal(manifest_args$version, SHINYELECTRON_DEFAULTS$runtime_versions$python$version)
+  expect_equal(manifest_args$release_date, SHINYELECTRON_DEFAULTS$runtime_versions$python$release)
 })

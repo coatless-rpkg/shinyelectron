@@ -210,13 +210,14 @@ test_that("embed_r_runtime prunes by default and keeps everything with prune = F
 
 test_that("embed_r_runtime checks prune before downloading or copying a runtime", {
   skip_if_not_installed("mockery")
-  calls <- character(0)
+  # One shared recorder; each stub calls it with its own label.
+  calls <- mockery::mock()
   mockery::stub(embed_r_runtime, "install_r_portable", function(...) {
-    calls <<- c(calls, "install_r_portable")
+    calls("install_r_portable")
     tempfile()
   })
   mockery::stub(embed_r_runtime, "copy_dir_contents", function(...) {
-    calls <<- c(calls, "copy_dir_contents")
+    calls("copy_dir_contents")
     invisible(NULL)
   })
 
@@ -228,7 +229,10 @@ test_that("embed_r_runtime checks prune before downloading or copying a runtime"
     ),
     "prune"
   )
-  expect_equal(calls, character(0))
+  expect_equal(
+    vapply(mockery::mock_args(calls), `[[`, character(1), 1L),
+    character(0)
+  )
 })
 
 test_that("dependencies.r.prune defaults to TRUE and is read from the config file", {
@@ -255,15 +259,16 @@ test_that("a quoted true or false in the config file is read with one warning", 
   cfg_file <- file.path(appdir, "_shinyelectron.yml")
 
   read_counting_warnings <- function() {
-    n <- 0L
+    # Count only the quoted-flag warnings; any other warning passes through.
+    rec <- mockery::mock()
     cfg <- withCallingHandlers(
       read_config(appdir),
       shinyelectron_quoted_flag = function(w) {
-        n <<- n + 1L
+        rec(w)
         invokeRestart("muffleWarning")
       }
     )
-    list(config = cfg, warnings = n)
+    list(config = cfg, warnings = length(mockery::mock_calls(rec)))
   }
 
   writeLines(c("dependencies:", "  r:", '    prune: "false"'), cfg_file)

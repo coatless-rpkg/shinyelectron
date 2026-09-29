@@ -412,17 +412,11 @@ test_that("build_multi_app embeds the R runtime once with the unioned package se
   # Direct union of each app's packages, deliberately unsorted with a duplicate.
   union_pkgs <- c("shiny", "bslib", "shiny", "DT")
 
-  captured <- NULL
-  captured_prune <- NULL
-  captured_local <- NULL
-  n_calls <- 0
+  embed_rec <- mockery::mock()
   mockery::stub(build_multi_app, "embed_r_runtime",
     function(output_dir, packages, repos, version, platform, arch, verbose = TRUE,
              prune, local_packages) {
-      captured <<- packages
-      captured_prune <<- prune
-      captured_local <<- local_packages
-      n_calls <<- n_calls + 1
+      embed_rec(packages = packages, prune = prune, local_packages = local_packages)
       invisible(TRUE)
     })
   mockery::stub(build_multi_app, "validate_node_npm", function() invisible(TRUE))
@@ -441,10 +435,11 @@ test_that("build_multi_app embeds the R runtime once with the unioned package se
     r_packages = union_pkgs
   )
 
-  expect_equal(n_calls, 1)
-  expect_equal(captured, sort(unique(union_pkgs)))
-  expect_true(captured_prune)   # dependencies.r.prune defaults to TRUE
-  expect_equal(captured_local, character(0))   # no dependencies.r.local_packages
+  expect_equal(length(mockery::mock_calls(embed_rec)), 1)
+  embed_args <- mockery::mock_args(embed_rec)[[1]]
+  expect_equal(embed_args$packages, sort(unique(union_pkgs)))
+  expect_true(embed_args$prune)   # dependencies.r.prune defaults to TRUE
+  expect_equal(embed_args$local_packages, character(0))   # no dependencies.r.local_packages
 })
 
 test_that("build_multi_app passes dependencies.r.prune from config to embed_r_runtime", {
@@ -468,13 +463,11 @@ test_that("build_multi_app passes dependencies.r.prune from config to embed_r_ru
          type = "r-shiny", runtime_strategy = "bundled")
   )
 
-  forwarded <- NULL
-  forwarded_local <- NULL
+  embed_rec <- mockery::mock()
   mockery::stub(build_multi_app, "embed_r_runtime",
     function(output_dir, packages, repos, version, platform, arch, verbose = TRUE,
              prune, local_packages) {
-      forwarded <<- prune
-      forwarded_local <<- local_packages
+      embed_rec(prune = prune, local_packages = local_packages)
       invisible(TRUE)
     })
   mockery::stub(build_multi_app, "validate_node_npm", function() invisible(TRUE))
@@ -493,14 +486,13 @@ test_that("build_multi_app passes dependencies.r.prune from config to embed_r_ru
     r_packages = "shiny"
   )
 
-  expect_false(forwarded)
-  expect_equal(forwarded_local, character(0))
+  expect_false(mockery::mock_args(embed_rec)[[1]]$prune)
+  expect_equal(mockery::mock_args(embed_rec)[[1]]$local_packages, character(0))
 
   # A quoted "false" in a config built in R also turns pruning off, with a
   # single warning from the up-front check.
   config$dependencies$r$prune <- "false"
-  forwarded <- NULL
-  n_quoted <- 0L
+  quoted_rec <- mockery::mock()
   withCallingHandlers(
     build_multi_app(
       apps_dir = apps_dir, output_dir = output_dir, app_name = "Suite",
@@ -511,12 +503,13 @@ test_that("build_multi_app passes dependencies.r.prune from config to embed_r_ru
       r_packages = "shiny"
     ),
     shinyelectron_quoted_flag = function(w) {
-      n_quoted <<- n_quoted + 1L
+      quoted_rec()
       invokeRestart("muffleWarning")
     }
   )
-  expect_equal(n_quoted, 1L)
-  expect_false(forwarded)
+  expect_equal(length(mockery::mock_calls(quoted_rec)), 1L)
+  # Second build, so the second embed_r_runtime() call.
+  expect_false(mockery::mock_args(embed_rec)[[2]]$prune)
 })
 
 test_that("build_multi_app rejects a bad dependencies.r.prune before creating or downloading anything", {
@@ -542,11 +535,11 @@ test_that("build_multi_app rejects a bad dependencies.r.prune before creating or
 
   # The real embed_r_runtime() runs; record whether it gets as far as
   # downloading or copying a runtime.
-  calls <- character(0)
+  calls_rec <- mockery::mock()
   record <- function(name, value = NULL) {
     force(value)
     function(...) {
-      calls <<- c(calls, name)
+      calls_rec(name)
       value
     }
   }
@@ -570,6 +563,7 @@ test_that("build_multi_app rejects a bad dependencies.r.prune before creating or
     "dependencies.r.prune",
     class = "shinyelectron_invalid_flag"
   )
+  calls <- vapply(mockery::mock_args(calls_rec), `[[`, character(1), 1)
   expect_equal(calls, character(0))
   expect_false(dir.exists(output_dir))
 })
@@ -759,9 +753,7 @@ test_that("export_multi_app does not include container-app packages in bundled e
   )
 
   destdir <- withr::local_tempdir()
-  captured_packages <- NULL
-  captured_prune <- NULL
-  captured_local <- NULL
+  embed_rec <- mockery::mock()
 
   local_mocked_bindings(
     # Controlled dependency resolution: bundled app gets pkgA, container gets pkgB.
@@ -782,9 +774,7 @@ test_that("export_multi_app does not include container-app packages in bundled e
     embed_r_runtime = function(output_dir, packages, repos, version,
                                platform, arch, verbose = TRUE,
                                prune, local_packages) {
-      captured_packages <<- packages
-      captured_prune <<- prune
-      captured_local <<- local_packages
+      embed_rec(packages = packages, prune = prune, local_packages = local_packages)
       invisible(TRUE)
     },
     # Stub the heavy build-pipeline steps that require npm / Electron.
@@ -811,10 +801,11 @@ test_that("export_multi_app does not include container-app packages in bundled e
     verbose  = FALSE
   )
 
-  expect_true("pkgA" %in% captured_packages,
+  embed_args <- mockery::mock_args(embed_rec)[[1]]
+  expect_true("pkgA" %in% embed_args$packages,
     label = "bundled app's package (pkgA) must reach embed_r_runtime")
-  expect_false("pkgB" %in% captured_packages,
+  expect_false("pkgB" %in% embed_args$packages,
     label = "container app's package (pkgB) must NOT reach embed_r_runtime")
-  expect_true(captured_prune)   # dependencies.r.prune defaults to TRUE
-  expect_equal(captured_local, character(0))   # no dependencies.r.local_packages
+  expect_true(embed_args$prune)   # dependencies.r.prune defaults to TRUE
+  expect_equal(embed_args$local_packages, character(0))   # no dependencies.r.local_packages
 })
