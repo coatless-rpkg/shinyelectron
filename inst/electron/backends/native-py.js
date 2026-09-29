@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const {
-  waitForServer, findAvailablePort, killProcessTree, waitForExit,
+  waitForServer, findAvailablePort, killProcessTree, isProcessRunning, waitForExit,
   sortCandidatesByVersion, reportRuntimeCandidates, meetsMinimumVersion, logDebug,
   resolveRuntimeManifestPath
 } = require('./utils');
@@ -520,11 +520,14 @@ class NativePyBackend extends EventEmitter {
           this.emit('status', { phase: 'server_ready', message: 'Python Shiny server ready', port: actualPort });
           settle(resolve, { port: actualPort });
         })
-        .catch((err) => {
-          // A crash close-handler may have already settled and stopped us;
-          // do not stop() again (it could kill a retry's fresh process).
+        .catch(() => {
+          // A crash already settled this start.
           if (settled) return;
-          this.stop();
+          // Tear down only the child this start spawned. stop() would kill
+          // whatever process is current, which may already belong to a newer
+          // start, and report a shutdown for an app that never came up.
+          if (this.pyProcess === child) this.pyProcess = null;
+          if (isProcessRunning(child)) killProcessTree(child);
           const error = new Error(
             `Python Shiny server failed to start within 60 seconds.\n\n` +
             `Python stderr output:\n${stderr}\n\n` +

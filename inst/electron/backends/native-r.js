@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const {
-  waitForServer, findAvailablePort, killProcessTree, waitForExit,
+  waitForServer, findAvailablePort, killProcessTree, isProcessRunning, waitForExit,
   sortCandidatesByVersion, reportRuntimeCandidates, meetsMinimumVersion, logDebug,
   resolveRuntimeManifestPath
 } = require('./utils');
@@ -501,11 +501,14 @@ class NativeRBackend extends EventEmitter {
           this.emit('status', { phase: 'server_ready', message: 'R Shiny server ready' });
           settle(resolve, { port: actualPort });
         })
-        .catch((err) => {
-          // A crash close-handler may have already settled and stopped us;
-          // do not stop() again (it could kill a retry's fresh process).
+        .catch(() => {
+          // A crash already settled this start.
           if (settled) return;
-          this.stop();
+          // Tear down only the child this start spawned. stop() would kill
+          // whatever process is current, which may already belong to a newer
+          // start, and report a shutdown for an app that never came up.
+          if (this.rProcess === child) this.rProcess = null;
+          if (isProcessRunning(child)) killProcessTree(child);
           this.emit('status', {
             phase: 'error',
             message: `R Shiny server failed to start within ${R_READY_TIMEOUT_MS / 1000} seconds.`,
