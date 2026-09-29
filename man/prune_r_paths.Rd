@@ -2,7 +2,7 @@
 % Please edit documentation in R/prune-runtime.R
 \name{prune_r_paths}
 \alias{prune_r_paths}
-\title{Remove allowlisted paths under one directory}
+\title{Remove allowlisted entries directly under one directory}
 \usage{
 prune_r_paths(dir, dir_names = character(0), file_names = character(0))
 }
@@ -12,10 +12,13 @@ prune_r_paths(dir, dir_names = character(0), file_names = character(0))
 \item{dir_names, file_names}{Character vectors of names to remove.}
 }
 \value{
-List with \code{files} and \code{bytes} removed.
+List with the number of \code{files} and \code{bytes} removed.
 }
 \description{
-Only names that appear in \code{dir_names} / \code{file_names} are removed; anything
-else is left untouched.
+Matches entry names exactly (case-sensitively). A name in \code{dir_names} is
+removed only when it is a directory, and a name in \code{file_names} only when it
+is a regular file. A symbolic link with a listed name is removed as a link.
+Anything else is left untouched, and nothing happens when \code{dir} is missing or
+is itself a symbolic link.
 }
 \keyword{internal}

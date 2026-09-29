@@ -1,87 +1,179 @@
-make_runtime_fixture <- function() {
-  root <- tempfile("prune-runtime-")
-  dir.create(root)
-
-  lib <- file.path(root, "library", "pkgA")
-  for (d in c("R", "libs", "help", "include", "tests", "examples")) {
-    dir.create(file.path(lib, d), recursive = TRUE)
+# A small embedded runtime/R tree laid out like a real bundled build: one
+# installed package in the sibling library, and a portable R distribution with
+# its own doc/, tests/ and library of base and recommended packages.
+local_runtime_fixture <- function(env = parent.frame()) {
+  root <- withr::local_tempdir("prune-runtime-", .local_envir = env)
+  files <- c(
+    # A package installed into the bundled library.
+    paste0("library/pkgA/", c(
+      "DESCRIPTION", "NAMESPACE", "NEWS.md", "R/pkgA.rdb", "libs/pkgA.so",
+      "help/pkgA.rdb", "include/pkgA.h", "examples/app.R", "demo/intro.R",
+      "tests/testthat.R", "tests/testthat/test-a.R", "testme/test-b.R",
+      "tinytest/test-c.R"
+    )),
+    # The portable R distribution (R_HOME).
+    paste0("portable-r-9.9.9-macos-arm64/", c(
+      "COPYING", "bin/Rscript", "include/R.h", "share/zoneinfo/UTC",
+      "tests/reg-tests-1a.R", "tests/Examples/base-Ex.R",
+      "doc/COPYING", "doc/COPYRIGHTS", "doc/AUTHORS", "doc/THANKS",
+      "doc/RESOURCES", "doc/CRAN_mirrors.csv", "doc/BioC_mirrors.csv",
+      "doc/KEYWORDS", "doc/KEYWORDS.db", "doc/html/index.html",
+      "doc/html/R.css", "doc/manual/R-intro.pdf", "doc/NEWS", "doc/NEWS.rds",
+      "doc/NEWS.pdf", "doc/FAQ",
+      # Base and recommended packages in the portable R's own library.
+      "library/base/DESCRIPTION", "library/stats/DESCRIPTION",
+      "library/stats/demo/nlm.R", "library/survival/DESCRIPTION",
+      "library/survival/NEWS.Rd", "library/survival/tests/survfit.R"
+    ))
+  )
+  for (f in file.path(root, files)) {
+    dir.create(dirname(f), recursive = TRUE, showWarnings = FALSE)
+    writeLines(paste("contents of", basename(f)), f)
   }
-  for (f in c("DESCRIPTION", "NEWS.md", "R/a.R", "libs/a.dll", "help/a.rdb",
-              "include/a.h", "tests/t.R", "examples/e.R")) {
-    file.create(file.path(lib, f))
-  }
-
-  pr <- file.path(root, "portable-r-9.9.9-win-x64")
-  dir.create(file.path(pr, "bin"), recursive = TRUE)
-  for (d in c("doc", "tests", "include", "Tcl")) dir.create(file.path(pr, d))
-  dir.create(file.path(pr, "share", "zoneinfo"), recursive = TRUE)
-  dir.create(file.path(pr, "library", "base"), recursive = TRUE)
-  for (f in c("bin/Rscript.exe", "doc/d", "tests/t", "include/h", "Tcl/x",
-              "share/zoneinfo/z", "library/base/DESCRIPTION")) {
-    file.create(file.path(pr, f))
-  }
-
   root
 }
 
-test_that("prune_r_paths removes only allowlisted names", {
-  dir <- tempfile("prune-paths-")
-  pkg <- file.path(dir, "pkg")
-  dir.create(file.path(pkg, "keep"), recursive = TRUE)
-  dir.create(file.path(pkg, "include"))
-  dir.create(file.path(pkg, "tests"))
-  file.create(file.path(pkg, "keep", "k"))
-  file.create(file.path(pkg, "include", "a.h"))
-  file.create(file.path(pkg, "tests", "t.R"))
-  file.create(file.path(pkg, "NEWS.md"))
-  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+# Paths prune_bundled_r_runtime() must remove from the fixture, and a selection
+# of neighbours it must keep.
+fixture_removed <- function(root) {
+  pkg <- file.path(root, "library", "pkgA")
+  r_home <- file.path(root, "portable-r-9.9.9-macos-arm64")
+  c(
+    file.path(pkg, c("tests", "testme", "tinytest")),
+    file.path(r_home, "tests"),
+    file.path(r_home, "doc", c("html", "manual", "NEWS", "NEWS.rds", "NEWS.pdf", "FAQ")),
+    file.path(r_home, "library", "survival", "tests")
+  )
+}
 
-  res <- prune_r_paths(pkg, c("include", "tests"), c("NEWS.md"))
+fixture_kept <- function(root) {
+  pkg <- file.path(root, "library", "pkgA")
+  r_home <- file.path(root, "portable-r-9.9.9-macos-arm64")
+  c(
+    file.path(pkg, c("DESCRIPTION", "NAMESPACE", "NEWS.md", "R", "libs", "help",
+                     "include", "examples", "demo")),
+    file.path(r_home, c("COPYING", "bin", "include", "share")),
+    file.path(r_home, "doc", c("COPYING", "COPYRIGHTS", "AUTHORS", "THANKS",
+                               "RESOURCES", "CRAN_mirrors.csv", "BioC_mirrors.csv",
+                               "KEYWORDS", "KEYWORDS.db")),
+    file.path(r_home, "library", c("base", "stats/DESCRIPTION", "stats/demo",
+                                   "survival/DESCRIPTION", "survival/NEWS.Rd"))
+  )
+}
 
-  expect_equal(res$files, 3L)
-  expect_false(dir.exists(file.path(pkg, "include")))
-  expect_false(dir.exists(file.path(pkg, "tests")))
-  expect_false(file.exists(file.path(pkg, "NEWS.md")))
-  expect_true(dir.exists(file.path(pkg, "keep")))
-})
+# The regular files at or below `paths`.
+regular_files <- function(paths) {
+  unlist(lapply(paths, function(p) {
+    if (dir.exists(p)) list.files(p, recursive = TRUE, full.names = TRUE, all.files = TRUE) else p
+  }))
+}
 
-test_that("prune_bundled_r_runtime prunes allowlists and keeps runtime files", {
-  root <- make_runtime_fixture()
-  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+test_that("prune_bundled_r_runtime removes only allowlisted test and documentation files", {
+  root <- local_runtime_fixture()
+  removed <- fixture_removed(root)
+  kept <- fixture_kept(root)
+  expected <- regular_files(removed)
+  expected_bytes <- sum(file.size(expected))
 
   res <- prune_bundled_r_runtime(root, verbose = FALSE)
 
-  pkg <- file.path(root, "library", "pkgA")
-  expect_true(dir.exists(file.path(pkg, "include")))   # headers are kept
-  expect_false(dir.exists(file.path(pkg, "tests")))
-  expect_false(dir.exists(file.path(pkg, "examples")))
-  expect_false(file.exists(file.path(pkg, "NEWS.md")))
-  expect_true(dir.exists(file.path(pkg, "R")))
-  expect_true(dir.exists(file.path(pkg, "libs")))
-  expect_true(dir.exists(file.path(pkg, "help")))
-  expect_true(file.exists(file.path(pkg, "DESCRIPTION")))
-
-  pr <- file.path(root, "portable-r-9.9.9-win-x64")
-  expect_false(dir.exists(file.path(pr, "doc")))
-  expect_false(dir.exists(file.path(pr, "tests")))
-  expect_true(dir.exists(file.path(pr, "include")))   # headers are kept
-  expect_true(dir.exists(file.path(pr, "Tcl")))
-  expect_true(dir.exists(file.path(pr, "share", "zoneinfo")))
-  expect_true(dir.exists(file.path(pr, "library", "base")))
-  expect_true(file.exists(file.path(pr, "bin", "Rscript.exe")))
-
-  expect_true(res$files > 0)
+  expect_equal(removed[file.exists(removed)], character(0))
+  expect_equal(kept[!file.exists(kept)], character(0))
+  expect_equal(res$files, length(expected))
+  expect_equal(res$bytes, expected_bytes)
 })
 
-test_that("prune_bundled_r_runtime honours opt-out flags", {
-  root <- make_runtime_fixture()
-  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+test_that("prune_bundled_r_runtime reports what it removed", {
+  root <- local_runtime_fixture()
+  n <- length(regular_files(fixture_removed(root)))
+  expect_message(
+    prune_bundled_r_runtime(root, verbose = TRUE),
+    paste("Removed", n, "test and documentation files")
+  )
+  # Nothing left to remove the second time round, so nothing is reported.
+  expect_silent(res <- prune_bundled_r_runtime(root, verbose = TRUE))
+  expect_equal(res$files, 0L)
+})
 
-  prune_bundled_r_runtime(root, prune_library = FALSE, prune_portable = FALSE,
-                          verbose = FALSE)
+test_that("prune_bundled_r_runtime removes symbolic links without following them", {
+  root <- local_runtime_fixture()
+  expected <- regular_files(fixture_removed(root))
+  expected_bytes <- sum(file.size(expected))
 
-  expect_true(dir.exists(file.path(root, "library", "pkgA", "include")))
-  expect_true(dir.exists(file.path(root, "portable-r-9.9.9-win-x64", "doc")))
+  outside <- withr::local_tempdir("prune-outside-")
+  outside_file <- file.path(outside, "data.R")
+  writeLines("outside the runtime", outside_file)
+  Sys.chmod(outside_file, "600")
+  outside_mode <- file.mode(outside_file)
+
+  pkg_tests <- file.path(root, "library", "pkgA", "tests")
+  dir.create(file.path(root, "library", "pkgB"))
+  linked <- suppressWarnings(c(
+    # Links inside a directory that is pruned...
+    file.symlink(outside, file.path(pkg_tests, "outside-dir")),
+    file.symlink(outside_file, file.path(pkg_tests, "outside-file")),
+    # ...and a pruned name that is itself a link out of the tree.
+    file.symlink(outside, file.path(root, "library", "pkgB", "tests"))
+  ))
+  skip_if_not(all(linked), "Symbolic links are not supported on this system")
+
+  res <- prune_bundled_r_runtime(root, verbose = FALSE)
+
+  # The links are gone; what they pointed to is untouched and not counted.
+  expect_false(file.exists(pkg_tests))
+  expect_false(fs::link_exists(file.path(root, "library", "pkgB", "tests")))
+  expect_true(dir.exists(file.path(root, "library", "pkgB")))
+  expect_equal(readLines(outside_file), "outside the runtime")
+  expect_equal(file.mode(outside_file), outside_mode)
+  expect_equal(res$files, length(expected))
+  expect_equal(res$bytes, expected_bytes)
+})
+
+test_that("prune_bundled_r_runtime removes read-only test directories", {
+  skip_on_os("windows")
+  root <- local_runtime_fixture()
+  locked <- file.path(root, "library", "pkgA", "tests", "testthat")
+  Sys.chmod(file.path(locked, "test-a.R"), "444")
+  Sys.chmod(locked, "555")
+
+  prune_bundled_r_runtime(root, verbose = FALSE)
+
+  expect_false(dir.exists(file.path(root, "library", "pkgA", "tests")))
+})
+
+test_that("prune_r_paths matches exact names of the right type", {
+  pkg <- withr::local_tempdir("prune-pkg-")
+  dir.create(file.path(pkg, "Tests"))                 # different case
+  writeLines("x", file.path(pkg, "Tests", "a.R"))
+  writeLines("x", file.path(pkg, "tinytest"))         # a file, not a directory
+  dir.create(file.path(pkg, "NEWS"))                  # a directory, not a file
+  writeLines("x", file.path(pkg, "NEWS", "b.R"))
+  dir.create(file.path(pkg, "testme"))
+  writeLines("x", file.path(pkg, "testme", "c.R"))
+
+  res <- prune_r_paths(pkg, dir_names = c("tests", "tinytest", "testme"),
+                       file_names = "NEWS")
+
+  expect_equal(res$files, 1L)
+  expect_false(dir.exists(file.path(pkg, "testme")))
+  expect_true(file.exists(file.path(pkg, "Tests", "a.R")))
+  expect_true(file.exists(file.path(pkg, "tinytest")))
+  expect_true(file.exists(file.path(pkg, "NEWS", "b.R")))
+})
+
+test_that("pruning counts only files that are actually removed", {
+  skip_if_not_installed("mockery")
+  pkg <- withr::local_tempdir("prune-pkg-")
+  dir.create(file.path(pkg, "tests"))
+  writeLines("x", file.path(pkg, "tests", "t.R"))
+
+  # A delete that silently fails, as when another process holds the files.
+  mockery::stub(remove_pruned_path, "unlink", function(...) 1L)
+  res <- remove_pruned_path(file.path(pkg, "tests"))
+
+  expect_true(file.exists(file.path(pkg, "tests", "t.R")))
+  expect_equal(res$files, 0L)
+  expect_equal(res$bytes, 0)
 })
 
 test_that("prune_bundled_r_runtime is a no-op for a missing runtime directory", {
@@ -89,10 +181,10 @@ test_that("prune_bundled_r_runtime is a no-op for a missing runtime directory", 
   expect_equal(res$files, 0L)
   expect_equal(res$bytes, 0)
 })
+
 test_that("embed_r_runtime prunes by default and keeps everything with prune = FALSE", {
   skip_if_not_installed("mockery")
-  cached <- make_runtime_fixture()
-  on.exit(unlink(cached, recursive = TRUE), add = TRUE)
+  cached <- local_runtime_fixture()
   mockery::stub(embed_r_runtime, "install_r_portable", function(...) cached)
   mockery::stub(embed_r_runtime, "copy_dir_contents", function(src, dst) {
     fs::dir_copy(src, dst)
@@ -109,10 +201,11 @@ test_that("embed_r_runtime prunes by default and keeps everything with prune = F
   }
 
   pruned <- embed()
-  expect_false(dir.exists(file.path(pruned, "library", "pkgA", "tests")))
+  expect_equal(fixture_removed(pruned)[file.exists(fixture_removed(pruned))], character(0))
+  expect_equal(fixture_kept(pruned)[!file.exists(fixture_kept(pruned))], character(0))
 
   unpruned <- embed(prune = FALSE)
-  expect_true(dir.exists(file.path(unpruned, "library", "pkgA", "tests")))
+  expect_true(all(file.exists(fixture_removed(unpruned))))
 })
 
 test_that("dependencies.r.prune defaults to TRUE and is read from the config file", {

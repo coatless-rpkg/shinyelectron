@@ -459,7 +459,7 @@ nodejs:
 #     repos:
 #       - "https://cloud.r-project.org"
 #     lib_path: null         # null = R default, "app-local", or custom path
-#     prune: true            # Bundled only: trim tests and docs from the embedded R
+#     prune: true            # Bundled only: remove package tests, R manuals and news
 #   python:
 #     # null = the maintained latest pin; "latest" = always newest; "3.12.0" = exact pin
 #     version: null

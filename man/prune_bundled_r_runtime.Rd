@@ -2,40 +2,44 @@
 % Please edit documentation in R/prune-runtime.R
 \name{prune_bundled_r_runtime}
 \alias{prune_bundled_r_runtime}
-\title{Prune build-only files from an embedded R runtime}
+\title{Remove test suites and bulky documentation from an embedded R runtime}
 \usage{
-prune_bundled_r_runtime(
-  runtime_dir,
-  prune_library = TRUE,
-  prune_portable = TRUE,
-  verbose = TRUE
-)
+prune_bundled_r_runtime(runtime_dir, verbose = TRUE)
 }
 \arguments{
 \item{runtime_dir}{Character. The embedded \code{runtime/R} directory.}
 
-\item{prune_library}{Logical. Prune the bundled package library.}
-
-\item{prune_portable}{Logical. Prune the portable R distribution.}
-
-\item{verbose}{Logical. Whether to display progress.}
+\item{verbose}{Logical. Whether to report what was removed.}
 }
 \value{
-Invisibly, a list with \code{files} and \code{bytes} removed.
+Invisibly, a list with the number of \code{files} and \code{bytes} removed.
 }
 \description{
-Reduces installer size and install time by deleting files that are only
-needed while compiling dependent packages, running tests, or reading
-offline documentation -- never at application runtime. The set of removed
-names is a fixed allowlist, so pruning cannot remove package code, compiled
-libraries, data, HTML widgets or help databases.
+Shrinks a bundled R runtime by deleting files that a running app does not
+read. The removed names form a fixed allowlist; everything else is kept.
 }
 \details{
-For the bundled package library it removes, from each installed package:
-\verb{tests/}, \verb{testme/}, \verb{tinytest/}, \verb{examples/}, \verb{demo/} and root-level
-\verb{NEWS*} / \verb{CHANGELOG*} files. For the portable R distribution it removes
-top-level \verb{doc/} and \verb{tests/}. \verb{include/} (C/C++ and R headers needed by
-\code{Rcpp::sourceCpp()} / rstan at runtime) is always kept, along with \verb{share/},
-\verb{Tcl/}, \verb{bin/}, \verb{etc/}, \verb{modules/}, \verb{library/} and \verb{src/}.
+The allowlist covers:
+\itemize{
+\item From every installed package, both in the bundled library
+(\code{runtime/R/library}) and among the base and recommended packages in the
+portable R's own library: the test suites in \verb{tests/}, \verb{testme/} and
+\verb{tinytest/}.
+\item From each portable R distribution (\verb{runtime/R/portable-r-*}): R's
+regression tests in \verb{tests/}, and inside \verb{doc/} the \verb{html/} and \verb{manual/}
+directories plus R's news, FAQ, \code{CHANGES} and \code{README} files.
+}
+
+Package \verb{examples/}, \verb{demo/}, NEWS and CHANGELOG files and \verb{include/}
+headers are kept, because some packages and apps read them at runtime (for
+example \code{shinyjs::runExample()}, a "What's new" panel that shows \code{NEWS.md}
+via \code{system.file()}, or \code{Rcpp::sourceCpp()}). In the portable R's \verb{doc/},
+\code{COPYING}, \code{COPYRIGHTS} (third-party notices that binary distributions of R
+must include), \code{AUTHORS}, \code{THANKS}, \code{RESOURCES}, the mirror lists read by
+\code{utils::getCRANmirrors()} and the \code{KEYWORDS} files are kept.
+
+Symbolic links are never followed: a link is removed itself, and its target
+is neither touched nor counted. The totals count only the regular files that
+are actually gone afterwards.
 }
 \keyword{internal}

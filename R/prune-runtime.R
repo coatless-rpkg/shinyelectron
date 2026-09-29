@@ -1,115 +1,172 @@
-# Names removed from every installed R package (allowlist). These are tests,
-# examples and changelogs only. `include/` (C/C++ headers) is deliberately
-# KEPT: a bundled app may compile code at runtime via Rcpp::sourceCpp() or
-# rstan, which need the headers. Package code, compiled libs, data, HTML
-# widgets and help databases are kept too.
-.r_library_prune_dirs <- c("tests", "testme", "tinytest",
-                           "examples", "demo")
-.r_library_prune_files <- c("NEWS", "NEWS.md", "NEWS.Rd",
-                            "CHANGELOG", "CHANGELOG.md")
+# What prune_bundled_r_runtime() removes from an embedded R runtime. This is
+# an allowlist of exact names: anything not listed is kept. That includes each
+# package's `examples/`, `demo/`, NEWS and CHANGELOG files, which some packages
+# and apps read at runtime (shinyjs::runExample(), plotly::plotly_example(), a
+# "What's new" panel showing NEWS.md via system.file()), and `include/`, which
+# Rcpp::sourceCpp() needs.
+.r_prune_allowlist <- list(
+  # Test suites, removed from every installed package: those in the bundled
+  # library and the base and recommended packages in the portable R's library.
+  package_dirs = c("tests", "testme", "tinytest"),
+  # R's own regression tests at the top of the portable R distribution.
+  r_home_dirs = "tests",
+  # Manuals, HTML documentation, news and FAQs in the portable R's doc/. The
+  # rest of doc/ stays: COPYRIGHTS carries third-party notices that binary
+  # distributions of R must include, and utils reads CRAN_mirrors.csv
+  # (getCRANmirrors()) and AUTHORS (contributors()).
+  doc_dirs = c("html", "manual"),
+  doc_files = c(
+    "NEWS", "NEWS.0", "NEWS.1", "NEWS.2", "NEWS.3", "NEWS.pdf",
+    "NEWS.rds", "NEWS.2.rds", "NEWS.3.rds", "FAQ", "rw-FAQ",
+    "CHANGES", "CHANGES.rds", "README.packages", "README.Rterm"
+  )
+)
 
-# Names removed from the portable R distribution (allowlist). `share/` carries
-# timezone/encoding data R needs at runtime, `Tcl/` may be needed by tcltk, and
-# `include/` holds the R headers used by Rcpp::sourceCpp()/rstan, so all -- along
-# with bin/, etc/, modules/, library/ and src/ -- are kept.
-.r_runtime_prune_dirs <- c("doc", "tests")
-
-#' Remove allowlisted paths under one directory
+#' Remove allowlisted entries directly under one directory
 #'
-#' Only names that appear in `dir_names` / `file_names` are removed; anything
-#' else is left untouched.
+#' Matches entry names exactly (case-sensitively). A name in `dir_names` is
+#' removed only when it is a directory, and a name in `file_names` only when it
+#' is a regular file. A symbolic link with a listed name is removed as a link.
+#' Anything else is left untouched, and nothing happens when `dir` is missing or
+#' is itself a symbolic link.
 #'
 #' @param dir Character. Directory to prune.
 #' @param dir_names,file_names Character vectors of names to remove.
-#' @return List with `files` and `bytes` removed.
+#' @return List with the number of `files` and `bytes` removed.
 #' @keywords internal
 prune_r_paths <- function(dir, dir_names = character(0),
                           file_names = character(0)) {
-  files <- 0L
-  bytes <- 0
-
-  for (name in dir_names) {
-    path <- fs::path(dir, name)
-    if (fs::dir_exists(path)) {
-      info <- fs::dir_info(path, recurse = TRUE, type = "file", fail = FALSE)
-      files <- files + nrow(info)
-      bytes <- bytes + as.numeric(sum(info$size, na.rm = TRUE))
-      unlink(path, recursive = TRUE, force = TRUE)
-    }
+  removed <- list(files = 0L, bytes = 0)
+  if (!is_real_dir(dir)) {
+    return(removed)
   }
 
-  for (name in file_names) {
-    path <- fs::path(dir, name)
-    if (fs::file_exists(path)) {
-      files <- files + 1L
-      bytes <- bytes + as.numeric(fs::file_size(path))
-      unlink(path, force = TRUE)
-    }
+  entries <- fs::dir_info(dir, all = TRUE, fail = FALSE)
+  entry_names <- fs::path_file(entries$path)
+  entry_types <- as.character(entries$type)
+  targets <- entries$path[
+    (entry_names %in% dir_names & entry_types %in% c("directory", "symlink")) |
+      (entry_names %in% file_names & entry_types %in% c("file", "symlink"))
+  ]
+
+  for (path in targets) {
+    res <- remove_pruned_path(path)
+    removed$files <- removed$files + res$files
+    removed$bytes <- removed$bytes + res$bytes
   }
 
-  list(files = files, bytes = bytes)
+  removed
 }
 
-#' Prune build-only files from an embedded R runtime
+# Remove one file, directory or symbolic link without following links, and
+# report the regular files that are actually gone afterwards. A link is removed
+# itself; its target is never touched or counted. Links inside a directory are
+# removed before the recursive delete, because unlink(force = TRUE) changes the
+# permissions of whatever a link points to. Pruning is best effort: if a
+# removal fails part-way, the rest stays in place and the counts say so.
+remove_pruned_path <- function(path) {
+  before <- regular_file_sizes(path)
+
+  tryCatch({
+    type <- as.character(fs::file_info(path, fail = FALSE)$type)
+    if (identical(type, "symlink")) {
+      fs::link_delete(path)
+    } else if (identical(type, "directory")) {
+      inner <- fs::dir_info(path, recurse = TRUE, all = TRUE, fail = FALSE)
+      fs::link_delete(inner$path[inner$type %in% "symlink"])
+      unlink(path, recursive = TRUE, force = TRUE)
+    } else if (identical(type, "file")) {
+      unlink(path, force = TRUE)
+    }
+  }, error = function(e) NULL)
+
+  after <- regular_file_sizes(path)
+  gone <- before[!names(before) %in% names(after)]
+  list(files = length(gone), bytes = sum(gone))
+}
+
+# Sizes of the regular files at or below `path`, named by path. Symbolic links
+# are listed without being followed, so their targets never appear here.
+regular_file_sizes <- function(path) {
+  info <- fs::file_info(path, fail = FALSE)
+  if (identical(as.character(info$type), "directory")) {
+    info <- fs::dir_info(path, recurse = TRUE, all = TRUE, fail = FALSE)
+  }
+  info <- info[info$type %in% "file", ]
+  sizes <- as.numeric(info$size)
+  names(sizes) <- as.character(info$path)
+  sizes
+}
+
+# TRUE for each path that is a directory and not a symbolic link to one.
+is_real_dir <- function(path) {
+  as.character(fs::file_info(path, fail = FALSE)$type) %in% "directory"
+}
+
+#' Remove test suites and bulky documentation from an embedded R runtime
 #'
-#' Reduces installer size and install time by deleting files that are only
-#' needed while compiling dependent packages, running tests, or reading
-#' offline documentation -- never at application runtime. The set of removed
-#' names is a fixed allowlist, so pruning cannot remove package code, compiled
-#' libraries, data, HTML widgets or help databases.
+#' Shrinks a bundled R runtime by deleting files that a running app does not
+#' read. The removed names form a fixed allowlist; everything else is kept.
 #'
-#' For the bundled package library it removes, from each installed package:
-#' `tests/`, `testme/`, `tinytest/`, `examples/`, `demo/` and root-level
-#' `NEWS*` / `CHANGELOG*` files. For the portable R distribution it removes
-#' top-level `doc/` and `tests/`. `include/` (C/C++ and R headers needed by
-#' `Rcpp::sourceCpp()` / rstan at runtime) is always kept, along with `share/`,
-#' `Tcl/`, `bin/`, `etc/`, `modules/`, `library/` and `src/`.
+#' The allowlist covers:
+#'
+#' * From every installed package, both in the bundled library
+#'   (`runtime/R/library`) and among the base and recommended packages in the
+#'   portable R's own library: the test suites in `tests/`, `testme/` and
+#'   `tinytest/`.
+#' * From each portable R distribution (`runtime/R/portable-r-*`): R's
+#'   regression tests in `tests/`, and inside `doc/` the `html/` and `manual/`
+#'   directories plus R's news, FAQ, `CHANGES` and `README` files.
+#'
+#' Package `examples/`, `demo/`, NEWS and CHANGELOG files and `include/`
+#' headers are kept, because some packages and apps read them at runtime (for
+#' example `shinyjs::runExample()`, a "What's new" panel that shows `NEWS.md`
+#' via `system.file()`, or `Rcpp::sourceCpp()`). In the portable R's `doc/`,
+#' `COPYING`, `COPYRIGHTS` (third-party notices that binary distributions of R
+#' must include), `AUTHORS`, `THANKS`, `RESOURCES`, the mirror lists read by
+#' `utils::getCRANmirrors()` and the `KEYWORDS` files are kept.
+#'
+#' Symbolic links are never followed: a link is removed itself, and its target
+#' is neither touched nor counted. The totals count only the regular files that
+#' are actually gone afterwards.
 #'
 #' @param runtime_dir Character. The embedded `runtime/R` directory.
-#' @param prune_library Logical. Prune the bundled package library.
-#' @param prune_portable Logical. Prune the portable R distribution.
-#' @param verbose Logical. Whether to display progress.
-#' @return Invisibly, a list with `files` and `bytes` removed.
+#' @param verbose Logical. Whether to report what was removed.
+#' @return Invisibly, a list with the number of `files` and `bytes` removed.
 #' @keywords internal
-prune_bundled_r_runtime <- function(runtime_dir, prune_library = TRUE,
-                                    prune_portable = TRUE, verbose = TRUE) {
-  runtime_dir <- fs::path(runtime_dir)
-  if (!fs::dir_exists(runtime_dir)) {
-    return(invisible(list(files = 0L, bytes = 0)))
+prune_bundled_r_runtime <- function(runtime_dir, verbose = TRUE) {
+  total <- list(files = 0L, bytes = 0)
+  if (!is_real_dir(runtime_dir)) {
+    return(invisible(total))
   }
-  total_files <- 0L
-  total_bytes <- 0
+  add <- function(res) {
+    total$files <<- total$files + res$files
+    total$bytes <<- total$bytes + res$bytes
+  }
 
-  if (isTRUE(prune_library)) {
-    lib_dir <- fs::path(runtime_dir, "library")
-    if (fs::dir_exists(lib_dir)) {
-      for (pkg_dir in fs::dir_ls(lib_dir, type = "directory")) {
-        res <- prune_r_paths(pkg_dir, .r_library_prune_dirs,
-                             .r_library_prune_files)
-        total_files <- total_files + res$files
-        total_bytes <- total_bytes + res$bytes
-      }
+  allow <- .r_prune_allowlist
+  r_homes <- fs::dir_ls(runtime_dir, type = "directory")
+  r_homes <- r_homes[startsWith(fs::path_file(r_homes), "portable-r-")]
+
+  for (r_home in r_homes) {
+    add(prune_r_paths(r_home, dir_names = allow$r_home_dirs))
+    add(prune_r_paths(fs::path(r_home, "doc"), allow$doc_dirs, allow$doc_files))
+  }
+
+  libraries <- c(fs::path(runtime_dir, "library"), fs::path(r_homes, "library"))
+  for (lib in libraries[is_real_dir(libraries)]) {
+    for (pkg_dir in fs::dir_ls(lib, type = "directory")) {
+      add(prune_r_paths(pkg_dir, dir_names = allow$package_dirs))
     }
   }
 
-  if (isTRUE(prune_portable)) {
-    portable_dirs <- fs::dir_ls(runtime_dir, type = "directory")
-    portable_dirs <- portable_dirs[startsWith(fs::path_file(portable_dirs),
-                                            "portable-r-")]
-    for (r_dir in portable_dirs) {
-      res <- prune_r_paths(r_dir, .r_runtime_prune_dirs, character(0))
-      total_files <- total_files + res$files
-      total_bytes <- total_bytes + res$bytes
-    }
-  }
-
-  if (verbose && total_files > 0) {
+  if (verbose && total$files > 0) {
     cli::cli_alert_info(
-      "Pruned {total_files} build-only file{?s} ({round(total_bytes / 1024^2, 1)} MB) from the bundled R runtime"
+      "Removed {total$files} test and documentation file{?s} ({round(total$bytes / 1024^2, 1)} MB) from the bundled R runtime"
     )
   }
 
-  invisible(list(files = total_files, bytes = total_bytes))
+  invisible(total)
 }
 
 #' Resolve the `dependencies.r.prune` setting
