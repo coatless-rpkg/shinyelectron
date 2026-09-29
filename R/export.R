@@ -5,7 +5,10 @@
 #'
 #' @param appdir Character string. Path to the directory containing the Shiny application.
 #' @param destdir Character string. Path to the destination directory where the Electron app will be created.
-#' @param app_name Character string. Name of the application. If NULL, uses the base name of appdir.
+#' @param app_name Character string. Display name of the application. If NULL,
+#'   uses `app.name` from `_shinyelectron.yml`, then the base name of appdir.
+#'   Unless `app.slug` is set, the name also gives the app's slug, its
+#'   identity for installed copies and updates.
 #' @param app_type Character string or NULL. Language of the Shiny app:
 #'   `"r-shiny"` or `"py-shiny"`. If NULL (default), the type is autodetected
 #'   from files in `appdir`. The legacy values `"r-shinylive"` and
@@ -93,6 +96,7 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
 
   # App display name: explicit argument > config app.name > directory basename
   # (mirrors export_multi_app(), so app.name is honored for single apps too).
+  name_from_config <- is.null(app_name) && !is.null(config$app$name)
   app_name <- app_name %||% config$app$name %||% basename(appdir)
   validate_app_name(app_name)
 
@@ -125,6 +129,10 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
       "x" = "Found 1 app entry: {.val {config$apps[[1]]$id %||% config$apps[[1]]$name}}"
     ), class = "shinyelectron_one_app_suite")
   }
+
+  # Settle the slug, the app's identity, here where the app directory is
+  # known; process_templates() takes it from the config.
+  config$app$slug <- resolve_app_slug(config, app_name, appdir, name_from_config)
 
   # Detect multi-app mode (skip single-app structure validation)
   if (is_multi_app(config)) {

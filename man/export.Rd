@@ -26,7 +26,10 @@ export(
 
 \item{destdir}{Character string. Path to the destination directory where the Electron app will be created.}
 
-\item{app_name}{Character string. Name of the application. If NULL, uses the base name of appdir.}
+\item{app_name}{Character string. Display name of the application. If NULL,
+uses \code{app.name} from \verb{_shinyelectron.yml}, then the base name of appdir.
+Unless \code{app.slug} is set, the name also gives the app's slug, its
+identity for installed copies and updates.}
 
 \item{app_type}{Character string or NULL. Language of the Shiny app:
 \code{"r-shiny"} or \code{"py-shiny"}. If NULL (default), the type is autodetected

@@ -218,3 +218,17 @@ test_that("wizard advanced path records github as the update provider", {
   expect_equal(config$updates$provider, "github")
   expect_true(isTRUE(config$updates$enabled))
 })
+
+# ---------------------------------------------------------------------------
+# Slug
+# ---------------------------------------------------------------------------
+
+test_that("wizard writes the slug derived from the app name", {
+  tmp <- withr::local_tempdir()
+  run_wizard_quiet(tmp, c("Sales Dashboard", rep("", 8L)))
+
+  config <- yaml::read_yaml(file.path(tmp, "_shinyelectron.yml"))
+  expect_equal(config$app$name, "Sales Dashboard")
+  expect_equal(config$app$slug, "sales-dashboard")
+  expect_equal(names(config$app), c("name", "slug", "version"))
+})

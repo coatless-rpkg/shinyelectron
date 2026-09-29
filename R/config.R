@@ -428,17 +428,27 @@ init_config <- function(appdir, app_name = NULL, overwrite = FALSE, verbose = TR
   app_name_safe <- gsub("\\", "\\\\", app_name, fixed = TRUE)
   app_name_safe <- gsub('"', '\\"', app_name_safe, fixed = TRUE)
 
+  # Write the slug out, so the app keeps its identity when the name changes.
+  slug <- resolve_app_slug(list(), app_name, normalizePath(appdir, mustWork = FALSE))
+  slug_line <- if (is.null(slug)) {
+    '# slug: null             # Set a lowercase ASCII slug such as "my-app"'
+  } else {
+    paste0('slug: "', slug, '"')
+  }
+
   # Template content with all configuration sections
   template <- '# shinyelectron configuration file
 # Documentation: https://r-pkg.thecoatlessprofessor.com/shinyelectron/
 
 app:
   name: "{{{app_name}}}"
+  # The slug is the app identity: package name, app ID, user data folder,
+  # and installer file names. Keep it once the app has shipped, even if
+  # the name changes.
+  {{{slug_line}}}
   version: "1.0.0"
   # description: null       # Installer description (default: "<slug> - Shiny Electron App")
   # author: null            # Author shown by the installer (default: empty)
-  # Uncomment to set a custom URL-safe slug (default: derived from name)
-  # slug: null
   # Uncomment to configure logging
   # log_dir: null            # null = default log directory
   # log_level: "info"        # "debug", "info", "warn", "error"
@@ -602,12 +612,19 @@ nodejs:
 #   prompt_runtime_version: false # true = ask which R/Python version to use
 '
 
-  content <- whisker::whisker.render(template, list(app_name = app_name_safe))
+  content <- whisker::whisker.render(
+    template, list(app_name = app_name_safe, slug_line = slug_line)
+  )
   writeLines(content, config_path)
 
   if (verbose) {
     cli::cli_alert_success("Created configuration file: {.path {config_path}}")
     cli::cli_alert_info("Edit this file to customize your Electron app settings")
+    if (is.null(slug)) {
+      cli::cli_alert_warning(
+        "Set {.field app.slug}: no slug could be derived from {.val {app_name}} or the directory name."
+      )
+    }
   }
 
   validate_config_file(config_path)
@@ -705,12 +722,14 @@ show_config <- function(appdir = ".") {
 
   cat("\n")
 
-  # App section
+  # App section. The slug follows the same rules as export().
+  app_name <- config$app$name %||% basename(appdir)
+  slug <- resolve_app_slug(config, app_name, appdir)
   cli::cli_h2("Application")
   cli::cli_bullets(c(
-    "*" = "Name: {.val {config$app$name %||% basename(appdir)}}",
+    "*" = "Name: {.val {app_name}}",
     "*" = "Version: {.val {config$app$version %||% '1.0.0'}}",
-    "*" = "Slug: {.val {config$app$slug %||% slugify(config$app$name %||% basename(appdir))}}"
+    "*" = "Slug: {.val {slug %||% '(none; set app.slug)'}}"
   ))
 
   # Build section

@@ -161,9 +161,11 @@ wizard <- function(appdir) {
     }
   }
 
-  # Build the YAML content
+  # Build the YAML content. The slug is written out so the app keeps its
+  # identity when the name changes later.
+  slug <- resolve_app_slug(list(), app_name, normalizePath(appdir, mustWork = FALSE))
   config <- list(
-    app = list(name = app_name, version = app_version),
+    app = Filter(Negate(is.null), list(name = app_name, slug = slug, version = app_version)),
     build = list(type = app_type, platforms = platforms)
   )
 

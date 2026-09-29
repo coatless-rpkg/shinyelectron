@@ -1,5 +1,6 @@
 app:
   name: "Python Shiny Demo Suite"
+  slug: "demo-py-app-suite"
   version: "1.0.0"
 
 build:

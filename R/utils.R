@@ -68,7 +68,69 @@ slugify <- function(name) {
   slug <- gsub("[^a-z0-9]+", "-", slug)
   slug <- gsub("^-|-$", "", slug)
   if (!nzchar(slug)) {
-    cli::cli_abort("Cannot create an empty slug from input: {.val {name}}")
+    cli::cli_abort(c(
+      "Cannot create an empty slug from input: {.val {name}}",
+      "i" = "Set {.field app.slug} in {.file _shinyelectron.yml} to a lowercase ASCII slug such as {.val my-app}."
+    ))
+  }
+  slug
+}
+
+#' Slugify a name, or return NULL when nothing usable is left
+#'
+#' @param name The name to slugify. Anything but a single non-empty string
+#'   gives `NULL`.
+#' @return The [slugify()] result, or `NULL` when the name has no ASCII
+#'   letters or digits.
+#' @keywords internal
+slug_or_null <- function(name) {
+  if (!is_nonempty_string(name)) return(NULL)
+  tryCatch(slugify(name), error = function(e) NULL)
+}
+
+#' Resolve the app slug
+#'
+#' The slug is the app's identity. It names the package in `package.json`,
+#' the user data folder, the per-app caches under `~/.shinyelectron`, and the
+#' installer files, and unless `installer.app_id` is set it also gives the
+#' app ID, which Windows installers and macOS use to recognize an installed
+#' copy. `app.slug` wins when set. Otherwise the slug comes from the app
+#' name, or, when the name has no ASCII letters or digits, from the name of
+#' the app directory, with a message.
+#'
+#' Earlier releases derived the slug from the directory name whenever no
+#' `app_name` argument was given. So when the name came from `app.name`
+#' (`name_from_config`) and gives a different slug than the directory, this
+#' warns: the rebuilt app would no longer update installed copies.
+#'
+#' @param config List. The effective configuration.
+#' @param app_name Character string. The resolved display name.
+#' @param appdir Character string. The app directory.
+#' @param name_from_config Logical. Whether `app_name` came from `app.name`.
+#' @return The slug, or `NULL` when neither the name nor the directory gives
+#'   one, in which case `process_templates()` reports the error.
+#' @keywords internal
+resolve_app_slug <- function(config, app_name, appdir, name_from_config = FALSE) {
+  if (!is.null(config$app$slug)) {
+    return(config$app$slug)
+  }
+  dir_slug <- slug_or_null(basename(appdir))
+  slug <- slug_or_null(app_name)
+  if (is.null(slug)) {
+    if (!is.null(dir_slug)) {
+      cli::cli_inform(c(
+        "i" = "The app name {.val {app_name}} has no ASCII letters or digits, so the app slug comes from the directory name: {.val {dir_slug}}.",
+        " " = "Set {.field app.slug} in {.file _shinyelectron.yml} to choose another."
+      ))
+    }
+    return(dir_slug)
+  }
+  if (isTRUE(name_from_config) && !is.null(dir_slug) && !identical(slug, dir_slug)) {
+    cli::cli_warn(c(
+      "The app slug is now {.val {slug}}, from {.field app.name}; earlier releases of shinyelectron used {.val {dir_slug}}, from the directory name.",
+      "i" = "The slug is the app's identity: it names the user data folder and, unless {.field installer.app_id} is set, gives the app ID that Windows installers and macOS use to recognize an installed copy.",
+      "i" = "To keep updating copies built with the old slug, add {.code slug: \"{dir_slug}\"} under {.field app:} in {.file _shinyelectron.yml}; to keep the new one, add {.code slug: \"{slug}\"}."
+    ), class = "shinyelectron_slug_changed")
   }
   slug
 }

@@ -201,7 +201,7 @@ test_that("export detects multi-app and copies all apps", {
              file.path(tmpdir, "apps", "admin", "app.R"))
 
   yaml::write_yaml(list(
-    app = list(name = "Test Suite", version = "1.0.0"),
+    app = list(name = "Test Suite", slug = "test-suite", version = "1.0.0"),
     build = list(type = "r-shiny", runtime_strategy = "system"),
     apps = list(
       list(id = "dash", name = "Dashboard", path = "./apps/dash"),
