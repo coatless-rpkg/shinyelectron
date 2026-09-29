@@ -1,7 +1,9 @@
 # Render the shared Electron templates the way export() does: write
-# `config` as _shinyelectron.yml, read it back with read_config(), then run
-# process_templates(). Returns the path to the generated main.js; the
-# temporary directories live until `env` exits.
+# `config` as _shinyelectron.yml, read it back with read_config(), resolve
+# its paths against the app directory, then run process_templates(). A
+# configured tray icon is created there, since the build drops a missing
+# one. Returns the path to the generated main.js; the temporary directories
+# live until `env` exits.
 render_main_js <- function(config = list(), app_name = "Test App",
                            is_multi_app = FALSE, apps_manifest = NULL,
                            env = parent.frame()) {
@@ -9,11 +11,17 @@ render_main_js <- function(config = list(), app_name = "Test App",
   if (length(config) > 0) {
     yaml::write_yaml(config, file.path(appdir, "_shinyelectron.yml"))
   }
+  if (!is.null(config$tray$icon)) {
+    tray_icon <- fs::path(appdir, config$tray$icon)
+    fs::dir_create(fs::path_dir(tray_icon))
+    fs::file_create(tray_icon)
+  }
   out <- withr::local_tempdir(.local_envir = env)
   process_templates(
     out, app_name, "r-shiny", runtime_strategy = "system",
-    config = read_config(appdir), is_multi_app = is_multi_app,
-    apps_manifest = apps_manifest, verbose = FALSE
+    config = resolve_config_paths(read_config(appdir), appdir),
+    is_multi_app = is_multi_app, apps_manifest = apps_manifest,
+    verbose = FALSE
   )
   file.path(out, "main.js")
 }

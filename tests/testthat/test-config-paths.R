@@ -141,7 +141,8 @@ test_that("export() resolves config paths against the app directory", {
   withr::local_dir(wd)
 
   local_fake_build()
-  withr::local_envvar(CSC_LINK = NA, CSC_KEY_PASSWORD = "secret")
+  withr::local_envvar(WIN_CSC_LINK = NA, WIN_CSC_KEY_PASSWORD = NA,
+                      CSC_LINK = NA, CSC_KEY_PASSWORD = "secret")
   destdir <- fs::path(withr::local_tempdir(), "out")
   result <- export(appdir, destdir, platform = "win", sign = TRUE,
                    verbose = FALSE)
@@ -155,7 +156,7 @@ test_that("export() resolves config paths against the app directory", {
                    readBin(fs::path(elsewhere, "logo.png"), "raw", 100))
 
   pkg <- jsonlite::fromJSON(fs::path(result$electron_app, "package.json"))
-  expect_equal(pkg$build$win$certificateFile,
+  expect_equal(pkg$build$win$signtoolOptions$certificateFile,
                as.character(fs::path(cert_dir, "signing.pfx")))
 })
 
@@ -169,14 +170,15 @@ test_that("export() resolves a relative certificate path against the app directo
   withr::local_dir(withr::local_tempdir())
 
   local_fake_build()
-  withr::local_envvar(CSC_LINK = NA, CSC_KEY_PASSWORD = "secret")
+  withr::local_envvar(WIN_CSC_LINK = NA, WIN_CSC_KEY_PASSWORD = NA,
+                      CSC_LINK = NA, CSC_KEY_PASSWORD = "secret")
   destdir <- fs::path(withr::local_tempdir(), "out")
   expect_no_warning(
     result <- export(appdir, destdir, platform = "win", verbose = FALSE)
   )
 
   pkg <- jsonlite::fromJSON(fs::path(result$electron_app, "package.json"))
-  expect_equal(pkg$build$win$certificateFile,
+  expect_equal(pkg$build$win$signtoolOptions$certificateFile,
                as.character(fs::path(appdir, "certs", "signing.pfx")))
 })
 
@@ -270,7 +272,8 @@ test_that("export() warns about a missing certificate only when signing Windows 
     signing = list(win = list(certificate_file = "certs/missing.pfx"))
   ))
   withr::local_dir(withr::local_tempdir())
-  withr::local_envvar(CSC_LINK = NA, CSC_KEY_PASSWORD = "secret")
+  withr::local_envvar(WIN_CSC_LINK = NA, WIN_CSC_KEY_PASSWORD = NA,
+                      CSC_LINK = NA, CSC_KEY_PASSWORD = "secret")
   local_fake_build()
 
   expect_no_warning(
@@ -408,7 +411,8 @@ test_that("app_check() reports a missing certificate when signing Windows builds
   appdir <- local_config_app(list(
     signing = list(win = list(certificate_file = "certs/missing.pfx"))
   ))
-  withr::local_envvar(CSC_LINK = NA, CSC_KEY_PASSWORD = "secret")
+  withr::local_envvar(WIN_CSC_LINK = NA, WIN_CSC_KEY_PASSWORD = NA,
+                      CSC_LINK = NA, CSC_KEY_PASSWORD = "secret")
 
   unsigned <- app_check(appdir, platform = "win", verbose = FALSE)
   expect_false(any(grepl("certificate_file", unsigned$warnings, fixed = TRUE)))
