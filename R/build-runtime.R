@@ -472,11 +472,23 @@ local_read_description <- function(path) {
   dcf
 }
 
+# DESCRIPTION fields already read from source tarballs, keyed by path, size
+# and modification time, so an export lists each tarball once.
+local_archive_descriptions <- new.env(parent = emptyenv())
+
 # Read `<top>/DESCRIPTION` from a source tarball, extracting only that file.
 # Returns NULL when it cannot be read. R's own tar warns about headers it
 # skips, such as the pax global header that git archive writes, so warnings
 # are silenced rather than treated as a failure.
 local_read_archive_description <- function(path) {
+  stamp <- file.info(path)
+  key <- paste(normalizePath(path, winslash = "/", mustWork = FALSE),
+               stamp$size, format(as.numeric(stamp$mtime), digits = 17),
+               sep = "|")
+  if (!is.null(local_archive_descriptions[[key]])) {
+    return(local_archive_descriptions[[key]])
+  }
+
   entries <- tryCatch(
     suppressWarnings(utils::untar(path, list = TRUE)),
     error = function(e) NULL
@@ -500,7 +512,11 @@ local_read_archive_description <- function(path) {
   if (!file.exists(desc)) {
     return(NULL)
   }
-  tryCatch(read.dcf(desc), error = function(e) NULL)
+  dcf <- tryCatch(read.dcf(desc), error = function(e) NULL)
+  if (!is.null(dcf)) {
+    assign(key, dcf, envir = local_archive_descriptions)
+  }
+  dcf
 }
 
 #' Order local R packages so each installs after the local packages it needs

@@ -101,6 +101,28 @@ test_that("an archive's name comes from its top-level DESCRIPTION only", {
   expect_equal(local_r_package_names(archive), "TopPkg")
 })
 
+test_that("a tarball's DESCRIPTION is read once until the file changes", {
+  skip_if_not_installed("mockery")
+  parent <- withr::local_tempdir()
+  write_local_pkg(parent, "OncePkg")
+  archive <- tar_local_pkg(parent, "OncePkg", "OncePkg_0.0.1.tar.gz")
+  listings <- 0
+  real_untar <- utils::untar
+  mockery::stub(local_read_archive_description, "utils::untar", function(tarfile, ...) {
+    if (isTRUE(list(...)$list)) listings <<- listings + 1
+    real_untar(tarfile, ...)
+  })
+
+  for (i in 1:3) {
+    expect_equal(unname(local_read_archive_description(archive)[1, "Package"]), "OncePkg")
+  }
+  expect_equal(listings, 1)
+
+  Sys.setFileTime(archive, Sys.time() + 10)
+  local_read_archive_description(archive)
+  expect_equal(listings, 2)
+})
+
 test_that("a git archive tarball is read with R's own tar", {
   git <- Sys.which("git")
   skip_if(!nzchar(git), "git is not available")
