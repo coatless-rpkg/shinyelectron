@@ -86,7 +86,7 @@ splash:
 | `duration` | Minimum display time in milliseconds before transitioning out of the splash | `1500` |
 | `text` | Loading text shown under the logo | `"Loading..."` |
 | `text_color` | Colour of the loading text (hex or CSS colour) | `"#333333"` |
-| `image` | Path to a PNG logo, relative to the app directory; rendered at up to 128 px square | none |
+| `image` | Path to a PNG logo, relative to the app directory; rendered at up to 128 px square. If the file is missing, the build warns and the splash shows the app’s initial | none |
 | `background` | Background colour of the lifecycle window during the splash phase (hex or CSS colour) | `null` (inherit from `_brand.yml`) |
 
 If you set `splash.background`, that wins. Otherwise the window inherits
@@ -244,7 +244,7 @@ tray:
 | `minimize_to_tray` | Minimize button hides the window to the tray | `true` |
 | `close_to_tray` | Close button hides to the tray instead of quitting | `false` |
 | `tooltip` | Text shown when the user hovers the icon | App name |
-| `icon` | Path to a custom tray icon | App icon |
+| `icon` | Path to a custom tray icon, relative to the app directory. If the file is missing, the build warns and uses the app icon | App icon |
 
 ### What the buttons do
 

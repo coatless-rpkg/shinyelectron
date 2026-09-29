@@ -76,8 +76,10 @@ export(
 
 - icon:
 
-  Character string. Path to application icon file. Platform-specific
-  format required.
+  Character string. Path to application icon file, absolute or relative
+  to the working directory. Platform-specific format required. Overrides
+  `icon` and `icons` in `_shinyelectron.yml`, whose paths are relative
+  to `appdir`.
 
 - overwrite:
 

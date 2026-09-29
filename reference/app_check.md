@@ -64,6 +64,15 @@ Invisible list with:
 
   Character vector of informational notes.
 
+## Details
+
+Files named in `_shinyelectron.yml`, such as `icon` or `splash.image`,
+are looked up relative to `appdir`, as
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+does. A missing icon is an error, because
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+stops on it; other missing files are warnings.
+
 ## Examples
 
 ``` r

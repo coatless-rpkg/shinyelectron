@@ -190,7 +190,7 @@ Anatomy of a splash screen with each part labelled. The sample window shows a ye
 </tr>
 <tr class="odd">
 <td><code>image</code></td>
-<td>Path to a PNG logo, relative to the app directory; rendered at up to 128 px square</td>
+<td>Path to a PNG logo, relative to the app directory; rendered at up to 128 px square. If the file is missing, the build warns and the splash shows the app’s initial</td>
 <td>none</td>
 </tr>
 <tr class="even">
@@ -391,7 +391,7 @@ Anatomy of a shinyelectron tray icon: a stylised OS bar at the top right shows t
 </tr>
 <tr class="odd">
 <td><code>icon</code></td>
-<td>Path to a custom tray icon</td>
+<td>Path to a custom tray icon, relative to the app directory. If the file is missing, the build warns and uses the app icon</td>
 <td>App icon</td>
 </tr>
 </tbody>

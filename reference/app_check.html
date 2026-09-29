@@ -130,6 +130,12 @@ If NULL, reads from config or autodetects from files in <code>appdir</code>.</p>
 <dd><p>Character vector of informational notes.</p></dd>
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Files named in <code>_shinyelectron.yml</code>, such as <code>icon</code> or <code>splash.image</code>, are
+looked up relative to <code>appdir</code>, as <code><a href="export.html">export()</a></code> does. A missing icon is an
+error, because <code><a href="export.html">export()</a></code> stops on it; other missing files are warnings.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>

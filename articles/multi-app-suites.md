@@ -128,11 +128,11 @@ apps:
 |----|----|----|
 | `id` | Yes | Unique identifier (used in file paths and the apps manifest) |
 | `name` | Yes | Display name shown on the launcher card |
-| `path` | Yes | Relative path from the suite root to the app directory |
+| `path` | Yes | Path to the app directory, relative to the suite root |
 | `description` | No | Short text shown below the name on the launcher card |
 | `type` | No | Override the default `build.type` for this specific app |
 | `runtime_strategy` | No | Override the default `build.runtime_strategy` for this specific app |
-| `icon` | No | Path to an icon image displayed on the launcher card |
+| `icon` | No | Path to an image for the launcher card, relative to the suite root. If the file is missing, the build warns and the card shows the app’s initial |
 
 Every app inherits `build.type` and `build.runtime_strategy` unless it
 overrides them. Suites can mix languages (some `r-shiny`, some

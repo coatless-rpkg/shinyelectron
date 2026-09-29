@@ -184,7 +184,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a><span class="fu">icon</span><span class="kw">:</span><span class="at"> </span><span class="st">"branding/icon.png"</span><span class="co">    # Single high-res source; electron-builder fans out to each platform</span></span>
 <span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a><span class="co"># Optional per-platform icon overrides (rarely needed):</span></span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a><span class="co"># Optional per-platform icons, used when icon is not set (rarely needed):</span></span>
 <span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a><span class="co"># icons:</span></span>
 <span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a><span class="co">#   mac: "branding/icon.icns"</span></span>
 <span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a><span class="co">#   win: "branding/icon.ico"</span></span>
@@ -231,6 +231,23 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <p>A function argument always wins. So <code>export(appdir = "app", destdir = "out", app_name = "Override")</code> uses <code>"Override"</code> even if the config file says something else, and everything else falls through to the config or the defaults.</p>
 </blockquote>
 </div>
+</section><section class="level2"><h2 id="file-paths">File paths<a class="anchor" aria-label="anchor" href="#file-paths"></a>
+</h2>
+<p>Paths in <code>_shinyelectron.yml</code> are relative to the directory that holds the file: the app directory, or the suite root of a <a href="multi-app-suites.html">multi-app suite</a>. The R working directory does not matter, so <code>export("path/to/app", "output")</code> finds the same files from anywhere. <code>~</code> expands to your home directory, and absolute paths are used as they are. These keys name files:</p>
+<ul>
+<li>
+<code>icon</code> and the entries of <code>icons</code>
+</li>
+<li><code>splash.image</code></li>
+<li><code>tray.icon</code></li>
+<li><code>signing.win.certificate_file</code></li>
+<li><code>installer.license_file</code></li>
+<li>
+<code>path</code> and <code>icon</code> in each <code>apps</code> entry</li>
+</ul>
+<p>Path arguments follow the usual R rule instead: <code>export(icon = "icon.png")</code> looks for <code>icon.png</code> in the working directory. <code><a href="../reference/build_electron_app.html">build_electron_app()</a></code> also uses the paths in its <code>config</code> argument as given, relative to the working directory.</p>
+<p>When one of these files does not exist, the message names the key and the full path that was checked. A missing app icon stops <code><a href="../reference/export.html">export()</a></code>, just as a missing <code>icon</code> argument does, and so does a missing <code>installer.license_file</code>. A missing splash image, tray icon, or launcher icon gives a warning, and the build uses the default instead. A missing <code>signing.win.certificate_file</code> gives a warning when <code><a href="../reference/export.html">export()</a></code> signs a Windows build.</p>
+<p>Paths that the app uses later on the end user’s machine, such as <code>log_dir</code>, <code>dependencies.r.lib_path</code>, and the host side of <code>container.volumes</code>, are not resolved: they are used there as written.</p>
 </section><section class="level2"><h2 id="section-reference">Section reference<a class="anchor" aria-label="anchor" href="#section-reference"></a>
 </h2>
 <section class="level3"><h3 id="app">
@@ -357,7 +374,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 </h3>
 <p>A single top-level <code>icon</code> entry is the simplest and recommended shape. Point it at a high-resolution PNG (1024×1024 or larger) and electron-builder will generate the per-platform variants it needs (<code>.icns</code> for macOS, <code>.ico</code> for Windows, and the PNG itself for Linux).</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">icon</span><span class="kw">:</span><span class="at"> </span><span class="st">"branding/icon.png"</span></span></code></pre></div>
-<p>If you genuinely need different artwork on different platforms (for example, a monochrome Windows icon alongside a full-color macOS icon), use the per-platform <code>icons</code> map as an override:</p>
+<p>If you genuinely need different artwork on different platforms (for example, a monochrome Windows icon alongside a full-color macOS icon), use the per-platform <code>icons</code> map instead of <code>icon</code>:</p>
 <table class="table caption-top">
 <colgroup>
 <col style="width: 15%">
@@ -392,7 +409,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 </tr>
 </tbody>
 </table>
-<p>Paths are relative to the app directory. When no icon is set at all, the build uses the default Electron icon.</p>
+<p>Paths are relative to the app directory, or to the suite root of a multi-app suite, whatever the working directory (see <a href="#file-paths">File paths</a>). <code><a href="../reference/export.html">export()</a></code> uses <code>icon</code> when it is set, and otherwise the <code>icons</code> entry for the first target platform. The <code>icon</code> argument of <code><a href="../reference/export.html">export()</a></code> overrides both, and is relative to the working directory. If the chosen file does not exist, <code><a href="../reference/export.html">export()</a></code> stops with an error that names the key and the path it checked. When no icon is set at all, the build uses the default Electron icon.</p>
 <div>
 <blockquote>
 <p><strong>Creating icons</strong></p>
@@ -804,7 +821,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <td><code>path</code></td>
 <td>string</td>
 <td>yes</td>
-<td>Relative path to the app directory</td>
+<td>Path to the app directory, relative to the suite root</td>
 </tr>
 <tr class="even">
 <td><code>type</code></td>
@@ -828,7 +845,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <td><code>icon</code></td>
 <td>string</td>
 <td>no</td>
-<td>Per-app icon path</td>
+<td>Image for the app’s launcher card, relative to the suite root</td>
 </tr>
 </tbody>
 </table>

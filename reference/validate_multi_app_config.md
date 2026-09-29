@@ -16,4 +16,5 @@ validate_multi_app_config(config, basedir)
 
 - basedir:
 
-  Character. Base directory for resolving relative paths.
+  Character. Base directory for resolving relative paths (see
+  [`resolve_config_path()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/resolve_config_path.md)).

@@ -132,7 +132,7 @@ server:
 
 icon: "branding/icon.png"    # Single high-res source; electron-builder fans out to each platform
 
-# Optional per-platform icon overrides (rarely needed):
+# Optional per-platform icons, used when icon is not set (rarely needed):
 # icons:
 #   mac: "branding/icon.icns"
 #   win: "branding/icon.ico"
@@ -180,6 +180,44 @@ container:                   # Used when runtime_strategy is "container"
 > `export(appdir = "app", destdir = "out", app_name = "Override")` uses
 > `"Override"` even if the config file says something else, and
 > everything else falls through to the config or the defaults.
+
+## File paths
+
+Paths in `_shinyelectron.yml` are relative to the directory that holds
+the file: the app directory, or the suite root of a [multi-app
+suite](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/multi-app-suites.md).
+The R working directory does not matter, so
+`export("path/to/app", "output")` finds the same files from anywhere.
+`~` expands to your home directory, and absolute paths are used as they
+are. These keys name files:
+
+- `icon` and the entries of `icons`
+- `splash.image`
+- `tray.icon`
+- `signing.win.certificate_file`
+- `installer.license_file`
+- `path` and `icon` in each `apps` entry
+
+Path arguments follow the usual R rule instead:
+`export(icon = "icon.png")` looks for `icon.png` in the working
+directory.
+[`build_electron_app()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/build_electron_app.md)
+also uses the paths in its `config` argument as given, relative to the
+working directory.
+
+When one of these files does not exist, the message names the key and
+the full path that was checked. A missing app icon stops
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md),
+just as a missing `icon` argument does, and so does a missing
+`installer.license_file`. A missing splash image, tray icon, or launcher
+icon gives a warning, and the build uses the default instead. A missing
+`signing.win.certificate_file` gives a warning when
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+signs a Windows build.
+
+Paths that the app uses later on the end user’s machine, such as
+`log_dir`, `dependencies.r.lib_path`, and the host side of
+`container.volumes`, are not resolved: they are used there as written.
 
 ## Section reference
 
@@ -242,7 +280,7 @@ icon: "branding/icon.png"
 
 If you genuinely need different artwork on different platforms (for
 example, a monochrome Windows icon alongside a full-color macOS icon),
-use the per-platform `icons` map as an override:
+use the per-platform `icons` map instead of `icon`:
 
 | Key     | Type   | Format  | Description                                 |
 |---------|--------|---------|---------------------------------------------|
@@ -250,8 +288,18 @@ use the per-platform `icons` map as an override:
 | `win`   | string | `.ico`  | Windows icon (multi-resolution recommended) |
 | `linux` | string | `.png`  | Linux icon (512×512 recommended)            |
 
-Paths are relative to the app directory. When no icon is set at all, the
-build uses the default Electron icon.
+Paths are relative to the app directory, or to the suite root of a
+multi-app suite, whatever the working directory (see [File
+paths](#file-paths)).
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+uses `icon` when it is set, and otherwise the `icons` entry for the
+first target platform. The `icon` argument of
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+overrides both, and is relative to the working directory. If the chosen
+file does not exist,
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+stops with an error that names the key and the path it checked. When no
+icon is set at all, the build uses the default Electron icon.
 
 > **Creating icons**
 >
@@ -490,11 +538,11 @@ vignette for details.
 |----|----|----|----|
 | `id` | string | yes | Unique identifier (URL-safe) |
 | `name` | string | yes | Display name in the launcher |
-| `path` | string | yes | Relative path to the app directory |
+| `path` | string | yes | Path to the app directory, relative to the suite root |
 | `type` | string | no | App type override (default: `build.type`) |
 | `runtime_strategy` | string | no | Runtime strategy override (default: `build.runtime_strategy`) |
 | `description` | string | no | Short description shown in the launcher |
-| `icon` | string | no | Per-app icon path |
+| `icon` | string | no | Image for the app’s launcher card, relative to the suite root |
 
 **Example:**
 
