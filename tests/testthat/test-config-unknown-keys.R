@@ -14,16 +14,12 @@ test_that("collect_unknown_config_keys flags nested typos", {
 
 test_that("collect_unknown_config_keys accepts valid nested config and exemptions", {
   cfg <- list(
-    app = list(version = "1.0.0", slug = "s", product_name = "P",
-               description = "d", author = "a"),
+    app = list(version = "1.0.0", slug = "s", log_level = "debug"),
     build = list(runtime_strategy = "bundled"),
     window = list(width = 1400, height = 900),
     icon = "x.ico",
     icons = list(win = "x.ico"),
-    installer = list(one_click = FALSE,
-                     allow_to_change_installation_directory = TRUE,
-                     per_machine = TRUE),
-    optimize = list(r_library = TRUE, r_runtime = TRUE),
+    installer = list(one_click = FALSE, app_id = "com.example.app"),
     container = list(engine = "docker", volumes = list("/a" = "/b"),
                      env = list(KEY = "v")),
     dependencies = list(r = list(repos = list("https://cloud.r-project.org"),
