@@ -543,8 +543,10 @@ installer produced by electron-builder.
 | Key | Type | Default | Description |
 |----|----|----|----|
 | `app_id` | string | `null` | Unique application identifier (e.g. `"com.example.myapp"`); `null` derives one from the app name |
-| `license_file` | string | `null` | Path to a license file shown during installation (Windows NSIS only) |
+| `license_file` | string | `null` | Path to a license file, relative to the app directory, that the Windows installer shows before installing. Plain text (UTF-8), `.rtf`, or `.html` |
 | `one_click` | boolean | `true` | Use a one-click installer on Windows; set to `false` for a wizard-style installer |
+| `allow_to_change_installation_directory` | boolean | `null` | `true` adds a wizard page where users choose the installation folder. Requires `one_click: false` |
+| `per_machine` | boolean | `null` | `true` installs for all users, which needs administrator rights on every install and update. `false` behaves like unset: the one-click installer installs for the current user, and the wizard still lets the user choose |
 
 **Example:**
 
@@ -553,7 +555,26 @@ installer:
   app_id: "com.example.my-dashboard"
   license_file: "LICENSE.txt"
   one_click: false
+  allow_to_change_installation_directory: true
 ```
+
+> **Decide on `per_machine` before the first release**
+>
+> A per-machine install goes to Program Files, and every later update
+> shows an administrator prompt. Standard users cannot write to Program
+> Files, and R Shiny runs an app with its own folder as the working
+> directory, so an app that writes files next to `app.R` fails for them.
+> Turning `per_machine` on for an app that has already shipped per-user
+> moves the next install there too. A standard user who approves that
+> prompt with an administrator’s credentials can end up with the old
+> per-user copy still installed next to the new one.
+
+> **Build Windows installers on Windows**
+>
+> Build the Windows installer on a Windows machine, as the [GitHub
+> Actions](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/github-actions.md)
+> workflow does. Installers built on macOS have been reported to cut
+> `.txt` and `.rtf` license pages short.
 
 ## Common recipes
 
@@ -666,6 +687,15 @@ or a key placed in the wrong section, are reported in a single warning
 that lists each one by its dotted path (for example `window.widht`), and
 the build goes on without them. Entries under `apps` and the contents of
 maps such as `container.env` are not checked.
+
+The `installer` settings are stricter. `one_click`,
+`allow_to_change_installation_directory`, and `per_machine` take `true`
+or `false`: a quoted `"true"` or `"false"` is read with a warning, and
+any other value stops the build.
+`allow_to_change_installation_directory: true` needs `one_click: false`,
+and a `license_file` that does not exist also stops the build.
+electron-builder would otherwise reject these late in the Windows build,
+after the runtime download.
 
 If the YAML itself fails to parse, shinyelectron warns and uses all
 defaults. This is deliberate: a broken config file should never block

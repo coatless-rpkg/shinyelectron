@@ -1,0 +1,26 @@
+# Mark a UTF-8 text file with a byte order mark
+
+NSIS reads a license text file that has no byte order mark in the build
+machine's ANSI code page, so UTF-8 text with characters such as the
+copyright sign, curly quotes or accented letters shows up garbled in the
+installer. electron-builder converts only localized `license_<lang>`
+files. This prepends the UTF-8 byte order mark when the file is valid
+UTF-8 with some non-ASCII content, and leaves ASCII files, files that
+already start with a byte order mark, other encodings such as Latin-1,
+and files containing NUL bytes (such as UTF-16) unchanged.
+
+## Usage
+
+``` r
+add_utf8_bom(path)
+```
+
+## Arguments
+
+- path:
+
+  Character. Path to the text file, rewritten in place.
+
+## Value
+
+Invisibly, `TRUE` when the byte order mark was added.

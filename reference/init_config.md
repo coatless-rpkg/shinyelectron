@@ -45,6 +45,6 @@ app <- file.path(tempdir(), "init-config-demo")
 dir.create(app, showWarnings = FALSE)
 writeLines("library(shiny)", file.path(app, "app.R"))
 init_config(app, app_name = "My App")
-#> ✔ Created configuration file: /tmp/RtmpRvgEK9/init-config-demo/_shinyelectron.yml
+#> ✔ Created configuration file: /tmp/Rtmp8O5vOI/init-config-demo/_shinyelectron.yml
 #> ℹ Edit this file to customize your Electron app settings
 ```

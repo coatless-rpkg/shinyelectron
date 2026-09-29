@@ -139,7 +139,11 @@ Default is FALSE.</p></dd>
 
 <dt id="arg-config">config<a class="anchor" aria-label="anchor" href="#arg-config"></a></dt>
 <dd><p>List. Configuration from _shinyelectron.yml file (optional). Used for
-template variables like window dimensions, port, and app version.</p></dd>
+template variables like window dimensions, port, and app version. File
+paths in a config passed here, such as <code>installer.license_file</code>, must be
+absolute or relative to the working directory. (<code><a href="export.html">export()</a></code> reads
+<code>_shinyelectron.yml</code> itself and resolves <code>installer.license_file</code> against
+the app directory.)</p></dd>
 
 
 <dt id="arg-overwrite">overwrite<a class="anchor" aria-label="anchor" href="#arg-overwrite"></a></dt>
