@@ -140,10 +140,17 @@ generate_package_json <- function(app_slug, app_version, backend, config,
       mac_config$notarize <- TRUE
     }
 
-    # Windows signing
+    # Windows signing. electron-builder 26 reads signtool settings only from
+    # win.signtoolOptions and rejects them directly under win. It validates
+    # the whole config before building, so misplaced keys would fail builds
+    # for every platform, not just Windows. The certificate password stays
+    # out of package.json: electron-builder reads it from
+    # WIN_CSC_KEY_PASSWORD or CSC_KEY_PASSWORD at build time.
     if (!is.null(signing$win$certificate_file)) {
-      win_config$certificateFile <- signing$win$certificate_file
-      win_config$signingHashAlgorithms <- list("sha256")
+      win_config$signtoolOptions <- list(
+        certificateFile = signing$win$certificate_file,
+        signingHashAlgorithms = list("sha256")
+      )
     }
   } else {
     # Without Developer ID signing, still ad-hoc sign the macOS bundle so it
