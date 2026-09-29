@@ -205,3 +205,18 @@ test_that("the Linux desktop entry names the slug as the window class", {
   expect_equal(parsed$build$linux$target, "AppImage")
   expect_equal(parsed$build$linux$desktop$entry$StartupWMClass, "my-app")
 })
+
+test_that("productName stays under build, so the user data folder follows the slug", {
+  # Electron names the app, and with it the user data folder, after a
+  # top-level productName when package.json has one, else after name.
+  # electron-builder drops the build block from the packaged package.json
+  # and adds only what build.extraMetadata holds.
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "native-r", list(), app_name = "My App"),
+    simplifyVector = FALSE
+  )
+  expect_false("productName" %in% names(parsed))
+  expect_false("extraMetadata" %in% names(parsed$build))
+  expect_equal(parsed$name, "my-app")
+  expect_equal(parsed$build$productName, "My App")
+})
