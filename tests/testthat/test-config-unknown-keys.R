@@ -242,7 +242,7 @@ test_that("export reports unknown keys once for a multi-app suite", {
   # Staging writes dependencies.json, which would query Posit Package Manager.
   local_mocked_bindings(query_sysreqs = function(...) character(0))
   dir <- .config_dir(c(
-    "app:", "  name: Suite", "  nmae: Typo",
+    "app:", "  name: Suite", "  slug: suite", "  nmae: Typo",
     "build:", "  type: r-shiny", "  runtime_strategy: system",
     "apps:",
     "  - id: one", "    name: One", "    path: apps/one",
