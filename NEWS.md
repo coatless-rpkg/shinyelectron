@@ -189,15 +189,6 @@
   instead of listing them as warnings, and it checks that
   `installer.license_file` exists.
 
-* With `updates.auto_download` on, the update notification now says the new
-  version is downloading, instead of asking the user to click to download.
-
-* An `app_name` with no ASCII letters or digits, such as one written only in
-  Chinese characters, no longer stops `export()` late in the build; the slug
-  comes from the directory name instead. When no slug can be derived, or
-  `app.slug` is invalid, `export()` now stops before converting the app, and
-  `show_config()` no longer fails on a non-ASCII `app.name`.
-
 * Paths in `_shinyelectron.yml` are now resolved against the app directory
   (the suite root for a multi-app suite) as documented, not the working
   directory, so `export()` finds them from anywhere. This covers `icon`,
@@ -213,6 +204,15 @@
   `signing.win.certificate_file` warns when a Windows build is signed.
   `app_check()` checks these files the same way and reports a missing icon as
   an error.
+
+* With `updates.auto_download` on, the update notification now says the new
+  version is downloading, instead of asking the user to click to download.
+
+* An `app_name` with no ASCII letters or digits, such as one written only in
+  Chinese characters, no longer stops `export()` late in the build; the slug
+  comes from the directory name instead. When no slug can be derived, or
+  `app.slug` is invalid, `export()` now stops before converting the app, and
+  `show_config()` no longer fails on a non-ASCII `app.name`.
 
 # shinyelectron 0.2.1
 
