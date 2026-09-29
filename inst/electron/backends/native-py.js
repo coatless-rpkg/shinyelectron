@@ -6,14 +6,16 @@ const path = require('path');
 const os = require('os');
 const {
   waitForServer, findAvailablePort, killProcessTree, isProcessRunning, waitForExit,
-  sortCandidatesByVersion, reportRuntimeCandidates, meetsMinimumVersion, logDebug,
-  resolveRuntimeManifestPath
+  startSupersededError, sortCandidatesByVersion, reportRuntimeCandidates,
+  meetsMinimumVersion, logDebug, resolveRuntimeManifestPath
 } = require('./utils');
 
 class NativePyBackend extends EventEmitter {
   constructor() {
     super();
     this.pyProcess = null;
+    // Bumped by every start() and stop(); see start().
+    this.startToken = 0;
   }
 
   /**
@@ -186,9 +188,20 @@ class NativePyBackend extends EventEmitter {
    * @param {string} options.appPath - Path to the Shiny app directory.
    * @param {number} options.port - Port to listen on.
    * @param {object} options.config - Backend configuration.
-   * @returns {Promise<{port: number}>} Resolves when the Shiny server is ready.
+   * @returns {Promise<{port: number}>} Resolves when the Shiny server is
+   *   ready. Rejects with code 'START_SUPERSEDED' when stop() or a newer
+   *   start() supersedes this one.
    */
   async start({ appPath, port, config }) {
+    // stop() and any later start() supersede this start. From then on it must
+    // not spawn Python, report status, or touch this.pyProcess: the backend is
+    // shared, so all of those now belong to whatever runs next.
+    const token = ++this.startToken;
+    const superseded = () => token !== this.startToken;
+    const throwIfSuperseded = () => {
+      if (superseded()) throw startSupersededError();
+    };
+
     // Clear only this backend's one-shot interactive handlers from a prior
     // start(); do NOT removeAllListeners(), which would also wipe the main
     // process's 'status'/'error' subscribers and freeze the lifecycle UI.
@@ -216,7 +229,9 @@ class NativePyBackend extends EventEmitter {
 
             if (!findCachedRuntime(manifest)) {
               const { isOnline } = require('./utils');
-              if (!await isOnline()) {
+              const online = await isOnline();
+              throwIfSuperseded();
+              if (!online) {
                 this.emit('status', {
                   phase: 'error',
                   message: 'This app needs to download Python on first launch but no internet connection was detected.\n\nPlease check your network connection and try again.'
@@ -227,12 +242,16 @@ class NativePyBackend extends EventEmitter {
               this.emit('status', { phase: 'downloading_runtime', message: 'Downloading Python runtime...' });
               python = await downloadRuntime(manifest, (msg, pct) => {
                 logDebug(`[Runtime] ${msg}`);
-                this.emit('status', { phase: 'downloading_runtime', message: msg, progress: pct });
+                if (!superseded()) {
+                  this.emit('status', { phase: 'downloading_runtime', message: msg, progress: pct });
+                }
               });
+              throwIfSuperseded();
             }
           }
         }
       } catch (err) {
+        throwIfSuperseded();
         const error = new Error(`Failed to set up Python runtime: ${err.message}`);
         this.emit('status', { phase: 'error', message: error.message, detail: { stderr: err.message } });
         throw error;
@@ -271,6 +290,7 @@ class NativePyBackend extends EventEmitter {
             resolve(data.runtimePath);
           });
         });
+        throwIfSuperseded();
 
         python = selectedPath;
         this.emit('status', { phase: 'runtime_found', message: `Selected Python: ${python}` });
@@ -350,6 +370,7 @@ class NativePyBackend extends EventEmitter {
       const libPath = checker.resolveLibPath(appSlug, config, prefs);
 
       const missing = await checker.checkMissingPy(manifest.packages, python);
+      throwIfSuperseded();
 
       if (missing.length > 0) {
         const promptBeforeInstall = config?.prompt_before_install ?? false;
@@ -383,10 +404,12 @@ class NativePyBackend extends EventEmitter {
 
             this.once('skip-install', () => resolveInstall());
           });
+          throwIfSuperseded();
         } else {
           const result = await checker.installPy(missing, manifest.index_urls || [], python, libPath, (pkg, idx, total) => {
             this.emit('status', { phase: 'installing_packages', message: `Installing ${pkg}...`, detail: { index: idx, total } });
           });
+          throwIfSuperseded();
 
           if (!result.success) {
             this.emit('status', { phase: 'install_error', message: result.error });
@@ -399,12 +422,13 @@ class NativePyBackend extends EventEmitter {
     // Find an available port (prefers the requested port; falls back to OS-assigned)
     const actualPort = await findAvailablePort(port, (attempted, next) => {
       logDebug(`Port ${attempted} is in use, trying ${next}...`);
+      if (superseded()) return;
       this.emit('status', { phase: 'port_conflict', message: `Port ${attempted} in use, trying ${next}...`, attempted, next });
     });
+    throwIfSuperseded();
 
     return new Promise((resolve, reject) => {
-      // Guard so the start() promise settles exactly once and a late
-      // waitForServer timeout cannot stop a process a retry has since spawned.
+      // Guard so the start() promise settles exactly once.
       let settled = false;
       const settle = (fn, arg) => { if (settled) return; settled = true; fn(arg); };
       // shiny run uses --app-dir for the directory and app:app as the module reference
@@ -464,6 +488,13 @@ class NativePyBackend extends EventEmitter {
       });
       this.pyProcess = child;
 
+      // Settle a superseded start without reporting anything or touching
+      // this.pyProcess; stop the child it spawned if that is still running.
+      const abandon = () => {
+        if (isProcessRunning(child)) killProcessTree(child);
+        settle(reject, startSupersededError());
+      };
+
       let stderr = '';
 
       child.stdout.on('data', (data) => {
@@ -474,6 +505,7 @@ class NativePyBackend extends EventEmitter {
         const msg = data.toString().trim();
         stderr += msg + '\n';
         logDebug(`[Python stderr] ${msg}`);
+        if (superseded()) return;
 
         // Surface Python's progress as lifecycle status updates
         if (/Uvicorn running on/.test(msg)) {
@@ -496,8 +528,12 @@ class NativePyBackend extends EventEmitter {
       child.on('close', (code) => {
         // Ignore a child that is no longer current: stop() clears the handle
         // before killing it, and a retry or multi-app switch replaces it, so
-        // an intentional kill or a stale close never reports a crash.
-        if (this.pyProcess !== child) return;
+        // an intentional kill or a stale close never reports a crash. A
+        // start that is still pending was superseded and settles quietly.
+        if (this.pyProcess !== child) {
+          if (superseded()) abandon();
+          return;
+        }
         this.pyProcess = null;
         if (code !== null && code !== 0) {
           const msg = `Python process exited unexpectedly (code ${code})`;
@@ -513,9 +549,17 @@ class NativePyBackend extends EventEmitter {
         }
       });
 
-      waitForServer(actualPort, { timeout: 60000, interval: 500 })
+      waitForServer(actualPort, {
+        timeout: 60000,
+        interval: 500,
+        isCancelled: () => settled || superseded()
+      })
         .then(() => {
           if (settled) return;
+          if (superseded()) {
+            abandon();
+            return;
+          }
           logDebug(`Python Shiny server ready on http://localhost:${actualPort}`);
           this.emit('status', { phase: 'server_ready', message: 'Python Shiny server ready', port: actualPort });
           settle(resolve, { port: actualPort });
@@ -523,6 +567,10 @@ class NativePyBackend extends EventEmitter {
         .catch(() => {
           // A crash already settled this start.
           if (settled) return;
+          if (superseded()) {
+            abandon();
+            return;
+          }
           // Tear down only the child this start spawned. stop() would kill
           // whatever process is current, which may already belong to a newer
           // start, and report a shutdown for an app that never came up.
@@ -544,13 +592,14 @@ class NativePyBackend extends EventEmitter {
   }
 
   /**
-   * Stop the native Python Shiny server.
-   * Emits 'app_exit' right away; callers that must know the Python process is
-   * gone (the auto-updater handoff) wait on the result.
+   * Stop the native Python Shiny server, superseding any start() still in
+   * progress. Emits 'app_exit' right away; callers that must know the Python
+   * process is gone (the auto-updater handoff) wait on the result.
    * @returns {Promise<void>} Resolves once the Python process has exited, or
    *   right away if none was running.
    */
   stop() {
+    this.startToken++;
     let exited = Promise.resolve();
     if (this.pyProcess) {
       logDebug('Stopping Python Shiny server...');

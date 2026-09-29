@@ -22,15 +22,22 @@ function logDebug(...args) {
  * @param {object} options - Configuration.
  * @param {number} options.timeout - Max wait time in ms (default 30000).
  * @param {number} options.interval - Poll interval in ms (default 500).
- * @returns {Promise<void>} Resolves when server responds, rejects on timeout.
+ * @param {function} [options.isCancelled] - Checked before every attempt;
+ *   once it returns true, polling stops and the promise rejects.
+ * @returns {Promise<void>} Resolves when server responds, rejects on timeout
+ *   or cancellation.
  */
-function waitForServer(port, { timeout = 30000, interval = 500 } = {}) {
+function waitForServer(port, { timeout = 30000, interval = 500, isCancelled = null } = {}) {
   return new Promise((resolve, reject) => {
     const start = Date.now();
     const fail = () =>
       reject(new Error(`Server on port ${port} did not start within ${timeout}ms`));
 
     function check() {
+      if (isCancelled && isCancelled()) {
+        reject(new Error(`Stopped waiting for the server on port ${port}`));
+        return;
+      }
       const remaining = timeout - (Date.now() - start);
       if (remaining <= 0) {
         fail();
@@ -132,14 +139,20 @@ function isOnline() {
   });
 }
 
+// Processes killProcessTree() was already asked to kill. A second request is
+// ignored, so a process is never signalled again once its PID may be reused.
+const killRequested = new WeakSet();
+
 /**
- * Kill a child process and its tree.
+ * Kill a child process and its tree. Only the first call for a given
+ * process does anything.
  * On Windows: taskkill /pid N /f /t
  * On Unix: SIGTERM, then SIGKILL after 500ms if still alive.
  * @param {object} proc - child_process instance with .pid
  */
 function killProcessTree(proc) {
-  if (!proc || !proc.pid) return;
+  if (!proc || !proc.pid || killRequested.has(proc)) return;
+  killRequested.add(proc);
   try {
     if (process.platform === 'win32') {
       const { execFileSync } = require('child_process');
@@ -176,6 +189,17 @@ function isProcessRunning(proc) {
 function waitForExit(proc) {
   if (!isProcessRunning(proc)) return Promise.resolve();
   return new Promise((resolve) => proc.once('exit', () => resolve()));
+}
+
+/**
+ * Error for a backend start() that stop() or a newer start() superseded.
+ * main.js ignores it: a superseded start has nothing left to show.
+ * @returns {Error} Error with code 'START_SUPERSEDED'.
+ */
+function startSupersededError() {
+  const err = new Error('Backend start was superseded by stop() or a newer start()');
+  err.code = 'START_SUPERSEDED';
+  return err;
 }
 
 /**
@@ -293,6 +317,7 @@ module.exports = {
   killProcessTree,
   isProcessRunning,
   waitForExit,
+  startSupersededError,
   sortCandidatesByVersion,
   reportRuntimeCandidates,
   compareVersions,

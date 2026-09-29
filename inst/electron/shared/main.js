@@ -59,6 +59,12 @@ function getBackendForApp(appType, runtimeStrategy) {
   return require('./backends/native-py');
 }
 
+// A backend start() that stop() or a newer start() superseded rejects with
+// this code. It has nothing left to show, so its callers ignore it.
+function isSupersededStart(err) {
+  return Boolean(err && err.code === 'START_SUPERSEDED');
+}
+
 {{#updates_enabled}}
 const { autoUpdater } = require('electron-updater');
 const updaterLog = require('electron-log');
@@ -663,6 +669,7 @@ function createWindow() {
     log('info', 'Server ready on port', actualPort);
     mainWindow.loadURL(`http://localhost:${actualPort}`);
   }).catch((err) => {
+    if (isSupersededStart(err)) return;
     log('error', 'Backend start failed:', err.message);
   });
   } // end if (!appsManifest)
@@ -767,6 +774,7 @@ function createWindow() {
       actualPort = result.port;
       mainWindow.loadURL('http://localhost:' + actualPort);
     }).catch(function(err) {
+      if (isSupersededStart(err)) return;
       log('error', 'Backend start failed:', err.message);
     });
   }
@@ -848,6 +856,7 @@ function createWindow() {
           actualPort = p;
           mainWindow.loadURL(`http://localhost:${actualPort}`);
         }).catch((err) => {
+          if (isSupersededStart(err)) return;
           log('error', 'Backend retry failed:', err.message);
         });
       }
