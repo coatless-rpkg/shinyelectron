@@ -10,7 +10,9 @@ const APP_DIR = path.join(TMP_DIR, 'app');
 const BUILD_DIR = path.join(TMP_DIR, 'build');
 
 // The app never starts listening, and a short lifecycle.startup_timeout makes
-// the readiness wait give up after 5 seconds.
+// the readiness wait give up after 5 seconds. The app asks for its own port:
+// other specs use the default 3838, and a server they start on it while this
+// app waits would answer this app's readiness probe.
 test.describe('Startup timeout - r-shiny system', () => {
   test.setTimeout(120000);
   /** @type {import('@playwright/test').ElectronApplication} */
@@ -24,7 +26,7 @@ test.describe('Startup timeout - r-shiny system', () => {
     `);
     fs.writeFileSync(
       path.join(APP_DIR, '_shinyelectron.yml'),
-      'lifecycle:\n  startup_timeout: 5000\n'
+      'lifecycle:\n  startup_timeout: 5000\nserver:\n  port: 3871\n'
     );
 
     electronDir = buildApp({
