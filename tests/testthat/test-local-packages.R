@@ -101,6 +101,26 @@ test_that("an archive's name comes from its top-level DESCRIPTION only", {
   expect_equal(local_r_package_names(archive), "TopPkg")
 })
 
+test_that("a git archive tarball is read with R's own tar", {
+  git <- Sys.which("git")
+  skip_if(!nzchar(git), "git is not available")
+  parent <- withr::local_tempdir()
+  repo <- write_local_pkg(parent, "GitPkg")
+  run_git <- function(...) {
+    processx::run(git, c("-c", "user.name=Test", "-c", "user.email=test@example.com",
+                         "-c", "commit.gpgsign=false", ...), wd = repo)
+  }
+  run_git("init", "-q")
+  run_git("add", "-A")
+  run_git("commit", "-q", "-m", "Add package")
+  archive <- file.path(parent, "GitPkg_0.0.1.tar.gz")
+  run_git("archive", "--format=tar.gz", "--prefix=GitPkg-main/", "-o", archive, "HEAD")
+  # git archive writes a pax global header, which R's own tar warns about.
+  withr::local_envvar(TAR = "internal")
+
+  expect_equal(local_r_package_names(archive), "GitPkg")
+})
+
 test_that("resolve_local_packages resolves relative paths against the app directory", {
   appdir <- withr::local_tempdir()
   write_local_pkg(file.path(appdir, "pkgs"), "InApp")

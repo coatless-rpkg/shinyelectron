@@ -473,12 +473,13 @@ local_read_description <- function(path) {
 }
 
 # Read `<top>/DESCRIPTION` from a source tarball, extracting only that file.
-# Returns NULL when it cannot be read.
+# Returns NULL when it cannot be read. R's own tar warns about headers it
+# skips, such as the pax global header that git archive writes, so warnings
+# are silenced rather than treated as a failure.
 local_read_archive_description <- function(path) {
   entries <- tryCatch(
-    utils::untar(path, list = TRUE),
-    error = function(e) NULL,
-    warning = function(w) NULL
+    suppressWarnings(utils::untar(path, list = TRUE)),
+    error = function(e) NULL
   )
   top <- unique(grep("^(\\./)?[^/]+/DESCRIPTION$", entries, value = TRUE))
   if (length(top) != 1L) {
@@ -492,9 +493,8 @@ local_read_archive_description <- function(path) {
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
   tryCatch(
-    utils::untar(path, files = top, exdir = tmp),
-    error = function(e) NULL,
-    warning = function(w) NULL
+    suppressWarnings(utils::untar(path, files = top, exdir = tmp)),
+    error = function(e) NULL
   )
   desc <- file.path(tmp, top)
   if (!file.exists(desc)) {
