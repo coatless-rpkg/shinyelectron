@@ -518,8 +518,15 @@ class NativePyBackend extends EventEmitter {
       });
 
       child.on('error', (err) => {
-        if (this.pyProcess !== child) return;
+        if (this.pyProcess !== child) {
+          if (superseded()) abandon();
+          return;
+        }
         this.pyProcess = null;
+        if (superseded()) {
+          abandon();
+          return;
+        }
         const error = new Error(`Failed to start Python: ${err.message}\n\nIs Python installed and on your PATH?`);
         this.emit('status', { phase: 'error', message: error.message, detail: { stderr } });
         settle(reject, error);
@@ -535,6 +542,13 @@ class NativePyBackend extends EventEmitter {
           return;
         }
         this.pyProcess = null;
+        // A superseded start stays quiet even when its own child is still the
+        // current one, as when a newer start has not spawned yet: killing the
+        // child can end it with a non-zero code (taskkill /f on Windows).
+        if (superseded()) {
+          abandon();
+          return;
+        }
         if (code !== null && code !== 0) {
           const msg = `Python process exited unexpectedly (code ${code})`;
           console.error(msg);

@@ -494,8 +494,15 @@ class NativeRBackend extends EventEmitter {
       });
 
       child.on('error', (err) => {
-        if (this.rProcess !== child) return;
+        if (this.rProcess !== child) {
+          if (superseded()) abandon();
+          return;
+        }
         this.rProcess = null;
+        if (superseded()) {
+          abandon();
+          return;
+        }
         const error = new Error(`Failed to start Rscript: ${err.message}\n\nIs R installed and Rscript on your PATH?`);
         this.emit('status', { phase: 'error', message: error.message, detail: { stderr } });
         settle(reject, error);
@@ -511,6 +518,13 @@ class NativeRBackend extends EventEmitter {
           return;
         }
         this.rProcess = null;
+        // A superseded start stays quiet even when its own child is still the
+        // current one, as when a newer start has not spawned yet: killing the
+        // child can end it with a non-zero code (taskkill /f on Windows).
+        if (superseded()) {
+          abandon();
+          return;
+        }
         if (code !== null && code !== 0) {
           const msg = `R process exited unexpectedly (code ${code})`;
           console.error(msg);
