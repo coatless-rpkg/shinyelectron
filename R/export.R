@@ -131,8 +131,10 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   }
 
   # Settle the slug, the app's identity, here where the app directory is
-  # known; process_templates() takes it from the config.
+  # known, and check it before any conversion or runtime download;
+  # process_templates() takes it from the config.
   config$app$slug <- resolve_app_slug(config, app_name, appdir, name_from_config)
+  if (build) check_app_slug(config$app$slug)
 
   # The Windows installer cannot hold a $ in the app's name or metadata; stop
   # a Windows build here, before any conversion or runtime download.

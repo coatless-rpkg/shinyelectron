@@ -108,7 +108,8 @@ slug_or_null <- function(name) {
 #' @param appdir Character string. The app directory.
 #' @param name_from_config Logical. Whether `app_name` came from `app.name`.
 #' @return The slug, or `NULL` when neither the name nor the directory gives
-#'   one, in which case `process_templates()` reports the error.
+#'   one. It is not validated here; [check_app_slug()] does that before a
+#'   build.
 #' @keywords internal
 resolve_app_slug <- function(config, app_name, appdir, name_from_config = FALSE) {
   if (!is.null(config$app$slug)) {
@@ -133,6 +134,37 @@ resolve_app_slug <- function(config, app_name, appdir, name_from_config = FALSE)
     ), class = "shinyelectron_slug_changed")
   }
   slug
+}
+
+#' Check the app slug before a build starts
+#'
+#' The build uses the slug only when it assembles the Electron app, after the
+#' conversion and any runtime download. Checking it right after
+#' [resolve_app_slug()] reports an invalid `app.slug`, or a name and
+#' directory that give no slug, before that work.
+#'
+#' @param slug The resolved slug, or `NULL` when none could be derived.
+#' @return Invisible `TRUE`; aborts otherwise.
+#' @keywords internal
+check_app_slug <- function(slug) {
+  rule <- c(
+    "i" = "Set {.field app.slug} in {.file _shinyelectron.yml} to lowercase letters, digits, and hyphens that start and end with a letter or digit, such as {.val my-app}."
+  )
+  if (is.null(slug)) {
+    cli::cli_abort(
+      c("Cannot derive an app slug from the app name or the directory name.", rule),
+      class = "shinyelectron_invalid_slug"
+    )
+  }
+  valid <- is_nonempty_string(slug) &&
+    isTRUE(tryCatch(validate_slug(slug), error = function(e) FALSE))
+  if (!valid) {
+    cli::cli_abort(
+      c(if (is_nonempty_string(slug)) "Invalid {.field app.slug}: {.val {slug}}" else "Invalid {.field app.slug}", rule),
+      class = "shinyelectron_invalid_slug"
+    )
+  }
+  invisible(TRUE)
 }
 
 #' Validate a slug string

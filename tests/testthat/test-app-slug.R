@@ -219,3 +219,50 @@ test_that("an invalid app.name is reported under its config key", {
     expect_no_match(conditionMessage(error), "app_name", fixed = TRUE)
   }
 })
+
+# --- Checking the slug before a build ---
+
+test_that("check_app_slug accepts a valid slug and names app.slug otherwise", {
+  expect_invisible(check_app_slug("dash-app"))
+  for (slug in list("My Slug", "-dash", 42, c("a", "b"))) {
+    expect_error(check_app_slug(slug), "app.slug", fixed = TRUE,
+                 class = "shinyelectron_invalid_slug")
+  }
+  expect_error(check_app_slug(NULL), class = "shinyelectron_invalid_slug")
+})
+
+test_that("export() rejects an invalid app.slug before converting the app", {
+  appdir <- local_app("dash-app", list(app = list(name = "Sales", slug = "Sales Dashboard")))
+  mockery::stub(export, "convert_app_to_shinylive", function(...) stop("converted"))
+  expect_error(
+    export(appdir, withr::local_tempdir(), overwrite = TRUE, verbose = FALSE),
+    class = "shinyelectron_invalid_slug"
+  )
+})
+
+test_that("export() stops early when neither the name nor the directory gives a slug", {
+  appdir <- local_app(non_ascii_name)
+  mockery::stub(export, "convert_app_to_shinylive", function(...) stop("converted"))
+  expect_error(
+    export(appdir, withr::local_tempdir(), overwrite = TRUE, verbose = FALSE),
+    class = "shinyelectron_invalid_slug"
+  )
+  # Without a build no slug is needed.
+  mockery::stub(export, "convert_app_to_shinylive", function(...) tempdir())
+  expect_no_error(
+    export(appdir, withr::local_tempdir(), build = FALSE, overwrite = TRUE, verbose = FALSE)
+  )
+})
+
+test_that("export_multi_app() checks the slug before a build too", {
+  appdir <- local_app("suite-dir")
+  config <- list(
+    app = list(name = "Sales Tools", slug = "Sales Tools"),
+    build = list(type = "r-shiny", runtime_strategy = "shinylive"),
+    apps = list(list(id = "a", name = "A", path = "."), list(id = "b", name = "B", path = "."))
+  )
+  expect_error(
+    export_multi_app(appdir, withr::local_tempdir(), config, overwrite = TRUE, verbose = FALSE),
+    class = "shinyelectron_invalid_slug"
+  )
+})

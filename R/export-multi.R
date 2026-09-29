@@ -13,6 +13,7 @@ export_multi_app <- function(appdir, destdir, config,
   validate_app_name(app_name, field = if (name_from_config) "app.name" else "app_name")
   # Same slug rules as export(), which has usually settled the slug already.
   config$app$slug <- resolve_app_slug(config, app_name, appdir, name_from_config)
+  if (build) check_app_slug(config$app$slug)
 
   # Validate the icon up front, matching the single-app path.
   if (!is.null(icon)) {

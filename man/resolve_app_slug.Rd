@@ -17,7 +17,8 @@ resolve_app_slug(config, app_name, appdir, name_from_config = FALSE)
 }
 \value{
 The slug, or \code{NULL} when neither the name nor the directory gives
-one, in which case \code{process_templates()} reports the error.
+one. It is not validated here; \code{\link[=check_app_slug]{check_app_slug()}} does that before a
+build.
 }
 \description{
 The slug is the app's identity. It names the package in \code{package.json},
