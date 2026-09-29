@@ -386,13 +386,19 @@ test_that("local_r_install_order rejects a dependency cycle", {
 test_that("check_local_r_package_loads trusts the sentinel line, not the exit status", {
   skip_if_not_installed("mockery")
   run_result <- NULL
+  run_args <- NULL
   mockery::stub(check_local_r_package_loads, "processx::run",
-                function(...) run_result)
+                function(command, args, ...) {
+                  run_args <<- args
+                  run_result
+                })
 
   # A crash while the process exits (seen on Windows) after a successful load.
   run_result <- list(status = -1073741819L, stdout = "\n<<SE_LOAD_OK>>\r\n",
                      stderr = "", timeout = FALSE)
   expect_true(check_local_r_package_loads("Rscript", "pkg", "lib", "current")$ok)
+  # The marker is flushed before the process can crash on exit.
+  expect_match(run_args[[2]], "<<SE_LOAD_OK>>.*flush\\(stdout\\(\\)\\)")
 
   run_result <- list(status = 1L, stdout = "",
                      stderr = "Error: .onLoad failed", timeout = FALSE)

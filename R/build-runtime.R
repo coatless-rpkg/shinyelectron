@@ -717,7 +717,7 @@ install_local_r_package <- function(rscript, pkg, source, lib,
       if (!installed) install_output,
       local_r_output_bullets(check$stderr, "Loading it in a fresh R session failed:"),
       if (check$timeout) {
-        c("x" = "Loading did not finish within {local_r_duration(300)}.")
+        c("x" = "Loading did not finish within {local_r_duration(check$limit)}.")
       },
       local_r_verbose_hint(verbose)
     ), class = "shinyelectron_local_packages_install")
@@ -728,12 +728,15 @@ install_local_r_package <- function(rscript, pkg, source, lib,
 }
 
 # Load `pkg` from `lib` in a fresh process of `rscript`. Success is a line
-# printed after loading, not the exit status, so a crash while the process
-# exits does not count as a failure.
+# printed (and flushed) after loading, not the exit status, so a crash while
+# the process exits does not count as a failure.
 check_local_r_package_loads <- function(rscript, pkg, lib, env, timeout = 300) {
   r_lit <- function(x) encodeString(x, quote = "'")
   r_code <- sprintf(
-    "invisible(loadNamespace(%s, lib.loc = %s)); cat('\\n<<SE_LOAD_OK>>\\n')",
+    paste0(
+      "invisible(loadNamespace(%s, lib.loc = %s)); ",
+      "cat('\\n<<SE_LOAD_OK>>\\n'); flush(stdout())"
+    ),
     r_lit(pkg), r_lit(lib)
   )
   result <- processx::run(
@@ -745,7 +748,8 @@ check_local_r_package_loads <- function(rscript, pkg, lib, env, timeout = 300) {
     ok = grepl("(^|\n)<<SE_LOAD_OK>>\r?(\n|$)", stdout),
     stdout = stdout,
     stderr = result$stderr %||% "",
-    timeout = isTRUE(result$timeout)
+    timeout = isTRUE(result$timeout),
+    limit = timeout
   )
 }
 
