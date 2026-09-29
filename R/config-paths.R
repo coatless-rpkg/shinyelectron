@@ -4,6 +4,8 @@
 # that the packaged app uses on the end user's machine (`app.log_dir`,
 # `dependencies.r.lib_path` and the host side of `container.volumes`) are
 # deliberately left out: they must not point into the build machine.
+# `installer.license_file` is resolved by resolve_installer_license(), which
+# also stops the build when the file is missing.
 CONFIG_PATH_KEYS <- list(
   "icon",
   c("icons", "mac"),

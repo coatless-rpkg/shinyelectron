@@ -208,6 +208,7 @@ SHINYELECTRON_DEFAULTS <- list(
   lifecycle = list(
     show_phase_details = TRUE,
     error_show_logs = TRUE,
+    startup_timeout = 180000L,
     shutdown_timeout = 10000L,
     custom_splash_html = NULL,
     custom_error_html = NULL,
@@ -218,6 +219,8 @@ SHINYELECTRON_DEFAULTS <- list(
   installer = list(
     app_id = NULL,
     license_file = NULL,
-    one_click = TRUE
+    one_click = TRUE,
+    allow_to_change_installation_directory = NULL,
+    per_machine = NULL
   )
 )

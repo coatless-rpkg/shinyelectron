@@ -17,11 +17,11 @@ const fs = require('fs');
 const backend = require('./backends/{{backend_module}}');
 
 // File logging -- writes to configured log directory or app userData
-const LOG_LEVEL = '{{log_level}}';
+const LOG_LEVEL = '{{{log_level_js}}}';
 const LOG_LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
 const LOG_THRESHOLD = LOG_LEVEL in LOG_LEVELS ? LOG_LEVELS[LOG_LEVEL] : 1;
 
-const logDir = '{{log_dir}}' || path.join(app.getPath('userData'), 'logs');
+const logDir = '{{{log_dir_js}}}' || path.join(app.getPath('userData'), 'logs');
 let logStream = null;
 
 function initLogging() {
@@ -57,6 +57,12 @@ function getBackendForApp(appType, runtimeStrategy) {
   if (runtimeStrategy === 'container') return require('./backends/container');
   if (appType.startsWith('r-')) return require('./backends/native-r');
   return require('./backends/native-py');
+}
+
+// A backend start() that stop() or a newer start() superseded rejects with
+// this code. It has nothing left to show, so its callers ignore it.
+function isSupersededStart(err) {
+  return Boolean(err && err.code === 'START_SUPERSEDED');
 }
 
 {{#updates_enabled}}
@@ -121,7 +127,7 @@ let trayMenu = null;
 
 {{#tray_enabled}}
 function createTray() {
-  const iconPath = path.join(__dirname, 'assets', '{{#tray_icon}}{{tray_icon}}{{/tray_icon}}{{^tray_icon}}icon.png{{/tray_icon}}');
+  const iconPath = path.join(__dirname, 'assets', '{{#tray_icon}}{{{tray_icon_js}}}{{/tray_icon}}{{^tray_icon}}icon.png{{/tray_icon}}');
 
   let trayIcon;
   if (fs.existsSync(iconPath)) {
@@ -133,7 +139,7 @@ function createTray() {
   }
 
   tray = new Tray(trayIcon);
-  tray.setToolTip('{{tray_tooltip}}');
+  tray.setToolTip('{{{tray_tooltip_js}}}');
 
   trayMenu = Menu.buildFromTemplate([
     {
@@ -226,15 +232,15 @@ function createMenu() {
     {
       label: 'Help',
       submenu: [
-        {{#help_url}}
+        {{#has_help_url}}
         {
           label: 'Documentation',
           click: async () => {
             const { shell } = require('electron');
-            await shell.openExternal('{{help_url}}');
+            await shell.openExternal('{{{help_url_js}}}');
           }
         },
-        {{/help_url}}
+        {{/has_help_url}}
         {
           label: 'View Logs',
           click: () => {
@@ -249,9 +255,9 @@ function createMenu() {
             const { dialog } = require('electron');
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'About {{app_name}}',
-              message: '{{app_name}}',
-              detail: 'Version {{app_version}}\n\nBuilt with shinyelectron'
+              title: 'About {{{app_name_js}}}',
+              message: '{{{app_name_js}}}',
+              detail: 'Version {{{app_version_js}}}\n\nBuilt with shinyelectron'
             });
           }
         }
@@ -347,15 +353,15 @@ function createMenu() {
     {
       label: 'Help',
       submenu: [
-        {{#help_url}}
+        {{#has_help_url}}
         {
           label: 'Documentation',
           click: async () => {
             const { shell } = require('electron');
-            await shell.openExternal('{{help_url}}');
+            await shell.openExternal('{{{help_url_js}}}');
           }
         },
-        {{/help_url}}
+        {{/has_help_url}}
         {
           label: 'View Logs',
           click: () => {
@@ -370,9 +376,9 @@ function createMenu() {
             const { dialog } = require('electron');
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'About {{app_name}}',
-              message: '{{app_name}}',
-              detail: 'Version {{app_version}}\n\nBuilt with shinyelectron'
+              title: 'About {{{app_name_js}}}',
+              message: '{{{app_name_js}}}',
+              detail: 'Version {{{app_version_js}}}\n\nBuilt with shinyelectron'
             });
           }
         }
@@ -393,6 +399,8 @@ function setupAutoUpdater() {
 
   autoUpdater.autoDownload = {{#auto_download}}true{{/auto_download}}{{^auto_download}}false{{/auto_download}};
   autoUpdater.autoInstallOnAppQuit = {{#auto_install}}true{{/auto_install}}{{^auto_install}}false{{/auto_install}};
+  // NSIS updater: ship the full installer, not a web installer.
+  autoUpdater.disableWebInstaller = true;
 
   autoUpdater.on('checking-for-update', () => {
     updaterLog.info('Checking for updates...');
@@ -434,10 +442,69 @@ function setupAutoUpdater() {
       title: 'Update Ready',
       message: 'A new version has been downloaded. Restart now to apply the update?',
       buttons: ['Restart', 'Later'],
-      defaultId: 0
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true
     }).then((result) => {
       if (result.response === 0) {
-        autoUpdater.quitAndInstall();
+        // Quit cleanly before handing over to the installer: stop the backend
+        // (R/Shiny) and wait for its process to exit so it releases the
+        // bundled runtime's files, and suppress the window-close confirmation
+        // so the update cannot be cancelled halfway.
+        isShuttingDown = true;
+        app.isQuitting = true;
+
+        let handedOver = false;
+        const handOver = () => {
+          if (handedOver) return;
+          handedOver = true;
+          // quitAndInstall() reports a failed install through 'error' and
+          // leaves the app running with its backend already stopped. Undo the
+          // shutdown so the window closes normally and tell the user.
+          const onInstallError = (err) => {
+            isShuttingDown = false;
+            app.isQuitting = false;
+            const options = {
+              type: 'error',
+              title: 'Update Failed',
+              message: 'The update could not be installed.',
+              detail: (err && err.message ? err.message + '\n\n' : '') +
+                'Please restart the app manually.',
+              buttons: ['OK'],
+              noLink: true
+            };
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              dialog.showMessageBox(mainWindow, options);
+            } else {
+              dialog.showMessageBox(options);
+            }
+          };
+          autoUpdater.once('error', onInstallError);
+          try {
+            autoUpdater.quitAndInstall();
+          } catch (err) {
+            autoUpdater.removeListener('error', onInstallError);
+            onInstallError(err);
+          }
+        };
+
+        stopSharedShinyliveServer();
+        if (!currentBackend) {
+          // No per-app backend is running (launcher or a shinylive app).
+          handOver();
+          return;
+        }
+        // Hand over once the backend process has exited, or after
+        // shutdown_timeout if it is still running by then.
+        let fallback = null;
+        const timedOut = new Promise((resolve) => {
+          fallback = setTimeout(resolve, {{shutdown_timeout}});
+        });
+        const exited = Promise.resolve(currentBackend.stop()).catch(() => {});
+        Promise.race([exited, timedOut]).then(() => {
+          clearTimeout(fallback);
+          handOver();
+        });
       }
     });
   });
@@ -570,7 +637,7 @@ function createWindow() {
       else if (data.phase === 'installing_packages') statusText = 'Installing packages...';
       else if (data.phase === 'checking_packages') statusText = 'Checking packages...';
 
-      tray.setToolTip('{{app_name}} - ' + statusText);
+      tray.setToolTip('{{{app_name_js}}} - ' + statusText);
       // Also update the Status menu item label so the context menu reflects
       // the current state (guards against older Electron builds missing
       // getMenuItemById by wrapping in try/catch).
@@ -602,6 +669,7 @@ function createWindow() {
     log('info', 'Server ready on port', actualPort);
     mainWindow.loadURL(`http://localhost:${actualPort}`);
   }).catch((err) => {
+    if (isSupersededStart(err)) return;
     log('error', 'Backend start failed:', err.message);
   });
   } // end if (!appsManifest)
@@ -662,7 +730,7 @@ function createWindow() {
         else if (data.phase === 'finding_runtime') statusText = 'Finding runtime...';
         else if (data.phase === 'installing_packages') statusText = 'Installing packages...';
         else if (data.phase === 'checking_packages') statusText = 'Checking packages...';
-        tray.setToolTip((selectedApp.name || '{{app_name}}') + ' - ' + statusText);
+        tray.setToolTip((selectedApp.name || '{{{app_name_js}}}') + ' - ' + statusText);
         try {
           if (trayMenu) {
             var statusItem = trayMenu.getMenuItemById('status');
@@ -706,6 +774,7 @@ function createWindow() {
       actualPort = result.port;
       mainWindow.loadURL('http://localhost:' + actualPort);
     }).catch(function(err) {
+      if (isSupersededStart(err)) return;
       log('error', 'Backend start failed:', err.message);
     });
   }
@@ -787,6 +856,7 @@ function createWindow() {
           actualPort = p;
           mainWindow.loadURL(`http://localhost:${actualPort}`);
         }).catch((err) => {
+          if (isSupersededStart(err)) return;
           log('error', 'Backend retry failed:', err.message);
         });
       }
@@ -875,7 +945,7 @@ function createWindow() {
         type: 'question',
         buttons: ['Quit', 'Cancel'],
         defaultId: 1,
-        title: 'Close {{app_name}}',
+        title: 'Close {{{app_name_js}}}',
         message: 'Are you sure you want to quit?'
       });
 
@@ -936,7 +1006,7 @@ function createWindow() {
 app.whenReady().then(() => {
   initLogging();
   log('info', 'App starting');
-  log('info', 'Version: {{app_version}}');
+  log('info', 'Version: {{{app_version_js}}}');
   log('info', 'App type: {{app_type}}');
   log('info', 'Backend: {{backend_module}}');
   log('info', 'Platform:', process.platform, process.arch);

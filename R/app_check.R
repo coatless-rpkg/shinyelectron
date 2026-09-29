@@ -56,7 +56,9 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
   # --- Read config ---
   # read_config converts YAML parse errors into R warnings (via cli::cli_warn)
   # rather than re-throwing them, so we need withCallingHandlers to capture
-  # those warnings in addition to the tryCatch for any unexpected hard errors.
+  # those warnings in addition to the tryCatch for hard errors. A hard error
+  # (for example an invalid installer setting) also stops export(), so it
+  # fails the check.
   config_parse_ok <- TRUE
   config <- tryCatch(
     withCallingHandlers({
@@ -76,8 +78,8 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
       invokeRestart("muffleWarning")
     }),
     error = function(e) {
-      warnings <<- c(warnings, paste0("Config error: ", e$message))
-      if (verbose) cli::cli_alert_warning("Config: {e$message}")
+      errors <<- c(errors, paste0("Config error: ", conditionMessage(e)))
+      if (verbose) cli::cli_alert_danger("Config: {conditionMessage(e)}")
       list()
     }
   )
@@ -293,6 +295,20 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
     shown <- paste(format(cert), collapse = " ")
     warnings <- c(warnings, paste0("signing.win.certificate_file file not found: ", shown))
     if (verbose) cli::cli_alert_warning("{.field signing.win.certificate_file} file not found: {.path {shown}}")
+  }
+
+  # --- Check: Installer license ---
+  # export() resolves installer.license_file against the app directory and
+  # stops when the file is missing.
+  license_file <- config$installer$license_file
+  if (!is.null(license_file)) {
+    tryCatch({
+      resolve_installer_license(config, appdir)
+      if (verbose) cli::cli_alert_success("Installer license: {.file {license_file}}")
+    }, error = function(e) {
+      errors <<- c(errors, conditionMessage(e))
+      if (verbose) cli::cli_alert_danger("Installer license: {conditionMessage(e)}")
+    })
   }
 
   # --- Result ---

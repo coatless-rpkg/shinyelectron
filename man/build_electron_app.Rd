@@ -51,12 +51,13 @@ The \code{icon} and \code{icons} keys of \code{config} are not read here.}
 
 \item{config}{List. Configuration from _shinyelectron.yml file (optional). Used for
 template variables like window dimensions, port, and app version. File
-paths in it, such as \code{splash.image}, \code{tray.icon} and
-\code{signing.win.certificate_file}, are used as given: absolute, or relative
-to the working directory, like the \code{icon} argument. \code{\link[=export]{export()}} reads
-\verb{_shinyelectron.yml} itself and first resolves those paths against the
-app directory. A splash image or tray icon that does not exist is left
-out with a warning.}
+paths in it, such as \code{splash.image}, \code{tray.icon},
+\code{signing.win.certificate_file} and \code{installer.license_file}, are used as
+given: absolute, or relative to the working directory, like the \code{icon}
+argument. \code{\link[=export]{export()}} reads \verb{_shinyelectron.yml} itself and first resolves
+those paths against the app directory. A splash image or tray icon that
+does not exist is left out with a warning; a missing license file stops
+the build.}
 
 \item{overwrite}{Logical. Whether to overwrite existing output directory. Default is FALSE.}
 

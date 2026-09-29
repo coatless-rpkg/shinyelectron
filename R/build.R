@@ -25,12 +25,13 @@
 #'   Default is FALSE.
 #' @param config List. Configuration from _shinyelectron.yml file (optional). Used for
 #'   template variables like window dimensions, port, and app version. File
-#'   paths in it, such as `splash.image`, `tray.icon` and
-#'   `signing.win.certificate_file`, are used as given: absolute, or relative
-#'   to the working directory, like the `icon` argument. [export()] reads
-#'   `_shinyelectron.yml` itself and first resolves those paths against the
-#'   app directory. A splash image or tray icon that does not exist is left
-#'   out with a warning.
+#'   paths in it, such as `splash.image`, `tray.icon`,
+#'   `signing.win.certificate_file` and `installer.license_file`, are used as
+#'   given: absolute, or relative to the working directory, like the `icon`
+#'   argument. [export()] reads `_shinyelectron.yml` itself and first resolves
+#'   those paths against the app directory. A splash image or tray icon that
+#'   does not exist is left out with a warning; a missing license file stops
+#'   the build.
 #' @param overwrite Logical. Whether to overwrite existing output directory. Default is FALSE.
 #' @param verbose Logical. Whether to display detailed progress information. Default is TRUE.
 #'
