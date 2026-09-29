@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const {
-  waitForServer, findAvailablePort, killProcessTree,
+  waitForServer, findAvailablePort, killProcessTree, waitForExit,
   sortCandidatesByVersion, reportRuntimeCandidates, meetsMinimumVersion, logDebug,
   resolveRuntimeManifestPath
 } = require('./utils');
@@ -542,21 +542,23 @@ class NativePyBackend extends EventEmitter {
 
   /**
    * Stop the native Python Shiny server.
+   * Emits 'app_exit' right away; callers that must know the Python process is
+   * gone (the auto-updater handoff) wait on the result.
+   * @returns {Promise<void>} Resolves once the Python process has exited, or
+   *   right away if none was running.
    */
   stop() {
+    let exited = Promise.resolve();
     if (this.pyProcess) {
       logDebug('Stopping Python Shiny server...');
       this.emit('status', { phase: 'stopping_server', message: 'Stopping Python Shiny server...' });
       const child = this.pyProcess;
       this.pyProcess = null;
-      // Emit app_exit only after the child has actually exited (its 'close'
-      // event), so callers that wait on it (e.g. the auto-updater handoff) do
-      // not race a still-running process.
-      child.once('close', () => this.emit('status', { phase: 'app_exit' }));
+      exited = waitForExit(child);
       killProcessTree(child);
-      return;
     }
     this.emit('status', { phase: 'app_exit' });
+    return exited;
   }
 }
 

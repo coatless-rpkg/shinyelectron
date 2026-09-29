@@ -156,6 +156,22 @@ function killProcessTree(proc) {
 }
 
 /**
+ * Wait for a child process to exit.
+ * Listens for 'exit' rather than 'close': 'close' also waits for every
+ * process that inherited the child's stdio, such as a helper the app started
+ * in the background, so it can fire long after the child itself is gone.
+ * @param {object} proc - child_process instance.
+ * @returns {Promise<void>} Resolves once the process has exited; right away
+ *   if it has already exited or never started.
+ */
+function waitForExit(proc) {
+  if (!proc || !proc.pid || proc.exitCode !== null || proc.signalCode !== null) {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => proc.once('exit', () => resolve()));
+}
+
+/**
  * Sort runtime candidates by version descending (latest first).
  * Versions are compared numerically component-by-component; non-numeric
  * parts and unknown versions (e.g. "0.0.0") sort last.
@@ -268,6 +284,7 @@ module.exports = {
   findAvailablePort,
   isOnline,
   killProcessTree,
+  waitForExit,
   sortCandidatesByVersion,
   reportRuntimeCandidates,
   compareVersions,

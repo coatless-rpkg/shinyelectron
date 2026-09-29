@@ -530,6 +530,8 @@ class ContainerBackend extends EventEmitter {
 
   /**
    * Stop and remove the container.
+   * @returns {Promise<void>} Resolves once the container has been stopped and
+   *   removed (or the attempt failed), or right away if none is running.
    */
   stop() {
     if (this.containerId && this.containerEngine) {
@@ -548,7 +550,12 @@ class ContainerBackend extends EventEmitter {
       // render. Run it detached (and `-t 3` to shorten the grace) so the UI is
       // free immediately; the child finishes even if the app quits first. Each
       // stage emits a status so the shutdown screen can show the breakdown.
-      const done = (message) => this.emit('status', { phase: 'app_exit', message });
+      let resolveStopped;
+      const stopped = new Promise((resolve) => { resolveStopped = resolve; });
+      const done = (message) => {
+        this.emit('status', { phase: 'app_exit', message });
+        resolveStopped();
+      };
       try {
         const proc = spawn(engine, ['stop', '-t', '3', id], { stdio: 'ignore', env, detached: true });
         proc.on('error', (err) => {
@@ -569,10 +576,12 @@ class ContainerBackend extends EventEmitter {
         console.warn(`Failed to stop container: ${err.message}`);
         done('Shutdown complete');
       }
+      return stopped;
     } else {
       // Nothing to tear down, but still signal completion so the shutdown
       // flow can proceed promptly.
       this.emit('status', { phase: 'app_exit', message: 'Shutting down...' });
+      return Promise.resolve();
     }
   }
 }

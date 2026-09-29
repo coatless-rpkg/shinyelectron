@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const {
-  waitForServer, findAvailablePort, killProcessTree,
+  waitForServer, findAvailablePort, killProcessTree, waitForExit,
   sortCandidatesByVersion, reportRuntimeCandidates, meetsMinimumVersion, logDebug,
   resolveRuntimeManifestPath
 } = require('./utils');
@@ -526,21 +526,23 @@ class NativeRBackend extends EventEmitter {
 
   /**
    * Stop the native R Shiny server.
+   * Emits 'stopping_server' and 'app_exit' right away; callers that must know
+   * the R process is gone (the auto-updater handoff) wait on the result.
+   * @returns {Promise<void>} Resolves once the R process has exited, or right
+   *   away if none was running.
    */
   stop() {
     this.emit('status', { phase: 'stopping_server', message: 'Stopping R server...' });
+    let exited = Promise.resolve();
     if (this.rProcess) {
       logDebug('Stopping R Shiny server...');
       const child = this.rProcess;
       this.rProcess = null;
-      // Emit app_exit only after the child has actually exited (its 'close'
-      // event), so callers that wait on it (e.g. the auto-updater handoff) do
-      // not race a still-running process.
-      child.once('close', () => this.emit('status', { phase: 'app_exit' }));
+      exited = waitForExit(child);
       killProcessTree(child);
-      return;
     }
     this.emit('status', { phase: 'app_exit' });
+    return exited;
   }
 }
 
