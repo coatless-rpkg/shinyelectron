@@ -211,9 +211,9 @@ test_that("metadata text is reduced to one line", {
 # --- Windows installer strings ---
 
 test_that("smart_quotes turns straight double quotes into typographic ones", {
-  expect_equal(smart_quotes('Sales "Q3" Dashboard'), "Sales “Q3” Dashboard")
-  expect_equal(smart_quotes('"Acme" Inc.'), "“Acme” Inc.")
-  expect_equal(smart_quotes('A 5" screen'), "A 5” screen")
+  expect_equal(smart_quotes('Sales "Q3" Dashboard'), "Sales \u201cQ3\u201d Dashboard")
+  expect_equal(smart_quotes('"Acme" Inc.'), "\u201cAcme\u201d Inc.")
+  expect_equal(smart_quotes('A 5" screen'), "A 5\u201d screen")
   expect_equal(smart_quotes("Plain"), "Plain")
   expect_null(smart_quotes(NULL))
 })
@@ -227,9 +227,9 @@ test_that("package.json keeps straight double quotes out of Windows installer st
     )),
     app_name = 'Sales "Q3" Dashboard'
   )
-  expect_equal(pkg$build$productName, "Sales “Q3” Dashboard")
-  expect_equal(pkg$build$copyright, "Copyright 2026 “Acme” Inc.")
-  expect_equal(pkg$author, list(name = "Jane “JD” Doe", email = "jane@example.org"))
+  expect_equal(pkg$build$productName, "Sales \u201cQ3\u201d Dashboard")
+  expect_equal(pkg$build$copyright, "Copyright 2026 \u201cAcme\u201d Inc.")
+  expect_equal(pkg$author, list(name = "Jane \u201cJD\u201d Doe", email = "jane@example.org"))
   # electron-builder smartens the description's quotes itself.
   expect_equal(pkg$description, 'The "best" app')
 })

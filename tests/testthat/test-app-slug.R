@@ -27,7 +27,7 @@ export_args <- function(appdir, ...) {
   captured
 }
 
-non_ascii_name <- "数据分析"
+non_ascii_name <- "\u6570\u636e\u5206\u6790"
 
 # --- resolve_app_slug() ---
 
