@@ -1028,6 +1028,20 @@ app.whenReady().then(() => {
   log('info', 'Backend: {{backend_module}}');
   log('info', 'Platform:', process.platform, process.arch);
   log('info', 'Preferred port: {{server_port}}');
+
+  if (process.platform === 'darwin') {
+    // The App menu's About item opens the native About panel; show the same
+    // metadata there as in Help > About. (Electron uses website and authors
+    // only on Linux.)
+    app.setAboutPanelOptions({
+      applicationName: '{{{app_name_js}}}',
+      applicationVersion: '{{{app_version_js}}}',
+      {{#has_app_copyright}}copyright: '{{{app_copyright_js}}}',{{/has_app_copyright}}
+      {{#has_app_homepage}}website: '{{{app_homepage_js}}}',{{/has_app_homepage}}
+      {{#has_app_author}}authors: ['{{{app_author_js}}}'],{{/has_app_author}}
+    });
+  }
+
   createWindow();
 
   {{#tray_enabled}}

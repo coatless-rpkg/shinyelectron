@@ -628,3 +628,25 @@ test_that("Check for Updates no longer attaches listeners or calls checkForUpdat
   expect_false(any(grepl("checkForUpdatesAndNotify", check, fixed = TRUE)))
   expect_true(any(grepl("await autoUpdater.checkForUpdates()", check, fixed = TRUE)))
 })
+
+# --- macOS About panel ---
+
+test_that("the macOS About panel gets the configured metadata", {
+  panel_options <- function(config, app_name = "Test App") {
+    main <- readLines(render_main_js(config, app_name = app_name))
+    start <- grep("app.setAboutPanelOptions({", main, fixed = TRUE)
+    end <- start + grep("});", main[-seq_len(start)], fixed = TRUE)[1]
+    main[start:end]
+  }
+
+  plain <- panel_options(list())
+  expect_true(any(grepl("applicationName: 'Test App',", plain, fixed = TRUE)))
+  expect_true(any(grepl("applicationVersion: '1.0.0',", plain, fixed = TRUE)))
+  expect_false(any(grepl("copyright:|website:|authors:", plain)))
+
+  full <- panel_options(list(app = about_metadata()), app_name = "Bob's App")
+  expect_true(any(grepl("applicationName: 'Bob\\'s App',", full, fixed = TRUE)))
+  expect_true(any(grepl("copyright: 'Copyright 2026 O\\'Hara & Co \\\\ Ltd',", full, fixed = TRUE)))
+  expect_true(any(grepl("website: 'https://example.org/it\\'s?a=1&b=2',", full, fixed = TRUE)))
+  expect_true(any(grepl("authors: ['Jane O\\'Hara'],", full, fixed = TRUE)))
+})
