@@ -673,7 +673,7 @@ class ContainerBackend extends EventEmitter {
    *   removed (or the attempt failed), or right away if none is running.
    */
   stop() {
-    this.startToken++;
+    const token = ++this.startToken;
     if (this.containerId && this.containerEngine) {
       const id = this.containerId;
       const engine = this.containerEngine;
@@ -684,10 +684,15 @@ class ContainerBackend extends EventEmitter {
       this.emit('status', { phase: 'stopping_server', message: `Stopping container ${short}...` });
       logDebug(`Stopping container ${id}...`);
 
+      // The later stages are reported only while no start() or stop() has
+      // come since: the backend is shared, and when the user switches to
+      // another container app its listeners are attached before this
+      // teardown finishes.
+      const current = () => this.startToken === token;
       return this.removeContainer(id, engine, env, () => {
-        this.emit('status', { phase: 'cleanup', message: 'Removing container...' });
+        if (current()) this.emit('status', { phase: 'cleanup', message: 'Removing container...' });
       }).then((message) => {
-        this.emit('status', { phase: 'app_exit', message });
+        if (current()) this.emit('status', { phase: 'app_exit', message });
       });
     } else {
       // Nothing to tear down, but still signal completion so the shutdown
