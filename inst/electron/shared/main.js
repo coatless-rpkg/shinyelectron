@@ -226,7 +226,7 @@ function createMenu() {
     {
       label: 'Help',
       submenu: [
-        {{#help_url}}
+        {{#has_help_url}}
         {
           label: 'Documentation',
           click: async () => {
@@ -234,7 +234,7 @@ function createMenu() {
             await shell.openExternal('{{help_url}}');
           }
         },
-        {{/help_url}}
+        {{/has_help_url}}
         {
           label: 'View Logs',
           click: () => {
@@ -249,8 +249,8 @@ function createMenu() {
             const { dialog } = require('electron');
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'About {{app_name}}',
-              message: '{{app_name}}',
+              title: 'About {{{app_name_js}}}',
+              message: '{{{app_name_js}}}',
               detail: 'Version {{app_version}}\n\nBuilt with shinyelectron'
             });
           }
@@ -347,7 +347,7 @@ function createMenu() {
     {
       label: 'Help',
       submenu: [
-        {{#help_url}}
+        {{#has_help_url}}
         {
           label: 'Documentation',
           click: async () => {
@@ -355,7 +355,7 @@ function createMenu() {
             await shell.openExternal('{{help_url}}');
           }
         },
-        {{/help_url}}
+        {{/has_help_url}}
         {
           label: 'View Logs',
           click: () => {
@@ -370,8 +370,8 @@ function createMenu() {
             const { dialog } = require('electron');
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'About {{app_name}}',
-              message: '{{app_name}}',
+              title: 'About {{{app_name_js}}}',
+              message: '{{{app_name_js}}}',
               detail: 'Version {{app_version}}\n\nBuilt with shinyelectron'
             });
           }

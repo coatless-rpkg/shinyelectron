@@ -51,8 +51,19 @@ generate_template_variables <- function(app_name, app_slug, app_type,
   # container_image becoming {} instead of being absent).
   backend_config <- Filter(Negate(is.null), backend_config)
 
+  # Escape a value for a single-quoted JavaScript string literal in main.js.
+  js_str <- function(x) {
+    if (is.null(x)) return(NULL)
+    x <- gsub("\\", "\\\\", x, fixed = TRUE)
+    x <- gsub("'", "\\'", x, fixed = TRUE)
+    x <- gsub("\r", " ", x, fixed = TRUE)
+    x <- gsub("\n", " ", x, fixed = TRUE)
+    x
+  }
+
   list(
     app_name = app_name,
+    app_name_js = js_str(app_name),
     app_slug = app_slug,
     app_type = app_type,
     app_version = config$app$version %||% SHINYELECTRON_DEFAULTS$app_version,
@@ -92,6 +103,7 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     menu_minimal = identical(config$menu$template %||% "default", "minimal"),
     show_dev_tools = config$menu$show_dev_tools %||% SHINYELECTRON_DEFAULTS$menu$show_dev_tools,
     help_url = config$menu$help_url %||% "",
+    has_help_url = !is.null(config$menu$help_url),
 
     # Auto-updates
     updates_enabled = config$updates$enabled %||% SHINYELECTRON_DEFAULTS$updates$enabled,
