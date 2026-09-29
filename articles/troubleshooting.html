@@ -473,7 +473,7 @@ v All systems ready! You should be able to build Electron apps successfully</cod
 <span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">sign</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
 <span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">win</span><span class="kw">:</span></span>
 <span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">certificate_file</span><span class="kw">:</span><span class="at"> </span><span class="st">"path/to/cert.pfx"</span></span></code></pre></div>
-<p>Set <code>CSC_LINK</code> and <code>CSC_KEY_PASSWORD</code> before building.</p>
+<p>Keep the certificate password out of the file: set <code>CSC_KEY_PASSWORD</code> before building. Without <code>certificate_file</code>, electron-builder reads the certificate from <code>CSC_LINK</code> instead.</p>
 <p>For <strong>local testing</strong>, click “More info” then “Run anyway”.</p>
 <p>EV certificates receive SmartScreen reputation immediately. Standard certificates build reputation over time, as more users run the signed installer.</p>
 </section></section><section class="level2"><h2 id="clear-the-cache">Clear the cache<a class="anchor" aria-label="anchor" href="#clear-the-cache"></a>

@@ -927,6 +927,64 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <td>Show a runtime-version picker when multiple R or Python installations are detected</td>
 </tr>
 </tbody>
+</table></section><section class="level3"><h3 id="signing">
+<code>signing</code><a class="anchor" aria-label="anchor" href="#signing"></a>
+</h3>
+<p>Code signing for release builds. Passwords and other credentials never go in this file; electron-builder reads them from environment variables. See <a href="code-signing.html">Code Signing and Distribution</a> for the certificates, the variables, and the setup on each platform.</p>
+<table class="table caption-top">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 18%">
+<col style="width: 27%">
+<col style="width: 39%">
+</colgroup>
+<thead><tr class="header">
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>sign</code></td>
+<td>boolean</td>
+<td><code>false</code></td>
+<td>Sign the builds <code><a href="../reference/export.html">export()</a></code> makes; <code>export(sign = TRUE)</code> signs even when this is <code>false</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>mac.identity</code></td>
+<td>string</td>
+<td><code>null</code></td>
+<td>Signing identity, e.g. <code>"Developer ID Application: Your Name (TEAMID)"</code>; <code>null</code> lets electron-builder find one</td>
+</tr>
+<tr class="odd">
+<td><code>mac.team_id</code></td>
+<td>string</td>
+<td><code>null</code></td>
+<td>Apple Team ID; notarization is skipped unless this or <code>APPLE_TEAM_ID</code> is set, and electron-builder reads the ID from <code>APPLE_TEAM_ID</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>mac.notarize</code></td>
+<td>boolean</td>
+<td><code>false</code></td>
+<td>Notarize with Apple; signed builds also notarize when <code>APPLE_ID</code> and <code>APPLE_APP_SPECIFIC_PASSWORD</code> are set</td>
+</tr>
+<tr class="odd">
+<td><code>win.certificate_file</code></td>
+<td>string</td>
+<td><code>null</code></td>
+<td>Path to a <code>.pfx</code> or <code>.p12</code> certificate; <code>null</code> uses <code>WIN_CSC_LINK</code> or <code>CSC_LINK</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>linux.gpg_sign</code></td>
+<td>boolean</td>
+<td><code>false</code></td>
+<td>Reserved for GPG-signing the AppImage; has no effect yet</td>
+</tr>
+</tbody>
 </table></section><section class="level3"><h3 id="installer">
 <code>installer</code><a class="anchor" aria-label="anchor" href="#installer"></a>
 </h3>
