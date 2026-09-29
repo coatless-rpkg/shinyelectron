@@ -474,3 +474,78 @@ test_that("install_local_r_packages aborts when a package fails to load", {
   expect_false(dir.exists(file.path(lib, "onloadpkg")))
   expect_length(list.files(lib, pattern = "^00LOCK"), 0)
 })
+
+test_that("build_electron_app passes the configured local packages to embed_r_runtime", {
+  skip_if_not_installed("mockery")
+  tmp <- withr::local_tempdir()
+  app_dir <- fs::path(tmp, "app")
+  fs::dir_create(app_dir)
+  writeLines("library(shiny)", fs::path(app_dir, "app.R"))
+
+  mockery::stub(build_electron_app, "validate_node_npm", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "setup_electron_project", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "copy_app_files", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "process_templates", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "install_npm_dependencies", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "build_for_platforms", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "validate_build_output", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "resolve_runtime_version", function(runtime, config) "4.6.1")
+  captured <- NULL
+  mockery::stub(build_electron_app, "embed_r_runtime",
+                function(output_dir, packages, repos, version, platform, arch,
+                         verbose, local_packages) {
+    captured <<- local_packages
+    invisible(fs::path(output_dir, "runtime", "R"))
+  })
+
+  local_packages <- c("/abs/pkgs/MyPkg", "/abs/vendor/other_1.0.tar.gz")
+  build_electron_app(
+    app_dir, fs::path(tmp, "out"), app_name = "test", app_type = "r-shiny",
+    runtime_strategy = "bundled", platform = "mac", arch = "arm64",
+    config = list(dependencies = list(r = list(local_packages = as.list(local_packages)))),
+    verbose = FALSE
+  )
+
+  expect_equal(captured, local_packages)
+})
+
+test_that("build_multi_app passes the configured local packages to embed_r_runtime", {
+  skip_if_not_installed("mockery")
+  config <- list(
+    build = list(type = "r-shiny", runtime_strategy = "bundled"),
+    dependencies = list(r = list(local_packages = list("/abs/pkgs/MyPkg"))),
+    apps = list(
+      list(id = "one", name = "One", path = "./apps/one"),
+      list(id = "two", name = "Two", path = "./apps/two")
+    )
+  )
+  apps_manifest <- list(
+    list(id = "one", name = "One", type = "r-shiny", runtime_strategy = "bundled"),
+    list(id = "two", name = "Two", type = "r-shiny", runtime_strategy = "bundled")
+  )
+
+  captured <- NULL
+  mockery::stub(build_multi_app, "embed_r_runtime",
+                function(output_dir, packages, repos, version, platform, arch,
+                         verbose, local_packages) {
+    captured <<- local_packages
+    invisible(TRUE)
+  })
+  mockery::stub(build_multi_app, "validate_node_npm", function() invisible(TRUE))
+  mockery::stub(build_multi_app, "setup_electron_project", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "process_templates", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "install_npm_dependencies", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "build_for_platforms", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "validate_build_output", function(...) invisible(TRUE))
+
+  build_multi_app(
+    apps_dir = withr::local_tempdir(),
+    output_dir = file.path(withr::local_tempdir(), "electron-app"),
+    app_name = "Suite", apps_manifest = apps_manifest, default_type = "r-shiny",
+    runtime_strategy = "bundled", sign = FALSE, platform = "mac", arch = "arm64",
+    icon = NULL, config = config, overwrite = TRUE, verbose = FALSE,
+    r_packages = "shiny"
+  )
+
+  expect_equal(captured, "/abs/pkgs/MyPkg")
+})

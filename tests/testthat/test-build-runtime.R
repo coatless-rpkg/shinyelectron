@@ -106,6 +106,73 @@ test_that("embed_r_runtime embeds the interpreter even when packages is empty", 
   expect_false(run_called)        # install.packages NOT invoked
 })
 
+test_that("embed_r_runtime installs local packages after the repository packages", {
+  skip_if_not_installed("mockery")
+  out <- withr::local_tempdir()
+  src <- withr::local_tempdir()
+  local_pkg <- file.path(src, "MyPkg")
+  dir.create(local_pkg)
+  writeLines(c("Package: MyPkg", "Version: 0.1.0", "Imports: jsonlite (>= 1.8.0)"),
+             file.path(local_pkg, "DESCRIPTION"))
+
+  mockery::stub(embed_r_runtime, "install_r_portable", function(...) fs::path(out, "cached-r"))
+  mockery::stub(embed_r_runtime, "copy_dir_contents", function(src, dst) {
+    fs::dir_create(fs::path(dst, "bin"), recurse = TRUE)
+    writeLines("#!/bin/sh", fs::path(dst, "bin", "Rscript"))
+    invisible(dst)
+  })
+  cached_rscript <- fs::path(out, "cached-r", "bin", "Rscript")
+  fs::dir_create(fs::path_dir(cached_rscript))
+  writeLines("#!/bin/sh", cached_rscript)
+  mockery::stub(embed_r_runtime, "r_executable", function(...) cached_rscript)
+  mockery::stub(embed_r_runtime, "utils::available.packages",
+                function(repos) matrix(nrow = 0, ncol = 0))
+  resolved_for <- NULL
+  mockery::stub(embed_r_runtime, "tools::package_dependencies",
+                function(packages, db, which, recursive) {
+                  resolved_for <<- packages
+                  list()
+                })
+  mockery::stub(embed_r_runtime, "detect_current_platform", function() "mac")
+
+  steps <- character(0)
+  r_code <- NULL
+  mockery::stub(embed_r_runtime, "processx::run", function(command, args, ...) {
+    steps <<- c(steps, "repository")
+    r_code <<- args[[2]]
+    lib <- fs::path(out, "runtime", "R", "library")
+    for (p in c("shiny", "jsonlite")) fs::dir_create(fs::path(lib, p), recurse = TRUE)
+    list(status = 0, stdout = "", stderr = "")
+  })
+  local_args <- NULL
+  mockery::stub(embed_r_runtime, "install_local_r_packages",
+                function(rscript, local_packages, lib_path, verbose) {
+                  steps <<- c(steps, "local")
+                  local_args <<- list(rscript = rscript, local_packages = local_packages,
+                                      lib_path = lib_path)
+                  invisible("MyPkg")
+                })
+
+  embed_r_runtime(
+    output_dir = out, packages = c("shiny", "MyPkg"),
+    repos = "https://cloud.r-project.org", version = "4.4.1",
+    platform = "mac", arch = "arm64", verbose = FALSE,
+    local_packages = local_pkg
+  )
+
+  # The local package's declared import comes from the repository; the local
+  # package itself never does.
+  expect_match(r_code, "'jsonlite'", fixed = TRUE)
+  expect_match(r_code, "'shiny'", fixed = TRUE)
+  expect_false(grepl("'MyPkg'", r_code, fixed = TRUE))
+  expect_false("MyPkg" %in% resolved_for)
+
+  expect_equal(steps, c("repository", "local"))
+  expect_equal(local_args$rscript, cached_rscript)
+  expect_equal(normalizePath(local_args$local_packages), normalizePath(local_pkg))
+  expect_equal(local_args$lib_path, fs::path(out, "runtime", "R", "library"))
+})
+
 test_that("embed_r_runtime falls back to the default repository when repos is NULL", {
   skip_if_not_installed("mockery")
   out <- withr::local_tempdir()

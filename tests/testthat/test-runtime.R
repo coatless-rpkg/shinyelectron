@@ -448,9 +448,11 @@ test_that("build_electron_app delegates bundled R embedding to embed_r_runtime w
 
   embed_args <- NULL
   mockery::stub(build_electron_app, "embed_r_runtime",
-                function(output_dir, packages, repos, version, platform, arch, verbose, ...) {
+                function(output_dir, packages, repos, version, platform, arch, verbose,
+                         local_packages) {
     embed_args <<- list(packages = packages, repos = repos, version = version,
-                        platform = platform, arch = arch)
+                        platform = platform, arch = arch,
+                        local_packages = local_packages)
     invisible(fs::path(output_dir, "runtime", "R"))
   })
 
@@ -464,6 +466,7 @@ test_that("build_electron_app delegates bundled R embedding to embed_r_runtime w
   expect_equal(embed_args$version, "4.4.1")
   expect_equal(embed_args$platform, "mac")
   expect_equal(embed_args$arch, "arm64")
+  expect_equal(embed_args$local_packages, character(0))
 })
 
 test_that("build_electron_app falls back to the configured repositories without a dependency manifest", {
