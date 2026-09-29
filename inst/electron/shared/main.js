@@ -62,6 +62,9 @@ function getBackendForApp(appType, runtimeStrategy) {
 {{#updates_enabled}}
 const { autoUpdater } = require('electron-updater');
 const updaterLog = require('electron-log');
+// True while Help > About > Check for Updates runs; it answers in its own
+// dialog, so the update-available notification stays quiet.
+let interactiveUpdateCheck = false;
 {{/updates_enabled}}
 
 let mainWindow;
@@ -434,17 +437,24 @@ function setupAutoUpdater() {
 
   autoUpdater.on('update-available', (info) => {
     updaterLog.info('Update available:', info.version);
+    // Check for Updates answers in its own dialog.
+    if (interactiveUpdateCheck) return;
     // Show non-intrusive notification instead of modal
     const { Notification } = require('electron');
     if (Notification.isSupported()) {
+      // With autoDownload on, the download has already started.
       const notification = new Notification({
         title: 'Update Available',
-        body: `Version ${info.version} is available. Click to download.`,
+        body: autoUpdater.autoDownload
+          ? `Version ${info.version} is downloading.`
+          : `Version ${info.version} is available. Click to download.`,
         silent: true
       });
-      notification.on('click', () => {
-        autoUpdater.downloadUpdate();
-      });
+      if (!autoUpdater.autoDownload) {
+        notification.on('click', () => {
+          autoUpdater.downloadUpdate().catch((err) => updaterLog.error('Update download failed:', err));
+        });
+      }
       notification.show();
     } else {
       // Fallback to log
@@ -492,11 +502,14 @@ async function checkForUpdatesInteractive() {
   const downloadFailed = (err) => show('warning', 'Could not download the update', reason(err));
 
   let result;
+  interactiveUpdateCheck = true;
   try {
     result = await autoUpdater.checkForUpdates();
   } catch (err) {
     await show('warning', 'Could not check for updates', reason(err));
     return;
+  } finally {
+    interactiveUpdateCheck = false;
   }
 
   // electron-updater answers null when it is inactive, as in a copy that is

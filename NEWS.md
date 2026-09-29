@@ -61,6 +61,9 @@
 * Help > Documentation appears only when `menu.help_url` is set, instead of
   in every app with a link that opened nothing.
 
+* With `updates.auto_download` on, the update notification now says the new
+  version is downloading, instead of asking the user to click to download.
+
 * An app name with no ASCII letters or digits, such as one written only in
   Chinese characters, no longer stops `export()` late in the build or breaks
   `show_config()`; the slug comes from the directory name instead.

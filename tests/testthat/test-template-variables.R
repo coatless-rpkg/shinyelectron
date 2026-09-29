@@ -562,6 +562,7 @@ run_update_check <- function(scenarios) {
     "  const app = { getVersion: () => '1.0.0' };",
     "  const mainWindow = null;",
     "  const updaterLog = { error: () => {} };",
+    "  let interactiveUpdateCheck = false;",
     "  const autoUpdater = {",
     "    autoDownload: false,",
     "    checkForUpdates: async () => {",
@@ -751,4 +752,71 @@ test_that("the macOS App menu shows the display name instead of the slug", {
   }
   main <- readLines(render_main_js(list(), app_name = "Bob's App"))
   expect_true(any(grepl("{ role: 'hide', label: 'Hide Bob\\'s App' }", main, fixed = TRUE)))
+})
+
+# Run the rendered setupAutoUpdater() and checkForUpdatesInteractive() under
+# node against a fake electron-updater that always finds version 2.0.0.
+# Checks once from Help > About, then once as the startup check does, and
+# returns the notifications and dialogs each check showed.
+run_update_notifications <- function(config) {
+  main <- readLines(render_main_js(config))
+  functions <- unlist(lapply(
+    c("^function setupAutoUpdater\\(\\)", "^async function checkForUpdatesInteractive\\(\\)"),
+    function(pattern) {
+      start <- grep(pattern, main)
+      main[start:(start + which(main[-seq_len(start)] == "}")[1])]
+    }
+  ))
+  script <- withr::local_tempfile(fileext = ".js", lines = c(
+    "const { EventEmitter } = require('events');",
+    "(async () => {",
+    "  let seen = [];",
+    "  class Notification {",
+    "    constructor(options) { this.options = options; }",
+    "    static isSupported() { return true; }",
+    "    on() {}",
+    "    show() { seen.push('notification: ' + this.options.body); }",
+    "  }",
+    "  const dialog = {",
+    "    showMessageBox: async (win, o) => { seen.push('dialog: ' + o.message); return { response: 1 }; }",
+    "  };",
+    "  const require = () => ({ dialog, Notification });",
+    "  const app = { getVersion: () => '1.0.0' };",
+    "  const mainWindow = null;",
+    "  const updaterLog = { info() {}, error() {}, transports: { file: {} } };",
+    grep("^let interactiveUpdateCheck", main, value = TRUE),
+    "  const autoUpdater = new EventEmitter();",
+    "  autoUpdater.checkForUpdates = async () => {",
+    "    const info = { version: '2.0.0' };",
+    "    autoUpdater.emit('update-available', info);",
+    "    return { isUpdateAvailable: true, updateInfo: info,",
+    "             downloadPromise: autoUpdater.autoDownload ? Promise.resolve() : null };",
+    "  };",
+    "  autoUpdater.downloadUpdate = async () => {};",
+    functions,
+    "  setupAutoUpdater();",
+    "  const out = {};",
+    "  await checkForUpdatesInteractive();",
+    "  out.interactive = seen; seen = [];",
+    "  await autoUpdater.checkForUpdates();",
+    "  out.startup = seen;",
+    "  process.stdout.write(JSON.stringify(out));",
+    "})();"
+  ))
+  jsonlite::fromJSON(processx::run("node", script)$stdout)
+}
+
+test_that("Check for Updates keeps the update notification quiet", {
+  skip_on_cran()
+  skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
+
+  manual <- run_update_notifications(list(updates = list(enabled = TRUE)))
+  expect_equal(manual$interactive, "dialog: Version 2.0.0 is available")
+  expect_equal(manual$startup, "notification: Version 2.0.0 is available. Click to download.")
+
+  automatic <- run_update_notifications(
+    list(updates = list(enabled = TRUE, auto_download = TRUE))
+  )
+  expect_equal(automatic$interactive, "dialog: Version 2.0.0 is downloading")
+  expect_equal(automatic$startup, "notification: Version 2.0.0 is downloading.")
 })
