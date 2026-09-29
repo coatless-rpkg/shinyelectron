@@ -208,7 +208,7 @@
     var splashMinDuration = {{splash_duration}};
     var splashStillActive = splashEnabled;
     var pendingTransition = null;
-    var preloaderBackground = '{{preloader_background}}';
+    var preloaderBackground = '{{{preloader_background_js}}}';
 
     function applyState(name) {
       document.querySelectorAll('.state').forEach(function(s) { s.classList.remove('active'); });

@@ -5,7 +5,7 @@ Playwright-based end-to-end tests for the shinyelectron Electron app, covering a
 ## Prerequisites
 
 - Node.js >= 18
-- R >= 4.4.0 with the shinyelectron package (loaded via `devtools::load_all()`)
+- R >= 4.5.0 with the shinyelectron package (loaded via `devtools::load_all()`)
 - Strategy-specific requirements (see table below)
 
 ## Setup
@@ -28,6 +28,7 @@ npm run test:fast
 npm run test:single         # r-shiny system: single app
 npm run test:multi          # r-shiny system: multi-app launcher
 npm run test:error          # r-shiny system: crash/error recovery
+npm run test:timeout        # r-shiny system: error screen after a startup timeout
 npm run test:r-shinylive    # r-shinylive: WebR in browser
 npm run test:py-shinylive   # py-shinylive: Pyodide in browser
 npm run test:py-system      # py-shiny system: native Python
@@ -43,6 +44,7 @@ npm run test:r-container    # r-shiny container: Docker/Podman
 | `single-app.spec.js` | r-shiny | system | R + shiny | ~1 min |
 | `multi-app-launcher.spec.js` | r-shiny | system | R + shiny | ~1 min |
 | `error-recovery.spec.js` | r-shiny | system | R | ~5 min |
+| `startup-timeout.spec.js` | r-shiny | system | R + shiny | ~2 min |
 | `r-shinylive.spec.js` | r-shinylive | shinylive | R + shinylive pkg | ~3 min |
 | `py-shinylive.spec.js` | py-shinylive | shinylive | Python + shinylive | ~3 min |
 | `py-shiny-system.spec.js` | py-shiny | system | Python + shiny | ~2 min |
