@@ -41,6 +41,22 @@ export_multi_app <- function(appdir, destdir, config,
   # staging (e.g. one bundled and one auto-download R app in the suite).
   validate_suite_strategies(config$apps, config)
 
+  # Local R packages go into the shared bundled R library, so the suite needs
+  # a bundled R app. Paths resolve against the suite root, whose config is the
+  # only one read; check them before anything is copied or downloaded.
+  suite_bundled_r <- any(vapply(config$apps, function(a) {
+    grepl("^r-", resolve_app_type(a, config)) &&
+      identical(resolve_app_strategy(a, config), "bundled")
+  }, logical(1)))
+  local_packages <- resolve_local_packages(
+    config$dependencies$r$local_packages,
+    base_dir = appdir,
+    bundled_r = suite_bundled_r
+  )
+  if (length(local_packages) > 0) {
+    config$dependencies$r$local_packages <- local_packages
+  }
+
   # Create destination
   if (fs::dir_exists(destdir)) {
     if (!overwrite) {

@@ -30,7 +30,10 @@ embed_r_runtime(
 
 \item{verbose}{Logical. Whether to display progress.}
 
-\item{local_packages}{Character vector. Paths to local R package source directories or archives to install into the bundled library after the repository packages.}
+\item{local_packages}{Character vector. Paths to local R package source
+folders or \code{.tar.gz} source tarballs to install into the bundled library
+after the repository packages. \code{\link[=export]{export()}} passes absolute paths; relative
+paths resolve against the working directory.}
 }
 \value{
 Invisibly, the path to the embedded \code{runtime/R} directory.

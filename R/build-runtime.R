@@ -15,13 +15,26 @@
 #' @param platform Character scalar. Target platform ("win"/"mac"/"linux").
 #' @param arch Character scalar. Target architecture ("x64"/"arm64").
 #' @param verbose Logical. Whether to display progress.
-#' @param local_packages Character vector. Paths to local R package source directories or archives to install into the bundled library after the repository packages.
+#' @param local_packages Character vector. Paths to local R package source
+#'   folders or `.tar.gz` source tarballs to install into the bundled library
+#'   after the repository packages. [export()] passes absolute paths; relative
+#'   paths resolve against the working directory.
 #' @return Invisibly, the path to the embedded `runtime/R` directory.
 #' @keywords internal
 embed_r_runtime <- function(output_dir, packages, repos, version,
                             platform, arch, verbose = TRUE,
                             local_packages = character(0)) {
   if (verbose) cli::cli_alert_info("Embedding R runtime for bundled strategy...")
+
+  # Check the local package sources before anything is downloaded. export()
+  # has already resolved them against the app directory; relative paths from
+  # a direct call resolve against the working directory.
+  local_packages <- resolve_local_packages(local_packages, base_dir = getwd())
+  local_names <- local_r_package_names(local_packages)
+  # Local packages may not be part of the detected/repo set; resolve their
+  # declared dependencies explicitly so they are installed first.
+  local_declared <- local_r_package_deps(local_packages)
+  direct_pkgs <- unique(c(unlist(packages), local_names, local_declared))
 
   # Resolve the effective version ONCE and pass it to both install_r_portable and
   # r_executable, replacing the two independent NULL-fallbacks that could
@@ -56,13 +69,6 @@ embed_r_runtime <- function(output_dir, packages, repos, version,
       }
     }
   }
-
-  local_packages <- unlist(local_packages)
-  local_names <- local_r_package_names(local_packages)
-  # Local packages may not be part of the detected/repo set; resolve their
-  # declared dependencies explicitly so they are installed first.
-  local_declared <- local_r_package_deps(local_packages)
-  direct_pkgs <- unique(c(unlist(packages), local_names, local_declared))
 
   # Install packages using the BUNDLED portable R itself (not the cache,
   # and not system R). This ensures binary packages are linked against
@@ -288,34 +294,112 @@ embed_python_runtime <- function(output_dir, packages, index_urls, version,
   invisible(runtime_dest)
 }
 
+#' Resolve and check the configured local R package sources
+#'
+#' Turns the `dependencies.r.local_packages` entries into absolute paths and
+#' checks them before anything is copied or downloaded. [export()] and the
+#' multi-app export call this with the directory that holds
+#' `_shinyelectron.yml` (the app directory, or the suite root), and
+#' [embed_r_runtime()] calls it again for direct callers. Each entry must be a
+#' package source folder (with a `DESCRIPTION`) or a `.tar.gz` / `.tgz` source
+#' tarball.
+#'
+#' @param local_packages Character vector or list. The configured entries.
+#' @param base_dir Character. Directory that relative entries resolve against.
+#' @param bundled_r Logical. Whether an R app in this build uses the bundled
+#'   strategy. Local packages are only installed into a bundled R library, so
+#'   a non-empty list aborts when this is `FALSE`.
+#' @return Character vector of absolute paths (empty when nothing is set).
+#' @keywords internal
+resolve_local_packages <- function(local_packages, base_dir, bundled_r = TRUE) {
+  entries <- local_packages %||% list()
+  if (!is.list(entries)) entries <- as.list(entries)
+  if (length(entries) == 0) {
+    return(character(0))
+  }
+
+  if (!isTRUE(bundled_r)) {
+    cli::cli_abort(c(
+      "{.field dependencies.r.local_packages} only works for R apps that use the {.val bundled} runtime strategy.",
+      "i" = "Set {.field build.runtime_strategy} to {.val bundled}, or remove {.field dependencies.r.local_packages}."
+    ), class = "shinyelectron_local_packages_strategy")
+  }
+
+  is_path <- vapply(entries, function(p) {
+    is.character(p) && length(p) == 1L && !is.na(p) && nzchar(trimws(p))
+  }, logical(1))
+  if (!all(is_path)) {
+    bad <- as.character(which(!is_path))
+    cli::cli_abort(c(
+      "Each {.field dependencies.r.local_packages} entry must be a path to an R package source.",
+      "x" = "Not a path: entr{?y/ies} {bad}."
+    ), class = "shinyelectron_local_packages_invalid")
+  }
+
+  base_dir <- fs::path_abs(path.expand(base_dir))
+  paths <- vapply(entries, function(p) {
+    as.character(fs::path_abs(path.expand(p), start = base_dir))
+  }, character(1), USE.NAMES = FALSE)
+
+  missing <- paths[!file.exists(paths)]
+  if (length(missing) > 0) {
+    cli::cli_abort(c(
+      "Local R package source{?s} not found: {.path {missing}}",
+      "i" = "Relative {.field dependencies.r.local_packages} paths resolve against {.path {base_dir}}."
+    ), class = "shinyelectron_local_packages_missing")
+  }
+
+  # Reads every DESCRIPTION, which rejects anything that is not a package
+  # source folder or source tarball.
+  pkgs <- local_r_package_names(paths)
+  dupes <- unique(pkgs[duplicated(pkgs)])
+  if (length(dupes) > 0) {
+    cli::cli_abort(
+      "{.field dependencies.r.local_packages} lists package {.pkg {dupes}} more than once.",
+      class = "shinyelectron_local_packages_invalid"
+    )
+  }
+
+  paths
+}
+
+#' Read the metadata of local R package sources
+#'
+#' @param paths Character vector. Paths to package source folders or `.tar.gz`
+#'   / `.tgz` source tarballs.
+#' @return A list with one element per path, named by package. Each element
+#'   holds `path`, `package`, `version`, `deps` (the package names from
+#'   `Depends`, `Imports` and `LinkingTo`, without `R`) and `is_dir`.
+#' @keywords internal
+local_r_package_info <- function(paths) {
+  paths <- as.character(unlist(paths))
+  info <- lapply(paths, function(p) {
+    dcf <- local_read_description(p)
+    fields <- intersect(c("Depends", "Imports", "LinkingTo"), colnames(dcf))
+    deps <- unlist(lapply(fields, function(f) local_parse_deps(dcf[1, f])))
+    list(
+      path = p,
+      package = unname(dcf[1, "Package"]),
+      version = unname(dcf[1, "Version"]),
+      deps = unique(as.character(deps)),
+      is_dir = dir.exists(p)
+    )
+  })
+  names(info) <- vapply(info, `[[`, character(1), "package")
+  info
+}
 
 #' Resolve the package names of local R package paths
 #'
-#' Accepts a mix of source directories (with a `DESCRIPTION`) and
-#' `<pkg>_<version>.<ext>` or `<pkg>-<version>.<ext>` archives, returning the
-#' `Package` name for each (read from the archive's `DESCRIPTION`).
+#' Reads the `Package` field from each source folder's `DESCRIPTION`, or from
+#' the `DESCRIPTION` in a source tarball's top-level folder.
 #'
 #' @param paths Character vector. Paths to local package directories or archives.
 #' @return Character vector of package names (empty when `paths` is empty).
 #' @keywords internal
 local_r_package_names <- function(paths) {
-  paths <- unlist(paths)
-  if (length(paths) == 0) {
-    return(character(0))
-  }
-  vapply(
-    paths,
-    function(p) {
-      dcf <- local_read_description(p)
-      if (!is.null(dcf) && "Package" %in% colnames(dcf)) {
-        return(dcf[1, "Package"][[1]])
-      }
-      base <- sub("\\.(tar\\.gz|tgz|zip|tar)$", "", fs::path_file(p), ignore.case = TRUE)
-      sub("[-_][0-9][^-_]*$", "", base)
-    },
-    character(1),
-    USE.NAMES = FALSE
-  )
+  vapply(local_r_package_info(paths), `[[`, character(1), "package",
+         USE.NAMES = FALSE)
 }
 
 #' Resolve the declared dependencies of local R package paths
@@ -329,59 +413,111 @@ local_r_package_names <- function(paths) {
 #' @return Character vector of dependency package names.
 #' @keywords internal
 local_r_package_deps <- function(paths) {
-  paths <- unlist(paths)
-  if (length(paths) == 0) {
-    return(character(0))
-  }
-  fields <- c("Depends", "Imports", "LinkingTo")
-  deps <- character(0)
-  for (p in paths) {
-    dcf <- local_read_description(p)
-    if (is.null(dcf)) {
-      next
-    }
-    for (f in intersect(fields, colnames(dcf))) {
-      vals <- dcf[1, f]
-      if (is.na(vals) || !nzchar(trimws(vals))) {
-        next
-      }
-      parts <- trimws(unlist(strsplit(vals, ",")))
-      parts <- trimws(sub("\\(.*\\)$", "", parts))
-      parts <- parts[nzchar(parts) & parts != "R"]
-      deps <- c(deps, parts)
-    }
-  }
+  deps <- as.character(unlist(lapply(local_r_package_info(paths), `[[`, "deps")))
   setdiff(unique(deps), BASE_R_PACKAGES)
 }
 
-# Read the DESCRIPTION of a local package path, which may be a source directory
-# or a source archive (.tar.gz / .tgz / .tar). Archive top-level directory names
-# vary (`<pkg>/` from R CMD build vs `<pkg>-<version>/` from GitHub tarballs), so
-# the `Package` / dependency fields are read from the DESCRIPTION inside the
-# archive rather than inferred from the file name.
+# Package names from one Depends/Imports/LinkingTo field, without version
+# constraints or R itself.
+local_parse_deps <- function(field) {
+  if (is.na(field) || !nzchar(trimws(field))) {
+    return(character(0))
+  }
+  parts <- strsplit(field, ",", fixed = TRUE)[[1]]
+  parts <- trimws(sub("(?s)\\(.*$", "", parts, perl = TRUE))
+  parts[nzchar(parts) & parts != "R"]
+}
+
+# Read the DESCRIPTION of a local package source: a folder, or a .tar.gz / .tgz
+# source tarball. Tarball top-level folder names vary (`<pkg>/` from R CMD
+# build, `<pkg>-<ref>/` from GitHub), so the fields come from the DESCRIPTION
+# in the single top-level folder rather than from the file name. Anything else,
+# including zip files and binary or installed builds, aborts.
 local_read_description <- function(path) {
   path <- unlist(path)[[1]]
-  desc <- fs::path(path, "DESCRIPTION")
-  if (fs::dir_exists(path) && fs::file_exists(desc)) {
-    return(read.dcf(desc))
-  }
-  if (fs::file_exists(path)) {
-    tmp <- tempfile("pkgdesc")
-    dir.create(tmp, showWarnings = FALSE)
-    on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
-    ok <- tryCatch({
-      utils::untar(path, exdir = tmp)
-      TRUE
-    }, error = function(e) FALSE)
-    if (isTRUE(ok)) {
-      descs <- list.files(tmp, pattern = "^DESCRIPTION$", recursive = TRUE, full.names = TRUE)
-      if (length(descs)) {
-        return(tryCatch(read.dcf(descs[[1]]), error = function(e) NULL))
-      }
+  if (dir.exists(path)) {
+    desc <- file.path(path, "DESCRIPTION")
+    if (!file.exists(desc)) {
+      cli::cli_abort(c(
+        "{.path {path}} is not an R package source: it has no {.file DESCRIPTION} file.",
+        "i" = "Use the folder that holds the package's {.file DESCRIPTION}."
+      ), class = "shinyelectron_local_packages_invalid")
     }
+    dcf <- tryCatch(read.dcf(desc), error = function(e) NULL)
+  } else if (!file.exists(path)) {
+    cli::cli_abort(
+      "Local R package source not found: {.path {path}}",
+      class = "shinyelectron_local_packages_missing"
+    )
+  } else if (grepl("\\.zip$", path, ignore.case = TRUE)) {
+    cli::cli_abort(c(
+      "{.path {path}} is a zip file, which cannot be installed as an R package source.",
+      "i" = "Use the package source folder or a {.file .tar.gz} source tarball from {.code R CMD build}."
+    ), class = "shinyelectron_local_packages_invalid")
+  } else if (!grepl("\\.(tar\\.gz|tgz)$", path, ignore.case = TRUE)) {
+    cli::cli_abort(c(
+      "{.path {path}} is not an R package source.",
+      "i" = "Use a package source folder or a {.file .tar.gz} or {.file .tgz} source tarball."
+    ), class = "shinyelectron_local_packages_invalid")
+  } else {
+    dcf <- local_read_archive_description(path)
   }
-  NULL
+
+  if (is.null(dcf) || nrow(dcf) != 1L ||
+      !all(c("Package", "Version") %in% colnames(dcf)) ||
+      anyNA(dcf[1, c("Package", "Version")])) {
+    cli::cli_abort(
+      "Could not read the {.field Package} and {.field Version} fields of {.path {path}}.",
+      class = "shinyelectron_local_packages_invalid"
+    )
+  }
+  pkg <- unname(dcf[1, "Package"])
+  if ("Built" %in% colnames(dcf)) {
+    cli::cli_abort(c(
+      "{.path {path}} is an installed or binary build of {.pkg {pkg}}, not its source.",
+      "i" = "Local packages are compiled for the bundled R, so use the package source folder or a source tarball."
+    ), class = "shinyelectron_local_packages_invalid")
+  }
+  if (!grepl("^[[:alpha:]][[:alnum:].]*[[:alnum:]]$", pkg)) {
+    cli::cli_abort(
+      "{.path {path}} declares an invalid package name: {.val {pkg}}",
+      class = "shinyelectron_local_packages_invalid"
+    )
+  }
+  dcf
 }
+
+# Read `<top>/DESCRIPTION` from a source tarball, extracting only that file.
+# Returns NULL when it cannot be read.
+local_read_archive_description <- function(path) {
+  entries <- tryCatch(
+    utils::untar(path, list = TRUE),
+    error = function(e) NULL,
+    warning = function(w) NULL
+  )
+  top <- unique(grep("^(\\./)?[^/]+/DESCRIPTION$", entries, value = TRUE))
+  if (length(top) != 1L) {
+    cli::cli_abort(c(
+      "{.path {path}} does not look like an R source tarball.",
+      "i" = "Expected a single top-level folder holding a {.file DESCRIPTION}, as {.code R CMD build} creates."
+    ), class = "shinyelectron_local_packages_invalid")
+  }
+
+  tmp <- tempfile("shinyelectron-desc-")
+  dir.create(tmp)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  tryCatch(
+    utils::untar(path, files = top, exdir = tmp),
+    error = function(e) NULL,
+    warning = function(w) NULL
+  )
+  desc <- file.path(tmp, top)
+  if (!file.exists(desc)) {
+    return(NULL)
+  }
+  tryCatch(read.dcf(desc), error = function(e) NULL)
+}
+
 #' Install local R package sources into the bundled library
 #'
 #' Installs source directories or archives with the bundled R (matching the

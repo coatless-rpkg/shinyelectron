@@ -13,8 +13,7 @@ local_r_package_names(paths)
 Character vector of package names (empty when \code{paths} is empty).
 }
 \description{
-Accepts a mix of source directories (with a \code{DESCRIPTION}) and
-\verb{<pkg>_<version>.<ext>} or \verb{<pkg>-<version>.<ext>} archives, returning the
-\code{Package} name for each (read from the archive's \code{DESCRIPTION}).
+Reads the \code{Package} field from each source folder's \code{DESCRIPTION}, or from
+the \code{DESCRIPTION} in a source tarball's top-level folder.
 }
 \keyword{internal}
