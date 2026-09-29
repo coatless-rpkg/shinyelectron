@@ -12,8 +12,8 @@
   r_home_dirs = "tests",
   # Manuals, HTML documentation, news and FAQs in the portable R's doc/. The
   # rest of doc/ stays: COPYRIGHTS carries third-party notices that binary
-  # distributions of R must include, and utils reads CRAN_mirrors.csv
-  # (getCRANmirrors()) and AUTHORS (contributors()).
+  # distributions of R must include, utils::getCRANmirrors() reads
+  # CRAN_mirrors.csv, and base::contributors() prints AUTHORS.
   doc_dirs = c("html", "manual"),
   doc_files = c(
     "NEWS", "NEWS.0", "NEWS.1", "NEWS.2", "NEWS.3", "NEWS.pdf",
