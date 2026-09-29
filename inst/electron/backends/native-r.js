@@ -16,6 +16,34 @@ class NativeRBackend extends EventEmitter {
     this.rProcess = null;
     // Bumped by every start() and stop(); see start().
     this.startToken = 0;
+    // Ends the prompt wait of the current start, if any; see waitForPrompt().
+    this.cancelPrompt = null;
+  }
+
+  /**
+   * Wait for the answer to one of start()'s prompts. stop() and a newer
+   * start() end the wait with START_SUPERSEDED, so a superseded start
+   * settles instead of staying pending forever.
+   * @param {string[]} events - The events that answer the prompt; their
+   *   listeners are removed once the wait ends.
+   * @param {function} executor - Registers those listeners; called with
+   *   (resolve, reject) like a Promise executor.
+   * @returns {Promise<*>}
+   */
+  waitForPrompt(events, executor) {
+    return new Promise((resolve, reject) => {
+      let finished = false;
+      const finish = (settle, value) => {
+        if (finished) return;
+        finished = true;
+        if (this.cancelPrompt === cancel) this.cancelPrompt = null;
+        for (const event of events) this.removeAllListeners(event);
+        settle(value);
+      };
+      const cancel = () => finish(reject, startSupersededError());
+      this.cancelPrompt = cancel;
+      executor((value) => finish(resolve, value), (err) => finish(reject, err));
+    });
   }
 
   /**
@@ -216,6 +244,7 @@ class NativeRBackend extends EventEmitter {
     const throwIfSuperseded = () => {
       if (superseded()) throw startSupersededError();
     };
+    if (this.cancelPrompt) this.cancelPrompt();
 
     // Clear only this backend's one-shot interactive handlers from a prior
     // start(); do NOT removeAllListeners(), which would also wipe the main
@@ -293,7 +322,7 @@ class NativeRBackend extends EventEmitter {
         });
 
         // Wait for user selection
-        const selectedPath = await new Promise((resolve) => {
+        const selectedPath = await this.waitForPrompt(['runtime-selected'], (resolve) => {
           this.once('runtime-selected', (data) => {
             // Save preference
             const currentPrefs = pickerChecker.readPreferences(appSlugPicker) || {};
@@ -368,7 +397,7 @@ class NativeRBackend extends EventEmitter {
             detail: { missing, all: manifest.packages, system_deps: systemDeps }
           });
 
-          await new Promise((resolveInstall, rejectInstall) => {
+          await this.waitForPrompt(['install-packages', 'skip-install'], (resolveInstall, rejectInstall) => {
             this.once('install-packages', async (data) => {
               const chosenPath = data.libPath === 'app-local'
                 ? path.join(os.homedir(), '.shinyelectron', 'libraries', appSlug)
@@ -616,6 +645,7 @@ class NativeRBackend extends EventEmitter {
    */
   stop() {
     this.startToken++;
+    if (this.cancelPrompt) this.cancelPrompt();
     this.emit('status', { phase: 'stopping_server', message: 'Stopping R server...' });
     let exited = Promise.resolve();
     if (this.rProcess) {
