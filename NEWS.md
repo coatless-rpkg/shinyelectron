@@ -1,3 +1,12 @@
+# shinyelectron (development version)
+
+* Bundled R builds now leave out files that a running app does not use: the
+  test suites (`tests/`, `testme/`, `tinytest/`) of every embedded package, and
+  the portable R's own regression tests, PDF and HTML manuals, and news and FAQ
+  files. Package examples, demos, NEWS files, and headers are kept, as are R's
+  license notices. Pruning is on by default; set `dependencies.r.prune: false`
+  in `_shinyelectron.yml` to ship the runtime unchanged.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the
