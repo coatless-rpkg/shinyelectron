@@ -113,3 +113,97 @@ test_that("process_templates warns once about a malformed author", {
   expect_length(grep("app.author", warnings, fixed = TRUE), 1)
   expect_equal(jsonlite::fromJSON(file.path(out, "package.json"))$author, "")
 })
+
+# --- app.description, app.homepage, and app.copyright ---
+
+test_that("package.json carries the description, homepage, and copyright", {
+  pkg <- package_json(list(app = list(
+    description = "Quarterly sales explorer",
+    homepage = "https://example.org/sales",
+    copyright = "Copyright 2026 Example Inc."
+  )))
+  expect_equal(pkg$description, "Quarterly sales explorer")
+  expect_equal(pkg$homepage, "https://example.org/sales")
+  expect_equal(pkg$build$copyright, "Copyright 2026 Example Inc.")
+})
+
+test_that("unset or blank metadata leaves package.json at its defaults", {
+  blank <- list(description = "", homepage = "", copyright = "  ")
+  for (app in list(list(), blank)) {
+    pkg <- package_json(list(app = app))
+    expect_equal(pkg$description, "my-app - Shiny Electron App")
+    expect_null(pkg$homepage)
+    expect_null(pkg$build$copyright)
+  }
+})
+
+test_that("validate_config accepts an http or https app.homepage", {
+  ok <- c("https://example.org", "http://example.org/a?b=1", "HTTPS://EXAMPLE.ORG", "", "  ")
+  for (homepage in ok) {
+    expect_no_error(validate_config(list(app = list(homepage = homepage))))
+  }
+})
+
+test_that("validate_config aborts on any other app.homepage", {
+  bad <- list(
+    "example.org", "ftp://example.org", "javascript:alert(1)",
+    "file:///etc/passwd", "https://", 42, list("https://a.org", "https://b.org")
+  )
+  for (homepage in bad) {
+    expect_error(
+      validate_config(list(app = list(homepage = homepage))),
+      class = "shinyelectron_invalid_homepage"
+    )
+  }
+})
+
+test_that("read_config aborts on a homepage that is not a web URL", {
+  appdir <- withr::local_tempdir()
+  writeLines(
+    c("app:", "  homepage: \"javascript:alert(1)\""),
+    file.path(appdir, "_shinyelectron.yml")
+  )
+  expect_error(read_config(appdir), "app.homepage", class = "shinyelectron_invalid_homepage")
+})
+
+test_that("validate_config drops a description or copyright that is not a string", {
+  expect_warning(
+    config <- validate_config(list(app = list(description = list("a", "b")))),
+    "app.description"
+  )
+  expect_null(config$app$description)
+  expect_warning(
+    config <- validate_config(list(app = list(copyright = 2026))),
+    "app.copyright"
+  )
+  expect_null(config$app$copyright)
+})
+
+test_that("a homepage that is not a web URL never reaches package.json or main.js", {
+  # generate_package_json() and process_templates() can receive a config that
+  # never went through validate_config().
+  config <- list(app = list(homepage = "javascript:alert(1)"))
+  expect_null(package_json(config)$homepage)
+  expect_null(app_metadata(config)$homepage)
+})
+
+test_that("metadata text is reduced to one line", {
+  # A YAML block scalar keeps its line breaks and adds a trailing one.
+  appdir <- withr::local_tempdir()
+  writeLines(c(
+    "app:",
+    "  description: |",
+    "    Quarterly sales",
+    "    explorer",
+    "  copyright: >",
+    "    Copyright 2026",
+    "    Example Inc.",
+    "  author:",
+    "    name: \"Jane\\nDoe\""
+  ), file.path(appdir, "_shinyelectron.yml"))
+  pkg <- package_json(read_config(appdir))
+  expect_equal(pkg$description, "Quarterly sales explorer")
+  expect_equal(pkg$build$copyright, "Copyright 2026 Example Inc.")
+  expect_equal(pkg$author, list(name = "Jane Doe"))
+  expect_null(metadata_text(" \n "))
+})

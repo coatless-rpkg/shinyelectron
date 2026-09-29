@@ -16,13 +16,14 @@
 generate_package_json <- function(app_slug, app_version, backend, config,
                                   has_icon = FALSE, sign = FALSE,
                                   is_multi_app = FALSE, app_name = NULL) {
-  author <- normalize_app_author(config$app$author)
+  metadata <- app_metadata(config)
+  author <- metadata$author
 
   # Base structure
   pkg <- list(
     name = app_slug,
     version = app_version,
-    description = config$app$description %||% paste0(app_slug, " - Shiny Electron App"),
+    description = metadata$description %||% paste0(app_slug, " - Shiny Electron App"),
     main = "main.js",
     # --publish never suppresses electron-builder's publish pipeline, which
     # 26.x crashes in ("Cannot read properties of null (reading 'channel')")
@@ -51,6 +52,8 @@ generate_package_json <- function(app_slug, app_version, backend, config,
       `electron-builder` = paste0("^", SHINYELECTRON_DEFAULTS$electron_toolchain$builder)
     )
   )
+  # electron-builder links the homepage from the Windows uninstall entry.
+  pkg$homepage <- metadata$homepage
 
   # Dependencies vary by backend
   deps <- list()
@@ -84,6 +87,10 @@ generate_package_json <- function(app_slug, app_version, backend, config,
     artifactName = paste0(product_name_safe, "-Setup-${version}.${ext}"),
     directories = list(output = "dist")
   )
+  # The copyright goes into the Windows file properties and the macOS
+  # Info.plist, which the native About panel reads. Unset, electron-builder
+  # writes a default notice with the year and the author name (or productName).
+  build_config$copyright <- metadata$copyright
 
   # Publish config for auto-updates
   if (updates_enabled) {

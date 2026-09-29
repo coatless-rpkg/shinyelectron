@@ -349,10 +349,36 @@ validate_config <- function(config) {
     config$dependencies$system_packages <- NULL
   }
 
-  # Validate app.author: an npm person string or a map. A malformed value is
+  # Validate the app metadata that fills package.json and the About dialog.
+  for (key in c("description", "copyright")) {
+    value <- config$app[[key]]
+    if (!is.null(value) && !(is.character(value) && length(value) == 1L)) {
+      cli::cli_warn(c(
+        "Invalid {.field app.{key}} in config",
+        "i" = "Must be a single string; ignoring it",
+        "i" = "Edit {.field app.{key}} in {.file _shinyelectron.yml}"
+      ))
+      config$app[[key]] <- NULL
+    }
+  }
+
+  # app.author is an npm person string or a map. A malformed value is
   # dropped; normalize_app_author() explains why.
   if (!is.null(config$app$author) && is.null(normalize_app_author(config$app$author))) {
     config$app$author <- NULL
+  }
+
+  # The About dialog opens app.homepage in the browser, so it must be a web
+  # URL. A blank value counts as unset.
+  homepage <- config$app$homepage
+  homepage_blank <- is.character(homepage) && length(homepage) == 1L &&
+    (is.na(homepage) || !nzchar(trimws(homepage)))
+  if (!is.null(homepage) && !homepage_blank && !is_http_url(homepage)) {
+    cli::cli_abort(c(
+      "Invalid {.field app.homepage} in config: it must start with {.val http://} or {.val https://}",
+      "x" = if (is.character(homepage) && length(homepage) == 1L) "Found {.val {homepage}}",
+      "i" = "Edit {.field app.homepage} in {.file _shinyelectron.yml}"
+    ), class = "shinyelectron_invalid_homepage")
   }
 
   config
