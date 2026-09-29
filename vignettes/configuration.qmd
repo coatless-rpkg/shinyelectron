@@ -130,7 +130,6 @@ icon: "branding/icon.png"    # Single high-res source; electron-builder fans out
 
 nodejs:
   version: null              # Node.js version (null = latest LTS)
-  # auto_install: false      # Planned: auto-install Node.js if not found (not yet implemented)
 
 container:                   # Used when runtime_strategy is "container"
   engine: "docker"           # "docker" or "podman"
@@ -264,7 +263,7 @@ Node.js installation behavior.
 ::: {.callout-note}
 ## `auto_install` is planned, not yet active
 
-An `auto_install` key is reserved for a future release. Today, a missing Node.js aborts the build with guidance to run `install_nodejs()` or install Node.js manually. Do not rely on `auto_install: true` having any effect.
+An `auto_install` key is planned for a future release. It is not read yet, so setting it has no effect and is reported as an unknown key. Today, a missing Node.js aborts the build with guidance to run `install_nodejs()` or install Node.js manually.
 :::
 
 ### `dependencies`

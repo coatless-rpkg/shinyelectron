@@ -180,3 +180,19 @@ test_that("read_config reports unknown keys inside logging", {
   expect_equal(config$app$log_dir, "logs")
   expect_equal(config$app$log_level, SHINYELECTRON_DEFAULTS$logging$log_level)
 })
+
+test_that("init_config output and its commented-out keys are all known", {
+  dir <- withr::local_tempdir()
+  init_config(dir, app_name = "Demo", verbose = FALSE)
+  expect_no_warning(read_config(dir))
+
+  # Uncomment every commented-out key, so the template cannot suggest a key
+  # that read_config() would then report as unknown.
+  path <- file.path(dir, CONFIG_FILENAME)
+  lines <- sub('^(\\s*)# (\\s*)([a-z_]+:|"[^"]*":|- )', "\\1\\2\\3",
+               readLines(path))
+  expect_contains(lines, c("logging:", "icons:", "dependencies:", "container:"))
+  writeLines(lines, path)
+  expect_no_warning(config <- read_config(dir))
+  expect_equal(config$container$volumes[["/host/path"]], "/container/path")
+})

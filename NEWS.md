@@ -12,6 +12,9 @@
   different values, `logging` wins and shinyelectron warns. `init_config()`
   now writes the `logging` form.
 
+* `init_config()` no longer suggests `nodejs.auto_install`, which has no effect
+  yet.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the
