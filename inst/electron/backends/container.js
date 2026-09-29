@@ -537,7 +537,12 @@ class ContainerBackend extends EventEmitter {
             const msg = data.toString().trim();
             if (msg) {
               logDebug(`[container] ${msg}`);
-              if (!superseded()) this.emit('status', { phase: 'starting_server', message: msg });
+              // Lines that arrive after the start has settled are no longer
+              // startup progress; reporting them would replace the error
+              // screen (or the tray's Running state) with "Starting...".
+              if (!settled && !superseded()) {
+                this.emit('status', { phase: 'starting_server', message: msg });
+              }
             }
           } catch { /* ignore write errors after shutdown */ }
         });
