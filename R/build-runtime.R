@@ -15,10 +15,20 @@
 #' @param platform Character scalar. Target platform ("win"/"mac"/"linux").
 #' @param arch Character scalar. Target architecture ("x64"/"arm64").
 #' @param verbose Logical. Whether to display progress.
+#' @param prune Logical. Whether to remove the test and documentation files
+#'   that [prune_bundled_r_runtime()] allowlists once the packages are
+#'   installed. Callers pass the validated `dependencies.r.prune` setting.
 #' @return Invisibly, the path to the embedded `runtime/R` directory.
 #' @keywords internal
 embed_r_runtime <- function(output_dir, packages, repos, version,
-                            platform, arch, verbose = TRUE) {
+                            platform, arch, verbose = TRUE,
+                            prune = TRUE) {
+  # Check `prune` before anything is downloaded or copied, so a bad value
+  # cannot surface only after the runtime and packages are installed.
+  if (!isTRUE(prune) && !isFALSE(prune)) {
+    cli::cli_abort("{.arg prune} must be {.code TRUE} or {.code FALSE}, not {.val {prune}}.")
+  }
+
   if (verbose) cli::cli_alert_info("Embedding R runtime for bundled strategy...")
 
   # Resolve the effective version ONCE and pass it to both install_r_portable and
@@ -181,6 +191,12 @@ embed_r_runtime <- function(output_dir, packages, repos, version,
       }
 
     }
+  }
+
+  # Shrink the installer by removing test and documentation files that the
+  # app does not need. Only allowlisted names go (see prune-runtime.R).
+  if (isTRUE(prune)) {
+    prune_bundled_r_runtime(runtime_dest, verbose = verbose)
   }
 
   if (verbose) cli::cli_alert_success("Embedded R runtime")

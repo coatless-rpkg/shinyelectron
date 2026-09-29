@@ -521,6 +521,15 @@ validate_config <- function(config) {
     }
   }
 
+  # Normalize dependencies.r.prune to a logical here, so a quoted "true" or
+  # "false" warns once when the file is read and later lookups see TRUE or
+  # FALSE. Unlike the checks above, any other value aborts rather than falling
+  # back to the default, because guessing could remove files the user meant
+  # to keep.
+  if (!is.null(config$dependencies$r$prune)) {
+    config$dependencies$r$prune <- resolve_r_prune(config)
+  }
+
   # Validate dependencies$system_packages: must be a character vector or NULL.
   sp <- config$dependencies$system_packages
   if (!is.null(sp) && !is.character(sp)) {
@@ -689,6 +698,7 @@ nodejs:
 #     repos:
 #       - "https://cloud.r-project.org"
 #     lib_path: null         # null = R default, "app-local", or custom path
+#     prune: true            # Bundled only: remove package tests, R manuals and news
 #   python:
 #     # null = the maintained latest pin; "latest" = always newest; "3.12.0" = exact pin
 #     version: null
