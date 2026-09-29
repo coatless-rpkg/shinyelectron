@@ -156,7 +156,8 @@ SHINYELECTRON_DEFAULTS <- list(
       packages = list(),
       repos = list("https://cloud.r-project.org"),
       lib_path = NULL,
-      prune = TRUE      # bundled only: remove package tests, R manuals and news
+      prune = TRUE,     # bundled only: remove package tests, R manuals and news
+      local_packages = list()
     ),
     python = list(
       version = NULL,   # NULL = default Python; pin to embed a specific version

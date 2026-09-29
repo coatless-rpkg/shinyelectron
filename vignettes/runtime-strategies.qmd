@@ -139,6 +139,10 @@ export(
 3. For R, package test suites and R's own tests, manuals, and news are then removed to keep the installer smaller. Set `dependencies.r.prune: false` in `_shinyelectron.yml` to keep them; see [Pruning the bundled R runtime](configuration.html#pruning-the-bundled-r-runtime).
 4. At launch, the Electron backend uses the bundled `Rscript` or `python3` instead of anything on the user's system.
 
+### Local R packages
+
+An R app that needs packages from outside a repository, such as your own in-house packages, can list their source folders or `.tar.gz` source tarballs under `dependencies.r.local_packages` in `_shinyelectron.yml`. Only the bundled strategy supports this. Relative paths resolve against the app directory. In a multi-app suite they resolve against the suite root, and only the root `_shinyelectron.yml` is read. Each source folder is first built into a tarball with the bundled R's `R CMD build`. The packages then install into the bundled library after the repository packages, in dependency order among themselves, and each must load in a fresh R session or the build stops. `Remotes:` fields are not read. The [Configuration Guide](configuration.html#local-r-packages) covers the details.
+
 ### Tradeoffs
 
 Bundled gets you full native package compatibility with zero dependencies on the end user's machine, and the app works offline from the very first launch. The price is a much larger installer (150 to 300 MB depending on runtime and packages) and a longer build because the runtime has to be downloaded and populated with packages during `export()`.

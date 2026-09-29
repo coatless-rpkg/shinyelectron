@@ -12,7 +12,8 @@ embed_r_runtime(
   platform,
   arch,
   verbose = TRUE,
-  prune = TRUE
+  prune = TRUE,
+  local_packages = character(0)
 )
 }
 \arguments{
@@ -20,7 +21,8 @@ embed_r_runtime(
 
 \item{packages}{Character vector. DIRECT R package names (may be empty/NULL).}
 
-\item{repos}{Character vector. CRAN-like repository URLs.}
+\item{repos}{Character vector. CRAN-like repository URLs. \code{NULL} uses the
+default CRAN mirror.}
 
 \item{version}{Character. Resolved R version (non-NULL from callers).}
 
@@ -33,6 +35,11 @@ embed_r_runtime(
 \item{prune}{Logical. Whether to remove the test and documentation files
 that \code{\link[=prune_bundled_r_runtime]{prune_bundled_r_runtime()}} allowlists once the packages are
 installed. Callers pass the validated \code{dependencies.r.prune} setting.}
+
+\item{local_packages}{Character vector. Paths to local R package source
+folders or \code{.tar.gz} source tarballs to install into the bundled library
+after the repository packages. \code{\link[=export]{export()}} passes absolute paths; relative
+paths resolve against the working directory.}
 }
 \value{
 Invisibly, the path to the embedded \code{runtime/R} directory.
@@ -41,9 +48,11 @@ Invisibly, the path to the embedded \code{runtime/R} directory.
 Behavior-preserving extraction of the R bundled-embedding block from
 \code{\link[=build_electron_app]{build_electron_app()}}. ALWAYS installs + copies the interpreter (and resolves
 symlinks) so the shared \code{runtime/R} path exists for suite-wide bundled
-detection; only the package install is gated on a non-empty \code{packages} set.
+detection; only the package install is gated on a non-empty package set
+(\code{packages} plus any local packages and their declared dependencies).
 \code{packages} is the DIRECT set (as stored in \code{dependencies.json}); the recursive
 dependency closure and the \code{pre_installed} setdiff are resolved here, against
-the freshly-created \code{runtime/R/library}.
+the freshly-created \code{runtime/R/library}. Local packages are installed last,
+with \code{\link[=install_local_r_packages]{install_local_r_packages()}}.
 }
 \keyword{internal}

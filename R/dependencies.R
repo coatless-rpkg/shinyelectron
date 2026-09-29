@@ -53,10 +53,15 @@ query_sysreqs <- function(pkgs, distribution = "ubuntu", release = "24.04") {
 #' @param language Character string: "r" or "python".
 #' @param repos List of R repository URLs (for language = "r").
 #' @param index_urls List of Python index URLs (for language = "python").
+#' @param local_packages Character vector. Names of R packages installed from
+#'   `dependencies.r.local_packages`. They stay in the manifest but are left
+#'   out of the system-requirements lookup, which only knows repository
+#'   packages and rejects the whole query when one name is unknown.
 #' @return Character string of JSON content.
 #' @keywords internal
 generate_dependency_manifest <- function(packages, language,
-                                         repos = NULL, index_urls = NULL) {
+                                         repos = NULL, index_urls = NULL,
+                                         local_packages = character(0)) {
   manifest <- list(
     schema_version = MANIFEST_SCHEMA_VERSION,
     language = language,
@@ -76,9 +81,10 @@ generate_dependency_manifest <- function(packages, language,
   # as.list() forces JSON array shape so the JS consumer can iterate even when
   # a distro has exactly one system package.
   if (language == "r" && length(packages) > 0) {
+    sysreq_packages <- setdiff(packages, local_packages)
     manifest$system_deps <- list(
-      debian = as.list(query_sysreqs(packages, "ubuntu", "24.04")),
-      fedora = as.list(query_sysreqs(packages, "redhat", "9"))
+      debian = as.list(query_sysreqs(sysreq_packages, "ubuntu", "24.04")),
+      fedora = as.list(query_sysreqs(sysreq_packages, "redhat", "9"))
     )
   }
 

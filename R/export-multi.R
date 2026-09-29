@@ -60,6 +60,23 @@ export_multi_app <- function(appdir, destdir, config,
   # staging (e.g. one bundled and one auto-download R app in the suite).
   validate_suite_strategies(config$apps, config)
 
+  # Local R packages go into the shared bundled R library, so the suite needs
+  # a bundled R app. Paths resolve against the suite root, whose config is the
+  # only one read; check them before anything is copied or downloaded.
+  suite_bundled_r <- any(vapply(config$apps, function(a) {
+    grepl("^r-", resolve_app_type(a, config)) &&
+      identical(resolve_app_strategy(a, config), "bundled")
+  }, logical(1)))
+  local_packages <- resolve_local_packages(
+    config$dependencies$r$local_packages,
+    base_dir = appdir,
+    bundled_r = suite_bundled_r
+  )
+  if (length(local_packages) > 0) {
+    config$dependencies$r$local_packages <- local_packages
+  }
+  local_names <- local_r_package_names(local_packages)
+
   # Create destination
   if (fs::dir_exists(destdir)) {
     if (!overwrite) {
@@ -151,7 +168,8 @@ export_multi_app <- function(appdir, destdir, config,
             packages = dep_info$packages,
             language = dep_info$language,
             repos = dep_info$repos,
-            index_urls = dep_info$index_urls
+            index_urls = dep_info$index_urls,
+            local_packages = local_names
           )
           writeLines(manifest, fs::path(app_dest, "dependencies.json"))
 
@@ -366,12 +384,14 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
     embed_r_runtime(
       output_dir = output_dir,
       packages = sort(unique(r_packages)),
-      repos = r_repos %||% SHINYELECTRON_DEFAULTS$dependencies$r$repos,
+      repos = r_repos %||% config$dependencies$r$repos %||%
+        SHINYELECTRON_DEFAULTS$dependencies$r$repos,
       version = resolve_runtime_version("r", config),
       platform = platform[1],
       arch = arch[1],
       verbose = verbose,
-      prune = prune
+      prune = prune,
+      local_packages = unlist(config$dependencies$r$local_packages) %||% character(0)
     )
   }
   if (py_bundled) {

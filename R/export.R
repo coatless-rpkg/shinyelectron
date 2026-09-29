@@ -208,6 +208,17 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   runtime_strategy <- runtime_strategy %||% config$build$runtime_strategy %||% "shinylive"
   validate_runtime_strategy(runtime_strategy)
 
+  # Local R packages only go into a bundled R library. Resolve them against
+  # the app directory and check them before anything is copied or downloaded.
+  local_packages <- resolve_local_packages(
+    config$dependencies$r$local_packages,
+    base_dir = appdir,
+    bundled_r = runtime_strategy == "bundled" && grepl("^r-", app_type)
+  )
+  if (length(local_packages) > 0) {
+    config$dependencies$r$local_packages <- local_packages
+  }
+
   # Validate runtime requirements for the system strategy. R/Python are an
   # end-user requirement (the bundle does not need them), so a missing runtime
   # on the build machine is a warning, mirroring the container-engine check.

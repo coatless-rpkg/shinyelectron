@@ -448,9 +448,11 @@ test_that("build_electron_app delegates bundled R embedding to embed_r_runtime w
 
   embed_args <- NULL
   mockery::stub(build_electron_app, "embed_r_runtime",
-                function(output_dir, packages, repos, version, platform, arch, verbose, prune) {
+                function(output_dir, packages, repos, version, platform, arch, verbose,
+                         prune, local_packages) {
     embed_args <<- list(packages = packages, repos = repos, version = version,
-                        platform = platform, arch = arch, prune = prune)
+                        platform = platform, arch = arch, prune = prune,
+                        local_packages = local_packages)
     invisible(fs::path(output_dir, "runtime", "R"))
   })
 
@@ -465,6 +467,7 @@ test_that("build_electron_app delegates bundled R embedding to embed_r_runtime w
   expect_equal(embed_args$platform, "mac")
   expect_equal(embed_args$arch, "arm64")
   expect_true(embed_args$prune)   # dependencies.r.prune defaults to TRUE
+  expect_equal(embed_args$local_packages, character(0))
 })
 
 test_that("build_electron_app passes dependencies.r.prune from config to embed_r_runtime", {
@@ -484,9 +487,12 @@ test_that("build_electron_app passes dependencies.r.prune from config to embed_r
   mockery::stub(build_electron_app, "resolve_runtime_version", function(runtime, config) "4.6.1")
 
   forwarded <- NULL
+  forwarded_local <- NULL
   mockery::stub(build_electron_app, "embed_r_runtime",
-                function(output_dir, packages, repos, version, platform, arch, verbose, prune) {
+                function(output_dir, packages, repos, version, platform, arch, verbose,
+                         prune, local_packages) {
     forwarded <<- prune
+    forwarded_local <<- local_packages
     invisible(fs::path(output_dir, "runtime", "R"))
   })
 
@@ -495,6 +501,7 @@ test_that("build_electron_app passes dependencies.r.prune from config to embed_r
                      config = list(dependencies = list(r = list(prune = FALSE))),
                      verbose = FALSE)
   expect_false(forwarded)
+  expect_equal(forwarded_local, character(0))
 
   # A quoted "false" in a config built in R also turns pruning off, with a
   # single warning from the up-front check.
@@ -553,4 +560,41 @@ test_that("build_electron_app rejects a bad dependencies.r.prune before touching
   )
   expect_equal(calls, character(0))
   expect_true(fs::file_exists(fs::path(out, "previous.txt")))
+})
+
+test_that("build_electron_app falls back to the configured repositories without a dependency manifest", {
+  skip_if_not_installed("mockery")
+  tmp <- withr::local_tempdir()
+  app_dir <- fs::path(tmp, "app"); fs::dir_create(app_dir)
+  writeLines("library(shiny)", fs::path(app_dir, "app.R"))
+
+  mockery::stub(build_electron_app, "validate_node_npm", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "setup_electron_project", function(...) invisible(TRUE))
+  # Writes no dependencies.json.
+  mockery::stub(build_electron_app, "copy_app_files", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "process_templates", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "install_npm_dependencies", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "build_for_platforms", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "validate_build_output", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "resolve_runtime_version", function(runtime, config) "4.4.1")
+
+  embed_repos <- NULL
+  mockery::stub(build_electron_app, "embed_r_runtime",
+                function(output_dir, packages, repos, version, platform, arch,
+                         verbose, prune, local_packages) {
+    embed_repos <<- repos
+    invisible(fs::path(output_dir, "runtime", "R"))
+  })
+
+  config <- list(dependencies = list(r = list(repos = list("https://example.org/cran"))))
+  build_electron_app(app_dir, fs::path(tmp, "out1"), app_name = "test",
+                     app_type = "r-shiny", runtime_strategy = "bundled",
+                     platform = "mac", arch = "arm64", config = config,
+                     verbose = FALSE)
+  expect_equal(unlist(embed_repos), "https://example.org/cran")
+
+  build_electron_app(app_dir, fs::path(tmp, "out2"), app_name = "test",
+                     app_type = "r-shiny", runtime_strategy = "bundled",
+                     platform = "mac", arch = "arm64", verbose = FALSE)
+  expect_equal(unlist(embed_repos), "https://cloud.r-project.org")
 })

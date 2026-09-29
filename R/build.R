@@ -169,7 +169,10 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
 
     if (runtime_strategy == "bundled" && grepl("^r-", app_type)) {
       packages <- character(0)
-      repos <- NULL
+      # Without a dependency manifest, local packages still need a repository
+      # for their own dependencies.
+      repos <- config$dependencies$r$repos %||%
+        SHINYELECTRON_DEFAULTS$dependencies$r$repos
       if (fs::file_exists(dep_manifest_path)) {
         dep_manifest <- jsonlite::fromJSON(dep_manifest_path, simplifyVector = FALSE)
         if (identical(dep_manifest$language, "r")) {
@@ -185,7 +188,8 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
         platform = platform[1],
         arch = arch[1],
         verbose = verbose,
-        prune = prune
+        prune = prune,
+        local_packages = unlist(config$dependencies$r$local_packages) %||% character(0)
       )
     }
 

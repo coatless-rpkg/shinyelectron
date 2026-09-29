@@ -52,6 +52,12 @@
   `"false"` is read with a warning, and any other value stops the build before
   anything is downloaded.
 
+* `dependencies.r.local_packages` installs R packages that are not on a
+  repository, such as in-house packages, into the R library of a `bundled`
+  build. List package source folders or `.tar.gz` source tarballs relative to
+  the app directory. Each package is built and installed with the bundled R
+  after its dependencies, and the build stops unless it loads.
+
 * New `app.description`, `app.author`, `app.homepage`, and `app.copyright`
   settings describe the app. They fill the generated `package.json` and the
   installer metadata, and Help > About shows them, with buttons to visit the

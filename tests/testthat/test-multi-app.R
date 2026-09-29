@@ -414,11 +414,14 @@ test_that("build_multi_app embeds the R runtime once with the unioned package se
 
   captured <- NULL
   captured_prune <- NULL
+  captured_local <- NULL
   n_calls <- 0
   mockery::stub(build_multi_app, "embed_r_runtime",
-    function(output_dir, packages, repos, version, platform, arch, verbose = TRUE, prune) {
+    function(output_dir, packages, repos, version, platform, arch, verbose = TRUE,
+             prune, local_packages) {
       captured <<- packages
       captured_prune <<- prune
+      captured_local <<- local_packages
       n_calls <<- n_calls + 1
       invisible(TRUE)
     })
@@ -441,6 +444,7 @@ test_that("build_multi_app embeds the R runtime once with the unioned package se
   expect_equal(n_calls, 1)
   expect_equal(captured, sort(unique(union_pkgs)))
   expect_true(captured_prune)   # dependencies.r.prune defaults to TRUE
+  expect_equal(captured_local, character(0))   # no dependencies.r.local_packages
 })
 
 test_that("build_multi_app passes dependencies.r.prune from config to embed_r_runtime", {
@@ -465,9 +469,12 @@ test_that("build_multi_app passes dependencies.r.prune from config to embed_r_ru
   )
 
   forwarded <- NULL
+  forwarded_local <- NULL
   mockery::stub(build_multi_app, "embed_r_runtime",
-    function(output_dir, packages, repos, version, platform, arch, verbose = TRUE, prune) {
+    function(output_dir, packages, repos, version, platform, arch, verbose = TRUE,
+             prune, local_packages) {
       forwarded <<- prune
+      forwarded_local <<- local_packages
       invisible(TRUE)
     })
   mockery::stub(build_multi_app, "validate_node_npm", function() invisible(TRUE))
@@ -487,6 +494,7 @@ test_that("build_multi_app passes dependencies.r.prune from config to embed_r_ru
   )
 
   expect_false(forwarded)
+  expect_equal(forwarded_local, character(0))
 
   # A quoted "false" in a config built in R also turns pruning off, with a
   # single warning from the up-front check.
@@ -753,6 +761,7 @@ test_that("export_multi_app does not include container-app packages in bundled e
   destdir <- withr::local_tempdir()
   captured_packages <- NULL
   captured_prune <- NULL
+  captured_local <- NULL
 
   local_mocked_bindings(
     # Controlled dependency resolution: bundled app gets pkgA, container gets pkgB.
@@ -765,14 +774,17 @@ test_that("export_multi_app does not include container-app packages in bundled e
     },
     # Avoid network calls inside generate_dependency_manifest (query_sysreqs).
     generate_dependency_manifest = function(packages, language,
-                                            repos = NULL, index_urls = NULL) {
+                                            repos = NULL, index_urls = NULL,
+                                            local_packages = character(0)) {
       '{"schema_version":"2","language":"r","packages":[]}'
     },
     # Capture what embed_r_runtime receives.
     embed_r_runtime = function(output_dir, packages, repos, version,
-                               platform, arch, verbose = TRUE, prune) {
+                               platform, arch, verbose = TRUE,
+                               prune, local_packages) {
       captured_packages <<- packages
       captured_prune <<- prune
+      captured_local <<- local_packages
       invisible(TRUE)
     },
     # Stub the heavy build-pipeline steps that require npm / Electron.
@@ -804,4 +816,5 @@ test_that("export_multi_app does not include container-app packages in bundled e
   expect_false("pkgB" %in% captured_packages,
     label = "container app's package (pkgB) must NOT reach embed_r_runtime")
   expect_true(captured_prune)   # dependencies.r.prune defaults to TRUE
+  expect_equal(captured_local, character(0))   # no dependencies.r.local_packages
 })
