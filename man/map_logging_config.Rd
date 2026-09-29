@@ -21,5 +21,7 @@ before \code{\link[=merge_config_deep]{merge_config_deep()}} fills in the defaul
 a field to different values, the \code{logging} value wins and a warning of
 class \code{shinyelectron_logging_conflict} names the field. Any other key under
 \code{logging} stays in place so that \code{\link[=collect_unknown_config_keys]{collect_unknown_config_keys()}} reports it.
+A \code{logging} value that is not a map, such as \code{logging: debug} or a list, is
+dropped with a warning of class \code{shinyelectron_invalid_logging_section}.
 }
 \keyword{internal}

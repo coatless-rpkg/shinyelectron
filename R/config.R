@@ -131,17 +131,27 @@ read_config <- function(appdir) {
 #' a field to different values, the `logging` value wins and a warning of
 #' class `shinyelectron_logging_conflict` names the field. Any other key under
 #' `logging` stays in place so that [collect_unknown_config_keys()] reports it.
+#' A `logging` value that is not a map, such as `logging: debug` or a list, is
+#' dropped with a warning of class `shinyelectron_invalid_logging_section`.
 #'
 #' @param config List. User configuration parsed from the YAML file.
 #' @return `config` with the `logging` fields moved into `app`.
 #' @keywords internal
 map_logging_config <- function(config) {
-  if (!is.list(config)) {
+  if (!is.list(config) || is.null(config[["logging"]])) {
     return(config)
   }
   logging <- config[["logging"]]
+  if (!is.list(logging) || (length(logging) > 0 && is.null(names(logging)))) {
+    cli::cli_warn(c(
+      "{.field logging} in {.file {CONFIG_FILENAME}} must be a map, not {.obj_type_friendly {logging}}, so it is ignored.",
+      "i" = "Put each setting on its own indented line under {.field logging}, such as {.code log_level: debug}."
+    ), class = "shinyelectron_invalid_logging_section")
+    config[["logging"]] <- NULL
+    return(config)
+  }
   app <- config[["app"]]
-  if (!is.list(logging) || !(is.null(app) || is.list(app))) {
+  if (!(is.null(app) || is.list(app))) {
     return(config)
   }
 

@@ -174,6 +174,23 @@ test_that("read_config prefers logging when it and app set a field differently",
   expect_equal(config$app$log_level, "debug")
 })
 
+test_that("read_config warns about a logging section that is not a map", {
+  for (lines in list("logging: debug", c("logging:", "  - log_level: debug"))) {
+    dir <- .config_dir(lines)
+    w <- expect_warning(config <- read_config(dir),
+                        class = "shinyelectron_invalid_logging_section")
+    expect_match(conditionMessage(w), "must be a map", fixed = TRUE)
+    expect_equal(config$app$log_level, SHINYELECTRON_DEFAULTS$logging$log_level)
+    expect_null(config[["logging"]])
+  }
+
+  # An empty section sets nothing and is not reported.
+  dir <- .config_dir("logging:")
+  expect_no_warning(read_config(dir))
+  dir <- .config_dir("logging: {}")
+  expect_no_warning(read_config(dir))
+})
+
 test_that("read_config reports unknown keys inside logging", {
   dir <- .config_dir(c("logging:", "  level: debug", "  log_dir: logs"))
   w <- expect_warning(config <- read_config(dir),
