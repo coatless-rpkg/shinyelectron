@@ -109,6 +109,47 @@ read_config <- function(appdir) {
   validate_config(merged)
 }
 
+#' Resolve the Windows installer license against the app directory
+#'
+#' `installer.license_file` is written relative to the app directory, while
+#' electron-builder runs inside the generated Electron project. Resolving the
+#' path up front lets the build copy the file into the project, and stops on
+#' a missing file before any runtime is downloaded.
+#'
+#' @param config List. The effective configuration.
+#' @param appdir Character. The app directory the configuration was read from.
+#' @return `config`, with `installer$license_file` made absolute when it is set.
+#' @keywords internal
+resolve_installer_license <- function(config, appdir) {
+  license_file <- config$installer$license_file
+  if (is.null(license_file)) {
+    return(config)
+  }
+  if (!is.character(license_file) || length(license_file) != 1L ||
+      is.na(license_file) || !nzchar(license_file)) {
+    cli::cli_abort(c(
+      "Invalid {.field installer.license_file} in config: {.val {license_file}}",
+      "i" = "Must be the path to a license file, relative to the app directory",
+      "i" = "Edit {.field installer.license_file} in {.file _shinyelectron.yml}"
+    ))
+  }
+
+  path <- fs::path_expand(license_file)
+  if (!fs::is_absolute_path(path)) {
+    path <- fs::path(appdir, path)
+  }
+  if (!fs::is_file(path)) {
+    cli::cli_abort(c(
+      "License file not found: {.path {path}}",
+      "i" = "{.field installer.license_file} is resolved relative to the app directory",
+      "i" = "Edit {.field installer.license_file} in {.file _shinyelectron.yml}"
+    ))
+  }
+
+  config$installer$license_file <- as.character(fs::path_abs(path))
+  config
+}
+
 #' Deep merge two lists
 #'
 #' Recursively merges config into defaults, where config values override defaults.
@@ -581,7 +622,7 @@ nodejs:
 ## Customize the installer appearance and behavior.
 # installer:
 #   app_id: null                  # null = "com.shinyelectron.<slug>"
-#   license_file: null            # Path to license file (shown during install)
+#   license_file: null            # Windows installer license page; path relative to the app dir
 #   one_click: true               # Windows: true = silent install, false = wizard
 #   # true adds a page for choosing the install directory; requires one_click: false
 #   allow_to_change_installation_directory: null

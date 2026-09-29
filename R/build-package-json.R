@@ -154,10 +154,6 @@ generate_package_json <- function(app_slug, app_version, backend, config,
     mac_config$identity <- "-"
   }
 
-  if (!is.null(config$installer$license_file)) {
-    win_config$license <- config$installer$license_file
-  }
-
   nsis_config <- build_nsis_config(config)
   if (length(nsis_config) > 0) {
     build_config$nsis <- nsis_config
@@ -183,6 +179,9 @@ generate_package_json <- function(app_slug, app_version, backend, config,
 #' and does not offer a directory page. [validate_config()] has already
 #' checked the values.
 #'
+#' `installer.license_file` becomes the NSIS `license`, pointing at the copy
+#' that [copy_installer_license()] places in the generated project.
+#'
 #' @param config List. The effective configuration.
 #' @return A named list for the package.json `build.nsis` field, empty when
 #'   no installer option is set.
@@ -200,5 +199,29 @@ build_nsis_config <- function(config) {
   if (!is.null(installer$per_machine)) {
     nsis$perMachine <- installer$per_machine
   }
+  if (!is.null(installer$license_file)) {
+    nsis$license <- installer_license_path(installer$license_file)
+  }
   nsis
+}
+
+#' Project path of the Windows installer license
+#'
+#' The license file is copied into the generated project's build resources
+#' under a fixed name. Names that electron-builder finds on its own, such as
+#' `license.txt` or `eula.txt`, are avoided because they would also add the
+#' license to other targets, for example as a Linux AppImage EULA. The
+#' extension is kept (lowercased) since electron-builder shows `.html`
+#' licenses differently from plain text and RTF; a file without an
+#' extension is treated as plain text.
+#'
+#' @param license_file Character. Path to the license file.
+#' @return Character. The license path relative to the Electron project.
+#' @keywords internal
+installer_license_path <- function(license_file) {
+  ext <- tolower(tools::file_ext(license_file))
+  if (!nzchar(ext)) {
+    ext <- "txt"
+  }
+  paste0("build/installer-license.", ext)
 }

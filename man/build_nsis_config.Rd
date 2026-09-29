@@ -23,4 +23,8 @@ and the wizard (\code{one_click: false}) asks whether to install for all users
 and does not offer a directory page. \code{\link[=validate_config]{validate_config()}} has already
 checked the values.
 }
+\details{
+\code{installer.license_file} becomes the NSIS \code{license}, pointing at the copy
+that \code{\link[=copy_installer_license]{copy_installer_license()}} places in the generated project.
+}
 \keyword{internal}

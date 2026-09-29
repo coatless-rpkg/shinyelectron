@@ -55,6 +55,7 @@ process_templates <- function(output_dir, app_name, app_type,
   )
 
   copy_brand_assets(output_dir, icon, config)
+  copy_installer_license(output_dir, config)
 
   if (verbose) cli::cli_alert_success("Processed Electron templates")
 }
@@ -280,4 +281,32 @@ copy_brand_assets <- function(output_dir, icon, config) {
     fs::file_copy(tray_icon, fs::path(output_dir, "assets", basename(tray_icon)),
                   overwrite = TRUE)
   }
+}
+
+#' Copy the Windows installer license into the build
+#'
+#' electron-builder runs inside the generated project, so the file named by
+#' `installer.license_file` is copied to [installer_license_path()], which
+#' [build_nsis_config()] references as the NSIS `license`. [export()] has
+#' already resolved the path against the app directory.
+#'
+#' @param output_dir Character. The Electron project directory.
+#' @param config List. The effective configuration.
+#' @return Invisibly, the path of the copy, or `NULL` when no license is set.
+#' @keywords internal
+copy_installer_license <- function(output_dir, config) {
+  license_file <- config$installer$license_file
+  if (is.null(license_file)) {
+    return(invisible(NULL))
+  }
+  if (!fs::is_file(license_file)) {
+    cli::cli_abort(c(
+      "License file not found: {.path {license_file}}",
+      "i" = "Edit {.field installer.license_file} in {.file _shinyelectron.yml}"
+    ))
+  }
+  dest <- fs::path(output_dir, installer_license_path(license_file))
+  fs::dir_create(fs::path_dir(dest))
+  fs::file_copy(license_file, dest, overwrite = TRUE)
+  invisible(dest)
 }

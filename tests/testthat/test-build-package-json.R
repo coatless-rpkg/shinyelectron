@@ -203,3 +203,22 @@ test_that("generate_package_json adds no directory page to the wizard by default
   )
   expect_equal(parsed$build$nsis, list(oneClick = FALSE))
 })
+
+test_that("generate_package_json emits installer.license_file as the NSIS license", {
+  cfg <- default_config()
+  cfg$installer$license_file <- "/path/to/LICENSE.txt"
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "native-r", cfg),
+    simplifyVector = FALSE
+  )
+  # electron-builder 26 rejects `license` under `win`; it is an NSIS option.
+  expect_null(parsed$build$win$license)
+  expect_equal(parsed$build$nsis,
+               list(oneClick = TRUE, license = "build/installer-license.txt"))
+})
+
+test_that("installer_license_path keeps the license format", {
+  expect_equal(installer_license_path("docs/EULA.RTF"), "build/installer-license.rtf")
+  expect_equal(installer_license_path("terms.html"), "build/installer-license.html")
+  expect_equal(installer_license_path("LICENSE"), "build/installer-license.txt")
+})

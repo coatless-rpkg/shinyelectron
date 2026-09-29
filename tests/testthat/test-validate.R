@@ -233,3 +233,49 @@ test_that("read_config aborts on installer settings electron-builder would rejec
   expect_false(cfg$installer$one_click)
   expect_true(cfg$installer$allow_to_change_installation_directory)
 })
+
+# --- Windows installer license ---
+
+test_that("resolve_installer_license resolves the path against the app directory", {
+  appdir <- withr::local_tempdir()
+  writeLines("Terms of use", file.path(appdir, "LICENSE.txt"))
+
+  cfg <- resolve_installer_license(
+    list(installer = list(license_file = "LICENSE.txt")), appdir
+  )
+  expect_equal(cfg$installer$license_file,
+               as.character(fs::path_abs(fs::path(appdir, "LICENSE.txt"))))
+
+  # An absolute path is kept as is, and an unset license is left alone.
+  again <- resolve_installer_license(cfg, withr::local_tempdir())
+  expect_equal(again$installer$license_file, cfg$installer$license_file)
+  expect_equal(resolve_installer_license(default_config(), appdir),
+               default_config())
+})
+
+test_that("resolve_installer_license aborts on a missing or invalid license", {
+  appdir <- withr::local_tempdir()
+  resolve <- function(license_file) {
+    resolve_installer_license(
+      list(installer = list(license_file = license_file)), appdir
+    )
+  }
+  expect_error(resolve("LICENSE.txt"), "License file not found")
+  expect_error(resolve("."), "License file not found")
+  expect_error(resolve(TRUE), "installer.license_file", fixed = TRUE)
+  expect_error(resolve(""), "installer.license_file", fixed = TRUE)
+})
+
+test_that("export stops on a missing license file before building anything", {
+  appdir <- withr::local_tempdir()
+  writeLines("library(shiny)", file.path(appdir, "app.R"))
+  writeLines(c("installer:", "  license_file: LICENSE.txt"),
+             file.path(appdir, "_shinyelectron.yml"))
+  destdir <- file.path(withr::local_tempdir(), "out")
+
+  expect_error(
+    export(appdir, destdir, build = FALSE, verbose = FALSE),
+    "License file not found"
+  )
+  expect_false(dir.exists(destdir))
+})
