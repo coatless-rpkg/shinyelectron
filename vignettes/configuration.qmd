@@ -136,7 +136,6 @@ icon: "branding/icon.png"    # Single high-res source; electron-builder fans out
 
 nodejs:
   version: null              # Node.js version (null = latest LTS)
-  # auto_install: false      # Planned: auto-install Node.js if not found (not yet implemented)
 
 container:                   # Used when runtime_strategy is "container"
   engine: "docker"           # "docker" or "podman"
@@ -295,7 +294,7 @@ Node.js installation behavior.
 ::: {.callout-note}
 ## `auto_install` is planned, not yet active
 
-An `auto_install` key is reserved for a future release. Today, a missing Node.js aborts the build with guidance to run `install_nodejs()` or install Node.js manually. Do not rely on `auto_install: true` having any effect.
+An `auto_install` key is planned for a future release. It is not read yet, so setting it has no effect and is reported as an unknown key. Today, a missing Node.js aborts the build with guidance to run `install_nodejs()` or install Node.js manually.
 :::
 
 ### `dependencies`
@@ -408,6 +407,8 @@ container:
     SHINY_LOG_LEVEL: "DEBUG"
 ```
 
+`env` values are written into the built app, so keep passwords and tokens out of them; see [Secrets and per-user credentials](security.html#secrets-and-per-user-credentials).
+
 ### `apps`
 
 Defines a multi-app suite: two or more Shiny apps packaged in one Electron shell with a launcher screen. At least two entries are required. Any entry can override `build.type` or `build.runtime_strategy`, which is how mixed-strategy suites work. One constraint applies: within a language, all native apps (`system`, `bundled`, `auto-download`) must share one strategy; `shinylive` and `container` apps combine freely. Export aborts on a conflict. See the [Multi-App Suites](multi-app-suites.html) vignette for details.
@@ -445,16 +446,17 @@ Controls where and how the app writes its log files.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `log_dir` | string | `null` | Directory for log files; `null` writes to the Electron app's `userData/logs` directory |
+| `log_dir` | string | `null` | Directory for log files; `null` writes to the Electron app's `userData/logs` directory. Any other value should be an absolute path that the app's user can write to: a relative path, including one that starts with `~`, resolves against the process working directory, and if the directory cannot be created no log file is written |
 | `log_level` | string | `"info"` | Logging verbosity: `"debug"`, `"info"`, `"warn"`, or `"error"` |
 
 **Example:**
 
 ```yaml
 logging:
-  log_dir: "/var/log/my-app"
-  log_level: "debug"
+  log_level: "debug"        # log_dir is unset, so logs go to userData/logs
 ```
+
+The same two keys are also accepted under `app` as `app.log_dir` and `app.log_level`, which is where earlier versions of `init_config()` put them. If both places set a key to different values, the `logging` value wins and shinyelectron warns.
 
 ### `lifecycle`
 
@@ -597,6 +599,8 @@ shinyelectron validates values on read and degrades gracefully rather than abort
 - Window dimensions under 100 pixels warn and use defaults.
 - Invalid port numbers warn and use `3838`.
 - An `app.description` or `app.copyright` that is not text, or an `app.author` that is neither a string nor a map of `name`, `email`, and `url`, warns and is left out.
+
+Keys that shinyelectron does not recognize, such as a misspelled `widht` or a key placed in the wrong section, are reported in a single warning that lists each one by its dotted path (for example `window.widht`), and the build goes on without them. Entries under `apps` and the contents of maps such as `container.env` are not checked.
 
 If the YAML itself fails to parse, shinyelectron warns and uses all defaults. This is deliberate: a broken config file should never block you from producing a build during development.
 

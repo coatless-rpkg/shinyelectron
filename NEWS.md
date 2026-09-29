@@ -2,6 +2,11 @@
 
 ## Breaking changes
 
+* shinyelectron now requires R 4.5.0 or newer, since it verifies downloaded
+  runtimes with `tools::sha256sum()`, which was added in R 4.5.0. The README
+  and `sitrep_electron_system()` now report this minimum. Apps built with the
+  `system` strategy still accept R 4.4.0 or newer on the end user's machine.
+
 * Installer and artifact file names change. They now come from the slug and
   always include the architecture, as in `my-app-1.0.0-arm64.dmg`,
   `my-app-Setup-1.0.0-x64.exe`, and `my-app-1.0.0-x86_64.AppImage`, so
@@ -44,6 +49,42 @@
   configuration it replaces gave a different slug.
 
 ## Minor improvements and fixes
+
+* shinyelectron now imports rlang. cli builds `cli_abort()` and `cli_warn()` on
+  rlang but only suggests it. Without rlang installed, errors from
+  `cli_abort()` showed "there is no package called 'rlang'" instead of their
+  own message, and warnings from `cli_warn()` became that same error, stopping
+  operations meant to continue, such as a Node.js install whose checksum list
+  could not be downloaded.
+
+* The situation reports (`sitrep_shinyelectron()` and friends) no longer
+  report Node.js, npm or Python as missing when the withr package is not
+  installed. withr is only a suggested dependency, and the probe used to fail
+  without it.
+
+* The Security Considerations guide gains a "Secrets and per-user credentials"
+  section. It covers which environment variables and `.Renviron` files reach an
+  app's R, Python, or container process, and how to give each user their own
+  token without bundling it.
+
+* Keys in `_shinyelectron.yml` that shinyelectron does not recognize, such as a
+  misspelled `widht` or a key placed in the wrong section, now trigger a
+  warning of class `shinyelectron_unknown_config_key` that names each one by
+  its dotted path (for example `window.widht`). They were previously ignored
+  without notice.
+
+* The top-level `logging` section documented in the Configuration Guide now
+  takes effect; its `log_dir` and `log_level` were previously ignored. If you
+  copied the guide's earlier example, drop its `log_dir: "/var/log/my-app"`
+  line: `log_dir` should be an absolute path that the app's user can write
+  to, and without it logs go to the app's `userData/logs` folder.
+  `app.log_dir` and `app.log_level` still work. When both set a key to
+  different values, `logging` wins with a warning of class
+  `shinyelectron_logging_conflict`. `init_config()` now suggests the
+  `logging` form.
+
+* `init_config()` no longer suggests `nodejs.auto_install`, which has no effect
+  yet.
 
 * App names and other settings that contain quotes or backslashes no longer
   break the generated app. Settings placed in JavaScript strings in `main.js`
