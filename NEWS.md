@@ -5,11 +5,12 @@
   code on every attempt; it now requests a path the app does not serve, so the
   UI is rendered once, when the window loads it.
 
-* When an R or Python app does not start in time, only that app's process is
-  stopped and the error screen stays up with its details and a Retry button.
-  Going back to the launcher while an R or Python app is still starting no
-  longer leaves that start running, where it could later stop the next app's
-  process or replace the window with the abandoned app.
+* When an app does not start in time, only its own R or Python process or
+  container is stopped, and the error screen stays up with its Retry and Quit
+  buttons; a container's error message now names the container. Going back to
+  the launcher while an app is still starting no longer leaves that start
+  running, where it could later stop the next app's process or container or
+  replace the window with the abandoned app.
 
 * Restarting to install a downloaded update now stops the app's R or Python
   process (or its container) and waits for it to exit before the installer
