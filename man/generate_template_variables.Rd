@@ -54,5 +54,11 @@ The list is a superset: some entries are serialized into
 \code{backend_config_json} (and consumed by the backend modules rather than a
 template) or are reserved for future placeholders. Adding a new
 placeholder requires adding it here.
+
+A configuration string that \code{main.js} places inside a single-quoted
+JavaScript literal also has an escaped \verb{*_js} entry (see \code{\link[=js_str]{js_str()}}),
+which the template renders with a triple mustache, as in
+\code{'{{{app_name_js}}}'}. The plain entries are HTML-escaped by a double
+mustache and belong in the HTML templates.
 }
 \keyword{internal}

@@ -11,6 +11,12 @@
 #' template) or are reserved for future placeholders. Adding a new
 #' placeholder requires adding it here.
 #'
+#' A configuration string that `main.js` places inside a single-quoted
+#' JavaScript literal also has an escaped `*_js` entry (see [js_str()]),
+#' which the template renders with a triple mustache, as in
+#' `'{{{app_name_js}}}'`. The plain entries are HTML-escaped by a double
+#' mustache and belong in the HTML templates.
+#'
 #' @param app_name Character. Display name of the app.
 #' @param app_slug Character. Path-safe slug derived from app_name.
 #' @param app_type Character. `"r-shiny"` or `"py-shiny"`.
@@ -51,22 +57,25 @@ generate_template_variables <- function(app_name, app_slug, app_type,
   # container_image becoming {} instead of being absent).
   backend_config <- Filter(Negate(is.null), backend_config)
 
-  # Escape a value for a single-quoted JavaScript string literal in main.js.
-  js_str <- function(x) {
-    if (is.null(x)) return(NULL)
-    x <- gsub("\\", "\\\\", x, fixed = TRUE)
-    x <- gsub("'", "\\'", x, fixed = TRUE)
-    x <- gsub("\r", " ", x, fixed = TRUE)
-    x <- gsub("\n", " ", x, fixed = TRUE)
-    x
-  }
+  # Config strings that main.js places inside single-quoted JavaScript
+  # literals. Each one also gets a js_str()-escaped `*_js` entry below.
+  app_version <- config$app$version %||% SHINYELECTRON_DEFAULTS$app_version
+  tray_tooltip <- config$tray$tooltip %||% app_name
+  # copy_brand_assets() writes the tray icon to assets/<basename>, and
+  # main.js joins it under assets/, so the template must carry only the
+  # basename (mirrors the splash image handling below).
+  tray_icon <- if (!is.null(config$tray$icon)) basename(config$tray$icon) else NULL
+  help_url <- config$menu$help_url %||% ""
+  log_level <- config$app$log_level %||% SHINYELECTRON_DEFAULTS$logging$log_level
+  log_dir <- config$app$log_dir %||% ""
 
   list(
     app_name = app_name,
     app_name_js = js_str(app_name),
     app_slug = app_slug,
     app_type = app_type,
-    app_version = config$app$version %||% SHINYELECTRON_DEFAULTS$app_version,
+    app_version = app_version,
+    app_version_js = js_str(app_version),
     has_icon = !is.null(icon),
     # copy_brand_assets() preserves the icon's extension (icon.ico/.icns/.png);
     # carry the real filename so the BrowserWindow icon path is not broken.
@@ -91,18 +100,18 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     tray_enabled = config$tray$enabled %||% SHINYELECTRON_DEFAULTS$tray$enabled,
     minimize_to_tray = config$tray$minimize_to_tray %||% SHINYELECTRON_DEFAULTS$tray$minimize_to_tray,
     close_to_tray = config$tray$close_to_tray %||% SHINYELECTRON_DEFAULTS$tray$close_to_tray,
-    tray_tooltip = config$tray$tooltip %||% app_name,
-    # copy_brand_assets() writes the tray icon to assets/<basename>, and
-    # main.js joins it under assets/, so the template must carry only the
-    # basename (mirrors the splash image handling below).
-    tray_icon = if (!is.null(config$tray$icon)) basename(config$tray$icon) else NULL,
+    tray_tooltip = tray_tooltip,
+    tray_tooltip_js = js_str(tray_tooltip),
+    tray_icon = tray_icon,
+    tray_icon_js = js_str(tray_icon),
 
     # Menus
     menu_enabled = config$menu$enabled %||% SHINYELECTRON_DEFAULTS$menu$enabled,
     menu_template = config$menu$template %||% SHINYELECTRON_DEFAULTS$menu$template,
     menu_minimal = identical(config$menu$template %||% "default", "minimal"),
     show_dev_tools = config$menu$show_dev_tools %||% SHINYELECTRON_DEFAULTS$menu$show_dev_tools,
-    help_url = config$menu$help_url %||% "",
+    help_url = help_url,
+    help_url_js = js_str(help_url),
     # whisker renders a section for "", so gate Help > Documentation on a
     # real URL rather than on the value itself.
     has_help_url = is_nonempty_string(config$menu$help_url),
@@ -140,14 +149,47 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     custom_error_html = config$lifecycle$custom_error_html %||% "",
 
     # Logging
-    log_level = config$app$log_level %||% SHINYELECTRON_DEFAULTS$logging$log_level,
+    log_level = log_level,
+    log_level_js = js_str(log_level),
     has_log_dir = !is.null(config$app$log_dir),
-    log_dir = config$app$log_dir %||% "",
+    log_dir = log_dir,
+    log_dir_js = js_str(log_dir),
 
     # Multi-app
     is_multi_app = is_multi_app,
     apps_json = if (is_multi_app) jsonlite::toJSON(apps_manifest, auto_unbox = TRUE) else "[]"
   )
+}
+
+#' Escape a value for a single-quoted JavaScript string literal
+#'
+#' Rendered JavaScript templates such as `main.js` place configuration
+#' strings between single quotes, as in `title: 'Close {{{app_name_js}}}'`.
+#' This escapes backslashes and then single quotes, turns carriage returns
+#' and line feeds into spaces, and writes U+2028 and U+2029 as escape
+#' sequences, so no value can end the literal early or change its meaning
+#' (a Windows path keeps its backslashes). Double quotes are left alone, so
+#' use the result only inside single quotes.
+#'
+#' Render the result with a triple mustache (`{{{name_js}}}`). A double
+#' mustache would HTML-escape it again and turn `&` into `&amp;`. HTML
+#' templates such as `lifecycle.html` keep the double mustache.
+#'
+#' @param x A character vector, a non-character scalar (coerced with
+#'   [as.character()], such as a version that YAML read as a number), or
+#'   `NULL`.
+#' @return A character vector, or `NULL` when `x` is `NULL`.
+#' @keywords internal
+js_str <- function(x) {
+  if (is.null(x)) return(NULL)
+  if (!is.character(x) && length(x) == 1L) x <- as.character(x)
+  x <- gsub("\\", "\\\\", x, fixed = TRUE)
+  x <- gsub("'", "\\'", x, fixed = TRUE)
+  x <- gsub("\r", " ", x, fixed = TRUE)
+  x <- gsub("\n", " ", x, fixed = TRUE)
+  x <- gsub("\u2028", "\\u2028", x, fixed = TRUE)
+  x <- gsub("\u2029", "\\u2029", x, fixed = TRUE)
+  x
 }
 
 #' Test for a single non-empty string

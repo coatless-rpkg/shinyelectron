@@ -1,7 +1,17 @@
 # shinyelectron (development version)
 
-* Help > Documentation appears only when `menu.help_url` is set. An empty
-  `help_url` no longer adds a menu item that opens nothing.
+* App names and other settings that contain quotes or backslashes no longer
+  break the generated app. The app name, version, tray tooltip and icon, help
+  URL, and log settings are now escaped wherever `main.js` places them in a
+  JavaScript string, so a name like "Children's Dashboard" or a Windows
+  `log_dir` such as `C:\Users\me\logs` works, and the quit dialog and tray
+  tooltip show `&` instead of `&amp;`.
+
+* Help > Documentation opens help URLs with query strings correctly instead
+  of turning `&` into `&amp;`.
+
+* Help > Documentation appears only when `menu.help_url` is set, instead of
+  in every app with a link that opened nothing.
 
 # shinyelectron 0.2.1
 
