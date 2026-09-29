@@ -1,3 +1,10 @@
+# shinyelectron (development version)
+
+* The situation reports (`sitrep_shinyelectron()` and friends) no longer
+  report Node.js, npm or Python as missing when the withr package is not
+  installed. withr is only a suggested dependency, and the probe used to fail
+  without it.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the
