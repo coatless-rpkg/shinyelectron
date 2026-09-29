@@ -104,6 +104,13 @@
   `WIN_CSC_*` variable that is set but empty now warns, because
   electron-builder stops there instead of falling back to `CSC_*`.
 
+* Bundled R builds now install packages with the portable R's own startup
+  files. The install no longer runs a project `.Rprofile` or `.Renviron` from
+  the working directory, such as renv's autoloader, and ignores `R_ENVIRON`
+  and `R_PROFILE` set for the calling R. A site profile chosen that way
+  skipped the portable R's macOS library fix-up, so installed binary packages
+  could crash when loaded. `~/.Renviron` and `~/.Rprofile` still apply.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the
