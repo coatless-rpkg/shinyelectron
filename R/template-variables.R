@@ -90,17 +90,18 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     app_version = app_version,
     app_version_js = js_str(app_version),
 
-    # About dialog metadata
-    app_description = js_str(config$app$description) %||% "",
-    has_app_description = !is.null(config$app$description),
-    app_author = js_str(about_author) %||% "",
-    has_app_author = !is.null(about_author),
-    app_email = js_str(about_email) %||% "",
-    has_app_email = !is.null(about_email),
-    app_homepage = js_str(config$app$homepage) %||% "",
-    has_app_homepage = !is.null(config$app$homepage),
-    app_copyright = js_str(config$app$copyright) %||% "",
-    has_app_copyright = !is.null(config$app$copyright),
+    # About dialog metadata. main.js renders each value only when its flag
+    # is set, so a blank setting leaves out its line or button.
+    app_description_js = js_str(config$app$description),
+    has_app_description = is_nonempty_string(config$app$description),
+    app_author_js = js_str(about_author),
+    has_app_author = is_nonempty_string(about_author),
+    app_email_js = js_str(about_email),
+    has_app_email = is_nonempty_string(about_email),
+    app_homepage_js = js_str(config$app$homepage),
+    has_app_homepage = is_nonempty_string(config$app$homepage),
+    app_copyright_js = js_str(config$app$copyright),
+    has_app_copyright = is_nonempty_string(config$app$copyright),
     has_icon = !is.null(icon),
     # copy_brand_assets() preserves the icon's extension (icon.ico/.icns/.png);
     # carry the real filename so the BrowserWindow icon path is not broken.

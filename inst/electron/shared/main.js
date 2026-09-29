@@ -173,6 +173,50 @@ function createTray() {
 {{/tray_enabled}}
 
 {{#menu_enabled}}
+// Help > About, shared by both menu templates. Each configured string comes
+// from an escaped *_js template variable.
+async function showAboutDialog() {
+  const { dialog, shell } = require('electron');
+  const detail = [
+    'Version {{{app_version_js}}}',
+    {{#has_app_description}}'', '{{{app_description_js}}}',{{/has_app_description}}
+    {{#has_app_author}}'', 'Author: {{{app_author_js}}}',{{/has_app_author}}
+    {{#has_app_copyright}}'', '{{{app_copyright_js}}}',{{/has_app_copyright}}
+    '', 'Built with shinyelectron'
+  ].join('\n');
+  // buttons[i] runs actions[i]; OK only closes the dialog.
+  const buttons = ['OK'];
+  const actions = [null];
+  {{#updates_enabled}}
+  // A macOS build ships only a dmg, and electron-updater can update a Mac
+  // app only from a zip, so the check is offered on Windows and Linux.
+  if (process.platform !== 'darwin') {
+    buttons.push('Check for Updates');
+    actions.push(checkForUpdatesInteractive);
+  }
+  {{/updates_enabled}}
+  {{#has_app_homepage}}
+  buttons.push('Visit Website');
+  actions.push(() => shell.openExternal('{{{app_homepage_js}}}'));
+  {{/has_app_homepage}}
+  {{#has_app_email}}
+  buttons.push('Email');
+  actions.push(() => shell.openExternal('mailto:{{{app_email_js}}}'));
+  {{/has_app_email}}
+  const { response } = await dialog.showMessageBox(mainWindow, {
+    type: 'info',
+    title: 'About {{{app_name_js}}}',
+    message: '{{{app_name_js}}}',
+    detail,
+    buttons,
+    defaultId: 0,
+    cancelId: 0,
+    // Windows would otherwise show the extra buttons as command links.
+    noLink: true
+  });
+  if (actions[response]) await actions[response]();
+}
+
 function createMenu() {
   const isMac = process.platform === 'darwin';
 
@@ -245,33 +289,8 @@ function createMenu() {
         { type: 'separator' },
         {
           label: 'About',
-          click: async () => {
-            const { dialog, shell } = require('electron');
-            const aboutDetail = [
-              'Version {{{app_version}}}',
-              {{#has_app_description}}'', '{{{app_description}}}',{{/has_app_description}}
-              {{#has_app_author}}'', 'Author: {{{app_author}}}',{{/has_app_author}}
-              {{#has_app_copyright}}'', '{{{app_copyright}}}',{{/has_app_copyright}}
-              '', 'Built with shinyelectron'
-            ].join('\n');
-            const aboutButtons = ['OK'];
-            const aboutActions = [];
-            {{#updates_enabled}}aboutActions[aboutButtons.push('Check for Updates') - 1] = 'update';{{/updates_enabled}}
-            {{#has_app_homepage}}aboutActions[aboutButtons.push('Visit Website') - 1] = 'homepage';{{/has_app_homepage}}
-            {{#has_app_email}}aboutActions[aboutButtons.push('Email') - 1] = 'email';{{/has_app_email}}
-            const aboutResult = await dialog.showMessageBox(mainWindow, {
-              type: 'info',
-              title: 'About {{{app_name_js}}}',
-              message: '{{{app_name_js}}}',
-              detail: aboutDetail,
-              buttons: aboutButtons,
-              defaultId: 0,
-              cancelId: 0
-            });
-            const aboutAction = aboutActions[aboutResult.response];
-            {{#updates_enabled}}if (aboutAction === 'update') checkForUpdatesInteractive();{{/updates_enabled}}
-            {{#has_app_homepage}}if (aboutAction === 'homepage') await shell.openExternal('{{{app_homepage}}}');{{/has_app_homepage}}
-            {{#has_app_email}}if (aboutAction === 'email') await shell.openExternal('mailto:{{{app_email}}}');{{/has_app_email}}
+          click: () => {
+            showAboutDialog().catch((err) => log('error', 'About dialog failed:', err));
           }
         }
       ]
@@ -385,33 +404,8 @@ function createMenu() {
         { type: 'separator' },
         {
           label: 'About',
-          click: async () => {
-            const { dialog, shell } = require('electron');
-            const aboutDetail = [
-              'Version {{{app_version}}}',
-              {{#has_app_description}}'', '{{{app_description}}}',{{/has_app_description}}
-              {{#has_app_author}}'', 'Author: {{{app_author}}}',{{/has_app_author}}
-              {{#has_app_copyright}}'', '{{{app_copyright}}}',{{/has_app_copyright}}
-              '', 'Built with shinyelectron'
-            ].join('\n');
-            const aboutButtons = ['OK'];
-            const aboutActions = [];
-            {{#updates_enabled}}aboutActions[aboutButtons.push('Check for Updates') - 1] = 'update';{{/updates_enabled}}
-            {{#has_app_homepage}}aboutActions[aboutButtons.push('Visit Website') - 1] = 'homepage';{{/has_app_homepage}}
-            {{#has_app_email}}aboutActions[aboutButtons.push('Email') - 1] = 'email';{{/has_app_email}}
-            const aboutResult = await dialog.showMessageBox(mainWindow, {
-              type: 'info',
-              title: 'About {{{app_name_js}}}',
-              message: '{{{app_name_js}}}',
-              detail: aboutDetail,
-              buttons: aboutButtons,
-              defaultId: 0,
-              cancelId: 0
-            });
-            const aboutAction = aboutActions[aboutResult.response];
-            {{#updates_enabled}}if (aboutAction === 'update') checkForUpdatesInteractive();{{/updates_enabled}}
-            {{#has_app_homepage}}if (aboutAction === 'homepage') await shell.openExternal('{{{app_homepage}}}');{{/has_app_homepage}}
-            {{#has_app_email}}if (aboutAction === 'email') await shell.openExternal('mailto:{{{app_email}}}');{{/has_app_email}}
+          click: () => {
+            showAboutDialog().catch((err) => log('error', 'About dialog failed:', err));
           }
         }
       ]

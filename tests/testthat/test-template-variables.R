@@ -419,3 +419,121 @@ test_that("lifecycle and launcher scripts parse and keep their values", {
   expect_equal(apps[[1]]$name, hostile_apps()[[1]]$name)
   expect_equal(apps[[1]]$description, hostile_apps()[[1]]$description)
 })
+
+# --- About dialog ---
+
+# App metadata with quotes, backslashes, markup, and a line break, each of
+# which would end or change a JavaScript literal if it were not escaped.
+about_metadata <- function() {
+  list(
+    description = "It's a \"test\" \\ with <b>markup</b>\nand a second line",
+    author = "Jane O'Hara <jane@example.org>",
+    homepage = "https://example.org/it's?a=1&b=2",
+    copyright = "Copyright 2026 O'Hara & Co \\ Ltd"
+  )
+}
+
+about_flags <- c(
+  "has_app_description", "has_app_author", "has_app_email",
+  "has_app_homepage", "has_app_copyright"
+)
+
+about_variables <- function(app) {
+  generate_template_variables(
+    app_name = "Test App", app_slug = "test-app", app_type = "r-shiny",
+    runtime_strategy = "system", icon = NULL, backend_module = "native-r.js",
+    brand = NULL, config = list(app = app)
+  )
+}
+
+# The lines of the rendered showAboutDialog() function.
+about_code <- function(main) {
+  start <- grep("async function showAboutDialog()", main, fixed = TRUE)
+  end <- start + which(main[-seq_len(start)] == "}")[1]
+  main[start:end]
+}
+
+test_that("About metadata gets escaped *_js entries and flags", {
+  vars <- about_variables(about_metadata())
+  expect_identical(vars$app_description_js, js_str(about_metadata()$description))
+  expect_identical(vars$app_author_js, "Jane O\\'Hara")
+  expect_identical(vars$app_email_js, "jane@example.org")
+  expect_identical(vars$app_homepage_js, "https://example.org/it\\'s?a=1&b=2")
+  expect_identical(vars$app_copyright_js, "Copyright 2026 O\\'Hara & Co \\\\ Ltd")
+  expect_true(all(unlist(vars[about_flags])))
+})
+
+test_that("unset or blank About metadata leaves its flag off", {
+  expect_false(any(unlist(about_variables(list())[about_flags])))
+  blank <- list(description = "", author = "", homepage = "", copyright = "")
+  expect_false(any(unlist(about_variables(blank)[about_flags])))
+})
+
+test_that("the About dialog offers only the buttons that apply", {
+  plain <- about_code(readLines(render_main_js(list())))
+  expect_false(any(grepl("buttons.push(", plain, fixed = TRUE)))
+  expect_true(any(grepl("noLink: true", plain, fixed = TRUE)))
+
+  full <- about_code(readLines(render_main_js(
+    list(app = about_metadata(), updates = list(enabled = TRUE))
+  )))
+  for (button in c("Check for Updates", "Visit Website", "Email")) {
+    expect_true(any(grepl(paste0("buttons.push('", button, "')"), full, fixed = TRUE)), info = button)
+  }
+  # The update check is not offered on macOS.
+  guard <- grep("process.platform !== 'darwin'", full, fixed = TRUE)
+  expect_length(guard, 1)
+  expect_match(full[guard + 1], "Check for Updates", fixed = TRUE)
+
+  no_updates <- about_code(readLines(render_main_js(
+    list(app = about_metadata(), updates = list(enabled = FALSE))
+  )))
+  expect_false(any(grepl("Check for Updates", no_updates, fixed = TRUE)))
+})
+
+test_that("main.js parses with quoted About metadata, with and without updates", {
+  skip_on_cran()
+  skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
+
+  for (updates in c(TRUE, FALSE)) {
+    for (template in c("default", "minimal")) {
+      config <- list(
+        app = about_metadata(), updates = list(enabled = updates),
+        menu = list(template = template)
+      )
+      main_path <- render_main_js(config, app_name = "Bob's \"Best\" C:\\Apps")
+      check <- processx::run("node", c("--check", main_path), error_on_status = FALSE)
+      expect_equal(
+        check$status, 0L,
+        info = paste0("updates = ", updates, ", ", template, ": ", check$stderr)
+      )
+    }
+  }
+})
+
+test_that("About dialog literals evaluate to the configured metadata", {
+  skip_on_cran()
+  skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
+
+  about <- about_code(readLines(render_main_js(
+    list(app = about_metadata()), app_name = "Bob's App"
+  )))
+  first <- grep("const detail = [", about, fixed = TRUE) + 1
+  last <- grep("].join('\\n');", about, fixed = TRUE) - 1
+  detail <- node_values(paste0(
+    "[", paste(about[first:last], collapse = "\n"), "].join('\\n')"
+  ))
+  expect_equal(detail, paste(
+    "Version 1.0.0",
+    "It's a \"test\" \\ with <b>markup</b> and a second line",
+    "Author: Jane O'Hara",
+    "Copyright 2026 O'Hara & Co \\ Ltd",
+    "Built with shinyelectron",
+    sep = "\n\n"
+  ))
+  expect_equal(
+    js_values(about, "shell.openExternal("),
+    c("https://example.org/it's?a=1&b=2", "mailto:jane@example.org")
+  )
+  expect_equal(js_values(about, "title: 'About "), "About Bob's App")
+})
