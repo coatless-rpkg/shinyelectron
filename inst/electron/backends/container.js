@@ -4,7 +4,9 @@ const { spawn, execFileSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { waitForServer, startupTimeoutMs, formatSeconds, logDebug } = require('./utils');
+const {
+  waitForServer, startupTimeoutMs, formatSeconds, startSupersededError, logDebug
+} = require('./utils');
 
 class ContainerBackend extends EventEmitter {
   constructor() {
@@ -14,6 +16,8 @@ class ContainerBackend extends EventEmitter {
     this.containerHost = null;
     // Teardowns already started, by container ID; see removeContainer().
     this.removals = new Map();
+    // Bumped by every start() and stop(); see start().
+    this.startToken = 0;
   }
 
   /**
@@ -177,8 +181,10 @@ class ContainerBackend extends EventEmitter {
    * or pulls from a registry as a fallback.
    * @param {string} image - Full image reference (name:tag).
    * @param {object} config - Backend configuration.
+   * @param {function} [isSuperseded] - Returns true once the start that needs
+   *   the image has been superseded; build output is then no longer reported.
    */
-  async ensureImage(image, config) {
+  async ensureImage(image, config, isSuperseded = () => false) {
     const env = this.getContainerEnv();
     const pullOnStart = config?.pull_on_start !== false; // default true
     const arch = process.arch === 'arm64' ? 'linux/arm64' : 'linux/amd64';
@@ -262,6 +268,7 @@ class ContainerBackend extends EventEmitter {
           const line = data.toString().trim();
           if (line) {
             logDebug(`[docker build] ${line}`);
+            if (isSuperseded()) return;
             this.emit('status', {
               phase: 'downloading_runtime',
               message: line.substring(0, 100)
@@ -273,6 +280,7 @@ class ContainerBackend extends EventEmitter {
           stderr += line + '\n';
           if (line) {
             logDebug(`[docker build] ${line}`);
+            if (isSuperseded()) return;
             this.emit('status', {
               phase: 'downloading_runtime',
               message: line.substring(0, 100)
@@ -334,8 +342,19 @@ class ContainerBackend extends EventEmitter {
    * @param {number} options.port - Port to expose.
    * @param {object} options.config - Backend configuration.
    * @returns {Promise<{port: number}>} Resolves when container is ready.
+   *   Rejects with code 'START_SUPERSEDED' when stop() or a newer start()
+   *   supersedes this one.
    */
   async start({ appPath, port, config }) {
+    // stop() and any later start() supersede this start. From then on it must
+    // not create a container, report status, or take over this.containerId:
+    // the backend is shared, so those now belong to whatever runs next.
+    const token = ++this.startToken;
+    const superseded = () => token !== this.startToken;
+    const throwIfSuperseded = () => {
+      if (superseded()) throw startSupersededError();
+    };
+
     // Note: do NOT removeAllListeners() here; it would wipe the main process's
     // 'status'/'error' subscribers. This backend registers no one-shot
     // internal listeners, so there is nothing to clear.
@@ -380,7 +399,13 @@ class ContainerBackend extends EventEmitter {
     logDebug(`Port: ${port}`);
 
     // Ensure image is available (build locally or pull from registry)
-    await this.ensureImage(image, config);
+    try {
+      await this.ensureImage(image, config, superseded);
+    } catch (err) {
+      throwIfSuperseded();
+      throw err;
+    }
+    throwIfSuperseded();
 
     this.emit('status', { phase: 'starting_server', message: 'Starting container...' });
 
@@ -421,8 +446,29 @@ class ContainerBackend extends EventEmitter {
     args.push(image);
 
     return new Promise((resolve, reject) => {
+      // Guard so the start() promise settles exactly once.
+      let settled = false;
+      const settle = (fn, arg) => { if (settled) return; settled = true; fn(arg); };
       const engine = this.containerEngine;
       const env = this.getContainerEnv();
+      // The container this start created, once `run` has returned its ID.
+      // Failure handling tears down this one, not this.containerId, which a
+      // later start may replace.
+      let containerId = null;
+      let logProc = null;
+
+      // Settle a superseded start without reporting anything: remove the
+      // container it created, if any, clearing this.containerId only while
+      // it still names that container.
+      const abandon = () => {
+        if (logProc) logProc.kill();
+        if (containerId) {
+          if (this.containerId === containerId) this.containerId = null;
+          this.removeContainer(containerId, engine, env);
+        }
+        settle(reject, startSupersededError());
+      };
+
       logDebug(`Running: ${engine} ${args.join(' ')}`);
 
       const proc = spawn(engine, args, {
@@ -438,6 +484,10 @@ class ContainerBackend extends EventEmitter {
 
       proc.on('close', (code) => {
         if (code !== 0) {
+          if (superseded()) {
+            abandon();
+            return;
+          }
           const err = new Error(
             `Failed to start container (exit code ${code})\n` +
             `Engine: ${this.containerEngine}\n` +
@@ -445,13 +495,15 @@ class ContainerBackend extends EventEmitter {
             `Error: ${stderr}`
           );
           this.emit('status', { phase: 'error', message: err.message, detail: { stderr } });
-          reject(err);
+          settle(reject, err);
           return;
         }
 
-        // The container this start created. Failure handling below tears down
-        // this one, not this.containerId, which a later start may replace.
-        const containerId = stdout.trim().substring(0, 12);
+        containerId = stdout.trim().substring(0, 12);
+        if (superseded()) {
+          abandon();
+          return;
+        }
         this.containerId = containerId;
         logDebug(`Container started: ${containerId}`);
 
@@ -469,13 +521,13 @@ class ContainerBackend extends EventEmitter {
         }
         if (!hostPort) {
           this.emit('status', { phase: 'error', message: 'Could not determine the container host port' });
-          reject(new Error('Could not determine the container host port'));
+          settle(reject, new Error('Could not determine the container host port'));
           return;
         }
         logDebug(`Container ${containerId} mapped ${containerPort} -> host ${hostPort}`);
 
         // Stream container logs while waiting for startup
-        const logProc = spawn(engine, ['logs', '-f', containerId], {
+        logProc = spawn(engine, ['logs', '-f', containerId], {
           stdio: ['ignore', 'pipe', 'pipe'],
           env
         });
@@ -485,7 +537,7 @@ class ContainerBackend extends EventEmitter {
             const msg = data.toString().trim();
             if (msg) {
               logDebug(`[container] ${msg}`);
-              this.emit('status', { phase: 'starting_server', message: msg });
+              if (!superseded()) this.emit('status', { phase: 'starting_server', message: msg });
             }
           } catch { /* ignore write errors after shutdown */ }
         });
@@ -498,14 +550,28 @@ class ContainerBackend extends EventEmitter {
 
         // Wait for the server to be ready (lifecycle.startup_timeout)
         const startupTimeout = startupTimeoutMs(config);
-        waitForServer(hostPort, { timeout: startupTimeout, interval: 1000 })
+        waitForServer(hostPort, {
+          timeout: startupTimeout,
+          interval: 1000,
+          isCancelled: () => settled || superseded()
+        })
           .then(() => {
+            if (settled) return;
+            if (superseded()) {
+              abandon();
+              return;
+            }
             logProc.kill();
             logDebug(`Container server ready on http://localhost:${hostPort}`);
             this.emit('status', { phase: 'server_ready', message: 'Container ready' });
-            resolve({ port: hostPort });
+            settle(resolve, { port: hostPort });
           })
           .catch(() => {
+            if (settled) return;
+            if (superseded()) {
+              abandon();
+              return;
+            }
             logProc.kill();
             // Get container logs for debugging
             try {
@@ -528,14 +594,18 @@ class ContainerBackend extends EventEmitter {
               `- Port ${port} conflict inside the container`
             );
             this.emit('status', { phase: 'error', message: startErr.message });
-            reject(startErr);
+            settle(reject, startErr);
           });
       });
 
       proc.on('error', (err) => {
-        const runErr = new Error(`Failed to run ${this.containerEngine}: ${err.message}`);
+        if (superseded()) {
+          abandon();
+          return;
+        }
+        const runErr = new Error(`Failed to run ${engine}: ${err.message}`);
         this.emit('status', { phase: 'error', message: runErr.message });
-        reject(runErr);
+        settle(reject, runErr);
       });
     });
   }
@@ -591,12 +661,14 @@ class ContainerBackend extends EventEmitter {
   }
 
   /**
-   * Stop and remove the container, reporting each stage so the shutdown
-   * screen can show the breakdown.
+   * Stop and remove the container, superseding any start() still in
+   * progress, and report each stage so the shutdown screen can show the
+   * breakdown.
    * @returns {Promise<void>} Resolves once the container has been stopped and
    *   removed (or the attempt failed), or right away if none is running.
    */
   stop() {
+    this.startToken++;
     if (this.containerId && this.containerEngine) {
       const id = this.containerId;
       const engine = this.containerEngine;
