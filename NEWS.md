@@ -3,14 +3,17 @@
 ## Breaking changes
 
 * `installer.one_click` must now be an unquoted `true` or `false`. A quoted
-  value such as `"false"`, which electron-builder used to accept, now stops
-  `export()` with an error that names the key.
+  value such as `"false"`, which electron-builder used to accept, is now a
+  configuration error that names the key: `export()`, `show_config()`, and
+  `check_auto_update_status()` stop, and `app_check()` reports it as a
+  failure.
 
 ## New features
 
 * `installer.allow_to_change_installation_directory: true` adds a page to the
   Windows setup wizard where users choose the installation folder. It requires
-  `installer.one_click: false`, and `export()` stops with an error otherwise.
+  `installer.one_click: false`; otherwise reading the configuration fails with
+  an error.
 
 * `installer.per_machine: true` installs the Windows app for all users. Every
   install and update then needs administrator rights.
@@ -22,6 +25,10 @@
   directory, copied into the build, and shown as the Windows installer's
   license page. A UTF-8 text license gets a byte order mark in the copy so
   the installer shows characters such as the copyright sign correctly.
+
+* `app_check()` now fails on configuration errors that stop `export()`
+  instead of listing them as warnings, and it checks that
+  `installer.license_file` exists.
 
 # shinyelectron 0.2.1
 
