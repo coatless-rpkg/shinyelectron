@@ -376,6 +376,8 @@ container:
     SHINY_LOG_LEVEL: "DEBUG"
 ```
 
+`env` values are written into the built app, so keep passwords and tokens out of them; see [Secrets and per-user credentials](security.html#secrets-and-per-user-credentials).
+
 ### `apps`
 
 Defines a multi-app suite: two or more Shiny apps packaged in one Electron shell with a launcher screen. At least two entries are required. Any entry can override `build.type` or `build.runtime_strategy`, which is how mixed-strategy suites work. One constraint applies: within a language, all native apps (`system`, `bundled`, `auto-download`) must share one strategy; `shinylive` and `container` apps combine freely. Export aborts on a conflict. See the [Multi-App Suites](multi-app-suites.html) vignette for details.
