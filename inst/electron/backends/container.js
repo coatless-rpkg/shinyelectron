@@ -1,6 +1,6 @@
 // Container backend -- runs Shiny app inside Docker/Podman container
 const { EventEmitter } = require('events');
-const { spawn, execFileSync } = require('child_process');
+const { spawn, spawnSync, execFileSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -582,10 +582,13 @@ class ContainerBackend extends EventEmitter {
               return;
             }
             logProc.kill();
-            // Get container logs for debugging
+            // Get the container's logs, stderr included (Shiny logs there),
+            // for the app log and the error screen's details.
+            let logs = '';
             try {
-              const logs = execFileSync(engine, ['logs', containerId], { encoding: 'utf8', env });
-              console.error(`Container logs:\n${logs}`);
+              const out = spawnSync(engine, ['logs', containerId], { encoding: 'utf8', env, timeout: 10000 });
+              logs = `${out.stdout || ''}${out.stderr || ''}`.trim();
+              if (logs) console.error(`Container logs:\n${logs}`);
             } catch { /* ignore */ }
 
             // Remove only the container this start created. stop() would
@@ -602,7 +605,7 @@ class ContainerBackend extends EventEmitter {
               `- App has errors that prevent it from starting\n` +
               `- Port ${port} conflict inside the container`
             );
-            this.emit('status', { phase: 'error', message: startErr.message });
+            this.emit('status', { phase: 'error', message: startErr.message, detail: { stderr: logs } });
             settle(reject, startErr);
           });
       });
