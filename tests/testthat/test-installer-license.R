@@ -52,6 +52,14 @@ test_that("copy_installer_license leaves UTF-16 text unchanged", {
   expect_equal(copied_license(utf16)$copy, utf16)
 })
 
+test_that("copy_installer_license explains where a missing license is looked up", {
+  project <- withr::local_tempdir()
+  cfg <- list(installer = list(license_file = "missing-license.txt"))
+  err <- expect_error(copy_installer_license(project, cfg), "License file not found")
+  expect_match(conditionMessage(err), "relative\\s+to\\s+the\\s+app\\s+directory")
+  expect_match(conditionMessage(err), "relative\\s+to\\s+the\\s+working\\s+directory")
+})
+
 test_that("copy_installer_license leaves RTF licenses unchanged", {
   rtf <- c(charToRaw("{\\rtf1 "), utf8, charToRaw("}"))
   res <- copied_license(rtf, "EULA.rtf")

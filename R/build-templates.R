@@ -288,8 +288,10 @@ copy_brand_assets <- function(output_dir, icon, config) {
 #' electron-builder runs inside the generated project, so the file named by
 #' `installer.license_file` is copied to [installer_license_path()], which
 #' [build_nsis_config()] references as the NSIS `license`. [export()] has
-#' already resolved the path against the app directory. A plain-text copy is
-#' passed through [add_utf8_bom()] so NSIS reads it as UTF-8.
+#' already resolved the path against the app directory; a config passed
+#' directly to [build_electron_app()] uses paths relative to the working
+#' directory. A plain-text copy is passed through [add_utf8_bom()] so NSIS
+#' reads it as UTF-8.
 #'
 #' @param output_dir Character. The Electron project directory.
 #' @param config List. The effective configuration.
@@ -303,7 +305,8 @@ copy_installer_license <- function(output_dir, config) {
   if (!fs::is_file(license_file)) {
     cli::cli_abort(c(
       "License file not found: {.path {license_file}}",
-      "i" = "Edit {.field installer.license_file} in {.file _shinyelectron.yml}"
+      "i" = "In {.file _shinyelectron.yml}, {.field installer.license_file} is relative to the app directory",
+      "i" = "In a {.arg config} passed to {.fn build_electron_app}, it must be absolute or relative to the working directory"
     ))
   }
   dest <- fs::path(output_dir, installer_license_path(license_file))
