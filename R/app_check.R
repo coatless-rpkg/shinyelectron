@@ -4,6 +4,10 @@
 #' Checks app structure, configuration, runtime availability, dependencies,
 #' and signing credentials. Reports issues without aborting.
 #'
+#' Files named in `_shinyelectron.yml`, such as `icon` or `splash.image`, are
+#' looked up relative to `appdir`, as [export()] does. A missing icon is an
+#' error, because [export()] stops on it; other missing files are warnings.
+#'
 #' @param appdir Character string. Path to the app directory. Default ".".
 #' @param app_type Character string or NULL. App type override.
 #'   If NULL, reads from config or autodetects from files in `appdir`.
@@ -79,6 +83,9 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
       list()
     }
   )
+
+  # File paths in the config are relative to the app directory, as in export().
+  config <- resolve_config_paths(config, appdir)
 
   # Resolve parameters. Order: function arg > config > autodetect (type)
   # or default (strategy).
@@ -249,17 +256,45 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
   }
 
   # --- Check: Icon ---
-  icon <- config$icons$mac %||% config$icons$win %||% config$icons$linux
-  if (!is.null(icon)) {
-    if (fs::file_exists(fs::path(appdir, icon))) {
-      if (verbose) cli::cli_alert_success("Icon: {.file {icon}}")
-    } else {
-      warnings <- c(warnings, paste0("Icon file not found: ", icon))
-      if (verbose) cli::cli_alert_warning("Icon: {.file {icon}} not found")
-    }
-  } else {
+  # export() picks `icon`, or else the `icons` entry for the platform it
+  # builds, and stops when that file does not exist, so a missing icon is an
+  # error. Check the icon each target platform would use.
+  icons <- unique(Filter(Negate(is.null),
+                         lapply(platform, function(p) config_icon(config, p))))
+  if (length(icons) == 0) {
     info <- c(info, "Icon: not configured (default Electron icon)")
     if (verbose) cli::cli_alert_info("Icon: not configured (default Electron icon)")
+  }
+  for (icon in icons) {
+    shown <- paste(format(icon$path), collapse = " ")
+    if (config_file_exists(icon$path)) {
+      if (verbose) cli::cli_alert_success("Icon: {.file {shown}}")
+    } else {
+      errors <- c(errors, paste0(icon$field, " file not found: ", shown))
+      if (verbose) cli::cli_alert_danger("Icon: {.field {icon$field}} file not found: {.path {shown}}")
+    }
+  }
+
+  # --- Check: Other files named in the config ---
+  # export() warns about these and builds without them. It also warns about a
+  # missing Windows certificate when it signs a Windows build.
+  for (entry in missing_config_files(config)) {
+    shown <- paste(format(entry$path), collapse = " ")
+    if (is.null(entry$id)) {
+      warnings <- c(warnings, paste0(entry$field, " file not found: ", shown))
+      if (verbose) cli::cli_alert_warning("{.field {entry$field}} file not found: {.path {shown}}")
+    } else {
+      warnings <- c(warnings, paste0(entry$field, " file of app ", entry$id,
+                                     " not found: ", shown))
+      if (verbose) cli::cli_alert_warning("{.field {entry$field}} file of app {.val {entry$id}} not found: {.path {shown}}")
+    }
+  }
+  cert <- config_value(config, c("signing", "win", "certificate_file"))
+  if (sign && "win" %in% platform && !is.null(cert) &&
+      !config_file_exists(cert)) {
+    shown <- paste(format(cert), collapse = " ")
+    warnings <- c(warnings, paste0("signing.win.certificate_file file not found: ", shown))
+    if (verbose) cli::cli_alert_warning("{.field signing.win.certificate_file} file not found: {.path {shown}}")
   }
 
   # --- Check: Installer license ---
