@@ -479,42 +479,59 @@ function setupAutoUpdater() {
   });
 }
 
-// Interactive "Check for Updates" (used by the About dialog): reports the
-// outcome instead of silently doing nothing when already up to date.
+// Help > About > Check for Updates. Unlike the startup check, this answers
+// every outcome with a dialog.
 async function checkForUpdatesInteractive() {
   const { dialog } = require('electron');
-  const detached = () => {
-    autoUpdater.removeListener('update-not-available', onNone);
-    autoUpdater.removeListener('update-available', onAvailable);
-    autoUpdater.removeListener('error', onError);
-  };
-  const onNone = () => {
-    detached();
-    dialog.showMessageBox(mainWindow, {
-      type: 'info',
-      title: 'Check for Updates',
-      message: 'You are up to date',
-      detail: `Version ${app.getVersion()} is the latest version.`
-    });
-  };
-  const onAvailable = () => {
-    // An update was found; setupAutoUpdater() downloads it and prompts to
-    // restart once it is ready.
-    detached();
-  };
-  const onError = (err) => {
-    detached();
-    dialog.showMessageBox(mainWindow, {
-      type: 'warning',
-      title: 'Check for Updates',
-      message: 'Could not check for updates',
-      detail: String((err && err.message) || err)
-    });
-  };
-  autoUpdater.on('update-not-available', onNone);
-  autoUpdater.on('update-available', onAvailable);
-  autoUpdater.on('error', onError);
-  autoUpdater.checkForUpdatesAndNotify();
+  const show = (type, message, detail) =>
+    dialog.showMessageBox(mainWindow, { type, title: 'Check for Updates', message, detail, noLink: true })
+      .catch((err) => updaterLog.error('Update dialog failed:', err));
+  const reason = (err) => String((err && err.message) || err);
+  const downloadFailed = (err) => show('warning', 'Could not download the update', reason(err));
+
+  let result;
+  try {
+    result = await autoUpdater.checkForUpdates();
+  } catch (err) {
+    await show('warning', 'Could not check for updates', reason(err));
+    return;
+  }
+
+  // electron-updater answers null when it is inactive, as in a copy that is
+  // not an installed build (npm run electron, for example).
+  if (!result) {
+    await show('info', 'Updates work only in the installed app',
+      'This copy was not installed from a release, so it cannot check for updates.');
+    return;
+  }
+  if (!result.isUpdateAvailable) {
+    await show('info', 'You are up to date', `Version ${app.getVersion()} is the latest version.`);
+    return;
+  }
+
+  const version = result.updateInfo.version;
+  if (autoUpdater.autoDownload) {
+    // The download is already running; the update-downloaded handler asks
+    // to restart once it finishes.
+    if (result.downloadPromise) result.downloadPromise.catch(downloadFailed);
+    await show('info', `Version ${version} is downloading`,
+      'You will be asked to restart when it is ready.');
+    return;
+  }
+  const { response } = await dialog.showMessageBox(mainWindow, {
+    type: 'info',
+    title: 'Check for Updates',
+    message: `Version ${version} is available`,
+    detail: `You have version ${app.getVersion()}.`,
+    buttons: ['Download', 'Later'],
+    defaultId: 0,
+    cancelId: 1,
+    noLink: true
+  });
+  if (response === 0) {
+    // The update-downloaded handler asks to restart once the download completes.
+    autoUpdater.downloadUpdate().catch(downloadFailed);
+  }
 }
 {{/updates_enabled}}
 

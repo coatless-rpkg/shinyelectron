@@ -537,3 +537,94 @@ test_that("About dialog literals evaluate to the configured metadata", {
   )
   expect_equal(js_values(about, "title: 'About "), "About Bob's App")
 })
+
+# --- Check for Updates ---
+
+# Run the rendered checkForUpdatesInteractive() under node against a fake
+# electron-updater and dialog module, once per scenario. Returns, for each
+# scenario, what the user saw: "<type>: <message> [<buttons>]" for a dialog,
+# and "download" when an update download started.
+run_update_check <- function(scenarios) {
+  main <- readLines(render_main_js(list(updates = list(enabled = TRUE))))
+  start <- grep("^async function checkForUpdatesInteractive\\(\\)", main)
+  end <- start + which(main[-seq_len(start)] == "}")[1]
+  script <- withr::local_tempfile(fileext = ".js", lines = c(
+    "(async () => {",
+    "  let scenario;",
+    "  let events = [];",
+    "  const dialog = {",
+    "    showMessageBox: async (win, o) => {",
+    "      events.push(o.type + ': ' + o.message + (o.buttons ? ' [' + o.buttons.join('|') + ']' : ''));",
+    "      return { response: scenario.response || 0 };",
+    "    }",
+    "  };",
+    "  const require = () => ({ dialog });",
+    "  const app = { getVersion: () => '1.0.0' };",
+    "  const mainWindow = null;",
+    "  const updaterLog = { error: () => {} };",
+    "  const autoUpdater = {",
+    "    autoDownload: false,",
+    "    checkForUpdates: async () => {",
+    "      if (scenario.checkError) throw new Error(scenario.checkError);",
+    "      return scenario.result;",
+    "    },",
+    "    downloadUpdate: async () => {",
+    "      events.push('download');",
+    "      if (scenario.downloadError) throw new Error(scenario.downloadError);",
+    "    }",
+    "  };",
+    main[start:end],
+    "  const out = [];",
+    paste0("  for (const s of ", jsonlite::toJSON(scenarios, auto_unbox = TRUE, null = "null"), ") {"),
+    "    scenario = s;",
+    "    events = [];",
+    "    autoUpdater.autoDownload = !!s.autoDownload;",
+    "    if (s.result && s.autoDownload) s.result.downloadPromise = Promise.resolve();",
+    "    await checkForUpdatesInteractive();",
+    "    await new Promise((resolve) => setTimeout(resolve, 10));",
+    "    out.push(events);",
+    "  }",
+    "  process.stdout.write(JSON.stringify(out));",
+    "})();"
+  ))
+  lapply(
+    jsonlite::fromJSON(processx::run("node", script)$stdout, simplifyVector = FALSE),
+    unlist
+  )
+}
+
+test_that("Check for Updates answers every outcome with a dialog", {
+  skip_on_cran()
+  skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
+
+  current <- list(isUpdateAvailable = FALSE, updateInfo = list(version = "1.0.0"))
+  newer <- list(isUpdateAvailable = TRUE, updateInfo = list(version = "2.0.0"))
+  offer <- "info: Version 2.0.0 is available [Download|Later]"
+  out <- run_update_check(list(
+    list(result = NULL),
+    list(result = current),
+    list(result = newer, response = 0),
+    list(result = newer, response = 1),
+    list(result = newer, autoDownload = TRUE),
+    list(checkError = "net::ERR_INTERNET_DISCONNECTED"),
+    list(result = newer, response = 0, downloadError = "404 Not Found")
+  ))
+
+  expect_equal(out[[1]], "info: Updates work only in the installed app")
+  expect_equal(out[[2]], "info: You are up to date")
+  expect_equal(out[[3]], c(offer, "download"))
+  expect_equal(out[[4]], offer)
+  expect_equal(out[[5]], "info: Version 2.0.0 is downloading")
+  expect_equal(out[[6]], "warning: Could not check for updates")
+  expect_equal(out[[7]], c(offer, "download", "warning: Could not download the update"))
+})
+
+test_that("Check for Updates no longer attaches listeners or calls checkForUpdatesAndNotify", {
+  main <- readLines(render_main_js(list(updates = list(enabled = TRUE))))
+  start <- grep("^async function checkForUpdatesInteractive\\(\\)", main)
+  end <- start + which(main[-seq_len(start)] == "}")[1]
+  check <- main[start:end]
+  expect_false(any(grepl("autoUpdater.on(", check, fixed = TRUE)))
+  expect_false(any(grepl("checkForUpdatesAndNotify", check, fixed = TRUE)))
+  expect_true(any(grepl("await autoUpdater.checkForUpdates()", check, fixed = TRUE)))
+})
