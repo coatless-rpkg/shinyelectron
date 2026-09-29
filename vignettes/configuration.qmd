@@ -337,6 +337,7 @@ dependencies:
 - A local package replaces a repository package with the same name.
 - Each package must load in a fresh R session from the bundled library, or the build stops with the load error and the last lines of the install output. Building or installing one package may take up to 30 minutes.
 - Packages with C, C++, or Fortran code need a compiler toolchain that works with the bundled R on the build machine, such as the Xcode Command Line Tools on macOS or Rtools on Windows.
+- Compiled code is linked on the build machine. System libraries that a package links against, such as Homebrew libraries found by its `configure` script or named in `~/.R/Makevars`, are not copied into the app, so they must also be installed on your users' machines.
 - Keep package sources outside the app directory: everything in the app directory is copied into the app.
 
 #### Python-specific dependency options
