@@ -220,6 +220,14 @@
   `app.slug` is invalid, `export()` now stops before converting the app, and
   `show_config()` no longer fails on a non-ASCII `app.name`.
 
+* `export()`, `build_electron_app()`, `init_config()`, and `show_config()`
+  now name the app after its folder when the app directory is a relative
+  path such as `"."` or `".."`. The app was named `"."` or `".."`, and
+  `export()` stopped because it could not derive an app slug. When the app
+  directory is a symbolic link, `app_check()`, `init_config()`, and
+  `wizard()` now take the slug from the link's name, as `export()` does,
+  instead of from the folder it points to.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the

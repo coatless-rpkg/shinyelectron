@@ -39,7 +39,7 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
   warnings <- character(0)
   info <- character(0)
 
-  app_name <- basename(normalizePath(appdir, mustWork = FALSE))
+  app_name <- app_dir_name(appdir)
 
   if (verbose) {
     cli::cli_h1("App Check: {app_name}")
@@ -320,7 +320,7 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
   # the directory name, and the display name from app.name or the directory
   # name.
   err <- catch_error({
-    slug <- resolve_app_slug(config, NULL, normalizePath(appdir, mustWork = FALSE))
+    slug <- resolve_app_slug(config, NULL, appdir)
     check_app_slug(slug)
     if (verbose) cli::cli_alert_success("App slug: {.val {slug}}")
   })

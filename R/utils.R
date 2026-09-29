@@ -88,6 +88,21 @@ slug_or_null <- function(name) {
   tryCatch(slugify(name), error = function(e) NULL)
 }
 
+#' Name of the app directory
+#'
+#' The last part of the directory's absolute path, so a relative path such as
+#' `"."` or `"app/.."` gives the name of the folder it points to, where
+#' [base::basename()] gives `"."` or `".."`. The path is made absolute without
+#' resolving symbolic links, so a linked directory keeps the name of the link,
+#' as with [base::basename()].
+#'
+#' @param appdir Character string. Path to the app directory.
+#' @return Character string. The directory's name.
+#' @keywords internal
+app_dir_name <- function(appdir) {
+  basename(fs::path_abs(path.expand(appdir)))
+}
+
 #' Resolve the app slug
 #'
 #' The slug is the app's identity. It names the package in `package.json`,
@@ -115,7 +130,7 @@ resolve_app_slug <- function(config, name, appdir) {
   if (!is.null(config$app$slug)) {
     return(config$app$slug)
   }
-  dir_slug <- slug_or_null(basename(appdir))
+  dir_slug <- slug_or_null(app_dir_name(appdir))
   if (is.null(name)) {
     return(dir_slug)
   }

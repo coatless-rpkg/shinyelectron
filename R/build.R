@@ -5,7 +5,7 @@
 #'
 #' @param app_dir Character string. Path to the converted Shiny/shinylive application.
 #' @param output_dir Character string. Path where the built Electron app will be saved.
-#' @param app_name Character string. Name of the application. If NULL, uses the base name of app_dir.
+#' @param app_name Character string. Name of the application. If NULL, uses the name of the app_dir directory.
 #' @param app_type Character string. Language of the Shiny app: `"r-shiny"`
 #'   (default) or `"py-shiny"`. Unlike `export()`, this function does **not**
 #'   autodetect the language from source files -- the default `"r-shiny"` is
@@ -82,7 +82,7 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
   validate_runtime_strategy(runtime_strategy)
 
   if (is.null(app_name)) {
-    app_name <- basename(app_dir)
+    app_name <- app_dir_name(app_dir)
   }
   validate_app_name(app_name)
 

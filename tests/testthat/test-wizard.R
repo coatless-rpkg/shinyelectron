@@ -139,6 +139,17 @@ test_that("wizard uses basename of appdir as default app name", {
   expect_equal(config$app$name, basename(tmp))
 })
 
+test_that("wizard names the app after the folder that '.' points to", {
+  tmp <- file.path(withr::local_tempdir(), "dash-app")
+  dir.create(tmp)
+  withr::local_dir(tmp)
+  run_wizard_quiet(".", rep("", 9L))
+
+  config <- yaml::read_yaml("_shinyelectron.yml")
+  expect_equal(config$app$name, "dash-app")
+  expect_equal(config$app$slug, "dash-app")
+})
+
 # ---------------------------------------------------------------------------
 # Language / strategy choices
 # ---------------------------------------------------------------------------

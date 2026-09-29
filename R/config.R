@@ -674,7 +674,7 @@ init_config <- function(appdir, app_name = NULL, overwrite = FALSE, verbose = TR
 
   # Derive app name from directory if not provided
   if (is.null(app_name)) {
-    app_name <- basename(appdir)
+    app_name <- app_dir_name(appdir)
   }
 
   # Escape app_name for a YAML double-quoted scalar.
@@ -685,8 +685,7 @@ init_config <- function(appdir, app_name = NULL, overwrite = FALSE, verbose = TR
   # Write the slug out, so the app keeps its identity when the name changes.
   # As export() does without an app_name argument, it comes from the
   # directory name; app_name only sets the display name.
-  dir_path <- normalizePath(appdir, mustWork = FALSE)
-  slug <- resolve_app_slug(list(), NULL, dir_path)
+  slug <- resolve_app_slug(list(), NULL, appdir)
 
   # The slug of the config being replaced: its app.slug or, without one,
   # the directory's, which export() used for it.
@@ -696,7 +695,7 @@ init_config <- function(appdir, app_name = NULL, overwrite = FALSE, verbose = TR
     old_slug <- if (!is.null(old$app$slug)) {
       as.character(old$app$slug)[1]
     } else {
-      slug_or_null(basename(dir_path))
+      slug_or_null(app_dir_name(appdir))
     }
   }
 
@@ -1008,7 +1007,7 @@ show_config <- function(appdir = ".") {
 
   # App section. The slug follows the same rules as export() without an
   # app_name argument: app.slug, else the directory name.
-  app_name <- config$app$name %||% basename(appdir)
+  app_name <- config$app$name %||% app_dir_name(appdir)
   slug <- resolve_app_slug(config, NULL, appdir)
   cli::cli_h2("Application")
   cli::cli_bullets(c(

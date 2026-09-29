@@ -19,7 +19,7 @@ export_multi_app <- function(appdir, destdir, config,
   force(slug_pinned)
 
   name_from_config <- is.null(app_name) && !is.null(config$app$name)
-  app_name <- app_name %||% config$app$name %||% basename(appdir)
+  app_name <- app_name %||% config$app$name %||% app_dir_name(appdir)
   validate_app_name(app_name, field = if (name_from_config) "app.name" else "app_name")
   config$app$slug <- resolve_app_slug(config, app_name, appdir)
   if (build) check_app_slug(config$app$slug)
