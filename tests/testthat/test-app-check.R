@@ -145,6 +145,62 @@ test_that("app_check checks installer text for a $ like export()", {
   expect_true(any(grepl("app.description", res$warnings, fixed = TRUE)))
 })
 
+test_that("app_check still reports a $ in installer text after another warning", {
+  appdir <- withr::local_tempdir()
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "app.R"))
+  writeLines(c("app:", "  description: Costs $5 a month"),
+             file.path(appdir, "_shinyelectron.yml"))
+  real_app_metadata <- app_metadata
+  local_mocked_bindings(app_metadata = function(config) {
+    warning("metadata warning")
+    real_app_metadata(config)
+  })
+
+  res <- app_check(appdir, platform = "win", verbose = FALSE)
+  expect_false(res$pass)
+  expect_true(any(grepl("app.description", res$errors, fixed = TRUE)))
+  expect_true("metadata warning" %in% res$warnings)
+})
+
+test_that("app_check reports every config warning, also before a config error", {
+  appdir <- withr::local_tempdir()
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "app.R"))
+  writeLines(c("window:", "  widht: 900", "installer:", "  per_machine: \"yes\""),
+             file.path(appdir, "_shinyelectron.yml"))
+  res <- app_check(appdir, verbose = FALSE)
+  expect_true(any(grepl("window.widht", res$warnings, fixed = TRUE)))
+  expect_true(any(grepl("installer.per_machine", res$warnings, fixed = TRUE)))
+
+  # The quoted flag warns before the setting it belongs to stops the build.
+  writeLines(c("installer:", "  one_click: \"true\"",
+               "  allow_to_change_installation_directory: true"),
+             file.path(appdir, "_shinyelectron.yml"))
+  res <- app_check(appdir, verbose = FALSE)
+  expect_true(any(grepl("installer.one_click", res$warnings, fixed = TRUE)))
+  expect_true(any(grepl("Config error", res$errors, fixed = TRUE)))
+})
+
+test_that("catch_conditions keeps every warning, including those before an error", {
+  res <- catch_conditions({
+    warning("first")
+    warning("second")
+    "done"
+  })
+  expect_equal(res$value, "done")
+  expect_null(res$error)
+  expect_equal(res$warnings, c("first", "second"))
+
+  res <- catch_conditions({
+    warning("before")
+    stop("failed")
+  })
+  expect_null(res$value)
+  expect_equal(conditionMessage(res$error), "failed")
+  expect_equal(res$warnings, "before")
+})
+
 test_that("app_check takes the slug from the app directory's name", {
   appdir <- file.path(withr::local_tempdir(), "sales-dashboard")
   dir.create(appdir)

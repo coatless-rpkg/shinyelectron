@@ -48,28 +48,30 @@ test_that("fetch_published_sha256 returns NULL on fetch error or empty file", {
 
 test_that("r_expected_sha256 queries the .sha256 sidecar of the archive URL", {
   skip_if_not_installed("mockery")
-  captured <- NULL
+  rec <- mockery::mock(NULL)
   mockery::stub(r_expected_sha256, "r_download_url",
                 function(...) "https://example/portable-r-4.4.1-macos-arm64.tar.gz")
   mockery::stub(r_expected_sha256, "fetch_published_sha256",
                 function(checksum_url, asset_filename = NULL) {
-                  captured <<- list(url = checksum_url, file = asset_filename)
+                  rec(url = checksum_url, file = asset_filename)
                   strrep("a", 64)
                 })
   expect_equal(r_expected_sha256("4.4.1", "mac", "arm64"), strrep("a", 64))
+  captured <- mockery::mock_args(rec)[[1]]
   expect_equal(captured$url, "https://example/portable-r-4.4.1-macos-arm64.tar.gz.sha256")
   expect_null(captured$file)
 })
 
 test_that("python_expected_sha256 queries SHA256SUMS with the asset filename", {
   skip_if_not_installed("mockery")
-  captured <- NULL
+  rec <- mockery::mock(NULL)
   mockery::stub(python_expected_sha256, "fetch_published_sha256",
                 function(checksum_url, asset_filename = NULL) {
-                  captured <<- list(url = checksum_url, file = asset_filename)
+                  rec(url = checksum_url, file = asset_filename)
                   strrep("b", 64)
                 })
   expect_equal(python_expected_sha256("3.14.6", "mac", "arm64", "20260623"), strrep("b", 64))
+  captured <- mockery::mock_args(rec)[[1]]
   expect_match(captured$url,
                "python-build-standalone/releases/download/20260623/SHA256SUMS",
                fixed = TRUE)
@@ -79,7 +81,7 @@ test_that("python_expected_sha256 queries SHA256SUMS with the asset filename", {
 
 test_that("install_r_portable passes the published checksum to the download helper", {
   skip_if_not_installed("mockery")
-  captured <- NULL
+  rec <- mockery::mock(NULL)
   mockery::stub(install_r_portable, "r_expected_sha256", function(...) strrep("a", 64))
   mockery::stub(install_r_portable, "r_install_path", function(...) "/tmp/r")
   mockery::stub(install_r_portable, "r_download_url", function(...) "https://example/r.tar.gz")
@@ -87,11 +89,11 @@ test_that("install_r_portable passes the published checksum to the download help
   mockery::stub(install_r_portable, "r_is_installed", function(...) FALSE)
   mockery::stub(install_r_portable, "download_and_extract_portable_tool",
                 function(..., expected_sha256 = NULL) {
-                  captured <<- expected_sha256
+                  rec(expected_sha256 = expected_sha256)
                   invisible("/tmp/r")
                 })
   install_r_portable(version = "4.4.1", platform = "mac", arch = "arm64", verbose = FALSE)
-  expect_equal(captured, strrep("a", 64))
+  expect_equal(mockery::mock_args(rec)[[1]]$expected_sha256, strrep("a", 64))
 })
 
 test_that("install_r_portable warns and continues when no checksum is available", {

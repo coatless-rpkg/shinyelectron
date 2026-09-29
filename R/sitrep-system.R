@@ -32,7 +32,7 @@ sitrep_electron_system <- function(verbose = TRUE) {
   ))
 
   # Check platform and architecture
-  tryCatch({
+  detect_error <- tryCatch({
     results$platform <- detect_current_platform()
     results$arch <- detect_current_arch()
 
@@ -40,13 +40,14 @@ sitrep_electron_system <- function(verbose = TRUE) {
       cli::cli_alert_success("Platform: {results$platform}")
       cli::cli_alert_success("Architecture: {results$arch}")
     }
-  }, error = function(e) {
-    # Use <<- so the issue persists to the outer results.
-    results$issues <<- c(results$issues, "Could not detect platform/architecture")
+    NULL
+  }, error = identity)
+  if (!is.null(detect_error)) {
+    results$issues <- c(results$issues, "Could not detect platform/architecture")
     if (verbose) {
       cli::cli_alert_danger("Could not detect platform/architecture")
     }
-  })
+  }
 
   # Check for local Node.js installation (shinyelectron-managed)
   local_versions <- nodejs_list_installed()

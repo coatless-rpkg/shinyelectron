@@ -54,35 +54,29 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
   }
 
   # --- Read config ---
-  # read_config converts YAML parse errors into R warnings (via cli::cli_warn)
-  # rather than re-throwing them, so we need withCallingHandlers to capture
-  # those warnings in addition to the tryCatch for hard errors. A hard error
-  # (for example an invalid installer setting) also stops export(), so it
-  # fails the check.
-  config_parse_ok <- TRUE
-  config <- tryCatch(
-    withCallingHandlers({
-      cfg <- read_config(appdir)
-      if (verbose) {
-        if (config_parse_ok && !is.null(find_config(appdir))) {
-          cli::cli_alert_success("Config: {.file _shinyelectron.yml} valid")
-        } else if (is.null(find_config(appdir))) {
-          cli::cli_alert_info("Config: no {.file _shinyelectron.yml} (using defaults)")
-        }
+  # read_config() reports YAML parse errors and questionable values as
+  # warnings and carries on. A hard error (for example an invalid installer
+  # setting) also stops export(), so it fails the check.
+  read <- catch_conditions(read_config(appdir))
+  for (msg in read$warnings) {
+    warnings <- c(warnings, paste0("Config error: ", msg))
+    if (verbose) cli::cli_alert_warning("Config: {msg}")
+  }
+  if (is.null(read$error)) {
+    config <- read$value
+    if (verbose) {
+      if (is.null(find_config(appdir))) {
+        cli::cli_alert_info("Config: no {.file _shinyelectron.yml} (using defaults)")
+      } else if (length(read$warnings) == 0) {
+        cli::cli_alert_success("Config: {.file _shinyelectron.yml} valid")
       }
-      cfg
-    }, warning = function(w) {
-      config_parse_ok <<- FALSE
-      warnings <<- c(warnings, paste0("Config error: ", conditionMessage(w)))
-      if (verbose) cli::cli_alert_warning("Config: {conditionMessage(w)}")
-      invokeRestart("muffleWarning")
-    }),
-    error = function(e) {
-      errors <<- c(errors, paste0("Config error: ", conditionMessage(e)))
-      if (verbose) cli::cli_alert_danger("Config: {conditionMessage(e)}")
-      list()
     }
-  )
+  } else {
+    msg <- conditionMessage(read$error)
+    errors <- c(errors, paste0("Config error: ", msg))
+    if (verbose) cli::cli_alert_danger("Config: {msg}")
+    config <- list()
+  }
 
   # File paths in the config are relative to the app directory, as in export().
   config <- resolve_config_paths(config, appdir)
@@ -121,7 +115,7 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
   }
 
   # --- Check: App structure ---
-  tryCatch({
+  err <- catch_error({
     if (app_type == "r-shiny") {
       validate_shiny_app_structure(appdir)
       entry <- if (fs::file_exists(fs::path(appdir, "app.R"))) {
@@ -134,10 +128,11 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
       validate_python_app_structure(appdir)
       if (verbose) cli::cli_alert_success("App structure: {.file app.py} found")
     }
-  }, error = function(e) {
-    errors <<- c(errors, conditionMessage(e))
-    if (verbose) cli::cli_alert_danger("App structure: {e$message}")
   })
+  if (!is.null(err)) {
+    errors <- c(errors, conditionMessage(err))
+    if (verbose) cli::cli_alert_danger("App structure: {err$message}")
+  }
 
   # --- Check: Brand ---
   brand <- read_brand_yml(appdir)
@@ -146,51 +141,56 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
   }
 
   # --- Check: Node.js ---
-  tryCatch({
+  err <- catch_error({
     node_info <- validate_node_npm()
     if (verbose) cli::cli_alert_success("Node.js: {node_info$node_version} + npm {node_info$npm_version}")
-  }, error = function(e) {
-    errors <<- c(errors, e$message)
-    if (verbose) cli::cli_alert_danger("Node.js: {e$message}")
   })
+  if (!is.null(err)) {
+    errors <- c(errors, err$message)
+    if (verbose) cli::cli_alert_danger("Node.js: {err$message}")
+  }
 
   # --- Check: Runtime ---
   if (runtime_strategy == "system") {
     if (app_type == "r-shiny") {
-      tryCatch({
+      err <- catch_error({
         rscript_path <- validate_r_available()
         if (verbose) cli::cli_alert_success("R: available at {.path {rscript_path}}")
-      }, error = function(e) {
-        errors <<- c(errors, e$message)
-        if (verbose) cli::cli_alert_danger("R: {e$message}")
       })
+      if (!is.null(err)) {
+        errors <- c(errors, err$message)
+        if (verbose) cli::cli_alert_danger("R: {err$message}")
+      }
     }
     if (app_type == "py-shiny") {
-      tryCatch({
+      err <- catch_error({
         validate_python_available()
         if (verbose) cli::cli_alert_success("Python: available")
-
+      })
+      if (!is.null(err)) {
+        errors <- c(errors, err$message)
+        if (verbose) cli::cli_alert_danger("Python: {err$message}")
+      } else {
         # Check that Shiny for Python is installed
-        tryCatch({
+        err <- catch_error({
           ver <- validate_python_shiny_installed()
           if (verbose) cli::cli_alert_success("Python shiny: {ver}")
-        }, error = function(e) {
-          errors <<- c(errors, e$message)
-          if (verbose) cli::cli_alert_danger("Python shiny: {e$message}")
         })
-      }, error = function(e) {
-        errors <<- c(errors, e$message)
-        if (verbose) cli::cli_alert_danger("Python: {e$message}")
-      })
+        if (!is.null(err)) {
+          errors <- c(errors, err$message)
+          if (verbose) cli::cli_alert_danger("Python shiny: {err$message}")
+        }
+      }
     }
   } else if (runtime_strategy == "container") {
-    tryCatch({
+    err <- catch_error({
       engine <- validate_container_available(config$container$engine)
       if (verbose) cli::cli_alert_success("Container engine: {.val {engine}}")
-    }, error = function(e) {
-      warnings <<- c(warnings, e$message)
-      if (verbose) cli::cli_alert_warning("Container: {e$message}")
     })
+    if (!is.null(err)) {
+      warnings <- c(warnings, err$message)
+      if (verbose) cli::cli_alert_warning("Container: {err$message}")
+    }
   }
 
   # --- Check: shinylive tooling (only when strategy is shinylive) ---
@@ -203,19 +203,20 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
         if (verbose) cli::cli_alert_danger("shinylive R package: not installed")
       }
     } else if (app_type == "py-shiny") {
-      tryCatch({
+      err <- catch_error({
         validate_python_available()
         validate_python_shinylive_installed()
         if (verbose) cli::cli_alert_success("Python shinylive: installed")
-      }, error = function(e) {
-        errors <<- c(errors, e$message)
-        if (verbose) cli::cli_alert_danger("Python shinylive: {e$message}")
       })
+      if (!is.null(err)) {
+        errors <- c(errors, err$message)
+        if (verbose) cli::cli_alert_danger("Python shinylive: {err$message}")
+      }
     }
   }
 
   # --- Check: Dependencies ---
-  tryCatch({
+  err <- catch_error({
     dep_result <- resolve_app_dependencies(appdir, app_type, runtime_strategy, config)
     if (!is.null(dep_result) && length(dep_result$packages) > 0) {
       dep_msg <- paste(dep_result$packages, collapse = ", ")
@@ -238,10 +239,11 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
       info <- c(info, "No dependencies detected")
       if (verbose) cli::cli_alert_info("Dependencies: none detected")
     }
-  }, error = function(e) {
-    warnings <<- c(warnings, paste0("Dependency check: ", e$message))
-    if (verbose) cli::cli_alert_warning("Dependencies: {e$message}")
   })
+  if (!is.null(err)) {
+    warnings <- c(warnings, paste0("Dependency check: ", err$message))
+    if (verbose) cli::cli_alert_warning("Dependencies: {err$message}")
+  }
 
   # --- Check: Signing ---
   if (sign) {
@@ -302,13 +304,13 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
   # stops when the file is missing.
   license_file <- config$installer$license_file
   if (!is.null(license_file)) {
-    tryCatch({
-      resolve_installer_license(config, appdir)
+    err <- catch_error(resolve_installer_license(config, appdir))
+    if (is.null(err)) {
       if (verbose) cli::cli_alert_success("Installer license: {.file {license_file}}")
-    }, error = function(e) {
-      errors <<- c(errors, conditionMessage(e))
-      if (verbose) cli::cli_alert_danger("Installer license: {conditionMessage(e)}")
-    })
+    } else {
+      errors <- c(errors, conditionMessage(err))
+      if (verbose) cli::cli_alert_danger("Installer license: {conditionMessage(err)}")
+    }
   }
 
   # --- Check: App slug and installer text ---
@@ -317,29 +319,29 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
   # Without an app_name argument, export() takes the slug from app.slug or
   # the directory name, and the display name from app.name or the directory
   # name.
-  tryCatch({
+  err <- catch_error({
     slug <- resolve_app_slug(config, NULL, normalizePath(appdir, mustWork = FALSE))
     check_app_slug(slug)
     if (verbose) cli::cli_alert_success("App slug: {.val {slug}}")
-  }, error = function(e) {
-    errors <<- c(errors, conditionMessage(e))
-    if (verbose) cli::cli_alert_danger("App slug: {conditionMessage(e)}")
   })
-  tryCatch(
-    withCallingHandlers(
-      check_installer_text(config$app$name %||% app_name, config,
-                           windows = "win" %in% platform),
-      warning = function(w) {
-        warnings <<- c(warnings, conditionMessage(w))
-        if (verbose) cli::cli_alert_warning("Installer text: {conditionMessage(w)}")
-        invokeRestart("muffleWarning")
-      }
-    ),
-    error = function(e) {
-      errors <<- c(errors, conditionMessage(e))
-      if (verbose) cli::cli_alert_danger("Installer text: {conditionMessage(e)}")
-    }
+  if (!is.null(err)) {
+    errors <- c(errors, conditionMessage(err))
+    if (verbose) cli::cli_alert_danger("App slug: {conditionMessage(err)}")
+  }
+  # Other warnings can come before the $ check, so keep them all and carry on.
+  text <- catch_conditions(
+    check_installer_text(config$app$name %||% app_name, config,
+                         windows = "win" %in% platform)
   )
+  for (msg in text$warnings) {
+    warnings <- c(warnings, msg)
+    if (verbose) cli::cli_alert_warning("Installer text: {msg}")
+  }
+  if (!is.null(text$error)) {
+    msg <- conditionMessage(text$error)
+    errors <- c(errors, msg)
+    if (verbose) cli::cli_alert_danger("Installer text: {msg}")
+  }
 
   # --- Result ---
   pass <- length(errors) == 0
@@ -364,4 +366,50 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
   )
 
   invisible(result)
+}
+
+#' Evaluate an expression and return its error
+#'
+#' Lets each check in [app_check()] record a failure in its own results.
+#'
+#' @param expr An expression, evaluated in the calling function's
+#'   environment.
+#' @return `NULL` when `expr` finishes without an error, otherwise the error
+#'   condition.
+#' @keywords internal
+catch_error <- function(expr) {
+  tryCatch({
+    expr
+    NULL
+  }, error = identity)
+}
+
+#' Evaluate an expression, collecting its warnings and error
+#'
+#' Records every warning `expr` gives, in order, and lets it carry on, so
+#' [app_check()] can report each one. An error ends the evaluation; the
+#' warnings given before it are kept.
+#'
+#' @param expr An expression, evaluated in the calling function's
+#'   environment.
+#' @return A list with `value`, the value of `expr` or `NULL` after an error,
+#'   `error`, the error condition or `NULL`, and `warnings`, the messages of
+#'   the warnings given.
+#' @keywords internal
+catch_conditions <- function(expr) {
+  # A calling handler cannot return values to the caller, so the warnings
+  # go into a field of this local environment.
+  collected <- new.env(parent = emptyenv())
+  collected$warnings <- character(0)
+  result <- tryCatch(
+    list(
+      value = withCallingHandlers(expr, warning = function(w) {
+        collected$warnings <- c(collected$warnings, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      }),
+      error = NULL
+    ),
+    error = function(e) list(value = NULL, error = e)
+  )
+  c(result, list(warnings = collected$warnings))
 }

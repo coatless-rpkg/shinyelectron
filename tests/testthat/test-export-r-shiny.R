@@ -41,12 +41,8 @@ test_that("export defaults runtime_strategy to shinylive when NULL", {
   outdir <- tempfile()
   on.exit(unlink(c(tmpdir, outdir), recursive = TRUE))
 
-  captured_strategy <- NULL
-  mockery::stub(export, "build_electron_app", function(...) {
-    args <- list(...)
-    captured_strategy <<- args$runtime_strategy
-    tempdir()
-  })
+  build_rec <- mockery::mock(tempdir())
+  mockery::stub(export, "build_electron_app", build_rec)
   # Stub the shinylive conversion too: it depends on pkgcache, which
   # complains under R CMD check (R_USER_CACHE_DIR is unset there) and is
   # not the behaviour under test here.
@@ -55,7 +51,7 @@ test_that("export defaults runtime_strategy to shinylive when NULL", {
   export(appdir = tmpdir, destdir = outdir, app_type = "r-shiny",
          runtime_strategy = NULL, build = TRUE, verbose = FALSE)
 
-  expect_equal(captured_strategy, "shinylive")
+  expect_equal(mockery::mock_args(build_rec)[[1]]$runtime_strategy, "shinylive")
 })
 
 test_that("export passes system strategy to build_electron_app", {
@@ -67,15 +63,11 @@ test_that("export passes system strategy to build_electron_app", {
   outdir <- tempfile()
   on.exit(unlink(c(tmpdir, outdir), recursive = TRUE))
 
-  captured_strategy <- NULL
-  mockery::stub(export, "build_electron_app", function(...) {
-    args <- list(...)
-    captured_strategy <<- args$runtime_strategy
-    tempdir()
-  })
+  build_rec <- mockery::mock(tempdir())
+  mockery::stub(export, "build_electron_app", build_rec)
 
   export(appdir = tmpdir, destdir = outdir, app_type = "r-shiny",
          runtime_strategy = "system", build = TRUE, verbose = FALSE)
 
-  expect_equal(captured_strategy, "system")
+  expect_equal(mockery::mock_args(build_rec)[[1]]$runtime_strategy, "system")
 })

@@ -244,14 +244,16 @@ test_that("export() warns about a missing splash image or tray icon and builds w
 
   local_fake_build()
   destdir <- fs::path(withr::local_tempdir(), "out")
-  warnings <- list()
+  # Record only the missing-file warnings; any other warning still propagates.
+  rec <- mockery::mock()
   result <- withCallingHandlers(
     export(appdir, destdir, platform = "linux", verbose = FALSE),
     shinyelectron_config_file_not_found = function(w) {
-      warnings[[length(warnings) + 1L]] <<- cli::ansi_strip(conditionMessage(w))
+      rec(cli::ansi_strip(conditionMessage(w)))
       invokeRestart("muffleWarning")
     }
   )
+  warnings <- lapply(mockery::mock_args(rec), `[[`, 1L)
 
   expect_length(warnings, 2)
   expect_match(warnings[[1]], "splash.image", fixed = TRUE)

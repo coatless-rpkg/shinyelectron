@@ -112,15 +112,15 @@ test_that("e2e: r-shiny container export warns but succeeds", {
   on.exit(unlink(c(d, o), TRUE))
   writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})", file.path(d, "app.R"))
   call_export <- function() {
-    r <<- export(d, o, app_type = "r-shiny", runtime_strategy = "container",
-                 sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
+    export(d, o, app_type = "r-shiny", runtime_strategy = "container",
+           sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
   }
   r <- NULL
   if (is.null(detect_container_engine())) {
     # No docker/podman on the build machine: the missing-engine warning fires.
-    expect_warning(call_export(), "Container engine not available")
+    expect_warning(r <- call_export(), "Container engine not available")
   } else {
-    call_export()
+    r <- call_export()
   }
   expect_true(!is.null(r$converted_app))
 })
@@ -133,14 +133,14 @@ test_that("e2e: py-shiny container export warns but succeeds", {
   writeLines("from shiny import App, ui\napp=App(ui.page_fluid(),None)", file.path(d, "app.py"))
   writeLines("shiny", file.path(d, "requirements.txt"))
   call_export <- function() {
-    r <<- export(d, o, app_type = "py-shiny", runtime_strategy = "container",
-                 sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
+    export(d, o, app_type = "py-shiny", runtime_strategy = "container",
+           sign = FALSE, build = FALSE, overwrite = TRUE, verbose = FALSE)
   }
   r <- NULL
   if (is.null(detect_container_engine())) {
-    expect_warning(call_export(), "Container engine not available")
+    expect_warning(r <- call_export(), "Container engine not available")
   } else {
-    call_export()
+    r <- call_export()
   }
   expect_true(!is.null(r$converted_app))
 })

@@ -164,10 +164,8 @@ test_that("sitrep_electron_build_tools records issue when xcode missing on mac",
 })
 
 test_that("sitrep_electron_build_tools returns correct structure on linux", {
-  call_n <- 0L
   mockery::stub(sitrep_electron_build_tools, "detect_current_platform", function() "linux")
   mockery::stub(sitrep_electron_build_tools, "run_command_safe", function(...) {
-    call_n <<- call_n + 1L
     fake_run_ok("gcc (Ubuntu 11) 11.4.0")
   })
 
@@ -187,11 +185,9 @@ test_that("sitrep_electron_system returns new_sitrep_results structure", {
   mockery::stub(sitrep_electron_system, "get_node_command", function(...) "node")
   mockery::stub(sitrep_electron_system, "get_npm_command", function(...) "npm")
 
-  call_n <- 0L
-  mockery::stub(sitrep_electron_system, "run_command_safe", function(...) {
-    call_n <<- call_n + 1L
-    if (call_n == 1L) fake_run_ok("v22.10.0") else fake_run_ok("11.5.0")
-  })
+  # First call checks node, second checks npm
+  mockery::stub(sitrep_electron_system, "run_command_safe",
+                mockery::mock(fake_run_ok("v22.10.0"), fake_run_ok("11.5.0")))
 
   mockery::stub(sitrep_electron_system, "find_python_command", function() NULL)
   mockery::stub(sitrep_electron_system, "detect_container_engine", function(...) NULL)
@@ -213,11 +209,9 @@ test_that("sitrep_electron_system has expected extra fields", {
   mockery::stub(sitrep_electron_system, "get_node_command", function(...) "node")
   mockery::stub(sitrep_electron_system, "get_npm_command", function(...) "npm")
 
-  call_n <- 0L
-  mockery::stub(sitrep_electron_system, "run_command_safe", function(...) {
-    call_n <<- call_n + 1L
-    if (call_n == 1L) fake_run_ok("v22.10.0") else fake_run_ok("11.5.0")
-  })
+  # First call checks node, second checks npm
+  mockery::stub(sitrep_electron_system, "run_command_safe",
+                mockery::mock(fake_run_ok("v22.10.0"), fake_run_ok("11.5.0")))
 
   mockery::stub(sitrep_electron_system, "find_python_command", function() NULL)
   mockery::stub(sitrep_electron_system, "detect_container_engine", function(...) NULL)
@@ -236,11 +230,9 @@ test_that("sitrep_electron_system records node as installed on success", {
   mockery::stub(sitrep_electron_system, "get_node_command", function(...) "node")
   mockery::stub(sitrep_electron_system, "get_npm_command", function(...) "npm")
 
-  call_n <- 0L
-  mockery::stub(sitrep_electron_system, "run_command_safe", function(...) {
-    call_n <<- call_n + 1L
-    if (call_n == 1L) fake_run_ok("v22.10.0") else fake_run_ok("11.5.0")
-  })
+  # First call checks node, second checks npm
+  mockery::stub(sitrep_electron_system, "run_command_safe",
+                mockery::mock(fake_run_ok("v22.10.0"), fake_run_ok("11.5.0")))
 
   mockery::stub(sitrep_electron_system, "find_python_command", function() NULL)
   mockery::stub(sitrep_electron_system, "detect_container_engine", function(...) NULL)
@@ -279,11 +271,9 @@ test_that("sitrep_electron_system records issue when node version too old", {
   mockery::stub(sitrep_electron_system, "get_node_command", function(...) "node")
   mockery::stub(sitrep_electron_system, "get_npm_command", function(...) "npm")
 
-  call_n <- 0L
-  mockery::stub(sitrep_electron_system, "run_command_safe", function(...) {
-    call_n <<- call_n + 1L
-    if (call_n == 1L) fake_run_ok("v18.0.0") else fake_run_ok("11.5.0")
-  })
+  # First call checks node, second checks npm
+  mockery::stub(sitrep_electron_system, "run_command_safe",
+                mockery::mock(fake_run_ok("v18.0.0"), fake_run_ok("11.5.0")))
 
   mockery::stub(sitrep_electron_system, "find_python_command", function() NULL)
   mockery::stub(sitrep_electron_system, "detect_container_engine", function(...) NULL)
@@ -302,11 +292,9 @@ test_that("sitrep_electron_system sets r_version from running R", {
   mockery::stub(sitrep_electron_system, "get_node_command", function(...) "node")
   mockery::stub(sitrep_electron_system, "get_npm_command", function(...) "npm")
 
-  call_n <- 0L
-  mockery::stub(sitrep_electron_system, "run_command_safe", function(...) {
-    call_n <<- call_n + 1L
-    if (call_n == 1L) fake_run_ok("v22.10.0") else fake_run_ok("11.5.0")
-  })
+  # First call checks node, second checks npm
+  mockery::stub(sitrep_electron_system, "run_command_safe",
+                mockery::mock(fake_run_ok("v22.10.0"), fake_run_ok("11.5.0")))
 
   mockery::stub(sitrep_electron_system, "find_python_command", function() NULL)
   mockery::stub(sitrep_electron_system, "detect_container_engine", function(...) NULL)
@@ -391,7 +379,7 @@ test_that("sitrep_shinyelectron returns invisibly", {
 
 test_that("sitrep_shinyelectron passes project_dir to sitrep_electron_project", {
   minimal <- list(issues = character(0), recommendations = character(0))
-  captured_dir <- NULL
+  project_rec <- mockery::mock(minimal)
 
   mockery::stub(sitrep_shinyelectron, "sitrep_electron_system",
                 function(...) minimal)
@@ -401,10 +389,9 @@ test_that("sitrep_shinyelectron passes project_dir to sitrep_electron_project", 
                 function(...) minimal)
   mockery::stub(sitrep_shinyelectron, "sitrep_electron_project",
                 function(project_dir, ...) {
-                  captured_dir <<- project_dir
-                  minimal
+                  project_rec(project_dir = project_dir)
                 })
 
   sitrep_shinyelectron(project_dir = "/my/test/dir", verbose = FALSE)
-  expect_equal(captured_dir, "/my/test/dir")
+  expect_equal(mockery::mock_args(project_rec)[[1]]$project_dir, "/my/test/dir")
 })

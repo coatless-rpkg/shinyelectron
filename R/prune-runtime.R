@@ -139,9 +139,8 @@ prune_bundled_r_runtime <- function(runtime_dir, verbose = TRUE) {
   if (!is_real_dir(runtime_dir)) {
     return(invisible(total))
   }
-  add <- function(res) {
-    total$files <<- total$files + res$files
-    total$bytes <<- total$bytes + res$bytes
+  add <- function(total, res) {
+    list(files = total$files + res$files, bytes = total$bytes + res$bytes)
   }
 
   allow <- .r_prune_allowlist
@@ -149,14 +148,15 @@ prune_bundled_r_runtime <- function(runtime_dir, verbose = TRUE) {
   r_homes <- r_homes[startsWith(fs::path_file(r_homes), "portable-r-")]
 
   for (r_home in r_homes) {
-    add(prune_r_paths(r_home, dir_names = allow$r_home_dirs))
-    add(prune_r_paths(fs::path(r_home, "doc"), allow$doc_dirs, allow$doc_files))
+    total <- add(total, prune_r_paths(r_home, dir_names = allow$r_home_dirs))
+    total <- add(total, prune_r_paths(fs::path(r_home, "doc"), allow$doc_dirs,
+                                      allow$doc_files))
   }
 
   libraries <- c(fs::path(runtime_dir, "library"), fs::path(r_homes, "library"))
   for (lib in libraries[is_real_dir(libraries)]) {
     for (pkg_dir in fs::dir_ls(lib, type = "directory")) {
-      add(prune_r_paths(pkg_dir, dir_names = allow$package_dirs))
+      total <- add(total, prune_r_paths(pkg_dir, dir_names = allow$package_dirs))
     }
   }
 

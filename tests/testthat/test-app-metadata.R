@@ -99,16 +99,11 @@ test_that("an author map gives the About dialog a name and an Email button", {
 
 test_that("process_templates warns once about a malformed author", {
   out <- withr::local_tempdir()
-  warnings <- character(0)
-  withCallingHandlers(
+  warnings <- testthat::capture_warnings(
     process_templates(
       out, "Test App", "r-shiny", runtime_strategy = "system",
       config = list(app = list(author = c("Jane", "Joe"))), verbose = FALSE
-    ),
-    warning = function(w) {
-      warnings <<- c(warnings, conditionMessage(w))
-      invokeRestart("muffleWarning")
-    }
+    )
   )
   expect_length(grep("app.author", warnings, fixed = TRUE), 1)
   expect_equal(jsonlite::fromJSON(file.path(out, "package.json"))$author, "")

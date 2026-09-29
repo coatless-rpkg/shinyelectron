@@ -48,7 +48,7 @@ sitrep_electron_project <- function(project_dir = ".", verbose = TRUE) {
   results$package_json$exists <- fs::file_exists(package_json_path)
 
   if (results$package_json$exists) {
-    tryCatch({
+    parse_error <- tryCatch({
       package_json <- jsonlite::fromJSON(package_json_path, simplifyVector = FALSE)
       results$package_json$valid <- TRUE
       results$package_json$content <- package_json
@@ -80,15 +80,14 @@ sitrep_electron_project <- function(project_dir = ".", verbose = TRUE) {
           cli::cli_alert_warning("Build scripts: Missing {length(missing_scripts)} script{?s}")
         }
       }
-
-    }, error = function(e) {
-      # Use <<- so the issue persists to the outer results (an assignment with
-      # <- inside this handler would only modify a local copy).
-      results$issues <<- c(results$issues, "Invalid package.json")
+      NULL
+    }, error = identity)
+    if (!is.null(parse_error)) {
+      results$issues <- c(results$issues, "Invalid package.json")
       if (verbose) {
         cli::cli_alert_danger("package.json: Invalid JSON")
       }
-    })
+    }
   } else {
     results$issues <- c(results$issues, "No package.json found")
     if (verbose) {
