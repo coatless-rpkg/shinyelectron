@@ -14,7 +14,6 @@ class NativePyBackend extends EventEmitter {
   constructor() {
     super();
     this.pyProcess = null;
-    this.stopping = false;
   }
 
   /**
@@ -190,7 +189,6 @@ class NativePyBackend extends EventEmitter {
    * @returns {Promise<{port: number}>} Resolves when the Shiny server is ready.
    */
   async start({ appPath, port, config }) {
-    this.stopping = false;
     // Clear only this backend's one-shot interactive handlers from a prior
     // start(); do NOT removeAllListeners(), which would also wipe the main
     // process's 'status'/'error' subscribers and freeze the lifecycle UI.
@@ -496,13 +494,11 @@ class NativePyBackend extends EventEmitter {
       });
 
       child.on('close', (code) => {
-        // Ignore events from a previous child generation (retry or multi-app
-        // switch): a stale close must not clear the new handle or report a crash.
+        // Ignore a child that is no longer current: stop() clears the handle
+        // before killing it, and a retry or multi-app switch replaces it, so
+        // an intentional kill or a stale close never reports a crash.
         if (this.pyProcess !== child) return;
         this.pyProcess = null;
-        // Intentional shutdown (stop()/quit) kills the child, which exits
-        // non-zero; do not report that as a crash.
-        if (this.stopping) return;
         if (code !== null && code !== 0) {
           const msg = `Python process exited unexpectedly (code ${code})`;
           console.error(msg);
@@ -548,7 +544,6 @@ class NativePyBackend extends EventEmitter {
    * Stop the native Python Shiny server.
    */
   stop() {
-    this.stopping = true;
     if (this.pyProcess) {
       logDebug('Stopping Python Shiny server...');
       this.emit('status', { phase: 'stopping_server', message: 'Stopping Python Shiny server...' });
