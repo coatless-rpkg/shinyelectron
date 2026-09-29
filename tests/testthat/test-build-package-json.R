@@ -173,3 +173,26 @@ test_that("generate_package_json falls back to slug description and name product
   expect_equal(parsed$author, "")
   expect_equal(parsed$build$productName, "Display Name")
 })
+
+test_that("installer file names come from the slug and include the architecture", {
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "native-r", list(), app_name = "My App"),
+    simplifyVector = FALSE
+  )
+  expect_equal(parsed$build$artifactName, "${name}-${version}-${arch}.${ext}")
+  expect_equal(parsed$build$win$artifactName, "${name}-Setup-${version}-${arch}.${ext}")
+  for (pattern in c(parsed$build$artifactName, parsed$build$win$artifactName)) {
+    expect_match(pattern, "${name}", fixed = TRUE)
+    expect_match(pattern, "${arch}", fixed = TRUE)
+  }
+})
+
+test_that("the Windows executable keeps the slug while productName shows the app name", {
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "native-r", list(), app_name = "My App"),
+    simplifyVector = FALSE
+  )
+  expect_equal(parsed$build$productName, "My App")
+  expect_equal(parsed$build$win$executableName, "my-app")
+  expect_equal(parsed$build$win$target, "nsis")
+})

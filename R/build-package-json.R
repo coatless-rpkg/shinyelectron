@@ -73,18 +73,16 @@ generate_package_json <- function(app_slug, app_version, backend, config,
     pkg$dependencies <- deps
   }
 
-  # Resolve the display name once and derive a GitHub-safe artifact prefix
-  # from it. GitHub Releases rewrites spaces in asset names and electron-updater
-  # builds the download URL from latest.yml's path, so a product name with
-  # spaces (possible for a custom display name) would 404 the update.
-  product_name <- app_name %||% app_slug
-  product_name_safe <- gsub("[^A-Za-z0-9._-]+", "-", product_name)
-
-  # Build configuration
+  # Build configuration. The display name labels the installed app (the
+  # macOS .app, the Windows shortcuts and uninstall entry); file names keep
+  # the slug.
   build_config <- list(
     appId = config$installer$app_id %||% paste0("com.shinyelectron.", app_slug),
-    productName = product_name,
-    artifactName = paste0(product_name_safe, "-Setup-${version}.${ext}"),
+    productName = app_name %||% app_slug,
+    # ${name} is the package.json name, the slug, so installer names are safe
+    # for GitHub Releases. ${arch} keeps the build of each architecture, all
+    # written to the same dist/, from overwriting another.
+    artifactName = "${name}-${version}-${arch}.${ext}",
     directories = list(output = "dist")
   )
   # The copyright goes into the Windows file properties and the macOS
@@ -123,8 +121,14 @@ generate_package_json <- function(app_slug, app_version, backend, config,
     build_config$asarUnpack <- unpack
   }
 
-  # Platform targets
-  win_config <- list(target = "nsis")
+  # Platform targets. On Windows the executable, and with it the install
+  # folder, keeps the slug, so renaming the app does not break pinned
+  # shortcuts or move existing installs; the installer name adds "Setup".
+  win_config <- list(
+    target = "nsis",
+    executableName = app_slug,
+    artifactName = "${name}-Setup-${version}-${arch}.${ext}"
+  )
   mac_config <- list(target = "dmg")
   linux_config <- list(target = "AppImage")
 
