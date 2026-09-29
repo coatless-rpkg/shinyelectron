@@ -51,6 +51,15 @@ test_that("sitrep_electron_dependencies required list contains cli entry", {
   expect_true(isTRUE(result$required$cli$installed))
 })
 
+test_that("sitrep_electron_dependencies checks every non-base package in Imports", {
+  imports <- utils::packageDescription("shinyelectron", fields = "Imports")
+  imports <- trimws(sub("\\(.*$", "", strsplit(imports, ",")[[1]]))
+
+  result <- sitrep_electron_dependencies(verbose = FALSE)
+
+  expect_contains(names(result$required), setdiff(imports, BASE_R_PACKAGES))
+})
+
 # ---------------------------------------------------------------------------
 # sitrep_electron_project
 # ---------------------------------------------------------------------------
@@ -306,8 +315,41 @@ test_that("sitrep_electron_system sets r_version from running R", {
   result <- sitrep_electron_system(verbose = FALSE)
 
   expect_true(nzchar(result$r_version))
-  # Running R 4.6.0 which is >= 4.4.0; should not add an R-version issue
+  # The running R satisfies Depends (shinyelectron could not load otherwise),
+  # so it should not add an R-version issue
   expect_false(any(grepl("R version too old", result$issues)))
+})
+
+test_that("sitrep_electron_system flags R older than the Depends floor", {
+  mockery::stub(sitrep_electron_system, "detect_current_platform", function() "mac")
+  mockery::stub(sitrep_electron_system, "detect_current_arch", function() "arm64")
+  mockery::stub(sitrep_electron_system, "nodejs_list_installed", function() character(0))
+  mockery::stub(sitrep_electron_system, "get_node_command", function(...) "node")
+  mockery::stub(sitrep_electron_system, "get_npm_command", function(...) "npm")
+  mockery::stub(sitrep_electron_system, "run_command_safe", function(command, ...) {
+    if (command == "node") fake_run_ok("v22.10.0") else fake_run_ok("11.5.0")
+  })
+  mockery::stub(sitrep_electron_system, "find_python_command", function() NULL)
+  mockery::stub(sitrep_electron_system, "detect_container_engine", function(...) NULL)
+  mockery::stub(sitrep_electron_system, "cache_dir", function(...) "/nonexistent/cache/path")
+
+  r_version <- NULL
+  mockery::stub(sitrep_electron_system, "getRversion", function() numeric_version(r_version))
+
+  depends <- utils::packageDescription("shinyelectron", fields = "Depends")
+  r_floor <- sub(".*R \\(>= *([0-9.]+)\\).*", "\\1", depends)
+  expect_match(r_floor, "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+
+  # R 4.4 cannot install shinyelectron, so the report must not pass it
+  r_version <- "4.4.3"
+  old <- sitrep_electron_system(verbose = FALSE)
+  expect_equal(old$r_version, "4.4.3")
+  expect_contains(old$issues, "R version too old")
+  expect_contains(old$recommendations, paste("Update R to version", r_floor, "or higher"))
+
+  r_version <- r_floor
+  current <- sitrep_electron_system(verbose = FALSE)
+  expect_false("R version too old" %in% current$issues)
 })
 
 # ---------------------------------------------------------------------------

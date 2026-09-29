@@ -1,5 +1,62 @@
 # shinyelectron (development version)
 
+* shinyelectron now requires R 4.5.0 or newer, since it verifies downloaded
+  runtimes with `tools::sha256sum()`, which was added in R 4.5.0. The README
+  and `sitrep_electron_system()` now report this minimum. Apps built with the
+  `system` strategy still accept R 4.4.0 or newer on the end user's machine.
+
+* shinyelectron now imports rlang. cli builds `cli_abort()` and `cli_warn()` on
+  rlang but only suggests it. Without rlang installed, errors from
+  `cli_abort()` showed "there is no package called 'rlang'" instead of their
+  own message, and warnings from `cli_warn()` became that same error, stopping
+  operations meant to continue, such as a Node.js install whose checksum list
+  could not be downloaded.
+
+* The situation reports (`sitrep_shinyelectron()` and friends) no longer
+  report Node.js, npm or Python as missing when the withr package is not
+  installed. withr is only a suggested dependency, and the probe used to fail
+  without it.
+
+* The Security Considerations guide gains a "Secrets and per-user credentials"
+  section. It covers which environment variables and `.Renviron` files reach an
+  app's R, Python, or container process, and how to give each user their own
+  token without bundling it.
+
+* Keys in `_shinyelectron.yml` that shinyelectron does not recognize, such as a
+  misspelled `widht` or a key placed in the wrong section, now trigger a
+  warning of class `shinyelectron_unknown_config_key` that names each one by
+  its dotted path (for example `window.widht`). They were previously ignored
+  without notice.
+
+* The top-level `logging` section documented in the Configuration Guide now
+  takes effect; its `log_dir` and `log_level` were previously ignored. If you
+  copied the guide's earlier example, drop its `log_dir: "/var/log/my-app"`
+  line: `log_dir` should be an absolute path that the app's user can write
+  to, and without it logs go to the app's `userData/logs` folder.
+  `app.log_dir` and `app.log_level` still work. When both set a key to
+  different values, `logging` wins with a warning of class
+  `shinyelectron_logging_conflict`. `init_config()` now suggests the
+  `logging` form.
+
+* `init_config()` no longer suggests `nodejs.auto_install`, which has no effect
+  yet.
+
+* App names and other settings that contain quotes or backslashes no longer
+  break the generated app. Settings placed in JavaScript strings in `main.js`
+  or in the splash and preloader page are now escaped, so a name like
+  "Children's Dashboard" or a Windows `log_dir` such as `C:\Users\me\logs`
+  works, and the About and quit dialogs and the tray tooltip show `&` instead
+  of `&amp;`.
+
+* App names and descriptions in a multi-app suite that contain `<!--`
+  followed by `<script>` no longer break the launcher page.
+
+* Help > Documentation opens help URLs with query strings correctly instead
+  of turning `&` into `&amp;`.
+
+* Help > Documentation appears only when `menu.help_url` is set, instead of
+  in every app with a link that opened nothing.
+
 * R and Python apps whose UI takes several seconds to render no longer fail to
   start. The startup check used to request the app's page, which ran the UI
   code on every attempt; it now requests a path the app does not serve, so the
