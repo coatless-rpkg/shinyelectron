@@ -21,6 +21,13 @@ function appendLine(file, line) {
 }
 
 function runApp(appDir, port) {
+  // Exit once the test harness that started us is gone, so a failed test
+  // never leaves a fake server behind.
+  const parent = process.ppid;
+  setInterval(() => {
+    if (process.ppid !== parent) process.exit(0);
+  }, 500).unref();
+
   let mode = { mode: 'serve' };
   try {
     mode = JSON.parse(fs.readFileSync(path.join(appDir, 'fake-mode.json'), 'utf8'));

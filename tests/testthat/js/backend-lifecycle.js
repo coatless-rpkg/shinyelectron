@@ -87,7 +87,7 @@ function within(promise, ms, what) {
     timer = setTimeout(() => reject(new Error(`timed out waiting for ${what}`)), ms);
   });
   return Promise.race([
-    promise.then((value) => ({ ok: true, value }), (error) => ({ ok: false, error })),
+    Promise.resolve(promise).then((value) => ({ ok: true, value }), (error) => ({ ok: false, error })),
     timeout
   ]).finally(() => clearTimeout(timer));
 }
@@ -105,6 +105,15 @@ function assertEqual(actual, expected, message) {
   const a = JSON.stringify(actual);
   const e = JSON.stringify(expected);
   if (a !== e) throw new Error(`${message}: expected ${e}, got ${a}`);
+}
+
+// Every backend a scenario creates, so the runner can stop them all even when
+// a scenario fails halfway.
+const created = [];
+function newBackend(Backend) {
+  const be = new Backend();
+  created.push(be);
+  return be;
 }
 
 const config = (extra) => Object.assign(
@@ -138,7 +147,7 @@ for (const [label, Backend, handle] of [['R', NativeR, 'rProcess'], ['Python', N
   const idleStopPhases = label === 'R' ? ['stopping_server', 'app_exit'] : ['app_exit'];
 
   test(label, `${label}: start() probes readiness without requesting the UI`, async () => {
-    const be = new Backend();
+    const be = newBackend(Backend);
     const { app } = await startRunning(be, handle);
     const requests = requestsOf(app);
     assert(requests.length > 0, 'the server saw the probe');
@@ -147,7 +156,7 @@ for (const [label, Backend, handle] of [['R', NativeR, 'rProcess'], ['Python', N
   });
 
   test(label, `${label}: stop() emits its statuses at once and resolves after the child exits`, async () => {
-    const be = new Backend();
+    const be = newBackend(Backend);
     const events = record(be);
     const { child } = await startRunning(be, handle);
     const mark = events.length;
@@ -164,7 +173,7 @@ for (const [label, Backend, handle] of [['R', NativeR, 'rProcess'], ['Python', N
   });
 
   test(label, `${label}: stop() without a running server`, async () => {
-    const be = new Backend();
+    const be = newBackend(Backend);
     const events = record(be);
     const res = await within(be.stop(), 1000, 'stop() to resolve');
     assert(res.ok, 'stop() resolves');
@@ -172,7 +181,7 @@ for (const [label, Backend, handle] of [['R', NativeR, 'rProcess'], ['Python', N
   });
 
   test(label, `${label}: a crash of the current child is reported`, async () => {
-    const be = new Backend();
+    const be = newBackend(Backend);
     const events = record(be);
     const app = makeApp({ mode: 'crash' });
     const res = await within(
@@ -186,7 +195,7 @@ for (const [label, Backend, handle] of [['R', NativeR, 'rProcess'], ['Python', N
   });
 
   test(label, `${label}: a startup timeout ends on the error status`, async () => {
-    const be = new Backend();
+    const be = newBackend(Backend);
     const events = record(be);
     const app = makeApp({ mode: 'hang' });
     const p = handled(be.start({ appPath: app, port: await freePort(), config: config({ startup_timeout: 1200 }) }));
@@ -207,7 +216,7 @@ for (const [label, Backend, handle] of [['R', NativeR, 'rProcess'], ['Python', N
   });
 
   test(label, `${label}: stop() during startup keeps the start from spawning`, async () => {
-    const be = new Backend();
+    const be = newBackend(Backend);
     const events = record(be);
     const app = makeApp({ mode: 'serve' });
     const p = handled(be.start({ appPath: app, port: await freePort(), config: config({ startup_timeout: 10000 }) }));
@@ -222,7 +231,7 @@ for (const [label, Backend, handle] of [['R', NativeR, 'rProcess'], ['Python', N
   });
 
   test(label, `${label}: stop() during the readiness wait settles the start quietly`, async () => {
-    const be = new Backend();
+    const be = newBackend(Backend);
     const events = record(be);
     const app = makeApp({ mode: 'hang' });
     const p = handled(be.start({ appPath: app, port: await freePort(), config: config({ startup_timeout: 10000 }) }));
@@ -237,7 +246,7 @@ for (const [label, Backend, handle] of [['R', NativeR, 'rProcess'], ['Python', N
   });
 
   test(label, `${label}: a superseded start leaves the next server alone`, async () => {
-    const be = new Backend();
+    const be = newBackend(Backend);
     const events = record(be);
     const appA = makeApp({ mode: 'hang' });
     const t0 = Date.now();
@@ -255,7 +264,7 @@ for (const [label, Backend, handle] of [['R', NativeR, 'rProcess'], ['Python', N
   });
 
   test(label, `${label}: a newer start() stops the child of the start it replaces`, async () => {
-    const be = new Backend();
+    const be = newBackend(Backend);
     const appA = makeApp({ mode: 'hang' });
     const a = handled(be.start({ appPath: appA, port: await freePort(), config: config({ startup_timeout: 10000 }) }));
     const childA = await waitFor(() => be[handle], 10000, 'A to spawn');
@@ -269,7 +278,7 @@ for (const [label, Backend, handle] of [['R', NativeR, 'rProcess'], ['Python', N
 }
 
 test('R', 'stop() does not wait for helpers holding the child\'s output open', async () => {
-  const be = new NativeR();
+  const be = newBackend(NativeR);
   const { app, child } = await startRunning(be, 'rProcess', { holdStdio: 5000 });
   let closed = false;
   child.once('close', () => { closed = true; });
@@ -357,6 +366,9 @@ test('probe', 'waitForServer stops polling once cancelled', async () => {
     }
   }));
   fs.writeFileSync(resultsFile, JSON.stringify(results, null, 1));
+  try {
+    await within(Promise.all(created.map((be) => be.stop())), 5000, 'backends to stop');
+  } catch { /* the fake runtimes also exit on their own once we are gone */ }
   try { fs.rmSync(work, { recursive: true, force: true }); } catch { /* best effort */ }
   process.exit(0);
 })();
