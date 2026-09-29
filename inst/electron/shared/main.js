@@ -17,11 +17,11 @@ const fs = require('fs');
 const backend = require('./backends/{{backend_module}}');
 
 // File logging -- writes to configured log directory or app userData
-const LOG_LEVEL = '{{log_level}}';
+const LOG_LEVEL = '{{{log_level_js}}}';
 const LOG_LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
 const LOG_THRESHOLD = LOG_LEVEL in LOG_LEVELS ? LOG_LEVELS[LOG_LEVEL] : 1;
 
-const logDir = '{{log_dir}}' || path.join(app.getPath('userData'), 'logs');
+const logDir = '{{{log_dir_js}}}' || path.join(app.getPath('userData'), 'logs');
 let logStream = null;
 
 function initLogging() {
@@ -121,7 +121,7 @@ let trayMenu = null;
 
 {{#tray_enabled}}
 function createTray() {
-  const iconPath = path.join(__dirname, 'assets', '{{#tray_icon}}{{tray_icon}}{{/tray_icon}}{{^tray_icon}}icon.png{{/tray_icon}}');
+  const iconPath = path.join(__dirname, 'assets', '{{#tray_icon}}{{{tray_icon_js}}}{{/tray_icon}}{{^tray_icon}}icon.png{{/tray_icon}}');
 
   let trayIcon;
   if (fs.existsSync(iconPath)) {
@@ -133,7 +133,7 @@ function createTray() {
   }
 
   tray = new Tray(trayIcon);
-  tray.setToolTip('{{tray_tooltip}}');
+  tray.setToolTip('{{{tray_tooltip_js}}}');
 
   trayMenu = Menu.buildFromTemplate([
     {
@@ -226,15 +226,15 @@ function createMenu() {
     {
       label: 'Help',
       submenu: [
-        {{#help_url}}
+        {{#has_help_url}}
         {
           label: 'Documentation',
           click: async () => {
             const { shell } = require('electron');
-            await shell.openExternal('{{help_url}}');
+            await shell.openExternal('{{{help_url_js}}}');
           }
         },
-        {{/help_url}}
+        {{/has_help_url}}
         {
           label: 'View Logs',
           click: () => {
@@ -249,9 +249,9 @@ function createMenu() {
             const { dialog } = require('electron');
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'About {{app_name}}',
-              message: '{{app_name}}',
-              detail: 'Version {{app_version}}\n\nBuilt with shinyelectron'
+              title: 'About {{{app_name_js}}}',
+              message: '{{{app_name_js}}}',
+              detail: 'Version {{{app_version_js}}}\n\nBuilt with shinyelectron'
             });
           }
         }
@@ -347,15 +347,15 @@ function createMenu() {
     {
       label: 'Help',
       submenu: [
-        {{#help_url}}
+        {{#has_help_url}}
         {
           label: 'Documentation',
           click: async () => {
             const { shell } = require('electron');
-            await shell.openExternal('{{help_url}}');
+            await shell.openExternal('{{{help_url_js}}}');
           }
         },
-        {{/help_url}}
+        {{/has_help_url}}
         {
           label: 'View Logs',
           click: () => {
@@ -370,9 +370,9 @@ function createMenu() {
             const { dialog } = require('electron');
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'About {{app_name}}',
-              message: '{{app_name}}',
-              detail: 'Version {{app_version}}\n\nBuilt with shinyelectron'
+              title: 'About {{{app_name_js}}}',
+              message: '{{{app_name_js}}}',
+              detail: 'Version {{{app_version_js}}}\n\nBuilt with shinyelectron'
             });
           }
         }
@@ -570,7 +570,7 @@ function createWindow() {
       else if (data.phase === 'installing_packages') statusText = 'Installing packages...';
       else if (data.phase === 'checking_packages') statusText = 'Checking packages...';
 
-      tray.setToolTip('{{app_name}} - ' + statusText);
+      tray.setToolTip('{{{app_name_js}}} - ' + statusText);
       // Also update the Status menu item label so the context menu reflects
       // the current state (guards against older Electron builds missing
       // getMenuItemById by wrapping in try/catch).
@@ -662,7 +662,7 @@ function createWindow() {
         else if (data.phase === 'finding_runtime') statusText = 'Finding runtime...';
         else if (data.phase === 'installing_packages') statusText = 'Installing packages...';
         else if (data.phase === 'checking_packages') statusText = 'Checking packages...';
-        tray.setToolTip((selectedApp.name || '{{app_name}}') + ' - ' + statusText);
+        tray.setToolTip((selectedApp.name || '{{{app_name_js}}}') + ' - ' + statusText);
         try {
           if (trayMenu) {
             var statusItem = trayMenu.getMenuItemById('status');
@@ -875,7 +875,7 @@ function createWindow() {
         type: 'question',
         buttons: ['Quit', 'Cancel'],
         defaultId: 1,
-        title: 'Close {{app_name}}',
+        title: 'Close {{{app_name_js}}}',
         message: 'Are you sure you want to quit?'
       });
 
@@ -936,7 +936,7 @@ function createWindow() {
 app.whenReady().then(() => {
   initLogging();
   log('info', 'App starting');
-  log('info', 'Version: {{app_version}}');
+  log('info', 'Version: {{{app_version_js}}}');
   log('info', 'App type: {{app_type}}');
   log('info', 'Backend: {{backend_module}}');
   log('info', 'Platform:', process.platform, process.arch);

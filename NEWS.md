@@ -41,6 +41,22 @@
 * `init_config()` no longer suggests `nodejs.auto_install`, which has no effect
   yet.
 
+* App names and other settings that contain quotes or backslashes no longer
+  break the generated app. Settings placed in JavaScript strings in `main.js`
+  or in the splash and preloader page are now escaped, so a name like
+  "Children's Dashboard" or a Windows `log_dir` such as `C:\Users\me\logs`
+  works, and the About and quit dialogs and the tray tooltip show `&` instead
+  of `&amp;`.
+
+* App names and descriptions in a multi-app suite that contain `<!--`
+  followed by `<script>` no longer break the launcher page.
+
+* Help > Documentation opens help URLs with query strings correctly instead
+  of turning `&` into `&amp;`.
+
+* Help > Documentation appears only when `menu.help_url` is set, instead of
+  in every app with a link that opened nothing.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the
