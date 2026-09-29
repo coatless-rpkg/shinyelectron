@@ -161,12 +161,9 @@ generate_package_json <- function(app_slug, app_version, backend, config,
     mac_config$identity <- "-"
   }
 
-  if (!is.null(config$installer$license_file)) {
-    win_config$license <- config$installer$license_file
-  }
-
-  if (!is.null(config$installer$one_click)) {
-    build_config$nsis <- list(oneClick = config$installer$one_click)
+  nsis_config <- build_nsis_config(config)
+  if (length(nsis_config) > 0) {
+    build_config$nsis <- nsis_config
   }
 
   build_config$win <- win_config
@@ -176,4 +173,65 @@ generate_package_json <- function(app_slug, app_version, backend, config,
   pkg$build <- build_config
 
   jsonlite::toJSON(pkg, pretty = TRUE, auto_unbox = TRUE)
+}
+
+#' Build the electron-builder `nsis` block from installer config
+#'
+#' Maps `installer.one_click`, `installer.allow_to_change_installation_directory`
+#' and `installer.per_machine` onto electron-builder's `oneClick`,
+#' `allowToChangeInstallationDirectory` and `perMachine`. Each option is
+#' emitted only when the config sets it, so electron-builder's own defaults
+#' apply otherwise: the one-click installer installs for the current user,
+#' and the wizard (`one_click: false`) asks whether to install for all users
+#' and does not offer a directory page. [validate_config()] has already
+#' checked the values.
+#'
+#' `installer.license_file` becomes the NSIS `license`, pointing at the copy
+#' that [copy_installer_license()] places in the generated project.
+#'
+#' @param config List. The effective configuration.
+#' @return A named list for the package.json `build.nsis` field, empty when
+#'   no installer option is set.
+#' @keywords internal
+build_nsis_config <- function(config) {
+  installer <- config$installer
+  nsis <- list()
+  if (!is.null(installer$one_click)) {
+    nsis$oneClick <- installer$one_click
+  }
+  if (!is.null(installer$allow_to_change_installation_directory)) {
+    nsis$allowToChangeInstallationDirectory <-
+      installer$allow_to_change_installation_directory
+  }
+  if (!is.null(installer$per_machine)) {
+    nsis$perMachine <- installer$per_machine
+  }
+  if (!is.null(installer$license_file)) {
+    nsis$license <- installer_license_path(installer$license_file)
+  }
+  nsis
+}
+
+#' Project path of the Windows installer license
+#'
+#' The license file is copied into the generated project's build resources
+#' under a fixed name. Names that electron-builder finds on its own, such as
+#' `license.txt` or `eula.txt`, are avoided because they would also add the
+#' license to other targets, for example as a Linux AppImage EULA. The
+#' extension is kept (lowercased) since electron-builder shows `.html`
+#' licenses differently from plain text and RTF. electron-builder only
+#' recognizes the `.html` suffix, so `.htm` becomes `.html`; a file without
+#' an extension is treated as plain text.
+#'
+#' @param license_file Character. Path to the license file.
+#' @return Character. The license path relative to the Electron project.
+#' @keywords internal
+installer_license_path <- function(license_file) {
+  ext <- tolower(tools::file_ext(license_file))
+  if (!nzchar(ext)) {
+    ext <- "txt"
+  } else if (ext == "htm") {
+    ext <- "html"
+  }
+  paste0("build/installer-license.", ext)
 }
