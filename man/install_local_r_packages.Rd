@@ -53,7 +53,11 @@ The build, the install and the check run with the caller's environment plus
 \code{R_LIBS}, \code{R_LIBS_USER} and \code{R_LIBS_SITE} set to the bundled library.
 \code{R_LIBS_SITE} is the one that matters: the portable R's \code{Rprofile.site}
 resets \code{.libPaths()} to its own library plus the site library, including in
-the child processes of \verb{R CMD build} and \verb{R CMD INSTALL}.
+the child processes of \verb{R CMD build} and \verb{R CMD INSTALL}. These processes
+read no user environ file or user profile and ignore inherited \code{R_ENVIRON}
+and \code{R_PROFILE} settings, so startup files meant for the calling R (such as
+the ones callr passes down, or a project profile that activates renv) cannot
+point the library paths elsewhere; each R still reads its own site files.
 
 On Windows hosts the install adds \code{--no-staged-install --no-clean-on-error}.
 There the bundled R's lazy-load step can crash while exiting, after it has

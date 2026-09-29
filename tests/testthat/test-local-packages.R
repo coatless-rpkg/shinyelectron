@@ -443,7 +443,7 @@ test_that("local installs keep the caller's environment and use the unstaged ins
 
   mockery::stub(install_local_r_package, "detect_current_platform", function() "mac")
   install_local_r_package("Rscript", "pkg", "pkg_0.0.1.tar.gz", lib, verbose = FALSE)
-  expect_equal(captured$env[[1]], "current")
+  expect_equal(captured$env[["PATH"]], Sys.getenv("PATH"))
   expect_equal(captured$env[["R_LIBS_SITE"]], lib)
   expect_false(grepl("--no-staged-install", captured$args[[2]], fixed = TRUE))
 
@@ -453,15 +453,25 @@ test_that("local installs keep the caller's environment and use the unstaged ins
   expect_match(captured$args[[2]], "--no-clean-on-error", fixed = TRUE)
 })
 
-test_that("local install failures point out library settings in the user environ file", {
-  renviron <- withr::local_tempfile(lines = c("# personal settings", "R_LIBS_SITE=/opt/site-library"))
-  withr::local_envvar(R_ENVIRON_USER = renviron)
-  hint <- local_r_renviron_hint()
-  expect_named(hint, "i")
-  expect_match(hint, "R_LIBS_SITE", fixed = TRUE)
+test_that("local_r_env keeps the caller's environment but not its R startup file overrides", {
+  startup <- file.path(withr::local_tempdir(),
+                       c("site.Renviron", "site.Rprofile", "user.Renviron", "user.Rprofile"))
+  file.create(startup)
+  withr::local_envvar(
+    R_ENVIRON = startup[[1]], R_PROFILE = startup[[2]],
+    R_ENVIRON_USER = startup[[3]], R_PROFILE_USER = startup[[4]],
+    R_LIBS_SITE = "/elsewhere/site-library", SHINYELECTRON_TEST_VAR = "kept"
+  )
 
-  writeLines("LANG=en_US.UTF-8", renviron)
-  expect_null(local_r_renviron_hint())
+  env <- local_r_env("/abs/lib")
+
+  expect_false(any(c("R_ENVIRON", "R_PROFILE") %in% names(env)))
+  expect_false(anyDuplicated(names(env)) > 0)
+  # The user files point at paths that do not exist, so R reads none.
+  expect_false(file.exists(env[["R_ENVIRON_USER"]]))
+  expect_false(file.exists(env[["R_PROFILE_USER"]]))
+  expect_equal(unname(env[c("R_LIBS", "R_LIBS_USER", "R_LIBS_SITE")]), rep("/abs/lib", 3))
+  expect_equal(env[["SHINYELECTRON_TEST_VAR"]], "kept")
 })
 
 test_that("a timed-out local install fails and leaves no lock directory", {
@@ -561,6 +571,40 @@ test_that("a help page that needs a local dependency at build time builds with t
   rscript <- r_executable(SHINYELECTRON_DEFAULTS$runtime_versions$r, platform,
                           detect_current_arch())
   skip_if(is.null(rscript), "The portable R is not cached")
+  expect_build_time_dependency_install(rscript)
+})
+
+test_that("the caller's R startup files cannot hide the bundled library", {
+  skip_on_cran()
+  rscript <- local_test_rscript()
+  dir <- withr::local_tempdir()
+  elsewhere <- normalizePath(withr::local_tempdir(), winslash = "/")
+  path <- function(...) normalizePath(file.path(dir, ...), winslash = "/", mustWork = FALSE)
+  # A user environ file that points every library variable elsewhere.
+  writeLines(paste0(c("R_LIBS", "R_LIBS_USER", "R_LIBS_SITE"), "=", elsewhere),
+             path("user.Renviron"))
+  # Startup files like the ones callr hands to the R it starts, which on
+  # Windows reach every descendant: the site environ file selects a site
+  # profile that empties the site library and puts another library first.
+  writeLines(c(
+    ".Library.site <- character(0)",
+    ".libPaths(.libPaths())",
+    sprintf(".libPaths('%s')", elsewhere)
+  ), path("site.Rprofile"))
+  writeLines(paste0("R_PROFILE=", path("site.Rprofile")), path("site.Renviron"))
+  # A user profile that switches to a project library, as renv does, for this
+  # R and the ones it starts.
+  writeLines(c(
+    sprintf("Sys.setenv(R_LIBS = '%1$s', R_LIBS_USER = '%1$s', R_LIBS_SITE = '%1$s')", elsewhere),
+    sprintf(".libPaths('%s')", elsewhere)
+  ), path("user.Rprofile"))
+  withr::local_envvar(
+    R_ENVIRON = path("site.Renviron"),
+    R_ENVIRON_USER = path("user.Renviron"),
+    R_PROFILE = path("site.Rprofile"),
+    R_PROFILE_USER = path("user.Rprofile")
+  )
+
   expect_build_time_dependency_install(rscript)
 })
 

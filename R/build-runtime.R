@@ -571,7 +571,11 @@ local_r_install_order <- function(info) {
 #' `R_LIBS`, `R_LIBS_USER` and `R_LIBS_SITE` set to the bundled library.
 #' `R_LIBS_SITE` is the one that matters: the portable R's `Rprofile.site`
 #' resets `.libPaths()` to its own library plus the site library, including in
-#' the child processes of `R CMD build` and `R CMD INSTALL`.
+#' the child processes of `R CMD build` and `R CMD INSTALL`. These processes
+#' read no user environ file or user profile and ignore inherited `R_ENVIRON`
+#' and `R_PROFILE` settings, so startup files meant for the calling R (such as
+#' the ones callr passes down, or a project profile that activates renv) cannot
+#' point the library paths elsewhere; each R still reads its own site files.
 #'
 #' On Windows hosts the install adds `--no-staged-install --no-clean-on-error`.
 #' There the bundled R's lazy-load step can crash while exiting, after it has
@@ -624,8 +628,29 @@ install_local_r_packages <- function(rscript, local_packages, lib_path,
 # Environment for the R processes that build, install and load-check local
 # packages: the caller's environment (PATH, HOME, TMPDIR, Makevars settings)
 # with the bundled library as the user and site library.
+#
+# R applies its startup files on top of the environment it starts with, so
+# they must not be able to point the library paths elsewhere. The caller has
+# already applied its own startup files, so the children skip the user
+# environ file and the user profile (R reads none when the variable names a
+# file that does not exist; R CMD check uses R_ENVIRON_USER='no_such_file' on
+# Windows for the same reason) and drop inherited R_ENVIRON and R_PROFILE
+# overrides, so each R reads its own site files. callr sets all four for the R
+# it starts. On Unix an R started with --vanilla, as R CMD check runs tests,
+# exports them as empty strings, but on Windows they reach every descendant,
+# and callr's profiles empty .Library.site and put the calling R's library
+# first. A project profile that activates renv also changes the library paths.
 local_r_env <- function(lib) {
-  c("current", R_LIBS = lib, R_LIBS_USER = lib, R_LIBS_SITE = lib)
+  env <- Sys.getenv()
+  env <- stats::setNames(as.character(env), names(env))
+  set <- c(
+    R_LIBS = lib, R_LIBS_USER = lib, R_LIBS_SITE = lib,
+    R_ENVIRON_USER = file.path(tempdir(), "no-user-Renviron"),
+    R_PROFILE_USER = file.path(tempdir(), "no-user-Rprofile")
+  )
+  drop <- c("R_ENVIRON", "R_PROFILE", names(set))
+  key <- if (.Platform$OS.type == "windows") toupper else identity
+  c(env[!key(names(env)) %in% key(drop)], set)
 }
 
 # Build a source tarball of a local package folder into `build_dir` with the R
@@ -662,7 +687,6 @@ build_local_r_package <- function(pkg, rscript, build_dir, env,
         c("x" = "{.code R CMD build} did not finish within {local_r_duration(timeout)}.")
       },
       local_r_output_bullets(result$stdout, "Last lines of the {.code R CMD build} output:"),
-      local_r_renviron_hint(build_dir),
       local_r_verbose_hint(verbose)
     ), class = "shinyelectron_local_packages_build")
   }
@@ -717,7 +741,6 @@ install_local_r_package <- function(rscript, pkg, source, lib,
     cli::cli_abort(c(
       "Installing local R package {.pkg {pkg}} did not finish within {local_r_duration(timeout)}.",
       install_output,
-      local_r_renviron_hint(),
       local_r_verbose_hint(verbose)
     ), class = "shinyelectron_local_packages_install")
   }
@@ -737,7 +760,6 @@ install_local_r_package <- function(rscript, pkg, source, lib,
       if (check$timeout) {
         c("x" = "Loading did not finish within {local_r_duration(check$limit)}.")
       },
-      local_r_renviron_hint(),
       local_r_verbose_hint(verbose)
     ), class = "shinyelectron_local_packages_install")
   }
@@ -783,30 +805,6 @@ local_r_output_bullets <- function(text, heading, n = 25) {
   }
   lines <- gsub("}", "}}", gsub("{", "{{", lines, fixed = TRUE), fixed = TRUE)
   c(c("x" = heading), stats::setNames(lines, rep(" ", length(lines))))
-}
-
-# A hint for failure messages when the user environ file that R reads in `wd`
-# sets a library variable. R applies that file on top of the environment it
-# starts with, so the setting replaces the bundled library in these processes.
-local_r_renviron_hint <- function(wd = getwd()) {
-  file <- Sys.getenv("R_ENVIRON_USER")
-  if (!nzchar(file)) {
-    file <- file.path(wd, ".Renviron")
-    if (!file.exists(file)) file <- file.path(path.expand("~"), ".Renviron")
-  }
-  if (!file.exists(file)) {
-    return(NULL)
-  }
-  lines <- tryCatch(readLines(file, warn = FALSE), error = function(e) character(0))
-  set <- grep("^\\s*R_LIBS(_USER|_SITE)?\\s*=", lines, value = TRUE)
-  if (length(set) == 0) {
-    return(NULL)
-  }
-  vars <- unique(sub("^\\s*(R_LIBS\\w*)\\s*=.*$", "\\1", set))
-  hint <- cli::format_inline(
-    "{.file {file}} sets {.envvar {vars}}, which replaces the bundled library in these R processes."
-  )
-  c("i" = gsub("}", "}}", gsub("{", "{{", hint, fixed = TRUE), fixed = TRUE))
 }
 
 # Points to the full output when it was not shown as it ran.
