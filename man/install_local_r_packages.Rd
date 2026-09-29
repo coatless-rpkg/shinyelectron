@@ -47,7 +47,7 @@ A package counts as installed only when a fresh process of the same
 errors, \code{.onLoad()} failures and timed-out installs, and because it looks
 for a line printed after loading rather than at the exit status, it also
 tolerates the Windows crash described below. On failure the build stops
-with the load error and the path to the install log.
+with the load error and the last lines of the install output.
 
 The build, the install and the check run with the caller's environment plus
 \code{R_LIBS}, \code{R_LIBS_USER} and \code{R_LIBS_SITE} set to the bundled library.

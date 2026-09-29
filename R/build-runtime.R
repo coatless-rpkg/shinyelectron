@@ -549,7 +549,7 @@ local_r_install_order <- function(info) {
 #' errors, `.onLoad()` failures and timed-out installs, and because it looks
 #' for a line printed after loading rather than at the exit status, it also
 #' tolerates the Windows crash described below. On failure the build stops
-#' with the load error and the path to the install log.
+#' with the load error and the last lines of the install output.
 #'
 #' The build, the install and the check run with the caller's environment plus
 #' `R_LIBS`, `R_LIBS_USER` and `R_LIBS_SITE` set to the bundled library.
@@ -645,8 +645,8 @@ build_local_r_package <- function(pkg, rscript, build_dir, env,
       if (isTRUE(result$timeout)) {
         c("x" = "{.code R CMD build} did not finish within {local_r_duration(timeout)}.")
       },
-      "x" = "Last lines of the {.code R CMD build} output:",
-      local_r_output_bullets(result$stdout)
+      local_r_output_bullets(result$stdout, "Last lines of the {.code R CMD build} output:"),
+      local_r_verbose_hint(verbose)
     ), class = "shinyelectron_local_packages_build")
   }
   normalizePath(tarball, winslash = "/")
@@ -692,24 +692,19 @@ install_local_r_package <- function(rscript, pkg, source, lib,
   # A killed or failed install can leave its lock directory behind.
   unlink(list.files(lib, pattern = "^00LOCK", full.names = TRUE), recursive = TRUE)
 
-  log_file <- tempfile(paste0("shinyelectron-install-", pkg, "-"), fileext = ".log")
-  writeLines(c(
-    paste("Package:", pkg), paste("Source:", source),
-    paste("Library:", lib), paste("Rscript:", rscript), "",
-    result$stdout %||% ""
-  ), log_file)
-
+  install_output <- local_r_output_bullets(
+    result$stdout, "Last lines of the {.code R CMD INSTALL} output:"
+  )
   if (isTRUE(result$timeout)) {
     unlink(file.path(lib, pkg), recursive = TRUE)
     cli::cli_abort(c(
       "Installing local R package {.pkg {pkg}} did not finish within {local_r_duration(timeout)}.",
-      "i" = "Install log: {.path {log_file}}"
+      install_output,
+      local_r_verbose_hint(verbose)
     ), class = "shinyelectron_local_packages_install")
   }
 
   check <- check_local_r_package_loads(rscript, pkg, lib, env)
-  cat(c("", "== load check ==", check$stdout, check$stderr),
-      file = log_file, sep = "\n", append = TRUE)
   if (!check$ok) {
     installed <- dir.exists(file.path(lib, pkg))
     unlink(file.path(lib, pkg), recursive = TRUE)
@@ -719,16 +714,12 @@ install_local_r_package <- function(rscript, pkg, source, lib,
       } else {
         "Local R package {.pkg {pkg}} did not install into the bundled library."
       },
-      if (!installed) {
-        c("x" = "Last lines of the {.code R CMD INSTALL} output:",
-          local_r_output_bullets(result$stdout, n = 15))
-      },
-      "x" = "Loading it in a fresh R session failed:",
-      local_r_output_bullets(check$stderr),
+      if (!installed) install_output,
+      local_r_output_bullets(check$stderr, "Loading it in a fresh R session failed:"),
       if (check$timeout) {
         c("x" = "Loading did not finish within {local_r_duration(300)}.")
       },
-      "i" = "Install log: {.path {log_file}}"
+      local_r_verbose_hint(verbose)
     ), class = "shinyelectron_local_packages_install")
   }
 
@@ -758,13 +749,25 @@ check_local_r_package_loads <- function(rscript, pkg, lib, env, timeout = 300) {
   )
 }
 
-# The last `n` non-empty lines of process output as cli bullets, with braces
-# escaped so cli prints them verbatim.
-local_r_output_bullets <- function(text, n = 20) {
+# The last `n` non-empty lines of process output as cli bullets under
+# `heading`, with braces escaped so cli prints them verbatim. NULL when there
+# is no output.
+local_r_output_bullets <- function(text, heading, n = 25) {
   lines <- strsplit(paste(text %||% "", collapse = "\n"), "\r?\n")[[1]]
   lines <- utils::tail(lines[nzchar(trimws(lines))], n)
+  if (length(lines) == 0) {
+    return(NULL)
+  }
   lines <- gsub("}", "}}", gsub("{", "{{", lines, fixed = TRUE), fixed = TRUE)
-  stats::setNames(lines, rep(" ", length(lines)))
+  c(c("x" = heading), stats::setNames(lines, rep(" ", length(lines))))
+}
+
+# Points to the full output when it was not shown as it ran.
+local_r_verbose_hint <- function(verbose) {
+  if (isTRUE(verbose)) {
+    return(NULL)
+  }
+  c("i" = "Run with {.code verbose = TRUE} to see the full output.")
 }
 
 # "30 minutes" or "45 seconds".
