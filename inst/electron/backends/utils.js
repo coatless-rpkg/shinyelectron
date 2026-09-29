@@ -41,58 +41,80 @@ function formatSeconds(ms) {
   return `${seconds} second${seconds === 1 ? '' : 's'}`;
 }
 
+// Path the readiness probe requests. Apps do not serve it, so Shiny answers
+// with a quick 404 instead of running the app's UI function as it would for
+// GET /; a UI that takes longer to render than one attempt could otherwise
+// never count as ready. Any HTTP response means the server is up.
+const READY_PROBE_PATH = '/__shinyelectron_ready__';
+
 /**
- * Wait for a server to be ready on localhost.
+ * Wait for a server to answer HTTP requests on 127.0.0.1. Every server this
+ * waits for (native R and Python, and the container's port mapping) binds
+ * 127.0.0.1, so the probe goes there rather than to whatever "localhost"
+ * resolves to first, which can be ::1.
  * @param {number} port - Port to poll.
  * @param {object} options - Configuration.
  * @param {number} options.timeout - Max wait time in ms (default 30000).
- * @param {number} options.interval - Poll interval in ms (default 500).
+ * @param {number} options.interval - Pause between attempts in ms (default 500).
+ * @param {number} options.attemptTimeout - Cap on one attempt in ms
+ *   (default 8000), never more than the time left but at least 1000.
  * @param {function} [options.isCancelled] - Checked before every attempt;
  *   once it returns true, polling stops and the promise rejects.
  * @returns {Promise<void>} Resolves when server responds, rejects on timeout
  *   or cancellation.
  */
-function waitForServer(port, { timeout = 30000, interval = 500, isCancelled = null } = {}) {
+function waitForServer(port, {
+  timeout = 30000, interval = 500, attemptTimeout = 8000, isCancelled = null
+} = {}) {
   return new Promise((resolve, reject) => {
     const start = Date.now();
-    const fail = () =>
-      reject(new Error(`Server on port ${port} did not start within ${timeout}ms`));
+    let finished = false;
+    const finish = (settle, value) => {
+      if (finished) return;
+      finished = true;
+      settle(value);
+    };
 
     function check() {
+      if (finished) return;
       if (isCancelled && isCancelled()) {
-        reject(new Error(`Stopped waiting for the server on port ${port}`));
+        finish(reject, new Error(`Stopped waiting for the server on port ${port}`));
         return;
       }
       const remaining = timeout - (Date.now() - start);
       if (remaining <= 0) {
-        fail();
+        finish(reject, new Error(`Server on port ${port} did not start within ${timeout}ms`));
         return;
       }
 
-      const req = http.get(`http://localhost:${port}`, (res) => {
-        res.resume();
-        resolve();
-      });
+      // However an attempt fails, exactly one retry is scheduled, so only one
+      // attempt is ever in flight.
+      let attemptTimer = null;
+      let retried = false;
+      const retry = () => {
+        clearTimeout(attemptTimer);
+        if (retried) return;
+        retried = true;
+        setTimeout(check, interval);
+      };
 
-      req.on('error', () => {
-        if (Date.now() - start > timeout) {
-          fail();
-        } else {
-          setTimeout(check, interval);
+      const req = http.get(
+        { host: '127.0.0.1', port, path: READY_PROBE_PATH, agent: false },
+        (res) => {
+          clearTimeout(attemptTimer);
+          res.resume();
+          finish(resolve);
         }
-      });
+      );
+      req.on('error', retry);
 
-      // Cap each attempt: long enough for a slow-but-healthy first render, but
-      // not the whole budget, so a stalled connection cannot block polling
-      // until the overall deadline. The retry loop keeps polling meanwhile.
-      req.setTimeout(Math.min(8000, Math.max(1000, remaining)), () => {
-        req.destroy();
-        if (Date.now() - start > timeout) {
-          fail();
-        } else {
-          setTimeout(check, interval);
-        }
-      });
+      // Cap each attempt so a connection that never answers cannot stall
+      // polling until the overall deadline. Destroying the request emits
+      // 'error', which schedules the next attempt.
+      attemptTimer = setTimeout(
+        () => req.destroy(new Error('Readiness probe timed out')),
+        Math.min(attemptTimeout, Math.max(1000, remaining))
+      );
     }
 
     check();
