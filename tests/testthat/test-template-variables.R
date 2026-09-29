@@ -2,8 +2,9 @@
 # `config` as _shinyelectron.yml, read it back with read_config(), resolve
 # its paths against the app directory, then run process_templates(). A
 # configured tray icon is created there, since the build drops a missing
-# one. Returns the path to the generated main.js; the temporary directories
-# live until `env` exits.
+# one, and the output gets the assets folder that the project setup makes.
+# Returns the path to the generated main.js; the temporary directories live
+# until `env` exits.
 render_main_js <- function(config = list(), app_name = "Test App",
                            is_multi_app = FALSE, apps_manifest = NULL,
                            env = parent.frame()) {
@@ -17,6 +18,7 @@ render_main_js <- function(config = list(), app_name = "Test App",
     fs::file_create(tray_icon)
   }
   out <- withr::local_tempdir(.local_envir = env)
+  fs::dir_create(fs::path(out, "assets"))
   process_templates(
     out, app_name, "r-shiny", runtime_strategy = "system",
     config = resolve_config_paths(read_config(appdir), appdir),
