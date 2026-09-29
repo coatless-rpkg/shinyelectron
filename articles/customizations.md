@@ -158,6 +158,7 @@ overrides, and install or version prompts.
 lifecycle:
   show_phase_details: true
   error_show_logs: true
+  startup_timeout: 180000
   shutdown_timeout: 10000
   custom_splash_html: null
   custom_error_html: null
@@ -169,7 +170,8 @@ lifecycle:
 |----|----|----|----|
 | `show_phase_details` | boolean | Show the phase-detail line under the preloader headline | `true` |
 | `error_show_logs` | boolean | Show the collapsible error-log block in the error state | `true` |
-| `shutdown_timeout` | integer (ms) | Maximum milliseconds to wait for backend teardown before force-quitting | `10000` |
+| `startup_timeout` | integer (ms) | Maximum milliseconds to wait for the R, Python, or container server to answer before showing a startup error | `180000` |
+| `shutdown_timeout` | integer (ms) | Maximum milliseconds to wait for backend teardown before force-quitting or installing an update | `10000` |
 | `custom_splash_html` | string | Raw HTML that replaces the entire splash state; `null` uses the built-in splash | `null` |
 | `custom_error_html` | string | Raw HTML that replaces the entire error state; `null` uses the built-in error view | `null` |
 | `prompt_before_install` | boolean | Prompt the user before installing missing R or Python packages | `false` |

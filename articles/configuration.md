@@ -511,7 +511,8 @@ keys below govern behavior and timeout rather than appearance.
 |----|----|----|----|
 | `show_phase_details` | boolean | `true` | Show the phase-detail line under the preloader headline |
 | `error_show_logs` | boolean | `true` | Show the collapsible error-log block in the error state |
-| `shutdown_timeout` | integer (ms) | `10000` | Maximum milliseconds to wait for backend teardown before force-quitting |
+| `startup_timeout` | integer (ms) | `180000` | Maximum milliseconds to wait for the R, Python, or container server to answer before showing a startup error |
+| `shutdown_timeout` | integer (ms) | `10000` | Maximum milliseconds to wait for backend teardown before force-quitting or installing an update |
 | `custom_splash_html` | string | `null` | Raw HTML replacing the entire splash state; `null` uses the built-in splash |
 | `custom_error_html` | string | `null` | Raw HTML replacing the entire error state; `null` uses the built-in error view |
 | `prompt_before_install` | boolean | `false` | Prompt the user before installing missing R or Python packages |
@@ -639,6 +640,9 @@ than aborting the build:
 - Invalid platforms and architectures are dropped with a warning.
 - Window dimensions under 100 pixels warn and use defaults.
 - Invalid port numbers warn and use `3838`.
+- A `lifecycle.startup_timeout` or `lifecycle.shutdown_timeout` that is
+  not a whole number of milliseconds from 1000 to 2147483647 warns and
+  uses the default.
 
 Keys that shinyelectron does not recognize, such as a misspelled `widht`
 or a key placed in the wrong section, are reported in a single warning

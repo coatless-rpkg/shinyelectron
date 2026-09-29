@@ -48,7 +48,7 @@ sitrep_electron_project()
 sitrep_electron_project(tempdir())
 #> 
 #> ── Project Report ──────────────────────────────────────────────────────────────
-#> ℹ Checking directory: /tmp/RtmpOLD2Ms
+#> ℹ Checking directory: /tmp/RtmpD2eXjq
 #> ✖ package.json: Not found
 #> ! main.js: Not found
 #> ✖ App files: Not found in src/app or app/

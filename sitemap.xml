@@ -88,8 +88,10 @@
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/is_multi_app.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/is_named_list.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/is_nonempty_string.html</loc></url>
+<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/is_timeout_ms.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/js_str.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/json_for_script.html</loc></url>
+<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/lifecycle_timeout.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/manifest-schemas.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/map_logging_config.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/merge_config_deep.html</loc></url>

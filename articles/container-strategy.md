@@ -72,7 +72,7 @@ starts, locate the engine socket, pick Docker or Podman. Phase 2, Image,
 purple, covers step 4 to make available: pull from registry, or build
 the embedded Dockerfile locally; cached after first launch. Phase 3,
 Run, green, covers steps 5 to 7 to start and connect: docker run -d,
-poll Shiny for up to 120 seconds, WebView loads the URL. Phase 4, Quit,
+poll Shiny for up to 180 seconds, WebView loads the URL. Phase 4, Quit,
 amber, covers step 8 cleanup: stop the container, remove it; the image
 stays cached for the next
 launch.](../reference/figures/container-launch-flow.svg)
@@ -95,7 +95,8 @@ The eight underlying steps:
 5.  `docker run -d` starts the container. The host port is mapped
     through; the app directory is bind-mounted to `/app` so the
     container reads your files live.
-6.  The backend **polls** the Shiny server for up to 120 seconds.
+6.  The backend **polls** the Shiny server until it answers, for up to
+    `lifecycle.startup_timeout` milliseconds (3 minutes by default).
 7.  Electron loads `http://localhost:<port>`.
 8.  On quit, the container is stopped and removed.
 

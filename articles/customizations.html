@@ -265,11 +265,12 @@ Three preloader styles side by side, each in a sample lifecycle window with the 
 <div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lifecycle</span><span class="kw">:</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">show_phase_details</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">error_show_logs</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">shutdown_timeout</span><span class="kw">:</span><span class="at"> </span><span class="dv">10000</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">custom_splash_html</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">custom_error_html</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">prompt_before_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">prompt_runtime_version</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span></code></pre></div>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">startup_timeout</span><span class="kw">:</span><span class="at"> </span><span class="dv">180000</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">shutdown_timeout</span><span class="kw">:</span><span class="at"> </span><span class="dv">10000</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">custom_splash_html</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">custom_error_html</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">prompt_before_install</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">prompt_runtime_version</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span></code></pre></div>
 <table class="table caption-top">
 <colgroup>
 <col style="width: 22%">
@@ -297,30 +298,36 @@ Three preloader styles side by side, each in a sample lifecycle window with the 
 <td><code>true</code></td>
 </tr>
 <tr class="odd">
-<td><code>shutdown_timeout</code></td>
+<td><code>startup_timeout</code></td>
 <td>integer (ms)</td>
-<td>Maximum milliseconds to wait for backend teardown before force-quitting</td>
-<td><code>10000</code></td>
+<td>Maximum milliseconds to wait for the R, Python, or container server to answer before showing a startup error</td>
+<td><code>180000</code></td>
 </tr>
 <tr class="even">
+<td><code>shutdown_timeout</code></td>
+<td>integer (ms)</td>
+<td>Maximum milliseconds to wait for backend teardown before force-quitting or installing an update</td>
+<td><code>10000</code></td>
+</tr>
+<tr class="odd">
 <td><code>custom_splash_html</code></td>
 <td>string</td>
 <td>Raw HTML that replaces the entire splash state; <code>null</code> uses the built-in splash</td>
 <td><code>null</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>custom_error_html</code></td>
 <td>string</td>
 <td>Raw HTML that replaces the entire error state; <code>null</code> uses the built-in error view</td>
 <td><code>null</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>prompt_before_install</code></td>
 <td>boolean</td>
 <td>Prompt the user before installing missing R or Python packages</td>
 <td><code>false</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>prompt_runtime_version</code></td>
 <td>boolean</td>
 <td>Show a runtime-version picker when multiple R or Python installations are detected</td>

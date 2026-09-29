@@ -891,30 +891,36 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <td>Show the collapsible error-log block in the error state</td>
 </tr>
 <tr class="odd">
+<td><code>startup_timeout</code></td>
+<td>integer (ms)</td>
+<td><code>180000</code></td>
+<td>Maximum milliseconds to wait for the R, Python, or container server to answer before showing a startup error</td>
+</tr>
+<tr class="even">
 <td><code>shutdown_timeout</code></td>
 <td>integer (ms)</td>
 <td><code>10000</code></td>
-<td>Maximum milliseconds to wait for backend teardown before force-quitting</td>
+<td>Maximum milliseconds to wait for backend teardown before force-quitting or installing an update</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>custom_splash_html</code></td>
 <td>string</td>
 <td><code>null</code></td>
 <td>Raw HTML replacing the entire splash state; <code>null</code> uses the built-in splash</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>custom_error_html</code></td>
 <td>string</td>
 <td><code>null</code></td>
 <td>Raw HTML replacing the entire error state; <code>null</code> uses the built-in error view</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>prompt_before_install</code></td>
 <td>boolean</td>
 <td><code>false</code></td>
 <td>Prompt the user before installing missing R or Python packages</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>prompt_runtime_version</code></td>
 <td>boolean</td>
 <td><code>false</code></td>
@@ -1049,6 +1055,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <li>Invalid platforms and architectures are dropped with a warning.</li>
 <li>Window dimensions under 100 pixels warn and use defaults.</li>
 <li>Invalid port numbers warn and use <code>3838</code>.</li>
+<li>A <code>lifecycle.startup_timeout</code> or <code>lifecycle.shutdown_timeout</code> that is not a whole number of milliseconds from 1000 to 2147483647 warns and uses the default.</li>
 </ul>
 <p>Keys that shinyelectron does not recognize, such as a misspelled <code>widht</code> or a key placed in the wrong section, are reported in a single warning that lists each one by its dotted path (for example <code>window.widht</code>), and the build goes on without them. Entries under <code>apps</code> and the contents of maps such as <code>container.env</code> are not checked.</p>
 <p>If the YAML itself fails to parse, shinyelectron warns and uses all defaults. This is deliberate: a broken config file should never block you from producing a build during development.</p>
