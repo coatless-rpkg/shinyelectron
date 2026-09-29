@@ -311,6 +311,36 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
     })
   }
 
+  # --- Check: App slug and installer text ---
+  # export() stops on an app slug it cannot use, and on a $ in the text a
+  # Windows installer shows when it builds for Windows; other builds warn.
+  # Without an app_name argument, export() takes the slug from app.slug or
+  # the directory name, and the display name from app.name or the directory
+  # name.
+  tryCatch({
+    slug <- resolve_app_slug(config, NULL, normalizePath(appdir, mustWork = FALSE))
+    check_app_slug(slug)
+    if (verbose) cli::cli_alert_success("App slug: {.val {slug}}")
+  }, error = function(e) {
+    errors <<- c(errors, conditionMessage(e))
+    if (verbose) cli::cli_alert_danger("App slug: {conditionMessage(e)}")
+  })
+  tryCatch(
+    withCallingHandlers(
+      check_installer_text(config$app$name %||% app_name, config,
+                           windows = "win" %in% platform),
+      warning = function(w) {
+        warnings <<- c(warnings, conditionMessage(w))
+        if (verbose) cli::cli_alert_warning("Installer text: {conditionMessage(w)}")
+        invokeRestart("muffleWarning")
+      }
+    ),
+    error = function(e) {
+      errors <<- c(errors, conditionMessage(e))
+      if (verbose) cli::cli_alert_danger("Installer text: {conditionMessage(e)}")
+    }
+  )
+
   # --- Result ---
   pass <- length(errors) == 0
 
