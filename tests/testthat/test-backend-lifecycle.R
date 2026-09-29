@@ -1,11 +1,11 @@
-# The native R and Python backends' start()/stop() lifecycle, driven under
-# plain Node (no Electron) with fake Rscript and python3 executables. See
-# js/backend-lifecycle.js for the scenarios and js/fake-runtime.js for the
-# fake runtimes.
+# The start()/stop() lifecycle of the native R and Python backends and the
+# container backend, driven under plain Node (no Electron) with fake Rscript,
+# python3 and docker executables. See js/backend-lifecycle.js for the
+# scenarios and js/fake-runtime.js for the fakes.
 
-test_that("native backends start, stop, time out and hand over cleanly", {
+test_that("backends start, stop, time out and hand over cleanly", {
   skip_on_cran()
-  # The fake runtimes are shell scripts.
+  # The fake executables are shell scripts.
   skip_on_os("windows")
   node <- Sys.which("node")
   skip_if_not(nzchar(node), "Node.js not available")

@@ -1,16 +1,24 @@
-// Stand-in for Rscript and python3 used by backend-lifecycle.js.
-// Called through small shell wrappers as: fake-runtime.js <R|python> <args...>
-// A Shiny "run" reads <appDir>/fake-mode.json to decide how to behave:
+// Stand-in for Rscript, python3 and docker used by backend-lifecycle.js.
+// Called through small shell wrappers as: fake-runtime.js <R|python|docker> ...
+// A Shiny "run" (or a container) reads <appDir>/fake-mode.json to decide how
+// to behave:
 //   serve  answer every HTTP request with 404 and log the request
 //   hang   never bind the port
 //   crash  print an error and exit with status 1
 // With holdStdio: <ms>, it also starts a helper that keeps its stdout and
-// stderr open for that long. Every run is recorded in <appDir>/fake-runs.log.
-// `fake-runtime.js install <dir>` writes the Rscript and python3 wrappers.
+// stderr open for that long. With termExitCode: <n>, it exits with status n
+// on SIGTERM, as a process killed by taskkill /f does on Windows. Every run
+// is recorded in <appDir>/fake-runs.log.
+// The fake docker keeps its containers in $FAKE_DOCKER_STATE and logs every
+// call there in calls.log.
+// `fake-runtime.js install <dir>` writes the Rscript, python3 and docker
+// wrappers.
 'use strict';
 
+const crypto = require('crypto');
 const fs = require('fs');
 const http = require('http');
+const net = require('net');
 const path = require('path');
 const { spawn } = require('child_process');
 
@@ -20,19 +28,33 @@ function appendLine(file, line) {
   fs.appendFileSync(file, line + '\n');
 }
 
-function runApp(appDir, port) {
-  // Exit once the test harness that started us is gone, so a failed test
-  // never leaves a fake server behind.
-  const parent = process.ppid;
+// Exit once the test harness is gone, so a failed test never leaves a fake
+// server behind. Containers are detached from the short-lived `docker run`,
+// so everything watches the harness process itself.
+function exitWithHarness() {
+  const harness = Number(process.env.FAKE_HARNESS_PID);
+  if (!harness) return;
   setInterval(() => {
-    if (process.ppid !== parent) process.exit(0);
+    try {
+      process.kill(harness, 0);
+    } catch {
+      process.exit(0);
+    }
   }, 500).unref();
+}
+
+function runApp(appDir, port) {
+  exitWithHarness();
 
   let mode = { mode: 'serve' };
   try {
     mode = JSON.parse(fs.readFileSync(path.join(appDir, 'fake-mode.json'), 'utf8'));
   } catch { /* default mode */ }
   appendLine(path.join(appDir, 'fake-runs.log'), `${process.pid} ${port}`);
+
+  if (mode.termExitCode !== undefined) {
+    process.on('SIGTERM', () => process.exit(mode.termExitCode));
+  }
 
   if (mode.holdStdio) {
     // A helper that inherits our stdio keeps the parent's pipes open after
@@ -62,6 +84,80 @@ function runApp(appDir, port) {
   server.listen(port, '127.0.0.1', () => {
     process.stderr.write(`Listening on http://127.0.0.1:${port}\n`);
   });
+}
+
+function fakeDocker() {
+  const state = process.env.FAKE_DOCKER_STATE;
+  fs.mkdirSync(state, { recursive: true });
+  appendLine(path.join(state, 'calls.log'), args.join(' '));
+  const containerFile = (id) => path.join(state, `${id}.json`);
+  const readContainer = (id) => {
+    try {
+      return JSON.parse(fs.readFileSync(containerFile(id), 'utf8'));
+    } catch {
+      return null;
+    }
+  };
+  const killContainer = (id) => {
+    const container = readContainer(id);
+    if (!container) return;
+    try { process.kill(container.pid); } catch { /* already gone */ }
+  };
+
+  switch (args[0]) {
+    case '--version':
+      process.stdout.write('Docker version 27.0.0\n');
+      return;
+    case 'context':
+      process.stdout.write('unix:///fake/docker.sock\n');
+      return;
+    case 'image':
+      return; // `image inspect`: the image is always there
+    case 'run': {
+      // The first -v mounts the app directory at /app.
+      const mount = args[args.indexOf('-v') + 1];
+      const appDir = mount.slice(0, mount.lastIndexOf(':/app'));
+      const probe = net.createServer();
+      probe.listen(0, '127.0.0.1', () => {
+        const port = probe.address().port;
+        probe.close(() => {
+          const id = crypto.randomBytes(32).toString('hex');
+          const container = spawn(process.execPath, [__filename, 'container', appDir, String(port)], {
+            detached: true,
+            stdio: 'ignore'
+          });
+          container.unref();
+          fs.writeFileSync(containerFile(id.slice(0, 12)), JSON.stringify({ pid: container.pid, port }));
+          process.stdout.write(id + '\n');
+        });
+      });
+      return;
+    }
+    case 'port': {
+      const container = readContainer(args[1]);
+      if (!container) process.exit(1);
+      process.stdout.write(`127.0.0.1:${container.port}\n`);
+      return;
+    }
+    case 'logs':
+      process.stdout.write('fake container log line\n');
+      if (args[1] === '-f') {
+        exitWithHarness();
+        setInterval(() => {}, 1 << 30);
+      }
+      return;
+    case 'stop':
+      killContainer(args[args.length - 1]);
+      return;
+    case 'rm': {
+      const id = args[args.length - 1];
+      killContainer(id);
+      try { fs.unlinkSync(containerFile(id)); } catch { /* already removed */ }
+      return;
+    }
+    default:
+      process.exit(1);
+  }
 }
 
 function makeWrapper(file, which) {
@@ -96,8 +192,14 @@ if (lang === 'R') {
   } else if (args[0] === '-m' && args[1] === 'shiny') {
     runApp(args[args.indexOf('--app-dir') + 1], Number(args[args.indexOf('--port') + 1]));
   }
+} else if (lang === 'docker') {
+  fakeDocker();
+} else if (lang === 'container') {
+  // A fake container: fake-runtime.js container <appDir> <hostPort>
+  runApp(args[0], Number(args[1]));
 } else if (lang === 'install') {
-  // fake-runtime.js install <binDir>: write the Rscript and python3 wrappers.
+  // fake-runtime.js install <binDir>: write the wrappers.
   makeWrapper(path.join(args[0], 'Rscript'), 'R');
   makeWrapper(path.join(args[0], 'python3'), 'python');
+  makeWrapper(path.join(args[0], 'docker'), 'docker');
 }
