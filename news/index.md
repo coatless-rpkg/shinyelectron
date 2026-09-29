@@ -17,6 +17,12 @@
   that same error, stopping operations meant to continue, such as a
   Node.js install whose checksum list could not be downloaded.
 
+- The situation reports
+  ([`sitrep_shinyelectron()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_shinyelectron.md)
+  and friends) no longer report Node.js, npm or Python as missing when
+  the withr package is not installed. withr is only a suggested
+  dependency, and the probe used to fail without it.
+
 ## shinyelectron 0.2.1
 
 CRAN release: 2026-08-07
