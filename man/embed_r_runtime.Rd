@@ -11,7 +11,8 @@ embed_r_runtime(
   version,
   platform,
   arch,
-  verbose = TRUE
+  verbose = TRUE,
+  prune = TRUE
 )
 }
 \arguments{
@@ -28,6 +29,10 @@ embed_r_runtime(
 \item{arch}{Character scalar. Target architecture ("x64"/"arm64").}
 
 \item{verbose}{Logical. Whether to display progress.}
+
+\item{prune}{Logical. Whether to remove the test and documentation files
+that \code{\link[=prune_bundled_r_runtime]{prune_bundled_r_runtime()}} allowlists once the packages are
+installed. Callers pass the validated \code{dependencies.r.prune} setting.}
 }
 \value{
 Invisibly, the path to the embedded \code{runtime/R} directory.

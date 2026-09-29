@@ -48,7 +48,11 @@ Default is FALSE.}
 \item{icon}{Character string. Path to application icon file. Platform-specific format required.}
 
 \item{config}{List. Configuration from _shinyelectron.yml file (optional). Used for
-template variables like window dimensions, port, and app version.}
+template variables like window dimensions, port, and app version. File
+paths in a config passed here, such as \code{installer.license_file}, must be
+absolute or relative to the working directory. (\code{\link[=export]{export()}} reads
+\verb{_shinyelectron.yml} itself and resolves \code{installer.license_file} against
+the app directory.)}
 
 \item{overwrite}{Logical. Whether to overwrite existing output directory. Default is FALSE.}
 

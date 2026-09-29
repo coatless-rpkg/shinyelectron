@@ -16,40 +16,106 @@ function logDebug(...args) {
   if (DEBUG_ENABLED) console.log('[shinyelectron]', ...args);
 }
 
+// Default for lifecycle.startup_timeout. Keep in sync with
+// SHINYELECTRON_DEFAULTS$lifecycle$startup_timeout in R/constants.R.
+const DEFAULT_STARTUP_TIMEOUT_MS = 180000;
+
 /**
- * Wait for a server to be ready on localhost.
+ * How long a backend waits for its server to answer before reporting a
+ * failed start: lifecycle.startup_timeout, passed in the backend config.
+ * @param {object} config - Backend configuration.
+ * @returns {number} Milliseconds.
+ */
+function startupTimeoutMs(config) {
+  const ms = config && config.startup_timeout;
+  return Number.isFinite(ms) && ms > 0 ? ms : DEFAULT_STARTUP_TIMEOUT_MS;
+}
+
+/**
+ * Describe a duration for messages, e.g. 180000 -> "180 seconds".
+ * @param {number} ms - Milliseconds.
+ * @returns {string}
+ */
+function formatSeconds(ms) {
+  const seconds = Math.round(ms / 100) / 10;
+  return `${seconds} second${seconds === 1 ? '' : 's'}`;
+}
+
+// Path the readiness probe requests. Apps do not serve it, so Shiny answers
+// with a quick 404 instead of running the app's UI function as it would for
+// GET /; a UI that takes longer to render than one attempt could otherwise
+// never count as ready. Any HTTP response means the server is up.
+const READY_PROBE_PATH = '/__shinyelectron_ready__';
+
+/**
+ * Wait for a server to answer HTTP requests on 127.0.0.1. Every server this
+ * waits for (native R and Python, and the container's port mapping) binds
+ * 127.0.0.1, so the probe goes there rather than to whatever "localhost"
+ * resolves to first, which can be ::1.
  * @param {number} port - Port to poll.
  * @param {object} options - Configuration.
  * @param {number} options.timeout - Max wait time in ms (default 30000).
- * @param {number} options.interval - Poll interval in ms (default 500).
- * @returns {Promise<void>} Resolves when server responds, rejects on timeout.
+ * @param {number} options.interval - Pause between attempts in ms (default 500).
+ * @param {number} options.attemptTimeout - Cap on one attempt in ms
+ *   (default 8000). Near the deadline an attempt gets the time left, or
+ *   1000 ms if less remains.
+ * @param {function} [options.isCancelled] - Checked before every attempt;
+ *   once it returns true, polling stops and the promise rejects.
+ * @returns {Promise<void>} Resolves when server responds, rejects on timeout
+ *   or cancellation.
  */
-function waitForServer(port, { timeout = 30000, interval = 500 } = {}) {
+function waitForServer(port, {
+  timeout = 30000, interval = 500, attemptTimeout = 8000, isCancelled = null
+} = {}) {
   return new Promise((resolve, reject) => {
     const start = Date.now();
+    let finished = false;
+    const finish = (settle, value) => {
+      if (finished) return;
+      finished = true;
+      settle(value);
+    };
 
     function check() {
-      const req = http.get(`http://localhost:${port}`, (res) => {
-        res.resume();
-        resolve();
-      });
+      if (finished) return;
+      if (isCancelled && isCancelled()) {
+        finish(reject, new Error(`Stopped waiting for the server on port ${port}`));
+        return;
+      }
+      const remaining = timeout - (Date.now() - start);
+      if (remaining <= 0) {
+        finish(reject, new Error(`Server on port ${port} did not start within ${timeout}ms`));
+        return;
+      }
 
-      req.on('error', () => {
-        if (Date.now() - start > timeout) {
-          reject(new Error(`Server on port ${port} did not start within ${timeout}ms`));
-        } else {
-          setTimeout(check, interval);
-        }
-      });
+      // However an attempt fails, exactly one retry is scheduled, so only one
+      // attempt is ever in flight.
+      let attemptTimer = null;
+      let retried = false;
+      const retry = () => {
+        clearTimeout(attemptTimer);
+        if (retried) return;
+        retried = true;
+        setTimeout(check, interval);
+      };
 
-      req.setTimeout(1000, () => {
-        req.destroy();
-        if (Date.now() - start > timeout) {
-          reject(new Error(`Server on port ${port} did not start within ${timeout}ms`));
-        } else {
-          setTimeout(check, interval);
+      const req = http.get(
+        { host: '127.0.0.1', port, path: READY_PROBE_PATH, agent: false },
+        (res) => {
+          clearTimeout(attemptTimer);
+          res.resume();
+          finish(resolve);
         }
-      });
+      );
+      req.on('error', retry);
+
+      // Cap each attempt so a connection that never answers cannot stall
+      // polling until the overall deadline. Destroying the request emits
+      // 'error', which schedules the next attempt.
+      attemptTimer = setTimeout(
+        () => req.destroy(new Error('Readiness probe timed out')),
+        Math.min(attemptTimeout, Math.max(1000, remaining))
+      );
     }
 
     check();
@@ -121,14 +187,20 @@ function isOnline() {
   });
 }
 
+// Processes killProcessTree() was already asked to kill. A second request is
+// ignored rather than signalling the process again.
+const killRequested = new WeakSet();
+
 /**
- * Kill a child process and its tree.
+ * Kill a child process and its tree. Only the first call for a given
+ * process does anything.
  * On Windows: taskkill /pid N /f /t
  * On Unix: SIGTERM, then SIGKILL after 500ms if still alive.
  * @param {object} proc - child_process instance with .pid
  */
 function killProcessTree(proc) {
-  if (!proc || !proc.pid) return;
+  if (!proc || !proc.pid || killRequested.has(proc)) return;
+  killRequested.add(proc);
   try {
     if (process.platform === 'win32') {
       const { execFileSync } = require('child_process');
@@ -136,12 +208,49 @@ function killProcessTree(proc) {
     } else {
       proc.kill('SIGTERM');
       setTimeout(() => {
+        // Skip the fallback once the process has exited: its PID may already
+        // belong to another process.
+        if (proc.exitCode !== null || proc.signalCode !== null) return;
         try { process.kill(proc.pid, 'SIGKILL'); } catch { /* already dead */ }
       }, 500);
     }
   } catch (err) {
     console.error('Error killing process:', err.message);
   }
+}
+
+/**
+ * Whether a child process was spawned and has not exited yet.
+ * @param {object} proc - child_process instance.
+ * @returns {boolean}
+ */
+function isProcessRunning(proc) {
+  return Boolean(proc && proc.pid && proc.exitCode === null && proc.signalCode === null);
+}
+
+/**
+ * Wait for a child process to exit.
+ * Listens for 'exit' rather than 'close': 'close' also waits for every
+ * process that inherited the child's stdio, such as a helper the app started
+ * in the background, so it can fire long after the child itself is gone.
+ * @param {object} proc - child_process instance.
+ * @returns {Promise<void>} Resolves once the process has exited; right away
+ *   if it has already exited or never started.
+ */
+function waitForExit(proc) {
+  if (!isProcessRunning(proc)) return Promise.resolve();
+  return new Promise((resolve) => proc.once('exit', () => resolve()));
+}
+
+/**
+ * Error for a backend start() that stop() or a newer start() superseded.
+ * main.js ignores it: a superseded start has nothing left to show.
+ * @returns {Error} Error with code 'START_SUPERSEDED'.
+ */
+function startSupersededError() {
+  const err = new Error('Backend start was superseded by stop() or a newer start()');
+  err.code = 'START_SUPERSEDED';
+  return err;
 }
 
 /**
@@ -252,11 +361,16 @@ function resolveRuntimeManifestPath(appPath) {
 }
 
 module.exports = {
+  startupTimeoutMs,
+  formatSeconds,
   waitForServer,
   isPortAvailable,
   findAvailablePort,
   isOnline,
   killProcessTree,
+  isProcessRunning,
+  waitForExit,
+  startSupersededError,
   sortCandidatesByVersion,
   reportRuntimeCandidates,
   compareVersions,

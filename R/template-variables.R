@@ -43,7 +43,8 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     prompt_before_install = config$lifecycle$prompt_before_install %||%
       SHINYELECTRON_DEFAULTS$lifecycle$prompt_before_install,
     prompt_runtime_version = config$lifecycle$prompt_runtime_version %||%
-      SHINYELECTRON_DEFAULTS$lifecycle$prompt_runtime_version
+      SHINYELECTRON_DEFAULTS$lifecycle$prompt_runtime_version,
+    startup_timeout = lifecycle_timeout(config, "startup_timeout")
   )
 
   # The container backend reads its image/engine/volume settings from the
@@ -117,8 +118,7 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     app_name_initial = substr(app_name, 1, 1),
 
     # Lifecycle
-    shutdown_timeout = config$lifecycle$shutdown_timeout %||%
-      SHINYELECTRON_DEFAULTS$lifecycle$shutdown_timeout,
+    shutdown_timeout = lifecycle_timeout(config, "shutdown_timeout"),
 
     # System tray
     tray_enabled = config$tray$enabled %||% SHINYELECTRON_DEFAULTS$tray$enabled,

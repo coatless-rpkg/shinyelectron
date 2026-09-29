@@ -13,6 +13,11 @@ validate_config(config)
 List of validated configuration
 }
 \description{
-Checks configuration values and warns about invalid entries.
+Checks configuration values and warns about invalid entries. The Windows
+installer flags are read with \code{\link[=config_flag]{config_flag()}}: a quoted \code{"true"} or
+\code{"false"} is used with a warning, but any other invalid value aborts, as
+does \code{installer.allow_to_change_installation_directory: true} without
+\code{installer.one_click: false}, because falling back to a default would
+build a different installer than the one requested.
 }
 \keyword{internal}

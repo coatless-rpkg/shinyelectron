@@ -59,6 +59,12 @@ function getBackendForApp(appType, runtimeStrategy) {
   return require('./backends/native-py');
 }
 
+// A backend start() that stop() or a newer start() superseded rejects with
+// this code. It has nothing left to show, so its callers ignore it.
+function isSupersededStart(err) {
+  return Boolean(err && err.code === 'START_SUPERSEDED');
+}
+
 {{#updates_enabled}}
 const { autoUpdater } = require('electron-updater');
 const updaterLog = require('electron-log');
@@ -430,6 +436,8 @@ function setupAutoUpdater() {
 
   autoUpdater.autoDownload = {{#auto_download}}true{{/auto_download}}{{^auto_download}}false{{/auto_download}};
   autoUpdater.autoInstallOnAppQuit = {{#auto_install}}true{{/auto_install}}{{^auto_install}}false{{/auto_install}};
+  // NSIS updater: ship the full installer, not a web installer.
+  autoUpdater.disableWebInstaller = true;
 
   autoUpdater.on('checking-for-update', () => {
     updaterLog.info('Checking for updates...');
@@ -478,10 +486,69 @@ function setupAutoUpdater() {
       title: 'Update Ready',
       message: 'A new version has been downloaded. Restart now to apply the update?',
       buttons: ['Restart', 'Later'],
-      defaultId: 0
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true
     }).then((result) => {
       if (result.response === 0) {
-        autoUpdater.quitAndInstall();
+        // Quit cleanly before handing over to the installer: stop the backend
+        // (R/Shiny) and wait for its process to exit so it releases the
+        // bundled runtime's files, and suppress the window-close confirmation
+        // so the update cannot be cancelled halfway.
+        isShuttingDown = true;
+        app.isQuitting = true;
+
+        let handedOver = false;
+        const handOver = () => {
+          if (handedOver) return;
+          handedOver = true;
+          // quitAndInstall() reports a failed install through 'error' and
+          // leaves the app running with its backend already stopped. Undo the
+          // shutdown so the window closes normally and tell the user.
+          const onInstallError = (err) => {
+            isShuttingDown = false;
+            app.isQuitting = false;
+            const options = {
+              type: 'error',
+              title: 'Update Failed',
+              message: 'The update could not be installed.',
+              detail: (err && err.message ? err.message + '\n\n' : '') +
+                'Please restart the app manually.',
+              buttons: ['OK'],
+              noLink: true
+            };
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              dialog.showMessageBox(mainWindow, options);
+            } else {
+              dialog.showMessageBox(options);
+            }
+          };
+          autoUpdater.once('error', onInstallError);
+          try {
+            autoUpdater.quitAndInstall();
+          } catch (err) {
+            autoUpdater.removeListener('error', onInstallError);
+            onInstallError(err);
+          }
+        };
+
+        stopSharedShinyliveServer();
+        if (!currentBackend) {
+          // No per-app backend is running (launcher or a shinylive app).
+          handOver();
+          return;
+        }
+        // Hand over once the backend process has exited, or after
+        // shutdown_timeout if it is still running by then.
+        let fallback = null;
+        const timedOut = new Promise((resolve) => {
+          fallback = setTimeout(resolve, {{shutdown_timeout}});
+        });
+        const exited = Promise.resolve(currentBackend.stop()).catch(() => {});
+        Promise.race([exited, timedOut]).then(() => {
+          clearTimeout(fallback);
+          handOver();
+        });
       }
     });
   });
@@ -704,6 +771,7 @@ function createWindow() {
     log('info', 'Server ready on port', actualPort);
     mainWindow.loadURL(`http://localhost:${actualPort}`);
   }).catch((err) => {
+    if (isSupersededStart(err)) return;
     log('error', 'Backend start failed:', err.message);
   });
   } // end if (!appsManifest)
@@ -808,6 +876,7 @@ function createWindow() {
       actualPort = result.port;
       mainWindow.loadURL('http://localhost:' + actualPort);
     }).catch(function(err) {
+      if (isSupersededStart(err)) return;
       log('error', 'Backend start failed:', err.message);
     });
   }
@@ -889,6 +958,7 @@ function createWindow() {
           actualPort = p;
           mainWindow.loadURL(`http://localhost:${actualPort}`);
         }).catch((err) => {
+          if (isSupersededStart(err)) return;
           log('error', 'Backend retry failed:', err.message);
         });
       }

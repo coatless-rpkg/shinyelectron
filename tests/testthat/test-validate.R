@@ -175,3 +175,167 @@ test_that("validate_config accepts a character vector for system_packages", {
   expect_no_warning(out <- validate_config(cfg))
   expect_equal(out$dependencies$system_packages, c("libfoo-dev", "libbar-dev"))
 })
+
+# --- validate_config: Windows installer flags ---
+
+test_that("validate_config accepts unset and logical installer flags", {
+  expect_no_warning(out <- validate_config(default_config()))
+  expect_equal(out$installer, default_config()$installer)
+
+  cfg <- list(installer = list(
+    one_click = FALSE,
+    allow_to_change_installation_directory = TRUE,
+    per_machine = TRUE
+  ))
+  expect_no_warning(out <- validate_config(cfg))
+  expect_equal(out$installer, cfg$installer)
+})
+
+test_that("validate_config reads quoted installer flags with a warning", {
+  cfg <- list(installer = list(one_click = "false"))
+  expect_warning(out <- validate_config(cfg), class = "shinyelectron_quoted_flag")
+  expect_identical(out$installer$one_click, FALSE)
+
+  cfg <- list(installer = list(
+    one_click = FALSE,
+    allow_to_change_installation_directory = "true"
+  ))
+  expect_warning(out <- validate_config(cfg), "installer.allow_to_change_installation_directory",
+                 class = "shinyelectron_quoted_flag")
+  expect_identical(out$installer$allow_to_change_installation_directory, TRUE)
+
+  cfg <- list(installer = list(per_machine = "Yes"))
+  expect_warning(out <- validate_config(cfg), class = "shinyelectron_quoted_flag")
+  expect_identical(out$installer$per_machine, TRUE)
+})
+
+test_that("validate_config rejects other non-logical installer flags", {
+  keys <- c("one_click", "allow_to_change_installation_directory", "per_machine")
+  bad_values <- list("maybe", "", 1L, NA, c(TRUE, FALSE))
+  for (key in keys) {
+    for (bad in bad_values) {
+      cfg <- list(installer = list(one_click = FALSE))
+      cfg$installer[key] <- list(bad)
+      expect_error(validate_config(cfg), paste0("installer.", key), fixed = TRUE,
+                   class = "shinyelectron_invalid_flag")
+    }
+  }
+})
+
+test_that("validate_config requires the wizard for a directory page", {
+  cfg <- list(installer = list(
+    one_click = TRUE,
+    allow_to_change_installation_directory = TRUE
+  ))
+  expect_error(validate_config(cfg), "requires\\s+installer\\.one_click")
+
+  # An unset one_click falls back to electron-builder's one-click default.
+  cfg$installer$one_click <- NULL
+  expect_error(validate_config(cfg), "requires\\s+installer\\.one_click")
+
+  # Quoted values are read first, so the check still applies to them.
+  quoted <- list(
+    list(one_click = "true", allow_to_change_installation_directory = TRUE),
+    list(one_click = TRUE, allow_to_change_installation_directory = "yes"),
+    list(allow_to_change_installation_directory = "true")
+  )
+  for (installer in quoted) {
+    expect_error(
+      suppressWarnings(validate_config(list(installer = installer)),
+                       classes = "shinyelectron_quoted_flag"),
+      "requires\\s+installer\\.one_click"
+    )
+  }
+})
+
+test_that("read_config aborts on installer settings electron-builder would reject", {
+  tmp <- withr::local_tempdir()
+  config_path <- file.path(tmp, "_shinyelectron.yml")
+
+  writeLines(c("installer:", "  allow_to_change_installation_directory: true"),
+             config_path)
+  expect_error(read_config(tmp), "requires\\s+installer\\.one_click")
+
+  writeLines(c("installer:", "  one_click: maybe"), config_path)
+  expect_error(read_config(tmp), "installer.one_click", fixed = TRUE,
+               class = "shinyelectron_invalid_flag")
+
+  writeLines(c("installer:", "  one_click: false",
+               "  allow_to_change_installation_directory: true"),
+             config_path)
+  cfg <- read_config(tmp)
+  expect_false(cfg$installer$one_click)
+  expect_true(cfg$installer$allow_to_change_installation_directory)
+})
+
+test_that("a quoted one_click warns once and still builds a wizard", {
+  tmp <- withr::local_tempdir()
+  writeLines(c("installer:", "  one_click: \"false\""),
+             file.path(tmp, "_shinyelectron.yml"))
+
+  quoted_warnings <- 0L
+  cfg <- withCallingHandlers(
+    read_config(tmp),
+    shinyelectron_quoted_flag = function(w) {
+      quoted_warnings <<- quoted_warnings + 1L
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_equal(quoted_warnings, 1L)
+  expect_identical(cfg$installer$one_click, FALSE)
+
+  # The stored logical reaches package.json without a second warning.
+  expect_no_warning(
+    parsed <- jsonlite::fromJSON(
+      generate_package_json("my-app", "1.0.0", "native-r", cfg),
+      simplifyVector = FALSE
+    )
+  )
+  expect_equal(parsed$build$nsis, list(oneClick = FALSE))
+})
+
+# --- Windows installer license ---
+
+test_that("resolve_installer_license resolves the path against the app directory", {
+  appdir <- withr::local_tempdir()
+  writeLines("Terms of use", file.path(appdir, "LICENSE.txt"))
+
+  cfg <- resolve_installer_license(
+    list(installer = list(license_file = "LICENSE.txt")), appdir
+  )
+  expect_equal(cfg$installer$license_file,
+               as.character(fs::path_abs(fs::path(appdir, "LICENSE.txt"))))
+
+  # An absolute path is kept as is, and an unset license is left alone.
+  again <- resolve_installer_license(cfg, withr::local_tempdir())
+  expect_equal(again$installer$license_file, cfg$installer$license_file)
+  expect_equal(resolve_installer_license(default_config(), appdir),
+               default_config())
+})
+
+test_that("resolve_installer_license aborts on a missing or invalid license", {
+  appdir <- withr::local_tempdir()
+  resolve <- function(license_file) {
+    resolve_installer_license(
+      list(installer = list(license_file = license_file)), appdir
+    )
+  }
+  expect_error(resolve("LICENSE.txt"), "License file not found")
+  expect_error(resolve("."), "License file not found")
+  expect_error(resolve(TRUE), "installer.license_file", fixed = TRUE)
+  expect_error(resolve(""), "installer.license_file", fixed = TRUE)
+})
+
+test_that("export stops on a missing license file before building anything", {
+  appdir <- withr::local_tempdir()
+  writeLines("library(shiny)", file.path(appdir, "app.R"))
+  writeLines(c("installer:", "  license_file: LICENSE.txt"),
+             file.path(appdir, "_shinyelectron.yml"))
+  destdir <- file.path(withr::local_tempdir(), "out")
+
+  expect_error(
+    export(appdir, destdir, build = FALSE, verbose = FALSE),
+    "License file not found"
+  )
+  expect_false(dir.exists(destdir))
+})

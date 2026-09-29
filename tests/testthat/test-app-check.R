@@ -75,6 +75,48 @@ test_that("app_check surfaces a config parse error as a warning", {
   expect_true(any(grepl("Config error", unlist(res$warnings))))
 })
 
+test_that("app_check fails for installer settings that export() rejects", {
+  appdir <- withr::local_tempdir()
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "app.R"))
+  writeLines(c("installer:", "  allow_to_change_installation_directory: true"),
+             file.path(appdir, "_shinyelectron.yml"))
+
+  res <- app_check(appdir, verbose = FALSE)
+  expect_false(res$pass)
+  expect_true(any(grepl("Config error", res$errors)))
+  expect_false(any(grepl("Config error", res$warnings)))
+})
+
+test_that("app_check reports a quoted installer flag as a warning", {
+  appdir <- withr::local_tempdir()
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "app.R"))
+  writeLines(c("installer:", "  one_click: \"false\""),
+             file.path(appdir, "_shinyelectron.yml"))
+
+  res <- app_check(appdir, verbose = FALSE)
+  expect_true(any(grepl("installer.one_click", res$warnings, fixed = TRUE)))
+  expect_false(any(grepl("installer.one_click", res$errors, fixed = TRUE)))
+})
+
+test_that("app_check fails when the installer license file is missing", {
+  appdir <- withr::local_tempdir()
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "app.R"))
+  writeLines(c("installer:", "  license_file: LICENSE.txt"),
+             file.path(appdir, "_shinyelectron.yml"))
+
+  res <- app_check(appdir, verbose = FALSE)
+  expect_false(res$pass)
+  expect_true(any(grepl("License file not found", res$errors)))
+
+  # The path is relative to the app directory, as in export().
+  writeLines("Terms of use", file.path(appdir, "LICENSE.txt"))
+  res <- app_check(appdir, verbose = FALSE)
+  expect_false(any(grepl("License file", res$errors)))
+})
+
 test_that("app_check returns correct structure", {
   tmpdir <- tempfile()
   dir.create(tmpdir)

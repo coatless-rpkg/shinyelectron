@@ -241,6 +241,47 @@ is_named_list <- function(x) {
   is.list(x) && !is.null(names(x)) && all(nzchar(names(x)))
 }
 
+#' Resolve the Windows installer license against the app directory
+#'
+#' `installer.license_file` is written relative to the app directory, while
+#' electron-builder runs inside the generated Electron project. Resolving the
+#' path up front lets the build copy the file into the project, and stops on
+#' a missing file before any runtime is downloaded.
+#'
+#' @param config List. The effective configuration.
+#' @param appdir Character. The app directory the configuration was read from.
+#' @return `config`, with `installer$license_file` made absolute when it is set.
+#' @keywords internal
+resolve_installer_license <- function(config, appdir) {
+  license_file <- config$installer$license_file
+  if (is.null(license_file)) {
+    return(config)
+  }
+  if (!is.character(license_file) || length(license_file) != 1L ||
+      is.na(license_file) || !nzchar(license_file)) {
+    cli::cli_abort(c(
+      "Invalid {.field installer.license_file} in config: {.val {license_file}}",
+      "i" = "Must be the path to a license file, relative to the app directory",
+      "i" = "Edit {.field installer.license_file} in {.file _shinyelectron.yml}"
+    ))
+  }
+
+  path <- fs::path_expand(license_file)
+  if (!fs::is_absolute_path(path)) {
+    path <- fs::path(appdir, path)
+  }
+  if (!fs::is_file(path)) {
+    cli::cli_abort(c(
+      "License file not found: {.path {path}}",
+      "i" = "{.field installer.license_file} is resolved relative to the app directory",
+      "i" = "Edit {.field installer.license_file} in {.file _shinyelectron.yml}"
+    ))
+  }
+
+  config$installer$license_file <- as.character(fs::path_abs(path))
+  config
+}
+
 #' Deep merge two lists
 #'
 #' Recursively merges config into defaults, where config values override defaults.
@@ -276,7 +317,12 @@ merge_config_deep <- function(defaults, config) {
 
 #' Validate configuration values
 #'
-#' Checks configuration values and warns about invalid entries.
+#' Checks configuration values and warns about invalid entries. The Windows
+#' installer flags are read with [config_flag()]: a quoted `"true"` or
+#' `"false"` is used with a warning, but any other invalid value aborts, as
+#' does `installer.allow_to_change_installation_directory: true` without
+#' `installer.one_click: false`, because falling back to a default would
+#' build a different installer than the one requested.
 #'
 #' @param config List of configuration values
 #' @return List of validated configuration
@@ -449,6 +495,22 @@ validate_config <- function(config) {
     config$container$engine <- NULL
   }
 
+  # Validate lifecycle timeouts. Both are milliseconds, and shutdown_timeout
+  # is written into main.js as a JavaScript literal, so a value such as "10s"
+  # would stop the app from launching.
+  for (key in c("startup_timeout", "shutdown_timeout")) {
+    value <- config$lifecycle[[key]]
+    if (!is.null(value) && !is_timeout_ms(value)) {
+      default_value <- SHINYELECTRON_DEFAULTS$lifecycle[[key]]
+      cli::cli_warn(c(
+        "Invalid {.field lifecycle.{key}} in config: {.val {value}}",
+        "i" = "Must be a whole number of milliseconds between 1000 and 2147483647; using default: {.val {default_value}}",
+        "i" = "Edit {.field lifecycle.{key}} in {.file _shinyelectron.yml}"
+      ))
+      config$lifecycle[[key]] <- default_value
+    }
+  }
+
   # Validate dependencies version strings: r, python, electron.
   # Each must be a single character string (e.g. "4.5.1" or "latest") or NULL.
   for (rt in c("r", "python", "electron")) {
@@ -463,6 +525,15 @@ validate_config <- function(config) {
     }
   }
 
+  # Normalize dependencies.r.prune to a logical here, so a quoted "true" or
+  # "false" warns once when the file is read and later lookups see TRUE or
+  # FALSE. Unlike the checks above, any other value aborts rather than falling
+  # back to the default, because guessing could remove files the user meant
+  # to keep.
+  if (!is.null(config$dependencies$r$prune)) {
+    config$dependencies$r$prune <- resolve_r_prune(config)
+  }
+
   # Validate dependencies$system_packages: must be a character vector or NULL.
   sp <- config$dependencies$system_packages
   if (!is.null(sp) && !is.character(sp)) {
@@ -472,6 +543,31 @@ validate_config <- function(config) {
       "i" = "Dropping to {.val NULL}"
     ))
     config$dependencies$system_packages <- NULL
+  }
+
+  # Read the Windows installer flags with config_flag(): a quoted "true" or
+  # "false" becomes the logical with a warning, and any other value aborts.
+  # Storing the logicals means build_nsis_config() and the check below never
+  # see a string (isTRUE("true") is FALSE, which would silently turn a
+  # one-click installer into the wizard), and the warning fires once per read.
+  for (key in c("one_click", "allow_to_change_installation_directory",
+                "per_machine")) {
+    flag <- config_flag(config$installer[[key]], paste0("installer.", key))
+    if (!is.null(flag)) {
+      config$installer[[key]] <- flag
+    }
+  }
+
+  # electron-builder only lets the wizard installer change the installation
+  # directory, and it rejects the combination only while building the Windows
+  # installer, after the runtime download. An unset one_click means one-click.
+  if (isTRUE(config$installer$allow_to_change_installation_directory) &&
+      !isFALSE(config$installer$one_click)) {
+    cli::cli_abort(c(
+      "{.field installer.allow_to_change_installation_directory} requires {.field installer.one_click} to be {.code false}",
+      "i" = "Only the wizard installer can ask where to install the app",
+      "i" = "Set {.field installer.one_click} to {.code false} in {.file _shinyelectron.yml}, or remove {.field installer.allow_to_change_installation_directory}"
+    ))
   }
 
   # YAML reads an unquoted name or slug such as 2048 as a number; read a
@@ -516,6 +612,30 @@ validate_config <- function(config) {
   }
 
   config
+}
+
+#' Check a lifecycle timeout value
+#'
+#' @param x Value to check.
+#' @return `TRUE` if `x` is a single whole number of milliseconds between
+#'   1000 and 2147483647 (the largest R integer), otherwise `FALSE`.
+#' @keywords internal
+is_timeout_ms <- function(x) {
+  is.numeric(x) && length(x) == 1L && !is.na(x) &&
+    x >= 1000 && x <= .Machine$integer.max && x == round(x)
+}
+
+#' Look up a lifecycle timeout for the generated app
+#'
+#' @param config List. Effective configuration.
+#' @param key Character. `"startup_timeout"` or `"shutdown_timeout"`.
+#' @return Integer milliseconds: the configured value, or the default when it
+#'   is missing or invalid (for example a config that skipped
+#'   [validate_config()]).
+#' @keywords internal
+lifecycle_timeout <- function(config, key) {
+  value <- config$lifecycle[[key]]
+  if (is_timeout_ms(value)) as.integer(value) else SHINYELECTRON_DEFAULTS$lifecycle[[key]]
 }
 
 #' Initialize configuration file
@@ -654,6 +774,7 @@ nodejs:
 #     repos:
 #       - "https://cloud.r-project.org"
 #     lib_path: null         # null = R default, "app-local", or custom path
+#     prune: true            # Bundled only: remove package tests, R manuals and news
 #   python:
 #     # null = the maintained latest pin; "latest" = always newest; "3.12.0" = exact pin
 #     version: null
@@ -749,15 +870,21 @@ nodejs:
 ## Customize the installer appearance and behavior.
 # installer:
 #   app_id: null                  # null = "com.shinyelectron.<slug>"
-#   license_file: null            # Path to license file (shown during install)
+#   license_file: null            # Windows installer license page; path relative to the app dir
 #   one_click: true               # Windows: true = silent install, false = wizard
+#   # true adds a page for choosing the install directory; requires one_click: false
+#   allow_to_change_installation_directory: null
+#   # true = install for all users (admin prompt on every update). Unset or
+#   # false: the one-click installer installs per user; the wizard lets the user choose.
+#   per_machine: null
 
 ## Lifecycle UI
 ## Controls the startup, loading, error, and shutdown experience.
 # lifecycle:
 #   show_phase_details: true
 #   error_show_logs: true
-#   shutdown_timeout: 10000
+#   startup_timeout: 180000       # ms to wait for the R, Python, or container server to start
+#   shutdown_timeout: 10000       # ms to wait for the server to stop when quitting
 #   custom_splash_html: null
 #   custom_error_html: null
 #   prompt_before_install: false  # true = ask before installing packages

@@ -110,6 +110,7 @@ build:
 dependencies:               # Runtime version pins and system packages
   r:
     version: null           # null = maintained pin; "latest" = live query; "4.6.1" = exact
+    prune: true             # Bundled only: remove package tests, R manuals and news
   python:
     version: null           # null = maintained pin; "latest" = live query; "3.12.0" = exact
   electron:
@@ -334,13 +335,34 @@ The support toolchain (`electron-builder`, `electron-updater`, `electron-log`) i
 
 #### R-specific dependency options
 
-These keys sit under `dependencies.r` and apply to the `bundled`, `auto-download`, and `system` strategies.
+These keys sit under `dependencies.r`. All but `prune` apply to the `bundled`, `auto-download`, and `system` strategies; `prune` applies to `bundled` only.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `r.packages` | list of strings | `[]` | R packages to install alongside the app |
 | `r.repos` | list of strings | `["https://cloud.r-project.org"]` | CRAN-compatible repository URLs to use when installing R packages |
 | `r.lib_path` | string | `null` | Custom library path where R packages are installed; `null` uses the default R library |
+| `r.prune` | boolean | `true` | Remove package test suites and R's own tests, manuals, and news from the embedded runtime (see below) |
+
+#### Pruning the bundled R runtime
+
+With the `bundled` strategy, shinyelectron trims the embedded R runtime after installing your packages, leaving out files that a running app does not use:
+
+- the test suites (`tests/`, `testme/`, `tinytest/`) of every installed package, including R's base and recommended packages;
+- R's own regression tests;
+- R's PDF and HTML manuals and its news and FAQ files.
+
+Everything else stays. Package code, data, help pages, `examples/`, `demo/`, NEWS files, and `include/` headers are kept, because some packages and apps read them at runtime: `shinyjs::runExample()` reads its examples, a "What's new" panel may show a package's `NEWS.md`, and `Rcpp::sourceCpp()` needs the headers. R's license files (`COPYING`, and `COPYRIGHTS` with the notices that binary distributions of R must include), its author list, and the mirror lists that `utils::getCRANmirrors()` reads are kept too.
+
+Pruning is on by default. To ship the runtime exactly as installed, turn it off:
+
+```yaml
+dependencies:
+  r:
+    prune: false
+```
+
+Write `true` or `false` without quotes. A quoted `"true"` or `"false"` is read as the matching value with a warning; any other value stops the build before anything is downloaded.
 
 #### Python-specific dependency options
 
@@ -466,11 +488,25 @@ Controls the lifecycle window that fills the gap between launch and app readines
 |-----|------|---------|-------------|
 | `show_phase_details` | boolean | `true` | Show the phase-detail line under the preloader headline |
 | `error_show_logs` | boolean | `true` | Show the collapsible error-log block in the error state |
-| `shutdown_timeout` | integer (ms) | `10000` | Maximum milliseconds to wait for backend teardown before force-quitting |
+| `startup_timeout` | integer (ms) | `180000` | Maximum milliseconds to wait for the R, Python, or container server to answer before showing a startup error |
+| `shutdown_timeout` | integer (ms) | `10000` | Maximum milliseconds to wait for backend teardown before force-quitting or installing an update |
 | `custom_splash_html` | string | `null` | Raw HTML replacing the entire splash state; `null` uses the built-in splash |
 | `custom_error_html` | string | `null` | Raw HTML replacing the entire error state; `null` uses the built-in error view |
 | `prompt_before_install` | boolean | `false` | Prompt the user before installing missing R or Python packages |
 | `prompt_runtime_version` | boolean | `false` | Show a runtime-version picker when multiple R or Python installations are detected |
+
+### `signing`
+
+Code signing for release builds. Passwords and other credentials never go in this file; electron-builder reads them from environment variables. See [Code Signing and Distribution](code-signing.html) for the certificates, the variables, and the setup on each platform.
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `sign` | boolean | `false` | Sign the builds `export()` makes; `export(sign = TRUE)` signs even when this is `false` |
+| `mac.identity` | string | `null` | Signing identity, e.g. `"Developer ID Application: Your Name (TEAMID)"`; `null` lets electron-builder find one |
+| `mac.team_id` | string | `null` | Apple Team ID; notarization is skipped unless this or `APPLE_TEAM_ID` is set, and electron-builder reads the ID from `APPLE_TEAM_ID` |
+| `mac.notarize` | boolean | `false` | Notarize with Apple; signed builds also notarize when `APPLE_ID` and `APPLE_APP_SPECIFIC_PASSWORD` are set |
+| `win.certificate_file` | string | `null` | Path to a `.pfx` or `.p12` certificate; `null` uses `WIN_CSC_LINK` or `CSC_LINK` |
+| `linux.gpg_sign` | boolean | `false` | Reserved for GPG-signing the AppImage; has no effect yet |
 
 ### `installer`
 
@@ -479,8 +515,10 @@ Controls installer branding and behavior for the Windows (NSIS) installer produc
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `app_id` | string | `null` | Unique application identifier (e.g. `"com.example.myapp"`); `null` uses `"com.shinyelectron.<slug>"` |
-| `license_file` | string | `null` | Path to a license file shown during installation (Windows NSIS only) |
+| `license_file` | string | `null` | Path to a license file, relative to the app directory, that the Windows installer shows before installing. Plain text (UTF-8), `.rtf`, or `.html` |
 | `one_click` | boolean | `true` | Use a one-click installer on Windows; set to `false` for a wizard-style installer |
+| `allow_to_change_installation_directory` | boolean | `null` | `true` adds a wizard page where users choose the installation folder. Requires `one_click: false` |
+| `per_machine` | boolean | `null` | `true` installs for all users, which needs administrator rights on every install and update. `false` behaves like unset: the one-click installer installs for the current user, and the wizard still lets the user choose |
 
 **Example:**
 
@@ -489,7 +527,20 @@ installer:
   app_id: "com.example.my-dashboard"
   license_file: "LICENSE.txt"
   one_click: false
+  allow_to_change_installation_directory: true
 ```
+
+::: {.callout-warning}
+## Decide on `per_machine` before the first release
+
+A per-machine install goes to Program Files, and every later update shows an administrator prompt. Standard users cannot write to Program Files, and R Shiny runs an app with its own folder as the working directory, so an app that writes files next to `app.R` fails for them. Turning `per_machine` on for an app that has already shipped per-user moves the next install there too. A standard user who approves that prompt with an administrator's credentials can end up with the old per-user copy still installed next to the new one.
+:::
+
+::: {.callout-tip}
+## Build Windows installers on Windows
+
+Build the Windows installer on a Windows machine, as the [GitHub Actions](github-actions.html) workflow does. Installers built on macOS have been reported to cut `.txt` and `.rtf` license pages short.
+:::
 
 ## Common recipes
 
@@ -598,13 +649,18 @@ shinyelectron validates values on read and degrades gracefully rather than abort
 - Invalid platforms and architectures are dropped with a warning.
 - Window dimensions under 100 pixels warn and use defaults.
 - Invalid port numbers warn and use `3838`.
+- A `lifecycle.startup_timeout` or `lifecycle.shutdown_timeout` that is not a whole number of milliseconds from 1000 to 2147483647 warns and uses the default.
 - An `app.description` or `app.copyright` that is not text, or an `app.author` that is neither a string nor a map of `name`, `email`, and `url`, warns and is left out.
 
 Keys that shinyelectron does not recognize, such as a misspelled `widht` or a key placed in the wrong section, are reported in a single warning that lists each one by its dotted path (for example `window.widht`), and the build goes on without them. Entries under `apps` and the contents of maps such as `container.env` are not checked.
 
-If the YAML itself fails to parse, shinyelectron warns and uses all defaults. This is deliberate: a broken config file should never block you from producing a build during development.
+The `installer` settings are stricter. `one_click`, `allow_to_change_installation_directory`, and `per_machine` take `true` or `false`: a quoted `"true"` or `"false"` is read with a warning, and any other value stops the build. `allow_to_change_installation_directory: true` needs `one_click: false`, and a `license_file` that does not exist also stops the build. electron-builder would otherwise reject these late in the Windows build, after the runtime download.
+
+`dependencies.r.prune` is stricter. A quoted `"true"` or `"false"` is read as the matching value with a warning, but any other value stops the build with an error before anything is downloaded, because falling back to the default could remove files you meant to keep.
 
 `app.homepage` is stricter: a value that is not an `http://` or `https://` URL stops the build, because the About dialog opens it in the browser. So is a `$` in the app name, `app.description`, `app.author`, or `app.copyright` when the build includes Windows, because the Windows installer cannot hold one; for other platforms it only warns.
+
+If the YAML itself fails to parse, shinyelectron warns and uses all defaults. This is deliberate: a broken config file should never block you from producing a build during development.
 
 ## Next steps
 

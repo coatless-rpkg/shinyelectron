@@ -22,7 +22,11 @@
 #' @param sign Logical. Whether to enable code signing for the built application.
 #'   Default is FALSE.
 #' @param config List. Configuration from _shinyelectron.yml file (optional). Used for
-#'   template variables like window dimensions, port, and app version.
+#'   template variables like window dimensions, port, and app version. File
+#'   paths in a config passed here, such as `installer.license_file`, must be
+#'   absolute or relative to the working directory. ([export()] reads
+#'   `_shinyelectron.yml` itself and resolves `installer.license_file` against
+#'   the app directory.)
 #' @param overwrite Logical. Whether to overwrite existing output directory. Default is FALSE.
 #' @param verbose Logical. Whether to display detailed progress information. Default is TRUE.
 #'
@@ -76,6 +80,10 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
     app_name <- basename(app_dir)
   }
   validate_app_name(app_name)
+
+  # Resolve the R pruning flag now: a config built in R skips read_config(),
+  # and a bad value must fail before any output is deleted or runtime fetched.
+  prune <- resolve_r_prune(config)
 
   if (verbose) {
     cli::cli_h1("Building Electron application")
@@ -171,7 +179,8 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
         version = resolve_runtime_version("r", config),
         platform = platform[1],
         arch = arch[1],
-        verbose = verbose
+        verbose = verbose,
+        prune = prune
       )
     }
 

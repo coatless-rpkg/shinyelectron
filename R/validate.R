@@ -166,14 +166,48 @@ validate_signing_config <- function(config, platform = NULL) {
   }
 
   if (platform == "win") {
-    cert_file <- signing$win$certificate_file %||% Sys.getenv("CSC_LINK", "")
-    if (!nzchar(cert_file)) {
-      cli::cli_warn("Windows: {.envvar CSC_LINK} not set and {.field signing.win.certificate_file} not configured -- Windows builds will be unsigned")
+    # Mirror electron-builder's Windows lookup: the certificate comes from
+    # signing.win.certificate_file, then WIN_CSC_LINK, then CSC_LINK, and
+    # the password from WIN_CSC_KEY_PASSWORD, then CSC_KEY_PASSWORD. Like
+    # electron-builder, stop at the first variable that is set, even when it
+    # is empty.
+    first_set <- function(vars) {
+      set <- vars[!is.na(Sys.getenv(vars, unset = NA))]
+      if (length(set) > 0) set[[1]] else NULL
     }
 
-    cert_pw <- Sys.getenv("CSC_KEY_PASSWORD", "")
-    if (nzchar(cert_file) && !nzchar(cert_pw)) {
-      cli::cli_warn("Windows: {.envvar CSC_KEY_PASSWORD} not set -- signing may fail")
+    cert_var <- NULL
+    cert <- signing$win$certificate_file
+    if (is.null(cert)) {
+      cert_var <- first_set(c("WIN_CSC_LINK", "CSC_LINK"))
+      cert <- if (is.null(cert_var)) "" else Sys.getenv(cert_var)
+    }
+
+    if (!nzchar(cert)) {
+      if (is.null(cert_var)) {
+        cli::cli_warn(c(
+          "Windows: no signing certificate, so Windows builds will be unsigned.",
+          "i" = "Set {.field signing.win.certificate_file}, {.envvar WIN_CSC_LINK}, or {.envvar CSC_LINK}."
+        ))
+      } else {
+        cli::cli_warn(c(
+          "Windows: {.envvar {cert_var}} is set but empty, so Windows builds will be unsigned.",
+          "i" = "electron-builder reads {.envvar WIN_CSC_LINK} before {.envvar CSC_LINK} and stops at the first one that is set."
+        ))
+      }
+    } else {
+      pw_var <- first_set(c("WIN_CSC_KEY_PASSWORD", "CSC_KEY_PASSWORD"))
+      if (is.null(pw_var)) {
+        cli::cli_warn(c(
+          "Windows: no certificate password, so signing may fail.",
+          "i" = "Set {.envvar WIN_CSC_KEY_PASSWORD} or {.envvar CSC_KEY_PASSWORD}."
+        ))
+      } else if (!nzchar(Sys.getenv(pw_var))) {
+        cli::cli_warn(c(
+          "Windows: {.envvar {pw_var}} is set but empty, so signing may fail.",
+          "i" = "electron-builder reads {.envvar WIN_CSC_KEY_PASSWORD} before {.envvar CSC_KEY_PASSWORD} and stops at the first one that is set."
+        ))
+      }
     }
   }
 

@@ -15,10 +15,20 @@
 #' @param platform Character scalar. Target platform ("win"/"mac"/"linux").
 #' @param arch Character scalar. Target architecture ("x64"/"arm64").
 #' @param verbose Logical. Whether to display progress.
+#' @param prune Logical. Whether to remove the test and documentation files
+#'   that [prune_bundled_r_runtime()] allowlists once the packages are
+#'   installed. Callers pass the validated `dependencies.r.prune` setting.
 #' @return Invisibly, the path to the embedded `runtime/R` directory.
 #' @keywords internal
 embed_r_runtime <- function(output_dir, packages, repos, version,
-                            platform, arch, verbose = TRUE) {
+                            platform, arch, verbose = TRUE,
+                            prune = TRUE) {
+  # Check `prune` before anything is downloaded or copied, so a bad value
+  # cannot surface only after the runtime and packages are installed.
+  if (!isTRUE(prune) && !isFALSE(prune)) {
+    cli::cli_abort("{.arg prune} must be {.code TRUE} or {.code FALSE}, not {.val {prune}}.")
+  }
+
   if (verbose) cli::cli_alert_info("Embedding R runtime for bundled strategy...")
 
   # Resolve the effective version ONCE and pass it to both install_r_portable and
@@ -146,12 +156,21 @@ embed_r_runtime <- function(output_dir, packages, repos, version,
         type_clause
       )
 
-      # Pre-session code didn't scrub env or pass --vanilla and worked
-      # fine -- the bundled library being a sibling (not the R's own
-      # library) means R_LIBS_USER contamination doesn't override our
-      # explicit lib_path argument to install.packages.
+      # Run from an empty working directory, so a project .Rprofile or
+      # .Renviron in the caller's directory (such as renv's autoloader) does
+      # not run in the portable R, and without inherited R_ENVIRON and
+      # R_PROFILE settings, so the portable R reads its own site files (see
+      # portable_r_env()). The user's ~/.Renviron and ~/.Rprofile, which may
+      # hold proxy settings, stay in effect. The bundled library is a sibling
+      # of the R's own library and is passed to install.packages()
+      # explicitly, so inherited R_LIBS_USER settings do not redirect it.
+      install_wd <- tempfile("shinyelectron-r-install-")
+      dir.create(install_wd)
+      on.exit(unlink(install_wd, recursive = TRUE), add = TRUE)
       result <- processx::run(
         bundled_rscript, c("-e", r_code),
+        wd = install_wd,
+        env = portable_r_env(),
         error_on_status = FALSE,
         echo = verbose,
         timeout = 600
@@ -172,6 +191,12 @@ embed_r_runtime <- function(output_dir, packages, repos, version,
       }
 
     }
+  }
+
+  # Shrink the installer by removing test and documentation files that the
+  # app does not need. Only allowlisted names go (see prune-runtime.R).
+  if (isTRUE(prune)) {
+    prune_bundled_r_runtime(runtime_dest, verbose = verbose)
   }
 
   if (verbose) cli::cli_alert_success("Embedded R runtime")
