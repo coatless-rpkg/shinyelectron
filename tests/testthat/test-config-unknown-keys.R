@@ -196,3 +196,49 @@ test_that("init_config output and its commented-out keys are all known", {
   expect_no_warning(config <- read_config(dir))
   expect_equal(config$container$volumes[["/host/path"]], "/container/path")
 })
+
+test_that("export reports unknown keys once for a single app", {
+  skip_if_not_installed("renv")
+  dir <- .config_dir(c("app:", "  nmae: Typo"))
+  writeLines("library(shiny)\nshinyApp(ui = fluidPage(), server = function(input, output) {})",
+             file.path(dir, "app.R"))
+  out <- file.path(withr::local_tempdir(), "out")
+
+  n <- 0L
+  withCallingHandlers(
+    export(dir, out, app_type = "r-shiny", runtime_strategy = "system",
+           build = FALSE, verbose = FALSE),
+    shinyelectron_unknown_config_key = function(w) {
+      n <<- n + 1L
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_equal(n, 1L)
+})
+
+test_that("export reports unknown keys once for a multi-app suite", {
+  skip_if_not_installed("renv")
+  dir <- .config_dir(c(
+    "app:", "  name: Suite", "  nmae: Typo",
+    "build:", "  type: r-shiny", "  runtime_strategy: system",
+    "apps:",
+    "  - id: one", "    name: One", "    path: apps/one",
+    "  - id: two", "    name: Two", "    path: apps/two"
+  ))
+  for (id in c("one", "two")) {
+    dir.create(file.path(dir, "apps", id), recursive = TRUE)
+    writeLines("library(shiny)\nshinyApp(ui = fluidPage(), server = function(input, output) {})",
+               file.path(dir, "apps", id, "app.R"))
+  }
+  out <- file.path(withr::local_tempdir(), "out")
+
+  n <- 0L
+  withCallingHandlers(
+    export(dir, out, build = FALSE, verbose = FALSE),
+    shinyelectron_unknown_config_key = function(w) {
+      n <<- n + 1L
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_equal(n, 1L)
+})
