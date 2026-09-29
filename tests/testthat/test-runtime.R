@@ -448,9 +448,9 @@ test_that("build_electron_app delegates bundled R embedding to embed_r_runtime w
 
   embed_args <- NULL
   mockery::stub(build_electron_app, "embed_r_runtime",
-                function(output_dir, packages, repos, version, platform, arch, verbose) {
+                function(output_dir, packages, repos, version, platform, arch, verbose, prune) {
     embed_args <<- list(packages = packages, repos = repos, version = version,
-                        platform = platform, arch = arch)
+                        platform = platform, arch = arch, prune = prune)
     invisible(fs::path(output_dir, "runtime", "R"))
   })
 
@@ -464,4 +464,93 @@ test_that("build_electron_app delegates bundled R embedding to embed_r_runtime w
   expect_equal(embed_args$version, "4.4.1")
   expect_equal(embed_args$platform, "mac")
   expect_equal(embed_args$arch, "arm64")
+  expect_true(embed_args$prune)   # dependencies.r.prune defaults to TRUE
+})
+
+test_that("build_electron_app passes dependencies.r.prune from config to embed_r_runtime", {
+  skip_if_not_installed("mockery")
+
+  tmp <- withr::local_tempdir()
+  app_dir <- fs::path(tmp, "app"); fs::dir_create(app_dir)
+  writeLines("library(shiny)", fs::path(app_dir, "app.R"))
+
+  mockery::stub(build_electron_app, "validate_node_npm", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "setup_electron_project", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "copy_app_files", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "process_templates", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "install_npm_dependencies", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "build_for_platforms", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "validate_build_output", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "resolve_runtime_version", function(runtime, config) "4.6.1")
+
+  forwarded <- NULL
+  mockery::stub(build_electron_app, "embed_r_runtime",
+                function(output_dir, packages, repos, version, platform, arch, verbose, prune) {
+    forwarded <<- prune
+    invisible(fs::path(output_dir, "runtime", "R"))
+  })
+
+  build_electron_app(app_dir, fs::path(tmp, "out"), app_type = "r-shiny",
+                     runtime_strategy = "bundled", platform = "mac", arch = "arm64",
+                     config = list(dependencies = list(r = list(prune = FALSE))),
+                     verbose = FALSE)
+  expect_false(forwarded)
+
+  # A quoted "false" in a config built in R also turns pruning off, with a
+  # single warning from the up-front check.
+  forwarded <- NULL
+  n_quoted <- 0L
+  withCallingHandlers(
+    build_electron_app(app_dir, fs::path(tmp, "out2"), app_type = "r-shiny",
+                       runtime_strategy = "bundled", platform = "mac", arch = "arm64",
+                       config = list(dependencies = list(r = list(prune = "false"))),
+                       verbose = FALSE),
+    shinyelectron_quoted_flag = function(w) {
+      n_quoted <<- n_quoted + 1L
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_equal(n_quoted, 1L)
+  expect_false(forwarded)
+})
+
+test_that("build_electron_app rejects a bad dependencies.r.prune before touching output or runtimes", {
+  tmp <- withr::local_tempdir()
+  app_dir <- fs::path(tmp, "app"); fs::dir_create(app_dir)
+  writeLines("library(shiny)", fs::path(app_dir, "app.R"))
+  out <- fs::path(tmp, "out"); fs::dir_create(out)
+  writeLines("previous build", fs::path(out, "previous.txt"))
+
+  # The real embed_r_runtime() runs; record whether it gets as far as
+  # downloading or copying a runtime.
+  calls <- character(0)
+  record <- function(name, value = NULL) {
+    force(value)
+    function(...) {
+      calls <<- c(calls, name)
+      value
+    }
+  }
+  local_mocked_bindings(
+    validate_node_npm = function(...) invisible(TRUE),
+    setup_electron_project = record("setup_electron_project"),
+    copy_app_files = record("copy_app_files"),
+    resolve_runtime_version = function(...) "4.6.1",
+    install_r_portable = record("install_r_portable", fs::path(tmp, "cached-r")),
+    copy_dir_contents = record("copy_dir_contents")
+  )
+
+  # A config built in R skips read_config(), so a value that is neither true
+  # nor false must still stop the build, and before the previous output is
+  # deleted.
+  expect_error(
+    build_electron_app(app_dir, out, app_type = "r-shiny",
+                       runtime_strategy = "bundled", platform = "mac", arch = "arm64",
+                       config = list(dependencies = list(r = list(prune = "maybe"))),
+                       overwrite = TRUE, verbose = FALSE),
+    "dependencies.r.prune",
+    class = "shinyelectron_invalid_flag"
+  )
+  expect_equal(calls, character(0))
+  expect_true(fs::file_exists(fs::path(out, "previous.txt")))
 })

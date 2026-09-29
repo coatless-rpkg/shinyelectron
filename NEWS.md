@@ -135,6 +135,15 @@
   instead of listing them as warnings, and it checks that
   `installer.license_file` exists.
 
+* Bundled R builds now leave out files that a running app does not use: the
+  test suites (`tests/`, `testme/`, `tinytest/`) of every embedded package, and
+  the portable R's own regression tests, PDF and HTML manuals, and news and FAQ
+  files. Package examples, demos, NEWS files, and headers are kept, as are R's
+  license notices. Pruning is on by default; set `dependencies.r.prune: false`
+  in `_shinyelectron.yml` to ship the runtime unchanged. A quoted `"true"` or
+  `"false"` is read with a warning, and any other value stops the build before
+  anything is downloaded.
+
 * Paths in `_shinyelectron.yml` are now resolved against the app directory
   (the suite root for a multi-app suite) as documented, not the working
   directory, so `export()` finds them from anywhere. This covers `icon`,

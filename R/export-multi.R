@@ -288,6 +288,9 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
   validate_platform(platform)
   validate_arch(arch)
 
+  # Resolve the R pruning flag before anything is created or downloaded.
+  prune <- resolve_r_prune(config)
+
   # Resolve each app's type and runtime strategy once; the single-platform
   # guard, runtime embedding, and auto-download manifest writing all key off the
   # per-app resolved strategy rather than the suite-level scalar.
@@ -354,7 +357,8 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
       version = resolve_runtime_version("r", config),
       platform = platform[1],
       arch = arch[1],
-      verbose = verbose
+      verbose = verbose,
+      prune = prune
     )
   }
   if (py_bundled) {
