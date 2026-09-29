@@ -58,13 +58,9 @@ generate_template_variables <- function(app_name, app_slug, app_type,
   # container_image becoming {} instead of being absent).
   backend_config <- Filter(Negate(is.null), backend_config)
 
-  # About dialog: allow "Name <email>" in the author field and split out the email.
-  about_author <- config$app$author
-  about_email <- NULL
-  if (!is.null(about_author) && grepl("<[^>]+>", about_author)) {
-    about_email <- sub(".*<([^>]+)>.*", "\\1", about_author)
-    about_author <- trimws(sub("<[^>]+>", "", about_author))
-  }
+  # The About dialog shows the author's name, and its Email button writes to
+  # the author's email.
+  author <- normalize_app_author(config$app$author)
 
   # Config strings that main.js or the lifecycle page script places inside
   # single-quoted JavaScript literals. Each one also gets a js_str()-escaped
@@ -93,10 +89,10 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     # is set, so a blank setting leaves out its line or button.
     app_description_js = js_str(config$app$description),
     has_app_description = is_nonempty_string(config$app$description),
-    app_author_js = js_str(about_author),
-    has_app_author = is_nonempty_string(about_author),
-    app_email_js = js_str(about_email),
-    has_app_email = is_nonempty_string(about_email),
+    app_author_js = js_str(author$name),
+    has_app_author = is_nonempty_string(author$name),
+    app_email_js = js_str(author$email),
+    has_app_email = is_nonempty_string(author$email),
     app_homepage_js = js_str(config$app$homepage),
     has_app_homepage = is_nonempty_string(config$app$homepage),
     app_copyright_js = js_str(config$app$copyright),

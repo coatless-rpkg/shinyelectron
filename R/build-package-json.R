@@ -16,6 +16,8 @@
 generate_package_json <- function(app_slug, app_version, backend, config,
                                   has_icon = FALSE, sign = FALSE,
                                   is_multi_app = FALSE, app_name = NULL) {
+  author <- normalize_app_author(config$app$author)
+
   # Base structure
   pkg <- list(
     name = app_slug,
@@ -41,7 +43,8 @@ generate_package_json <- function(app_slug, app_version, backend, config,
       `build-linux-x64` = "electron-builder --linux --x64 --publish never",
       `build-linux-arm64` = "electron-builder --linux --arm64 --publish never"
     ),
-    author = config$app$author %||% "",
+    # npm's object form of a person, leaving out unset fields.
+    author = if (is.null(author)) "" else Filter(Negate(is.null), author),
     license = "AGPL-3.0-or-later",
     devDependencies = list(
       electron = paste0("^", resolve_runtime_version("electron", config)),

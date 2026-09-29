@@ -150,7 +150,7 @@ test_that("generate_package_json honours custom display name, description and au
   expect_equal(parsed$name, "myapp")
   expect_equal(parsed$version, "0.1.9")
   expect_equal(parsed$description, "Custom desc")
-  expect_equal(parsed$author, "Jane <j@x.org>")
+  expect_equal(parsed$author, list(name = "Jane", email = "j@x.org"))
   expect_equal(parsed$build$productName, "My App")
 })
 

@@ -349,6 +349,12 @@ validate_config <- function(config) {
     config$dependencies$system_packages <- NULL
   }
 
+  # Validate app.author: an npm person string or a map. A malformed value is
+  # dropped; normalize_app_author() explains why.
+  if (!is.null(config$app$author) && is.null(normalize_app_author(config$app$author))) {
+    config$app$author <- NULL
+  }
+
   config
 }
 

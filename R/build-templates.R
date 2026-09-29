@@ -23,6 +23,12 @@ process_templates <- function(output_dir, app_name, app_type,
   app_slug <- config$app$slug %||% slugify(app_name)
   validate_slug(app_slug)
 
+  # Both package.json and main.js read app.author; normalize it once so a
+  # malformed value warns a single time.
+  if (!is.null(config$app$author)) {
+    config$app$author <- normalize_app_author(config$app$author)
+  }
+
   backend_module <- resolve_backend_module(app_type, runtime_strategy)
 
   brand <- resolve_brand_yml(output_dir, is_multi_app, apps_manifest)
