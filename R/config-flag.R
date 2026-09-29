@@ -29,14 +29,19 @@ config_flag <- function(value, field, default = NULL) {
       word <- tolower(as.character(flag))
       cli::cli_warn(c(
         "{.field {field}} is the quoted string {.val {value}}; reading it as {.code {word}}.",
-        "i" = "Write {.code {word}} without quotes in {.file {CONFIG_FILENAME}}."
+        "i" = "Write {.code {word}} without quotes in {.file {CONFIG_FILENAME}}, or {.code {toupper(word)}} in R."
       ), class = "shinyelectron_quoted_flag")
       return(flag)
     }
   }
-  shown <- if (is.atomic(value) && length(value) == 1L) value else class(value)[1]
+  what <- if (is.atomic(value) && length(value) == 1L) {
+    cli::format_inline("{.val {value}}")
+  } else {
+    kind <- if (is.list(value)) "list" else paste(class(value)[1], "vector")
+    sprintf("a %s of length %d", kind, length(value))
+  }
   cli::cli_abort(c(
-    "Invalid {.field {field}} in config: {.val {shown}}",
-    "i" = "Must be {.code true} or {.code false} without quotes, or left unset."
+    "Invalid {.field {field}} in config: {what}",
+    "i" = "Must be {.code true} or {.code false} without quotes ({.code TRUE} or {.code FALSE} in R), or left unset."
   ), class = "shinyelectron_invalid_flag")
 }
