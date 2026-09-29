@@ -629,26 +629,54 @@ test_that("Check for Updates no longer attaches listeners or calls checkForUpdat
   expect_true(any(grepl("await autoUpdater.checkForUpdates()", check, fixed = TRUE)))
 })
 
-# --- macOS About panel ---
+# --- Native About panel ---
 
-test_that("the macOS About panel gets the configured metadata", {
-  panel_options <- function(config, app_name = "Test App") {
-    main <- readLines(render_main_js(config, app_name = app_name))
-    start <- grep("app.setAboutPanelOptions({", main, fixed = TRUE)
-    end <- start + grep("});", main[-seq_len(start)], fixed = TRUE)[1]
-    main[start:end]
-  }
+# The options main.js passes to app.setAboutPanelOptions(), as node reads
+# them.
+about_panel_options <- function(config, app_name = "Test App") {
+  main <- readLines(render_main_js(config, app_name = app_name))
+  start <- grep("app.setAboutPanelOptions({", main, fixed = TRUE)
+  end <- start + grep("});", main[-seq_len(start)], fixed = TRUE)[1]
+  object <- c("({", main[(start + 1):(end - 1)], "})")
+  node_values(paste(object, collapse = "\n"), simplify = FALSE)[[1]]
+}
 
-  plain <- panel_options(list())
-  expect_true(any(grepl("applicationName: 'Test App',", plain, fixed = TRUE)))
-  expect_true(any(grepl("applicationVersion: '1.0.0',", plain, fixed = TRUE)))
-  expect_false(any(grepl("copyright:|website:|authors:", plain)))
+test_that("the native About panel shows the app metadata", {
+  skip_on_cran()
+  skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
 
-  full <- panel_options(list(app = about_metadata()), app_name = "Bob's App")
-  expect_true(any(grepl("applicationName: 'Bob\\'s App',", full, fixed = TRUE)))
-  expect_true(any(grepl("copyright: 'Copyright 2026 O\\'Hara & Co \\\\ Ltd',", full, fixed = TRUE)))
-  expect_true(any(grepl("website: 'https://example.org/it\\'s?a=1&b=2',", full, fixed = TRUE)))
-  expect_true(any(grepl("authors: ['Jane O\\'Hara'],", full, fixed = TRUE)))
+  expect_equal(
+    about_panel_options(list()),
+    list(applicationName = "Test App", applicationVersion = "1.0.0")
+  )
+
+  # macOS shows the credits; Linux shows the website and the authors.
+  expect_equal(
+    about_panel_options(list(app = about_metadata()), app_name = "Bob's App"),
+    list(
+      applicationName = "Bob's App",
+      applicationVersion = "1.0.0",
+      copyright = "Copyright 2026 O'Hara & Co \\ Ltd",
+      credits = paste(
+        "It's a \"test\" \\ with <b>markup</b> and a second line",
+        "Author: Jane O'Hara",
+        sep = "\n"
+      ),
+      website = "https://example.org/it's?a=1&b=2",
+      authors = list("Jane O'Hara")
+    )
+  )
+
+  # Credits hold whichever of the description and the author is set.
+  author_only <- about_panel_options(list(app = list(author = "Jane Doe")))
+  expect_equal(author_only$credits, "Author: Jane Doe")
+})
+
+test_that("main.js sets the About panel on every platform", {
+  main <- readLines(render_main_js(list()))
+  call <- grep("app.setAboutPanelOptions({", main, fixed = TRUE)
+  expect_length(call, 1)
+  expect_false(any(grepl("process.platform", main[(call - 4):call], fixed = TRUE)))
 })
 
 # Run the rendered showAboutDialog() under node as if on `platform`, choosing

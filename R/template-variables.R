@@ -97,6 +97,9 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     has_app_homepage = is_nonempty_string(metadata$homepage),
     app_copyright_js = js_str(metadata$copyright),
     has_app_copyright = is_nonempty_string(metadata$copyright),
+    # The native About panel's credits hold the description and the author.
+    has_about_credits = is_nonempty_string(metadata$description) ||
+      is_nonempty_string(metadata$author$name),
     has_icon = !is.null(icon),
     # copy_brand_assets() preserves the icon's extension (icon.ico/.icns/.png);
     # carry the real filename so the BrowserWindow icon path is not broken.

@@ -275,7 +275,7 @@ Buttons appear for the settings that apply:
 
 Check for Updates answers in a dialog: the app is up to date, a newer version is ready to download (or already downloading when `updates.auto_download` is on), or the check failed, with the reason. It is left out on macOS, where a build ships only a disk image and electron-updater needs a zip archive to update the app.
 
-On macOS, the App menu's About item opens the system About panel instead, and it shows the same name, version, and copyright. The [Configuration Guide](configuration.html) describes each `app` key.
+On macOS, the App menu's About item opens the system About panel instead, and it shows the same name, version, copyright, description, and author. The [Configuration Guide](configuration.html) describes each `app` key.
 
 ### DevTools
 
