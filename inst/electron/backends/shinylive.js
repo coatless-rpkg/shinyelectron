@@ -50,6 +50,11 @@ class ShinyliveBackend extends EventEmitter {
     });
   }
 
+  /**
+   * Stop the static file server.
+   * @returns {Promise<void>} Resolves right away: close() stops new
+   *   connections at once, and there is no child process to wait for.
+   */
   stop() {
     this.emit('status', { phase: 'stopping_server', message: 'Stopping server...' });
     if (this.server) {
@@ -57,6 +62,7 @@ class ShinyliveBackend extends EventEmitter {
       this.server = null;
     }
     this.emit('status', { phase: 'app_exit' });
+    return Promise.resolve();
   }
 }
 

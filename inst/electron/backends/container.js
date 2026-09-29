@@ -1,10 +1,12 @@
 // Container backend -- runs Shiny app inside Docker/Podman container
 const { EventEmitter } = require('events');
-const { spawn, execFileSync } = require('child_process');
+const { spawn, spawnSync, execFileSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { waitForServer, logDebug } = require('./utils');
+const {
+  waitForServer, startupTimeoutMs, formatSeconds, startSupersededError, logDebug
+} = require('./utils');
 
 class ContainerBackend extends EventEmitter {
   constructor() {
@@ -12,6 +14,10 @@ class ContainerBackend extends EventEmitter {
     this.containerId = null;
     this.containerEngine = null;
     this.containerHost = null;
+    // Teardowns already started, by container ID; see removeContainer().
+    this.removals = new Map();
+    // Bumped by every start() and stop(); see start().
+    this.startToken = 0;
   }
 
   /**
@@ -175,8 +181,10 @@ class ContainerBackend extends EventEmitter {
    * or pulls from a registry as a fallback.
    * @param {string} image - Full image reference (name:tag).
    * @param {object} config - Backend configuration.
+   * @param {function} [isSuperseded] - Returns true once the start that needs
+   *   the image has been superseded; build output is then no longer reported.
    */
-  async ensureImage(image, config) {
+  async ensureImage(image, config, isSuperseded = () => false) {
     const env = this.getContainerEnv();
     const pullOnStart = config?.pull_on_start !== false; // default true
     const arch = process.arch === 'arm64' ? 'linux/arm64' : 'linux/amd64';
@@ -260,6 +268,7 @@ class ContainerBackend extends EventEmitter {
           const line = data.toString().trim();
           if (line) {
             logDebug(`[docker build] ${line}`);
+            if (isSuperseded()) return;
             this.emit('status', {
               phase: 'downloading_runtime',
               message: line.substring(0, 100)
@@ -271,6 +280,7 @@ class ContainerBackend extends EventEmitter {
           stderr += line + '\n';
           if (line) {
             logDebug(`[docker build] ${line}`);
+            if (isSuperseded()) return;
             this.emit('status', {
               phase: 'downloading_runtime',
               message: line.substring(0, 100)
@@ -332,8 +342,19 @@ class ContainerBackend extends EventEmitter {
    * @param {number} options.port - Port to expose.
    * @param {object} options.config - Backend configuration.
    * @returns {Promise<{port: number}>} Resolves when container is ready.
+   *   Rejects with code 'START_SUPERSEDED' when stop() or a newer start()
+   *   supersedes this one.
    */
   async start({ appPath, port, config }) {
+    // stop() and any later start() supersede this start. From then on it must
+    // not create a container, report status, or take over this.containerId:
+    // the backend is shared, so those now belong to whatever runs next.
+    const token = ++this.startToken;
+    const superseded = () => token !== this.startToken;
+    const throwIfSuperseded = () => {
+      if (superseded()) throw startSupersededError();
+    };
+
     // Note: do NOT removeAllListeners() here; it would wipe the main process's
     // 'status'/'error' subscribers. This backend registers no one-shot
     // internal listeners, so there is nothing to clear.
@@ -378,7 +399,13 @@ class ContainerBackend extends EventEmitter {
     logDebug(`Port: ${port}`);
 
     // Ensure image is available (build locally or pull from registry)
-    await this.ensureImage(image, config);
+    try {
+      await this.ensureImage(image, config, superseded);
+    } catch (err) {
+      throwIfSuperseded();
+      throw err;
+    }
+    throwIfSuperseded();
 
     this.emit('status', { phase: 'starting_server', message: 'Starting container...' });
 
@@ -419,11 +446,34 @@ class ContainerBackend extends EventEmitter {
     args.push(image);
 
     return new Promise((resolve, reject) => {
-      logDebug(`Running: ${this.containerEngine} ${args.join(' ')}`);
+      // Guard so the start() promise settles exactly once.
+      let settled = false;
+      const settle = (fn, arg) => { if (settled) return; settled = true; fn(arg); };
+      const engine = this.containerEngine;
+      const env = this.getContainerEnv();
+      // The container this start created, once `run` has returned its ID.
+      // Failure handling tears down this one, not this.containerId, which a
+      // later start may replace.
+      let containerId = null;
+      let logProc = null;
 
-      const proc = spawn(this.containerEngine, args, {
+      // Settle a superseded start without reporting anything: remove the
+      // container it created, if any, clearing this.containerId only while
+      // it still names that container.
+      const abandon = () => {
+        if (logProc) logProc.kill();
+        if (containerId) {
+          if (this.containerId === containerId) this.containerId = null;
+          this.removeContainer(containerId, engine, env);
+        }
+        settle(reject, startSupersededError());
+      };
+
+      logDebug(`Running: ${engine} ${args.join(' ')}`);
+
+      const proc = spawn(engine, args, {
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: this.getContainerEnv()
+        env
       });
 
       let stdout = '';
@@ -434,6 +484,10 @@ class ContainerBackend extends EventEmitter {
 
       proc.on('close', (code) => {
         if (code !== 0) {
+          if (superseded()) {
+            abandon();
+            return;
+          }
           const err = new Error(
             `Failed to start container (exit code ${code})\n` +
             `Engine: ${this.containerEngine}\n` +
@@ -441,19 +495,24 @@ class ContainerBackend extends EventEmitter {
             `Error: ${stderr}`
           );
           this.emit('status', { phase: 'error', message: err.message, detail: { stderr } });
-          reject(err);
+          settle(reject, err);
           return;
         }
 
-        this.containerId = stdout.trim().substring(0, 12);
-        logDebug(`Container started: ${this.containerId}`);
+        containerId = stdout.trim().substring(0, 12);
+        if (superseded()) {
+          abandon();
+          return;
+        }
+        this.containerId = containerId;
+        logDebug(`Container started: ${containerId}`);
 
         // Read the host port Docker assigned (output like "127.0.0.1:54321").
         let hostPort;
         try {
           const portOut = execFileSync(
-            this.containerEngine, ['port', this.containerId, `${containerPort}/tcp`],
-            { encoding: 'utf8', env: this.getContainerEnv() }
+            engine, ['port', containerId, `${containerPort}/tcp`],
+            { encoding: 'utf8', env }
           ).trim();
           const match = portOut.split('\n')[0].match(/:(\d+)\s*$/);
           hostPort = match ? parseInt(match[1], 10) : null;
@@ -461,16 +520,20 @@ class ContainerBackend extends EventEmitter {
           hostPort = null;
         }
         if (!hostPort) {
+          // Remove the container, as the timeout path does, so a Retry does
+          // not leave it running.
+          if (this.containerId === containerId) this.containerId = null;
+          if (containerId) this.removeContainer(containerId, engine, env);
           this.emit('status', { phase: 'error', message: 'Could not determine the container host port' });
-          reject(new Error('Could not determine the container host port'));
+          settle(reject, new Error('Could not determine the container host port'));
           return;
         }
-        logDebug(`Container ${this.containerId} mapped ${containerPort} -> host ${hostPort}`);
+        logDebug(`Container ${containerId} mapped ${containerPort} -> host ${hostPort}`);
 
         // Stream container logs while waiting for startup
-        const logProc = spawn(this.containerEngine, ['logs', '-f', this.containerId], {
+        logProc = spawn(engine, ['logs', '-f', containerId], {
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: this.getContainerEnv()
+          env
         });
         logProc.on('error', () => {}); // ignore EPIPE
         logProc.stdout.on('data', (data) => {
@@ -478,7 +541,12 @@ class ContainerBackend extends EventEmitter {
             const msg = data.toString().trim();
             if (msg) {
               logDebug(`[container] ${msg}`);
-              this.emit('status', { phase: 'starting_server', message: msg });
+              // Lines that arrive after the start has settled are no longer
+              // startup progress; reporting them would replace the error
+              // screen (or the tray's Running state) with "Starting...".
+              if (!settled && !superseded()) {
+                this.emit('status', { phase: 'starting_server', message: msg });
+              }
             }
           } catch { /* ignore write errors after shutdown */ }
         });
@@ -489,49 +557,130 @@ class ContainerBackend extends EventEmitter {
           } catch { /* ignore */ }
         });
 
-        // Wait for the server to be ready (longer timeout for container startup)
-        waitForServer(hostPort, { timeout: 120000, interval: 1000 })
+        // Wait for the server to be ready (lifecycle.startup_timeout)
+        const startupTimeout = startupTimeoutMs(config);
+        waitForServer(hostPort, {
+          timeout: startupTimeout,
+          interval: 1000,
+          isCancelled: () => settled || superseded()
+        })
           .then(() => {
+            if (settled) return;
+            if (superseded()) {
+              abandon();
+              return;
+            }
             logProc.kill();
             logDebug(`Container server ready on http://localhost:${hostPort}`);
             this.emit('status', { phase: 'server_ready', message: 'Container ready' });
-            resolve({ port: hostPort });
+            settle(resolve, { port: hostPort });
           })
-          .catch((err) => {
+          .catch(() => {
+            if (settled) return;
+            if (superseded()) {
+              abandon();
+              return;
+            }
             logProc.kill();
-            // Get container logs for debugging
+            // Get the container's logs, stderr included (Shiny logs there),
+            // for the app log and the error screen's details.
+            let logs = '';
             try {
-              const logs = execFileSync(this.containerEngine, ['logs', this.containerId], { encoding: 'utf8', env: this.getContainerEnv() });
-              console.error(`Container logs:\n${logs}`);
+              const out = spawnSync(engine, ['logs', containerId], { encoding: 'utf8', env, timeout: 10000 });
+              logs = `${out.stdout || ''}${out.stderr || ''}`.trim();
+              if (logs) console.error(`Container logs:\n${logs}`);
             } catch { /* ignore */ }
 
-            this.stop();
+            // Remove only the container this start created. stop() would
+            // remove whichever container is current and emit shutdown
+            // statuses that replace the error screen and its Retry button.
+            if (this.containerId === containerId) this.containerId = null;
+            if (containerId) this.removeContainer(containerId, engine, env);
             const startErr = new Error(
-              `Container server failed to start within 120 seconds.\n\n` +
-              `Container ID: ${this.containerId}\n` +
+              `Container server failed to start within ${formatSeconds(startupTimeout)}.\n\n` +
+              (containerId ? `Container ID: ${containerId}\n` : '') +
               `Image: ${image}\n\n` +
               `Possible causes:\n` +
               `- Container image does not contain required dependencies\n` +
               `- App has errors that prevent it from starting\n` +
               `- Port ${port} conflict inside the container`
             );
-            this.emit('status', { phase: 'error', message: startErr.message });
-            reject(startErr);
+            this.emit('status', { phase: 'error', message: startErr.message, detail: { stderr: logs } });
+            settle(reject, startErr);
           });
       });
 
       proc.on('error', (err) => {
-        const runErr = new Error(`Failed to run ${this.containerEngine}: ${err.message}`);
+        if (superseded()) {
+          abandon();
+          return;
+        }
+        const runErr = new Error(`Failed to run ${engine}: ${err.message}`);
         this.emit('status', { phase: 'error', message: runErr.message });
-        reject(runErr);
+        settle(reject, runErr);
       });
     });
   }
 
   /**
-   * Stop and remove the container.
+   * Stop and remove one container in the background. `docker/podman stop`
+   * blocks for the container's stop grace period (10s by default), and doing
+   * that synchronously freezes the main/UI thread so the shutdown screen
+   * can't render. Run it detached (and `-t 3` to shorten the grace) so the UI
+   * is free immediately; the child finishes even if the app quits first.
+   * Only the first call for a given container does anything; later calls
+   * return the same promise.
+   * @param {string} id - Container ID.
+   * @param {string} engine - Container engine command.
+   * @param {object} env - Environment with the engine host set.
+   * @param {function} [onRemoving] - Called when removal starts, so stop()
+   *   can report that step.
+   * @returns {Promise<string>} Resolves with a summary once the container is
+   *   gone or tearing it down failed.
+   */
+  removeContainer(id, engine, env, onRemoving = () => {}) {
+    if (this.removals.has(id)) return this.removals.get(id);
+    const removal = new Promise((resolve) => {
+      let finished = false;
+      const finish = (message) => {
+        finished = true;
+        resolve(message);
+      };
+      try {
+        const proc = spawn(engine, ['stop', '-t', '3', id], { stdio: 'ignore', env, detached: true });
+        proc.on('error', (err) => {
+          console.warn(`Failed to stop container: ${err.message}`);
+          finish('Shutdown complete');
+        });
+        proc.on('close', () => {
+          if (finished) return;
+          onRemoving();
+          try {
+            const rm = spawn(engine, ['rm', '-f', id], { stdio: 'ignore', env, detached: true });
+            rm.on('error', () => finish('Shutdown complete'));
+            rm.on('close', () => finish('Container removed. Shutting down...'));
+            rm.unref();
+          } catch { finish('Shutdown complete'); }
+        });
+        proc.unref();
+      } catch (err) {
+        console.warn(`Failed to stop container: ${err.message}`);
+        finish('Shutdown complete');
+      }
+    });
+    this.removals.set(id, removal);
+    return removal;
+  }
+
+  /**
+   * Stop and remove the container, superseding any start() still in
+   * progress, and report each stage so the shutdown screen can show the
+   * breakdown.
+   * @returns {Promise<void>} Resolves once the container has been stopped and
+   *   removed (or the attempt failed), or right away if none is running.
    */
   stop() {
+    const token = ++this.startToken;
     if (this.containerId && this.containerEngine) {
       const id = this.containerId;
       const engine = this.containerEngine;
@@ -542,37 +691,21 @@ class ContainerBackend extends EventEmitter {
       this.emit('status', { phase: 'stopping_server', message: `Stopping container ${short}...` });
       logDebug(`Stopping container ${id}...`);
 
-      // Stop and remove asynchronously and detached. `docker/podman stop` blocks
-      // for the container's stop grace period (10s by default), and doing that
-      // synchronously freezes the main/UI thread so the shutdown screen can't
-      // render. Run it detached (and `-t 3` to shorten the grace) so the UI is
-      // free immediately; the child finishes even if the app quits first. Each
-      // stage emits a status so the shutdown screen can show the breakdown.
-      const done = (message) => this.emit('status', { phase: 'app_exit', message });
-      try {
-        const proc = spawn(engine, ['stop', '-t', '3', id], { stdio: 'ignore', env, detached: true });
-        proc.on('error', (err) => {
-          console.warn(`Failed to stop container: ${err.message}`);
-          done('Shutdown complete');
-        });
-        proc.on('close', () => {
-          this.emit('status', { phase: 'cleanup', message: 'Removing container...' });
-          try {
-            const rm = spawn(engine, ['rm', '-f', id], { stdio: 'ignore', env, detached: true });
-            rm.on('error', () => done('Shutdown complete'));
-            rm.on('close', () => done('Container removed. Shutting down...'));
-            rm.unref();
-          } catch { done('Shutdown complete'); }
-        });
-        proc.unref();
-      } catch (err) {
-        console.warn(`Failed to stop container: ${err.message}`);
-        done('Shutdown complete');
-      }
+      // The later stages are reported only while no start() or stop() has
+      // come since: the backend is shared, and when the user switches to
+      // another container app its listeners are attached before this
+      // teardown finishes.
+      const current = () => this.startToken === token;
+      return this.removeContainer(id, engine, env, () => {
+        if (current()) this.emit('status', { phase: 'cleanup', message: 'Removing container...' });
+      }).then((message) => {
+        if (current()) this.emit('status', { phase: 'app_exit', message });
+      });
     } else {
       // Nothing to tear down, but still signal completion so the shutdown
       // flow can proceed promptly.
       this.emit('status', { phase: 'app_exit', message: 'Shutting down...' });
+      return Promise.resolve();
     }
   }
 }

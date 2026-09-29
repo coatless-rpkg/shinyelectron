@@ -208,6 +208,7 @@ SHINYELECTRON_DEFAULTS <- list(
   lifecycle = list(
     show_phase_details = TRUE,
     error_show_logs = TRUE,
+    startup_timeout = 180000L,
     shutdown_timeout = 10000L,
     custom_splash_html = NULL,
     custom_error_html = NULL,

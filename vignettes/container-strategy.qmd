@@ -46,7 +46,7 @@ On the build machine a container engine is optional. If present, shinyelectron c
 
 When a user opens the packaged app, shinyelectron walks four phases:
 
-<figure><picture><source srcset="../man/figures/container-launch-flow-dark.svg" media="(prefers-color-scheme: dark)" /><img src="../man/figures/container-launch-flow.svg" alt="Horizontal flow diagram with four phase cards connected by arrows under the title What happens when the user opens the app. Phase 1, Engine, blue, covers steps 1 to 3 to find and pick: Electron splash starts, locate the engine socket, pick Docker or Podman. Phase 2, Image, purple, covers step 4 to make available: pull from registry, or build the embedded Dockerfile locally; cached after first launch. Phase 3, Run, green, covers steps 5 to 7 to start and connect: docker run -d, poll Shiny for up to 120 seconds, WebView loads the URL. Phase 4, Quit, amber, covers step 8 cleanup: stop the container, remove it; the image stays cached for the next launch." style="width: 100%;" /></picture><figcaption>Four phases of launching a containerized shinyelectron app. Each phase groups one or more of the eight low-level steps and is colored consistently with later sections of this guide.</figcaption></figure>
+<figure><picture><source srcset="../man/figures/container-launch-flow-dark.svg" media="(prefers-color-scheme: dark)" /><img src="../man/figures/container-launch-flow.svg" alt="Horizontal flow diagram with four phase cards connected by arrows under the title What happens when the user opens the app. Phase 1, Engine, blue, covers steps 1 to 3 to find and pick: Electron splash starts, locate the engine socket, pick Docker or Podman. Phase 2, Image, purple, covers step 4 to make available: pull from registry, or build the embedded Dockerfile locally; cached after first launch. Phase 3, Run, green, covers steps 5 to 7 to start and connect: docker run -d, poll Shiny for up to 180 seconds, WebView loads the URL. Phase 4, Quit, amber, covers step 8 cleanup: stop the container, remove it; the image stays cached for the next launch." style="width: 100%;" /></picture><figcaption>Four phases of launching a containerized shinyelectron app. Each phase groups one or more of the eight low-level steps and is colored consistently with later sections of this guide.</figcaption></figure>
 
 The eight underlying steps:
 
@@ -55,7 +55,7 @@ The eight underlying steps:
 3. It **reads the engine** from the baked configuration (set via `engine:` in `_shinyelectron.yml`; default is `docker`).
 4. If the image is missing, it is **built from an embedded Dockerfile** or **pulled from a registry**.
 5. `docker run -d` starts the container. The host port is mapped through; the app directory is bind-mounted to `/app` so the container reads your files live.
-6. The backend **polls** the Shiny server for up to 120 seconds.
+6. The backend **polls** the Shiny server until it answers, for up to `lifecycle.startup_timeout` milliseconds (3 minutes by default).
 7. Electron loads `http://localhost:<port>`.
 8. On quit, the container is stopped and removed.
 
@@ -270,6 +270,8 @@ container:
     SHINY_LOG_LEVEL: "debug"
     DATABASE_URL: "postgresql://localhost:5432/mydb"
 ```
+
+These values are written into the built app and are the same for every user, so keep passwords and tokens out of them; see [Secrets and per-user credentials](security.html#secrets-and-per-user-credentials).
 
 ## Verifying the engine
 
