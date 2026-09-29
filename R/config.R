@@ -438,7 +438,21 @@ init_config <- function(appdir, app_name = NULL, overwrite = FALSE, verbose = TR
   app_name_safe <- gsub('"', '\\"', app_name_safe, fixed = TRUE)
 
   # Write the slug out, so the app keeps its identity when the name changes.
-  slug <- resolve_app_slug(list(), app_name, normalizePath(appdir, mustWork = FALSE))
+  dir_path <- normalizePath(appdir, mustWork = FALSE)
+  slug <- resolve_app_slug(list(), app_name, dir_path)
+
+  # The slug of the config being replaced: its app.slug or, without one,
+  # the directory's, which earlier releases used.
+  old_slug <- NULL
+  if (fs::file_exists(config_path)) {
+    old <- tryCatch(yaml::read_yaml(config_path), error = function(e) NULL)
+    old_slug <- if (!is.null(old$app$slug)) {
+      as.character(old$app$slug)[1]
+    } else {
+      slug_or_null(basename(dir_path))
+    }
+  }
+
   slug_line <- if (is.null(slug)) {
     '# slug: null             # Set a lowercase ASCII slug such as "my-app"'
   } else {
@@ -628,6 +642,13 @@ nodejs:
     template, list(app_name = app_name_safe, slug_line = slug_line)
   )
   writeLines(content, config_path)
+
+  if (!is.null(old_slug) && !is.null(slug) && !identical(old_slug, slug)) {
+    cli::cli_warn(c(
+      "The new configuration gives the app the slug {.val {slug}}; the one it replaced gave {.val {old_slug}}.",
+      "i" = "Copies installed from builds with the old slug will not update to builds with the new one. To keep them updating, set {.code slug: \"{old_slug}\"} in {.path {config_path}}."
+    ), class = "shinyelectron_slug_changed")
+  }
 
   if (verbose) {
     cli::cli_alert_success("Created configuration file: {.path {config_path}}")

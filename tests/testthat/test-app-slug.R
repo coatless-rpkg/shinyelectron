@@ -282,3 +282,19 @@ test_that("init_config() says to set app.slug when none can be derived", {
   expect_true(any(startsWith(lines, "  # slug: null")))
   expect_null(read_config(appdir)$app$slug)
 })
+
+test_that("init_config() warns when replacing a config changes the slug", {
+  # A config from before slug: was written out, which shipped under the
+  # directory's slug.
+  appdir <- local_app("dash-app", list(app = list(name = "dash-app")))
+  expect_warning(
+    init_config(appdir, app_name = "Sales Dashboard", overwrite = TRUE, verbose = FALSE),
+    "dash-app", class = "shinyelectron_slug_changed"
+  )
+  # The slug the replaced config pinned is kept, so no warning.
+  expect_no_warning(
+    init_config(appdir, app_name = "Sales Dashboard", overwrite = TRUE, verbose = FALSE)
+  )
+  # A fresh config has nothing to compare with.
+  expect_no_warning(init_config(local_app("new-app"), app_name = "Sales Dashboard", verbose = FALSE))
+})

@@ -10,7 +10,8 @@
   installed copy. When `app.name` gives an app without `app.slug` a
   different slug than its directory, `export()` warns and shows the
   `app: slug:` line that keeps updating existing installs. `init_config()`
-  and `wizard()` now write an explicit `slug:`.
+  and `wizard()` now write an explicit `slug:`, and `init_config()` warns
+  when a config it replaces gave a different slug.
 
 * Installer and artifact file names change. They now come from the slug and
   always include the architecture, as in `my-app-1.0.0-arm64.dmg`,
