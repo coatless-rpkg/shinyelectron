@@ -536,9 +536,13 @@ local_r_install_order <- function(info) {
 #' Installs each local package with the cached portable `Rscript` that also
 #' installs the repository packages, one package at a time and after the
 #' local packages it depends on ([local_r_install_order()]). A source folder is
-#' first built into a tarball in a temporary directory with the host R's
-#' `R CMD build`, so nothing is compiled or written inside the folder and
-#' stale object files in it never reach the bundle.
+#' first built into a tarball in a temporary directory with the same portable
+#' R's `R CMD build`, so nothing is compiled or written inside the folder and
+#' stale object files in it never reach the bundle. The build waits until the
+#' repository packages and the earlier local packages are in the library,
+#' because `R CMD build` installs the package to process help pages with
+#' build-stage Sexpr macros, and that install needs the package's
+#' dependencies.
 #'
 #' A package counts as installed only when a fresh process of the same
 #' `Rscript` loads it from the bundled library. That check catches compile
@@ -547,11 +551,11 @@ local_r_install_order <- function(info) {
 #' tolerates the Windows crash described below. On failure the build stops
 #' with the load error and the path to the install log.
 #'
-#' The install and the check run with the caller's environment plus `R_LIBS`,
-#' `R_LIBS_USER` and `R_LIBS_SITE` set to the bundled library. `R_LIBS_SITE`
-#' is the one that matters: the portable R's `Rprofile.site` resets
-#' `.libPaths()` to its own library plus the site library, including in the
-#' child processes of `R CMD INSTALL`.
+#' The build, the install and the check run with the caller's environment plus
+#' `R_LIBS`, `R_LIBS_USER` and `R_LIBS_SITE` set to the bundled library.
+#' `R_LIBS_SITE` is the one that matters: the portable R's `Rprofile.site`
+#' resets `.libPaths()` to its own library plus the site library, including in
+#' the child processes of `R CMD build` and `R CMD INSTALL`.
 #'
 #' On Windows hosts the install adds `--no-staged-install --no-clean-on-error`.
 #' There the bundled R's lazy-load step can crash while exiting, after it has
@@ -577,6 +581,7 @@ install_local_r_packages <- function(rscript, local_packages, lib_path,
   }
   info <- info[local_r_install_order(info)]
   lib <- normalizePath(lib_path, winslash = "/", mustWork = TRUE)
+  env <- local_r_env(lib)
 
   build_dir <- tempfile("shinyelectron-local-")
   dir.create(build_dir)
@@ -589,30 +594,48 @@ install_local_r_packages <- function(rscript, local_packages, lib_path,
   }
   for (pkg in info) {
     source <- if (pkg$is_dir) {
-      build_local_r_package(pkg, build_dir, timeout = timeout, verbose = verbose)
+      build_local_r_package(pkg, rscript, build_dir, env,
+                            timeout = timeout, verbose = verbose)
     } else {
       normalizePath(pkg$path, winslash = "/", mustWork = TRUE)
     }
-    install_local_r_package(rscript, pkg$package, source, lib,
+    install_local_r_package(rscript, pkg$package, source, lib, env = env,
                             timeout = timeout, verbose = verbose)
   }
   invisible(names(info))
 }
 
-# Build a source tarball of a local package folder into `build_dir` with the
-# host R. R CMD build works on a copy of the folder: it cleans src/ and
-# applies .Rbuildignore without changing the folder itself.
-build_local_r_package <- function(pkg, build_dir, timeout = 1800, verbose = TRUE) {
+# Environment for the R processes that build, install and load-check local
+# packages: the caller's environment (PATH, HOME, TMPDIR, Makevars settings)
+# with the bundled library as the user and site library.
+local_r_env <- function(lib) {
+  c("current", R_LIBS = lib, R_LIBS_USER = lib, R_LIBS_SITE = lib)
+}
+
+# Build a source tarball of a local package folder into `build_dir` with the R
+# front end next to `rscript`, in the install environment. R CMD build works
+# on a copy of the folder: it cleans src/ and applies .Rbuildignore without
+# changing the folder itself. For help pages with build-stage Sexpr macros it
+# also installs the package into a temporary library, which finds the
+# package's dependencies in the bundled library through `env`.
+build_local_r_package <- function(pkg, rscript, build_dir, env,
+                                  timeout = 1800, verbose = TRUE) {
   r_bin <- file.path(
-    R.home("bin"),
+    dirname(rscript),
     if (.Platform$OS.type == "windows") "R.exe" else "R"
   )
+  if (!file.exists(r_bin)) {
+    cli::cli_abort(
+      "Could not find the R front end next to {.path {rscript}}.",
+      class = "shinyelectron_local_packages_build"
+    )
+  }
   if (verbose) cli::cli_alert_info("Building a source tarball of {.pkg {pkg$package}}...")
   result <- processx::run(
     r_bin,
     c("CMD", "build", "--no-build-vignettes", "--no-manual",
       normalizePath(pkg$path, winslash = "/", mustWork = TRUE)),
-    wd = build_dir, error_on_status = FALSE, echo = verbose,
+    wd = build_dir, env = env, error_on_status = FALSE, echo = verbose,
     stderr_to_stdout = TRUE, timeout = timeout, cleanup_tree = TRUE
   )
   tarball <- file.path(build_dir, paste0(pkg$package, "_", pkg$version, ".tar.gz"))
@@ -632,11 +655,9 @@ build_local_r_package <- function(pkg, build_dir, timeout = 1800, verbose = TRUE
 # Install one local package from a source tarball with the cached portable
 # Rscript, then check that it loads from `lib` in a fresh process.
 install_local_r_package <- function(rscript, pkg, source, lib,
-                                    timeout = 1800, verbose = TRUE) {
+                                    env = local_r_env(lib), timeout = 1800,
+                                    verbose = TRUE) {
   r_lit <- function(x) encodeString(x, quote = "'")
-  # Keep the caller's environment (PATH, HOME, TMPDIR, Makevars settings) and
-  # make the bundled library the user and site library.
-  env <- c("current", R_LIBS = lib, R_LIBS_USER = lib, R_LIBS_SITE = lib)
 
   # Start from an empty slot so the load check can only pass for the package
   # installed here.

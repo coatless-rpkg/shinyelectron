@@ -140,7 +140,7 @@ export(
 
 ### Local R packages
 
-An R app that needs packages from outside a repository, such as your own in-house packages, can list their source folders or `.tar.gz` source tarballs under `dependencies.r.local_packages` in `_shinyelectron.yml`. Only the bundled strategy supports this. Relative paths resolve against the app directory. In a multi-app suite they resolve against the suite root, and only the root `_shinyelectron.yml` is read. Each source folder is first built into a tarball with `R CMD build`. The packages then install into the bundled library after the repository packages, in dependency order among themselves, and each must load in a fresh R session or the build stops. `Remotes:` fields are not read. The [Configuration Guide](configuration.html#local-r-packages) covers the details.
+An R app that needs packages from outside a repository, such as your own in-house packages, can list their source folders or `.tar.gz` source tarballs under `dependencies.r.local_packages` in `_shinyelectron.yml`. Only the bundled strategy supports this. Relative paths resolve against the app directory. In a multi-app suite they resolve against the suite root, and only the root `_shinyelectron.yml` is read. Each source folder is first built into a tarball with the bundled R's `R CMD build`. The packages then install into the bundled library after the repository packages, in dependency order among themselves, and each must load in a fresh R session or the build stops. `Remotes:` fields are not read. The [Configuration Guide](configuration.html#local-r-packages) covers the details.
 
 ### Tradeoffs
 

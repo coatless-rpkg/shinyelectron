@@ -331,7 +331,7 @@ dependencies:
 - Only R apps that use the `bundled` strategy can use local packages. `export()` stops with an error when the key is set for any other strategy, or for a suite without a bundled R app.
 - Relative paths resolve against the folder that holds `_shinyelectron.yml`: the app directory, or the suite root for a multi-app suite. A suite reads `local_packages` only from its root `_shinyelectron.yml`, not from the config files of its apps.
 - `export()` checks every entry before it downloads anything. Zip files and binary builds (such as the `.tgz` files CRAN publishes for macOS) are rejected, because local packages are compiled for the bundled R.
-- A source folder is first built into a tarball in a temporary directory with `R CMD build`, so nothing is compiled or written inside it.
+- A source folder is first built into a tarball in a temporary directory with the bundled R's `R CMD build`, so nothing is compiled or written inside it. The build runs after the package's dependencies are installed, so help pages whose `\Sexpr` macros need the package at build time work too.
 - The `Depends`, `Imports`, and `LinkingTo` packages of each local package are installed from `r.repos` first. `Remotes:` fields are not read, so list a dependency that is not on a repository under `local_packages` too, or add its repository to `r.repos`.
 - Local packages install in dependency order among themselves, so the order of the list does not matter. Local packages that depend on each other in a cycle stop the build.
 - A local package replaces a repository package with the same name.

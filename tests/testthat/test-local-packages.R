@@ -458,6 +458,46 @@ test_that("install_local_r_packages installs local packages in dependency order"
   expect_equal(list.files(src, recursive = TRUE, all.files = TRUE), before)
 })
 
+# Install a local package whose help page has a build-stage Sexpr, which makes
+# R CMD build install it, so its local dependency must already be installed.
+expect_build_time_dependency_install <- function(rscript) {
+  src <- withr::local_tempdir()
+  lib <- withr::local_tempdir()
+  dep <- write_local_pkg(
+    src, "depA", namespace = "export(a)", r_code = "a <- function() 1"
+  )
+  pkg <- write_local_pkg(
+    src, "pkgB", fields = "Imports: depA",
+    namespace = c("import(depA)", "export(b)"),
+    r_code = "b <- function() a() + 1"
+  )
+  dir.create(file.path(pkg, "man"))
+  writeLines(c(
+    "\\name{b}", "\\alias{b}", "\\title{B}", "\\usage{b()}",
+    "\\description{Two is \\Sexpr[stage=build]{1 + 1}.}"
+  ), file.path(pkg, "man", "b.Rd"))
+
+  installed <- install_local_r_packages(rscript, c(pkg, dep), lib, verbose = FALSE)
+
+  expect_equal(installed, c("depA", "pkgB"))
+  expect_true(file.exists(file.path(lib, "pkgB", "DESCRIPTION")))
+}
+
+test_that("a help page that needs a local dependency at build time builds", {
+  skip_on_cran()
+  expect_build_time_dependency_install(local_test_rscript())
+})
+
+test_that("a help page that needs a local dependency at build time builds with the portable R", {
+  skip_on_cran()
+  platform <- detect_current_platform()
+  skip_if_not(platform %in% c("mac", "win"), "No portable R for this platform")
+  rscript <- r_executable(SHINYELECTRON_DEFAULTS$runtime_versions$r, platform,
+                          detect_current_arch())
+  skip_if(is.null(rscript), "The portable R is not cached")
+  expect_build_time_dependency_install(rscript)
+})
+
 test_that("install_local_r_packages aborts when a package fails to load", {
   skip_on_cran()
   rscript <- local_test_rscript()

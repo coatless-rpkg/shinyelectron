@@ -33,9 +33,13 @@ Invisibly, the installed package names in install order.
 Installs each local package with the cached portable \code{Rscript} that also
 installs the repository packages, one package at a time and after the
 local packages it depends on (\code{\link[=local_r_install_order]{local_r_install_order()}}). A source folder is
-first built into a tarball in a temporary directory with the host R's
-\verb{R CMD build}, so nothing is compiled or written inside the folder and
-stale object files in it never reach the bundle.
+first built into a tarball in a temporary directory with the same portable
+R's \verb{R CMD build}, so nothing is compiled or written inside the folder and
+stale object files in it never reach the bundle. The build waits until the
+repository packages and the earlier local packages are in the library,
+because \verb{R CMD build} installs the package to process help pages with
+build-stage Sexpr macros, and that install needs the package's
+dependencies.
 }
 \details{
 A package counts as installed only when a fresh process of the same
@@ -45,11 +49,11 @@ for a line printed after loading rather than at the exit status, it also
 tolerates the Windows crash described below. On failure the build stops
 with the load error and the path to the install log.
 
-The install and the check run with the caller's environment plus \code{R_LIBS},
-\code{R_LIBS_USER} and \code{R_LIBS_SITE} set to the bundled library. \code{R_LIBS_SITE}
-is the one that matters: the portable R's \code{Rprofile.site} resets
-\code{.libPaths()} to its own library plus the site library, including in the
-child processes of \verb{R CMD INSTALL}.
+The build, the install and the check run with the caller's environment plus
+\code{R_LIBS}, \code{R_LIBS_USER} and \code{R_LIBS_SITE} set to the bundled library.
+\code{R_LIBS_SITE} is the one that matters: the portable R's \code{Rprofile.site}
+resets \code{.libPaths()} to its own library plus the site library, including in
+the child processes of \verb{R CMD build} and \verb{R CMD INSTALL}.
 
 On Windows hosts the install adds \code{--no-staged-install --no-clean-on-error}.
 There the bundled R's lazy-load step can crash while exiting, after it has
