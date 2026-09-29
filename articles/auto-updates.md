@@ -182,6 +182,11 @@ export GH_TOKEN=ghp_xxxxxxxxxxxx
 set GH_TOKEN=ghp_xxxxxxxxxxxx
 ```
 
+Apps opened from Finder, the Dock, or the Start menu do not see a
+variable set this way in a terminal; see [Secrets and per-user
+credentials](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/security.html#secrets-and-per-user-credentials)
+for how environment variables reach a launched app.
+
 ## S3
 
 > **Important**

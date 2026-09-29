@@ -432,6 +432,10 @@ container:
     SHINY_LOG_LEVEL: "DEBUG"
 ```
 
+`env` values are written into the built app, so keep passwords and
+tokens out of them; see [Secrets and per-user
+credentials](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/security.html#secrets-and-per-user-credentials).
+
 ### `apps`
 
 Defines a multi-app suite: two or more Shiny apps packaged in one

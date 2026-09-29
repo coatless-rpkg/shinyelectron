@@ -335,6 +335,7 @@ Three ways an image is sourced for a containerized shinyelectron app. Each card 
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">env</span><span class="kw">:</span></span>
 <span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">SHINY_LOG_LEVEL</span><span class="kw">:</span><span class="at"> </span><span class="st">"debug"</span></span>
 <span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">DATABASE_URL</span><span class="kw">:</span><span class="at"> </span><span class="st">"postgresql://localhost:5432/mydb"</span></span></code></pre></div>
+<p>These values are written into the built app and are the same for every user, so keep passwords and tokens out of them; see <a href="security.html#secrets-and-per-user-credentials">Secrets and per-user credentials</a>.</p>
 </section><section class="level2"><h2 id="verifying-the-engine">Verifying the engine<a class="anchor" aria-label="anchor" href="#verifying-the-engine"></a>
 </h2>
 <p>Check what shinyelectron sees on this machine:</p>

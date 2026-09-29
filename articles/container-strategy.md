@@ -431,6 +431,11 @@ container:
     DATABASE_URL: "postgresql://localhost:5432/mydb"
 ```
 
+These values are written into the built app and are the same for every
+user, so keep passwords and tokens out of them; see [Secrets and
+per-user
+credentials](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/security.html#secrets-and-per-user-credentials).
+
 ## Verifying the engine
 
 Check what shinyelectron sees on this machine:

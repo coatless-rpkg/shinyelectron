@@ -23,6 +23,11 @@
   the withr package is not installed. withr is only a suggested
   dependency, and the probe used to fail without it.
 
+- The Security Considerations guide gains a “Secrets and per-user
+  credentials” section. It covers which environment variables and
+  `.Renviron` files reach an app’s R, Python, or container process, and
+  how to give each user their own token without bundling it.
+
 ## shinyelectron 0.2.1
 
 CRAN release: 2026-08-07

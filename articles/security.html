@@ -234,23 +234,66 @@ Electron’s trust boundary: the renderer runs untrusted web content, the preloa
 </h3>
 <p><code><a href="https://rdrr.io/r/base/file.choose.html" class="external-link">file.choose()</a></code>, <code><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines()</a></code>, Python’s <code><a href="https://rdrr.io/r/base/connections.html" class="external-link">open()</a></code>: they inherit the launching user’s permissions and can reach anything that user can reach. SSH keys, browser history, the Documents folder. Expected for a desktop app, worth remembering when porting from a sandboxed Shiny Server where these calls quietly fail.</p>
 <p><strong>Least privilege still applies.</strong> If the app does not need to write files or spawn processes, do not include code that can. Removed code cannot be exploited.</p>
-</section><section class="level3"><h3 id="secrets-do-not-belong-in-the-bundle">Secrets do not belong in the bundle<a class="anchor" aria-label="anchor" href="#secrets-do-not-belong-in-the-bundle"></a>
+</section></section><section class="level2"><h2 id="secrets-and-per-user-credentials">Secrets and per-user credentials<a class="anchor" aria-label="anchor" href="#secrets-and-per-user-credentials"></a>
+</h2>
+<p>A credential that belongs to one person, such as their token for a cloud data warehouse, has to come from their machine when the app starts, not from the installer. What your code can see at that point depends on the runtime strategy:</p>
+<table class="table caption-top">
+<colgroup>
+<col style="width: 22%">
+<col style="width: 77%">
+</colgroup>
+<thead><tr class="header">
+<th>Strategy</th>
+<th>What reaches your code at launch</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Native R (<code>system</code>, <code>bundled</code>, <code>auto-download</code>)</td>
+<td>The environment the app was launched with, plus the user’s <code>~/.Renviron</code>
+</td>
+</tr>
+<tr class="even">
+<td>Native Python (<code>system</code>, <code>bundled</code>, <code>auto-download</code>)</td>
+<td>The environment the app was launched with</td>
+</tr>
+<tr class="odd">
+<td><code>container</code></td>
+<td>Only <code>PORT</code>, <code>HOST</code>, and the <code>container.env</code> values from <code>_shinyelectron.yml</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>shinylive</code></td>
+<td>Nothing from the machine, because no R or Python process runs there</td>
+</tr>
+</tbody>
+</table>
+<p>For per-user credentials, use a native strategy.</p>
+<p><strong>R apps.</strong> The Electron shell passes its environment to <code>Rscript</code> without <code>--vanilla</code>, and R reads the user’s <code>~/.Renviron</code> at startup like any other R session. That happens before <code>shiny::runApp()</code> switches into the app folder, so a <code>.Renviron</code> next to <code>app.R</code> is not read. On Windows, R’s <code>~</code> is usually the Documents folder; <code>path.expand("~/.Renviron")</code> shows the exact file.</p>
+<p><strong>Python apps.</strong> The environment passes through the same way, but nothing loads a <code>.env</code> file for you. If your app calls python-dotenv’s <code>load_dotenv()</code>, give it a path outside the app folder, such as a file in the user’s home directory. With no argument it searches upward from your code’s folder, which sits inside the installed app.</p>
+<p><strong>Container apps</strong> currently receive only <code>PORT</code>, <code>HOST</code>, and your <code>container.env</code> values. The user’s environment and <code>~/.Renviron</code> stay on the host.</p>
+<section class="level3"><h3 id="giving-each-user-their-own-token">Giving each user their own token<a class="anchor" aria-label="anchor" href="#giving-each-user-their-own-token"></a>
 </h3>
-<p>Anything you copy into the build is recoverable from the installed app. <code>.asar</code> is not encryption.</p>
+<ul>
+<li>
+<strong><code>~/.Renviron</code></strong> works for native R apps however they are opened, because R reads the file itself. Each user adds a line such as <code>WAREHOUSE_TOKEN=...</code>, and the app reads it with <code>Sys.getenv("WAREHOUSE_TOKEN")</code>.</li>
+<li>
+<strong>OS environment variables</strong> work for both languages, but how they reach the app depends on the platform. On Windows, user environment variables (set through “Edit environment variables for your account” or <code>setx</code>) reach apps started from the Start menu. On macOS, apps opened from Finder or the Dock do not see variables exported in shell startup files such as <code>~/.zshrc</code>, so use one of the other routes there.</li>
+<li>
+<strong>Browser sign-in</strong>, which many cloud warehouses offer (for example Snowflake’s <code>externalbrowser</code> authenticator and Databricks OAuth user-to-machine), suits a desktop app. The R or Python process runs on the user’s machine, so the warehouse driver can open their browser and they sign in with their own account. Nobody has to hand out a token or paste one into a file.</li>
+<li>
+<strong>The OS keychain</strong>, through <a href="https://cran.r-project.org/package=keyring" class="external-link">keyring</a> in R or <a href="https://pypi.org/project/keyring/" class="external-link">keyring</a> in Python, lets the app ask for a token once and keep it in the macOS Keychain or Windows Credential Manager.</li>
+</ul>
+<p><strong>Test the way users launch.</strong> <code><a href="../reference/run_electron_app.html">run_electron_app()</a></code> and <code>export(run_after = TRUE)</code> start Electron from your R session, so the app inherits that session’s environment, including variables R loaded from your own <code>.Renviron</code>. Starting the app’s executable from a terminal passes the terminal’s variables along, and R then prefers a <code>.Renviron</code> in the terminal’s current directory over <code>~/.Renviron</code>. Before you ship, open the installed app from Finder, the Dock, or the Start menu, ideally from an account without your credentials.</p>
+</section><section class="level3"><h3 id="never-bundle-credentials">Never bundle credentials<a class="anchor" aria-label="anchor" href="#never-bundle-credentials"></a>
+</h3>
+<p>Anything you copy into the build is recoverable from the installed app, and <code>.asar</code> is not encryption. Native and container builds copy the whole app folder, hidden files included.</p>
 <pre><code><span><span class="co"># These should NEVER be in your app directory</span></span>
 <span><span class="va">.env</span></span>
 <span><span class="va">.Renviron</span></span>
 <span><span class="va">credentials.json</span></span>
 <span><span class="va">service</span><span class="op">-</span><span class="va">account</span><span class="op">-</span><span class="va">key.json</span></span></code></pre>
-<p>Add them to <code>.gitignore</code> and check that your build pipeline does not sweep them in. When the app needs an API key at runtime, the options are:</p>
-<ul>
-<li>
-<strong>An environment variable</strong> the user sets on their machine.</li>
-<li>
-<strong>The OS keychain</strong> via <a href="https://cran.r-project.org/package=keyring" class="external-link">keyring</a>: free, encrypted, OS-managed.</li>
-<li>
-<strong>A first-launch prompt</strong> that stores an encrypted credential in the app’s user-data directory.</li>
-</ul></section></section><section class="level2"><h2 id="strategy-specific-notes">Strategy-specific notes<a class="anchor" aria-label="anchor" href="#strategy-specific-notes"></a>
+<p><code>.gitignore</code> does not help here: it keeps these files out of your repository, but a local <code><a href="../reference/export.html">export()</a></code> copies whatever is on disk. Values in <code>container.env</code> ship the same way, written into the built app, so keep tokens out of them too.</p>
+</section></section><section class="level2"><h2 id="strategy-specific-notes">Strategy-specific notes<a class="anchor" aria-label="anchor" href="#strategy-specific-notes"></a>
 </h2>
 <p>The <a href="runtime-strategies.html">runtime strategy</a> you pick decides which sandbox actually contains your code.</p>
 <section class="level3"><h3 id="shinylive">Shinylive<a class="anchor" aria-label="anchor" href="#shinylive"></a>
@@ -259,7 +302,7 @@ Electron’s trust boundary: the renderer runs untrusted web content, the preloa
 </section><section class="level3"><h3 id="system-bundled-auto-download">System, bundled, auto-download<a class="anchor" aria-label="anchor" href="#system-bundled-auto-download"></a>
 </h3>
 <p>A real R or Python child process. Whatever is reachable from <code><a href="https://rdrr.io/r/base/system.html" class="external-link">system()</a></code> or <code>subprocess</code> is reachable from the app. The defense is the input-validation discipline from the previous section. None of these strategies adds additional sandboxing.</p>
-</section><section class="level3"><h3 id="container">Container<a class="anchor" aria-label="anchor" href="#container"></a>
+</section><section class="level3"><h3 id="container-strategy-security">Container<a class="anchor" aria-label="anchor" href="#container-strategy-security"></a>
 </h3>
 <p>Docker or Podman puts the app inside an OS-level container, which is a stronger boundary than process isolation but weaker than a virtual machine:</p>
 <ul>
@@ -337,7 +380,7 @@ Electron’s trust boundary: the renderer runs untrusted web content, the preloa
 <tr class="odd">
 <td>Credentials</td>
 <td>You</td>
-<td>Never bundle; use env vars or the OS keychain</td>
+<td>Never bundle; use <code>~/.Renviron</code>, env vars, the OS keychain, or browser sign-in</td>
 </tr>
 <tr class="even">
 <td>Container image</td>

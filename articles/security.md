@@ -240,10 +240,79 @@ these calls quietly fail.
 files or spawn processes, do not include code that can. Removed code
 cannot be exploited.
 
-### Secrets do not belong in the bundle
+## Secrets and per-user credentials
 
-Anything you copy into the build is recoverable from the installed app.
-`.asar` is not encryption.
+A credential that belongs to one person, such as their token for a cloud
+data warehouse, has to come from their machine when the app starts, not
+from the installer. What your code can see at that point depends on the
+runtime strategy:
+
+| Strategy | What reaches your code at launch |
+|----|----|
+| Native R (`system`, `bundled`, `auto-download`) | The environment the app was launched with, plus the user’s `~/.Renviron` |
+| Native Python (`system`, `bundled`, `auto-download`) | The environment the app was launched with |
+| `container` | Only `PORT`, `HOST`, and the `container.env` values from `_shinyelectron.yml` |
+| `shinylive` | Nothing from the machine, because no R or Python process runs there |
+
+For per-user credentials, use a native strategy.
+
+**R apps.** The Electron shell passes its environment to `Rscript`
+without `--vanilla`, and R reads the user’s `~/.Renviron` at startup
+like any other R session. That happens before `shiny::runApp()` switches
+into the app folder, so a `.Renviron` next to `app.R` is not read. On
+Windows, R’s `~` is usually the Documents folder;
+`path.expand("~/.Renviron")` shows the exact file.
+
+**Python apps.** The environment passes through the same way, but
+nothing loads a `.env` file for you. If your app calls python-dotenv’s
+`load_dotenv()`, give it a path outside the app folder, such as a file
+in the user’s home directory. With no argument it searches upward from
+your code’s folder, which sits inside the installed app.
+
+**Container apps** currently receive only `PORT`, `HOST`, and your
+`container.env` values. The user’s environment and `~/.Renviron` stay on
+the host.
+
+### Giving each user their own token
+
+- **`~/.Renviron`** works for native R apps however they are opened,
+  because R reads the file itself. Each user adds a line such as
+  `WAREHOUSE_TOKEN=...`, and the app reads it with
+  `Sys.getenv("WAREHOUSE_TOKEN")`.
+- **OS environment variables** work for both languages, but how they
+  reach the app depends on the platform. On Windows, user environment
+  variables (set through “Edit environment variables for your account”
+  or `setx`) reach apps started from the Start menu. On macOS, apps
+  opened from Finder or the Dock do not see variables exported in shell
+  startup files such as `~/.zshrc`, so use one of the other routes
+  there.
+- **Browser sign-in**, which many cloud warehouses offer (for example
+  Snowflake’s `externalbrowser` authenticator and Databricks OAuth
+  user-to-machine), suits a desktop app. The R or Python process runs on
+  the user’s machine, so the warehouse driver can open their browser and
+  they sign in with their own account. Nobody has to hand out a token or
+  paste one into a file.
+- **The OS keychain**, through
+  [keyring](https://cran.r-project.org/package=keyring) in R or
+  [keyring](https://pypi.org/project/keyring/) in Python, lets the app
+  ask for a token once and keep it in the macOS Keychain or Windows
+  Credential Manager.
+
+**Test the way users launch.**
+[`run_electron_app()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/run_electron_app.md)
+and `export(run_after = TRUE)` start Electron from your R session, so
+the app inherits that session’s environment, including variables R
+loaded from your own `.Renviron`. Starting the app’s executable from a
+terminal passes the terminal’s variables along, and R then prefers a
+`.Renviron` in the terminal’s current directory over `~/.Renviron`.
+Before you ship, open the installed app from Finder, the Dock, or the
+Start menu, ideally from an account without your credentials.
+
+### Never bundle credentials
+
+Anything you copy into the build is recoverable from the installed app,
+and `.asar` is not encryption. Native and container builds copy the
+whole app folder, hidden files included.
 
     # These should NEVER be in your app directory
     .env
@@ -251,16 +320,11 @@ Anything you copy into the build is recoverable from the installed app.
     credentials.json
     service-account-key.json
 
-Add them to `.gitignore` and check that your build pipeline does not
-sweep them in. When the app needs an API key at runtime, the options
-are:
-
-- **An environment variable** the user sets on their machine.
-- **The OS keychain** via
-  [keyring](https://cran.r-project.org/package=keyring): free,
-  encrypted, OS-managed.
-- **A first-launch prompt** that stores an encrypted credential in the
-  app’s user-data directory.
+`.gitignore` does not help here: it keeps these files out of your
+repository, but a local
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+copies whatever is on disk. Values in `container.env` ship the same way,
+written into the built app, so keep tokens out of them too.
 
 ## Strategy-specific notes
 
@@ -354,7 +418,7 @@ re-enable any of them by editing the generated files. Do not.
 | Cross-origin headers | shinyelectron | Set automatically for Shinylive |
 | Shiny app code | You | Validate inputs, parameterize commands, avoid shell strings |
 | Filesystem use | You | Least privilege; the code you remove cannot be exploited |
-| Credentials | You | Never bundle; use env vars or the OS keychain |
+| Credentials | You | Never bundle; use `~/.Renviron`, env vars, the OS keychain, or browser sign-in |
 | Container image | You | Override `USER`, mount minimum, keep engine patched |
 | Code signing | You | Sign release builds; HTTPS for update manifests |
 
