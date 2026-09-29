@@ -39,6 +39,11 @@ Validates that a Shiny application can be built as an Electron app.
 Checks app structure, configuration, runtime availability, dependencies,
 and signing credentials. Reports issues without aborting.
 }
+\details{
+Files named in \verb{_shinyelectron.yml}, such as \code{icon} or \code{splash.image}, are
+looked up relative to \code{appdir}, as \code{\link[=export]{export()}} does. A missing icon is an
+error, because \code{\link[=export]{export()}} stops on it; other missing files are warnings.
+}
 \examples{
 \donttest{
 # Check a bundled example app

@@ -11,6 +11,12 @@ export_multi_app <- function(appdir, destdir, config,
   app_name <- app_name %||% config$app$name %||% basename(appdir)
   validate_app_name(app_name)
 
+  # Paths in the suite config are relative to the suite root. export() has
+  # already resolved them; resolving again is a no-op for absolute paths and
+  # covers a config passed in directly.
+  config <- resolve_config_paths(config, appdir)
+  config <- drop_missing_config_files(config, base_dir = appdir)
+
   # Validate the icon up front, matching the single-app path.
   if (!is.null(icon)) {
     validate_icon(icon, platform)
@@ -98,7 +104,7 @@ export_multi_app <- function(appdir, destdir, config,
 
     for (app_entry in config$apps) {
       app_id <- app_entry$id
-      app_src <- fs::path(appdir, app_entry$path)
+      app_src <- resolve_config_path(app_entry$path, appdir)
       app_dest <- fs::path(apps_dir, app_id)
       this_type <- resolve_app_type(app_entry, config)
       this_strategy <- resolve_app_strategy(app_entry, config)
@@ -148,8 +154,10 @@ export_multi_app <- function(appdir, destdir, config,
         }
       }
 
-      # Build manifest entry (use NA for missing icon so jsonlite writes null, not {})
-      app_icon <- if (is.null(app_entry$icon) || !nzchar(app_entry$icon %||% "")) NA else app_entry$icon
+      # Build manifest entry. The launcher shows the copy of the icon that
+      # copy_brand_assets() puts in the build (use NA for no icon so jsonlite
+      # writes null, not {}).
+      app_icon <- app_icon_asset(app_entry) %||% NA
       serve <- if (this_strategy == "shinylive") {
         list(kind = "shinylive", site = "src/shinylive-site", subdir = app_id)
       } else if (this_strategy == "container") {

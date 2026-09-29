@@ -144,6 +144,22 @@
   `"false"` is read with a warning, and any other value stops the build before
   anything is downloaded.
 
+* Paths in `_shinyelectron.yml` are now resolved against the app directory
+  (the suite root for a multi-app suite) as documented, not the working
+  directory, so `export()` finds them from anywhere. This covers `icon`,
+  `icons`, `splash.image`, `tray.icon`, `signing.win.certificate_file`, and
+  the `path` and `icon` of each `apps` entry; launcher icons are now copied
+  into the build so the launcher can show them. `~` and absolute paths work.
+  The `icon` argument of `export()` stays relative to the working directory.
+
+* A configured splash image, tray icon, or launcher icon that does not exist
+  now gives a warning naming the key and the path checked, instead of being
+  skipped silently, and the build uses the default. A missing configured app
+  icon stops `export()`, as a missing `icon` argument does, and a missing
+  `signing.win.certificate_file` warns when a Windows build is signed.
+  `app_check()` checks these files the same way and reports a missing icon as
+  an error.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the
