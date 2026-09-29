@@ -158,8 +158,9 @@ generate_package_json <- function(app_slug, app_version, backend, config,
     win_config$license <- config$installer$license_file
   }
 
-  if (!is.null(config$installer$one_click)) {
-    build_config$nsis <- list(oneClick = config$installer$one_click)
+  nsis_config <- build_nsis_config(config)
+  if (length(nsis_config) > 0) {
+    build_config$nsis <- nsis_config
   }
 
   build_config$win <- win_config
@@ -169,4 +170,34 @@ generate_package_json <- function(app_slug, app_version, backend, config,
   pkg$build <- build_config
 
   jsonlite::toJSON(pkg, pretty = TRUE, auto_unbox = TRUE)
+}
+
+#' Build the electron-builder `nsis` block from installer config
+#'
+#' `one_click = TRUE` keeps the silent one-click install to the default
+#' per-user location. `one_click = FALSE` uses the assisted wizard, where
+#' `allow_to_change_installation_directory` (defaulting to TRUE in wizard
+#' mode) lets the user choose where the application is installed.
+#'
+#' @param config List. The effective configuration.
+#' @return A named list for the package.json `build.nsis` field.
+#' @keywords internal
+build_nsis_config <- function(config) {
+  one_click <- config$installer$one_click
+  nsis <- list()
+  if (!is.null(one_click)) {
+    nsis$oneClick <- isTRUE(one_click)
+  }
+  change_dir <- config$installer$allow_to_change_installation_directory
+  if (is.null(change_dir)) {
+    change_dir <- isFALSE(one_click)
+  }
+  if (is.logical(change_dir) && length(change_dir) == 1L && !is.na(change_dir)) {
+    nsis$allowToChangeInstallationDirectory <- change_dir
+  }
+  per_machine <- config$installer$per_machine
+  if (is.logical(per_machine) && length(per_machine) == 1L && !is.na(per_machine)) {
+    nsis$perMachine <- per_machine
+  }
+  nsis
 }

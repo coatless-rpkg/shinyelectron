@@ -139,3 +139,23 @@ test_that("generate_package_json respects config electron version override", {
 
   expect_equal(parsed$devDependencies$electron, "^42.1.0")
 })
+
+test_that("build_nsis_config maps installer options", {
+  expect_equal(
+    build_nsis_config(list(installer = list(one_click = TRUE))),
+    list(oneClick = TRUE, allowToChangeInstallationDirectory = FALSE)
+  )
+  expect_equal(
+    build_nsis_config(list(installer = list(one_click = FALSE))),
+    list(oneClick = FALSE, allowToChangeInstallationDirectory = TRUE)
+  )
+  expect_equal(
+    build_nsis_config(list(installer = list(
+      one_click = TRUE,
+      allow_to_change_installation_directory = TRUE,
+      per_machine = FALSE
+    ))),
+    list(oneClick = TRUE, allowToChangeInstallationDirectory = TRUE,
+         perMachine = FALSE)
+  )
+})

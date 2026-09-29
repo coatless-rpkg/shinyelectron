@@ -551,6 +551,8 @@ nodejs:
 #   app_id: null                  # null = "com.shinyelectron.<slug>"
 #   license_file: null            # Path to license file (shown during install)
 #   one_click: true               # Windows: true = silent install, false = wizard
+#   allow_to_change_installation_directory: null  # null = true when one_click is false
+#   per_machine: null             # null = per-user (default); true = all users (needs admin)
 
 ## Lifecycle UI
 ## Controls the startup, loading, error, and shutdown experience.

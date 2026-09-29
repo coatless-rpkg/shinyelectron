@@ -218,6 +218,8 @@ SHINYELECTRON_DEFAULTS <- list(
   installer = list(
     app_id = NULL,
     license_file = NULL,
-    one_click = TRUE
+    one_click = TRUE,
+    allow_to_change_installation_directory = NULL,
+    per_machine = NULL
   )
 )
