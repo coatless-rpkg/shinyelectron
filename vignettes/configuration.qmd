@@ -489,6 +489,8 @@ installer:
 
 ## Common recipes
 
+Each recipe sets `slug` next to `name`. When you copy one, keep the slug your app already ships under, or set a new one before the first release.
+
 ### Development setup
 
 Fast iteration while you work:
@@ -496,6 +498,7 @@ Fast iteration while you work:
 ```yaml
 app:
   name: "My App (Dev)"
+  slug: "my-app-dev"
   version: "0.0.1"
 
 window:
@@ -510,6 +513,7 @@ For distribution across platforms:
 ```yaml
 app:
   name: "Production App"
+  slug: "production-app"
   version: "1.0.0"
 
 build:
@@ -540,6 +544,7 @@ Ship R inside the app:
 ```yaml
 app:
   name: "Analytics Tool"
+  slug: "analytics-tool"
   version: "1.0.0"
 
 build:
@@ -561,6 +566,7 @@ Several apps behind one launcher:
 ```yaml
 app:
   name: "My App Suite"
+  slug: "my-app-suite"
   version: "1.0.0"
 
 build:

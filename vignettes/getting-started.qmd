@@ -209,6 +209,7 @@ init_config("my-app")
 ```yaml
 app:
   name: "My Dashboard"
+  slug: "my-dashboard"
   version: "1.0.0"
 
 build:

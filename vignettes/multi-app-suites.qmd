@@ -108,6 +108,7 @@ A single suite can bundle apps with different runtime strategies. Set a suite-wi
 # _shinyelectron.yml
 app:
   name: "Mixed Suite"
+  slug: "mixed-suite"
   version: "1.0.0"
 
 build:

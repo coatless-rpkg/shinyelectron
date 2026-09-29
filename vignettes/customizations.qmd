@@ -258,6 +258,7 @@ Help > About shows the app name and version, plus whatever metadata you set unde
 ```yaml
 app:
   name: "Sales Dashboard"
+  slug: "sales-dashboard"
   description: "Quarterly sales explorer"
   author: "Jane Doe <jane@example.org>"
   homepage: "https://example.org/sales"
@@ -290,6 +291,7 @@ A complete config that uses all three knobs at once. Drop this into `_shinyelect
 ```yaml
 app:
   name: "My Dashboard"
+  slug: "my-dashboard"
   version: "1.0.0"
 
 splash:
