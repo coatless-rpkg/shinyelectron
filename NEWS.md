@@ -12,8 +12,9 @@
   line: `log_dir` should be an absolute path that the app's user can write
   to, and without it logs go to the app's `userData/logs` folder.
   `app.log_dir` and `app.log_level` still work. When both set a key to
-  different values, `logging` wins and shinyelectron warns. `init_config()`
-  now suggests the `logging` form.
+  different values, `logging` wins with a warning of class
+  `shinyelectron_logging_conflict`. `init_config()` now suggests the
+  `logging` form.
 
 * `init_config()` no longer suggests `nodejs.auto_install`, which has no effect
   yet.

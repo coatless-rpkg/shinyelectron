@@ -162,7 +162,9 @@ test_that("read_config prefers logging when it and app set a field differently",
     "app:", "  log_dir: logs", "  log_level: warn",
     "logging:", "  log_level: debug"
   ))
-  expect_warning(config <- read_config(dir), "logging.log_level", fixed = TRUE)
+  w <- expect_warning(config <- read_config(dir),
+                      class = "shinyelectron_logging_conflict")
+  expect_match(conditionMessage(w), "logging.log_level", fixed = TRUE)
   expect_equal(config$app$log_level, "debug")
   expect_equal(config$app$log_dir, "logs")
 

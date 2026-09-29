@@ -18,8 +18,8 @@ map_logging_config(config)
 \code{app.log_level}, which the file may also set directly. This copies
 \code{logging.log_dir} and \code{logging.log_level} into \code{app} on the parsed YAML,
 before \code{\link[=merge_config_deep]{merge_config_deep()}} fills in the defaults. When both spellings set
-a field to different values, the \code{logging} value wins and a warning names
-the field. Any other key under \code{logging} stays in place so that
-\code{\link[=collect_unknown_config_keys]{collect_unknown_config_keys()}} reports it.
+a field to different values, the \code{logging} value wins and a warning of
+class \code{shinyelectron_logging_conflict} names the field. Any other key under
+\code{logging} stays in place so that \code{\link[=collect_unknown_config_keys]{collect_unknown_config_keys()}} reports it.
 }
 \keyword{internal}

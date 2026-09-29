@@ -128,9 +128,9 @@ read_config <- function(appdir) {
 #' `app.log_level`, which the file may also set directly. This copies
 #' `logging.log_dir` and `logging.log_level` into `app` on the parsed YAML,
 #' before [merge_config_deep()] fills in the defaults. When both spellings set
-#' a field to different values, the `logging` value wins and a warning names
-#' the field. Any other key under `logging` stays in place so that
-#' [collect_unknown_config_keys()] reports it.
+#' a field to different values, the `logging` value wins and a warning of
+#' class `shinyelectron_logging_conflict` names the field. Any other key under
+#' `logging` stays in place so that [collect_unknown_config_keys()] reports it.
 #'
 #' @param config List. User configuration parsed from the YAML file.
 #' @return `config` with the `logging` fields moved into `app`.
@@ -153,7 +153,7 @@ map_logging_config <- function(config) {
       cli::cli_warn(c(
         "{.field logging.{field}} and {.field app.{field}} are both set in {.file {CONFIG_FILENAME}}.",
         "i" = "Using the {.field logging} value {.val {value}}."
-      ))
+      ), class = "shinyelectron_logging_conflict")
     }
     app[[field]] <- value
   }
