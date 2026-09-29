@@ -1,3 +1,29 @@
+# shinyelectron (development version)
+
+* R and Python apps whose UI takes several seconds to render no longer fail to
+  start. The startup check used to request the app's page, which ran the UI
+  code on every attempt; it now requests a path the app does not serve, so the
+  UI is rendered once, when the window loads it.
+
+* When an R or Python app does not start in time, only that app's process is
+  stopped and the error screen stays up with its details and a Retry button.
+  Going back to the launcher while an R or Python app is still starting no
+  longer leaves that start running, where it could later stop the next app's
+  process or replace the window with the abandoned app.
+
+* Restarting to install a downloaded update now stops the app's R or Python
+  process (or its container) and waits for it to exit before the installer
+  runs. If the update cannot be installed, a dialog asks you to restart the
+  app. Pressing Esc in the Update Ready dialog now means Later.
+
+* New `lifecycle.startup_timeout` sets how long, in milliseconds, an app waits
+  for its R, Python, or container server to start (default 180000, three
+  minutes). R and Python apps used to give up after 60 seconds and container
+  apps after 120. This timeout and `lifecycle.shutdown_timeout` must be whole
+  numbers of at least 1000; any other value warns and falls back to the
+  default. Before, a `shutdown_timeout` such as `"10s"` built an app that could
+  not launch.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the
