@@ -199,6 +199,8 @@ test_that("init_config output and its commented-out keys are all known", {
 
 test_that("export reports unknown keys once for a single app", {
   skip_if_not_installed("renv")
+  # Staging writes dependencies.json, which would query Posit Package Manager.
+  local_mocked_bindings(query_sysreqs = function(...) character(0))
   dir <- .config_dir(c("app:", "  nmae: Typo"))
   writeLines("library(shiny)\nshinyApp(ui = fluidPage(), server = function(input, output) {})",
              file.path(dir, "app.R"))
@@ -218,6 +220,8 @@ test_that("export reports unknown keys once for a single app", {
 
 test_that("export reports unknown keys once for a multi-app suite", {
   skip_if_not_installed("renv")
+  # Staging writes dependencies.json, which would query Posit Package Manager.
+  local_mocked_bindings(query_sysreqs = function(...) character(0))
   dir <- .config_dir(c(
     "app:", "  name: Suite", "  nmae: Typo",
     "build:", "  type: r-shiny", "  runtime_strategy: system",
