@@ -8,6 +8,14 @@
   certificate password still comes from `CSC_KEY_PASSWORD` and is never
   written to `package.json`.
 
+* The Windows credential checks in `export()` and `app_check()` now follow
+  electron-builder's lookup order: the certificate from
+  `signing.win.certificate_file`, then `WIN_CSC_LINK`, then `CSC_LINK`, and
+  the password from `WIN_CSC_KEY_PASSWORD`, then `CSC_KEY_PASSWORD`. Setting
+  only the `WIN_CSC_*` variables no longer draws a misleading warning, and a
+  `WIN_CSC_*` variable that is set but empty now warns, because
+  electron-builder stops there instead of falling back to `CSC_*`.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the
