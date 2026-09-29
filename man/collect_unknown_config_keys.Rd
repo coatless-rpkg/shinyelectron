@@ -6,7 +6,7 @@
 \usage{
 collect_unknown_config_keys(
   config,
-  defaults = default_config(),
+  defaults = config_schema(),
   path = character(0)
 )
 }
@@ -21,9 +21,13 @@ collect_unknown_config_keys(
 Character vector of unknown dotted key paths (possibly empty).
 }
 \description{
-Compares the keys in the config file against the documented schema (the
-defaults) and returns the dotted paths of any key that would otherwise be
-silently ignored. Free-form maps (\code{container.volumes}, \code{container.env}), the
-multi-app \code{apps} list and the top-level \code{icon} shortcut are exempt.
+Compares the keys in the config file against the accepted keys
+(\code{\link[=config_schema]{config_schema()}}) and returns the dotted paths of any key that would
+otherwise be silently ignored. It descends only where both the config
+value and the default are named lists, the rule \code{\link[=merge_config_deep]{merge_config_deep()}} uses,
+so a value that the merge takes whole is not inspected: free-form maps
+(\code{container.volumes}, \code{container.env}), values whose default is a list
+(\code{dependencies.r.repos}), the entries of the multi-app \code{apps} list and the
+top-level \code{icon} shortcut.
 }
 \keyword{internal}

@@ -117,41 +117,65 @@ read_config <- function(appdir) {
   validate_config(merged)
 }
 
+#' Configuration keys accepted in _shinyelectron.yml
+#'
+#' The keys of [default_config()] plus the top-level keys that have no
+#' default: the `icon` shortcut and the multi-app `apps` list.
+#'
+#' @return Named list shaped like [default_config()].
+#' @keywords internal
+config_schema <- function() {
+  c(default_config(), list(
+    icon = NULL,
+    apps = list()
+  ))
+}
+
 #' Collect unknown configuration keys
 #'
-#' Compares the keys in the config file against the documented schema (the
-#' defaults) and returns the dotted paths of any key that would otherwise be
-#' silently ignored. Free-form maps (`container.volumes`, `container.env`), the
-#' multi-app `apps` list and the top-level `icon` shortcut are exempt.
+#' Compares the keys in the config file against the accepted keys
+#' ([config_schema()]) and returns the dotted paths of any key that would
+#' otherwise be silently ignored. It descends only where both the config
+#' value and the default are named lists, the rule [merge_config_deep()] uses,
+#' so a value that the merge takes whole is not inspected: free-form maps
+#' (`container.volumes`, `container.env`), values whose default is a list
+#' (`dependencies.r.repos`), the entries of the multi-app `apps` list and the
+#' top-level `icon` shortcut.
 #'
 #' @param config List. User configuration parsed from the YAML file.
 #' @param defaults List. Schema to compare against (defaults to the full schema).
 #' @param path Character vector. Internal recursion path.
 #' @return Character vector of unknown dotted key paths (possibly empty).
 #' @keywords internal
-collect_unknown_config_keys <- function(config, defaults = default_config(),
+collect_unknown_config_keys <- function(config, defaults = config_schema(),
                                         path = character(0)) {
-  if (!is.list(config) || is.null(names(config)) || !all(nzchar(names(config)))) {
+  if (!is.list(config) || is.null(names(config))) {
     return(character(0))
   }
-  extra_top <- c("apps", "icon")
-  skip_subtrees <- c("container.volumes", "container.env", "apps")
   unknown <- character(0)
   for (name in names(config)) {
     full <- c(path, name)
-    full_str <- paste(full, collapse = ".")
-    known <- name %in% names(defaults) ||
-      (length(path) == 0L && name %in% extra_top)
-    if (!known) {
-      unknown <- c(unknown, full_str)
-      next
-    }
-    if (is.list(config[[name]]) && is.list(defaults[[name]]) &&
-        !full_str %in% skip_subtrees) {
+    if (!name %in% names(defaults)) {
+      unknown <- c(unknown, paste(full, collapse = "."))
+    } else if (is_named_list(config[[name]]) &&
+               is_named_list(defaults[[name]])) {
       unknown <- c(unknown, collect_unknown_config_keys(config[[name]], defaults[[name]], full))
     }
   }
   unknown
+}
+
+#' Test for a map-like list
+#'
+#' `TRUE` for a list whose elements all have non-empty names, the shape YAML
+#' gives a mapping. YAML sequences, scalars and lists with an unnamed element
+#' are not map-like.
+#'
+#' @param x Object to test.
+#' @return A single logical.
+#' @keywords internal
+is_named_list <- function(x) {
+  is.list(x) && !is.null(names(x)) && all(nzchar(names(x)))
 }
 
 #' Deep merge two lists
@@ -167,14 +191,11 @@ merge_config_deep <- function(defaults, config) {
     return(defaults)
   }
 
-  # Only recurse into map-like (fully named) lists. Unnamed YAML sequences
-  # (repos, index_urls, package lists) and scalars must override the default
-  # wholesale; recursing into them would iterate an empty `names()` and
-  # silently return the default, discarding the user's value.
-  is_named_list <- function(x) {
-    is.list(x) && !is.null(names(x)) && all(nzchar(names(x)))
-  }
-
+  # Only recurse into map-like (fully named) lists, as tested by
+  # is_named_list(). Unnamed YAML sequences (repos, index_urls, package lists)
+  # and scalars must override the default wholesale; recursing into them would
+  # iterate an empty `names()` and silently return the default, discarding the
+  # user's value.
   result <- defaults
 
   for (name in names(config)) {
