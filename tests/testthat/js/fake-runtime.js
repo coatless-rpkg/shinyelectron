@@ -10,7 +10,9 @@
 // on SIGTERM, as a process killed by taskkill /f does on Windows. Every run
 // is recorded in <appDir>/fake-runs.log.
 // The fake docker keeps its containers in $FAKE_DOCKER_STATE and logs every
-// call there in calls.log.
+// call there in calls.log. With lateLogs: <ms>, `docker logs -f` ignores
+// SIGTERM and prints one more line after that long, like log output still
+// in the pipe when the backend stops following the logs.
 // `fake-runtime.js install <dir>` writes the Rscript, python3 and docker
 // wrappers.
 'use strict';
@@ -43,13 +45,18 @@ function exitWithHarness() {
   }, 500).unref();
 }
 
+function readMode(appDir) {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(appDir, 'fake-mode.json'), 'utf8'));
+  } catch {
+    return { mode: 'serve' };
+  }
+}
+
 function runApp(appDir, port) {
   exitWithHarness();
 
-  let mode = { mode: 'serve' };
-  try {
-    mode = JSON.parse(fs.readFileSync(path.join(appDir, 'fake-mode.json'), 'utf8'));
-  } catch { /* default mode */ }
+  const mode = readMode(appDir);
   appendLine(path.join(appDir, 'fake-runs.log'), `${process.pid} ${port}`);
 
   if (mode.termExitCode !== undefined) {
@@ -127,7 +134,7 @@ function fakeDocker() {
             stdio: 'ignore'
           });
           container.unref();
-          fs.writeFileSync(containerFile(id.slice(0, 12)), JSON.stringify({ pid: container.pid, port }));
+          fs.writeFileSync(containerFile(id.slice(0, 12)), JSON.stringify({ pid: container.pid, port, appDir }));
           process.stdout.write(id + '\n');
         });
       });
@@ -139,13 +146,25 @@ function fakeDocker() {
       process.stdout.write(`127.0.0.1:${container.port}\n`);
       return;
     }
-    case 'logs':
+    case 'logs': {
       process.stdout.write('fake container log line\n');
-      if (args[1] === '-f') {
-        exitWithHarness();
+      if (args[1] !== '-f') return;
+      exitWithHarness();
+      const id = args[args.length - 1];
+      const container = readContainer(id);
+      const lateLogs = container && readMode(container.appDir).lateLogs;
+      if (lateLogs) {
+        process.on('SIGTERM', () => {});
+        setTimeout(() => {
+          process.stdout.write('late container log line\n');
+          appendLine(path.join(state, 'calls.log'), `late-log ${id}`);
+          process.exit(0);
+        }, lateLogs);
+      } else {
         setInterval(() => {}, 1 << 30);
       }
       return;
+    }
     case 'stop':
       killContainer(args[args.length - 1]);
       return;

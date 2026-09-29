@@ -315,7 +315,8 @@ const containerConfig = (extra) => config({ container_engine: 'docker', ...extra
 test('container', 'Container: a startup timeout ends on the error status and removes its container', async () => {
   const be = newBackend(Container);
   const events = record(be);
-  const app = makeApp({ mode: 'hang' });
+  // lateLogs: one more log line arrives after the start has already failed.
+  const app = makeApp({ mode: 'hang', lateLogs: 4000 });
   const res = await within(
     be.start({ appPath: app, port: 3838, config: containerConfig({ startup_timeout: 1200 }) }),
     20000, 'start()'
@@ -327,6 +328,7 @@ test('container', 'Container: a startup timeout ends on the error status and rem
   await waitFor(() => dockerCalls().includes(`rm -f ${id}`), 5000, 'the container to be removed');
   const pid = Number(runsOf(app)[0].split(' ')[0]);
   await waitFor(() => !isAlive(pid), 5000, 'the container to exit');
+  await waitFor(() => dockerCalls().includes(`late-log ${id}`), 10000, 'the late log line');
   await delay(500);
   const all = phases(events);
   assertEqual(all[all.length - 1], 'error', 'last status');
