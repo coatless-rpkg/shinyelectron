@@ -68,6 +68,9 @@ function isSupersededStart(err) {
 {{#updates_enabled}}
 const { autoUpdater } = require('electron-updater');
 const updaterLog = require('electron-log');
+// True while Help > About > Check for Updates runs; it answers in its own
+// dialog, so the update-available notification stays quiet.
+let interactiveUpdateCheck = false;
 {{/updates_enabled}}
 
 let mainWindow;
@@ -179,6 +182,50 @@ function createTray() {
 {{/tray_enabled}}
 
 {{#menu_enabled}}
+// Help > About, shared by both menu templates. Each configured string comes
+// from an escaped *_js template variable.
+async function showAboutDialog() {
+  const { dialog, shell } = require('electron');
+  const detail = [
+    'Version {{{app_version_js}}}',
+    {{#has_app_description}}'', '{{{app_description_js}}}',{{/has_app_description}}
+    {{#has_app_author}}'', 'Author: {{{app_author_js}}}',{{/has_app_author}}
+    {{#has_app_copyright}}'', '{{{app_copyright_js}}}',{{/has_app_copyright}}
+    '', 'Built with shinyelectron'
+  ].join('\n');
+  // buttons[i] runs actions[i]; OK only closes the dialog.
+  const buttons = ['OK'];
+  const actions = [null];
+  {{#updates_enabled}}
+  // A macOS build ships only a dmg, and electron-updater can update a Mac
+  // app only from a zip, so the check is offered on Windows and Linux.
+  if (process.platform !== 'darwin') {
+    buttons.push('Check for Updates');
+    actions.push(checkForUpdatesInteractive);
+  }
+  {{/updates_enabled}}
+  {{#has_app_homepage}}
+  buttons.push('Visit Website');
+  actions.push(() => shell.openExternal('{{{app_homepage_js}}}'));
+  {{/has_app_homepage}}
+  {{#has_app_email}}
+  buttons.push('Email');
+  actions.push(() => shell.openExternal('mailto:{{{app_email_js}}}'));
+  {{/has_app_email}}
+  const { response } = await dialog.showMessageBox(mainWindow, {
+    type: 'info',
+    title: 'About {{{app_name_js}}}',
+    message: '{{{app_name_js}}}',
+    detail,
+    buttons,
+    defaultId: 0,
+    cancelId: 0,
+    // Windows would otherwise show the extra buttons as command links.
+    noLink: true
+  });
+  if (actions[response]) await actions[response]();
+}
+
 function createMenu() {
   const isMac = process.platform === 'darwin';
 
@@ -186,11 +233,12 @@ function createMenu() {
   // Minimal menu -- File, Edit, Help only
   const template = [
     ...(isMac ? [{
-      label: app.name,
+      // Electron would label these items with app.name, which is the slug.
+      label: '{{{app_name_js}}}',
       submenu: [
-        { role: 'about' },
+        { role: 'about', label: 'About {{{app_name_js}}}' },
         { type: 'separator' },
-        { role: 'quit' }
+        { role: 'quit', label: 'Quit {{{app_name_js}}}' }
       ]
     }] : []),
     {
@@ -252,13 +300,7 @@ function createMenu() {
         {
           label: 'About',
           click: () => {
-            const { dialog } = require('electron');
-            dialog.showMessageBox(mainWindow, {
-              type: 'info',
-              title: 'About {{{app_name_js}}}',
-              message: '{{{app_name_js}}}',
-              detail: 'Version {{{app_version_js}}}\n\nBuilt with shinyelectron'
-            });
+            showAboutDialog().catch((err) => log('error', 'About dialog failed:', err));
           }
         }
       ]
@@ -269,17 +311,18 @@ function createMenu() {
   // Default menu -- full menu bar
   const template = [
     ...(isMac ? [{
-      label: app.name,
+      // Electron would label these items with app.name, which is the slug.
+      label: '{{{app_name_js}}}',
       submenu: [
-        { role: 'about' },
+        { role: 'about', label: 'About {{{app_name_js}}}' },
         { type: 'separator' },
         { role: 'services' },
         { type: 'separator' },
-        { role: 'hide' },
+        { role: 'hide', label: 'Hide {{{app_name_js}}}' },
         { role: 'hideOthers' },
         { role: 'unhide' },
         { type: 'separator' },
-        { role: 'quit' }
+        { role: 'quit', label: 'Quit {{{app_name_js}}}' }
       ]
     }] : []),
     {
@@ -373,13 +416,7 @@ function createMenu() {
         {
           label: 'About',
           click: () => {
-            const { dialog } = require('electron');
-            dialog.showMessageBox(mainWindow, {
-              type: 'info',
-              title: 'About {{{app_name_js}}}',
-              message: '{{{app_name_js}}}',
-              detail: 'Version {{{app_version_js}}}\n\nBuilt with shinyelectron'
-            });
+            showAboutDialog().catch((err) => log('error', 'About dialog failed:', err));
           }
         }
       ]
@@ -408,17 +445,24 @@ function setupAutoUpdater() {
 
   autoUpdater.on('update-available', (info) => {
     updaterLog.info('Update available:', info.version);
+    // Check for Updates answers in its own dialog.
+    if (interactiveUpdateCheck) return;
     // Show non-intrusive notification instead of modal
     const { Notification } = require('electron');
     if (Notification.isSupported()) {
+      // With autoDownload on, the download has already started.
       const notification = new Notification({
         title: 'Update Available',
-        body: `Version ${info.version} is available. Click to download.`,
+        body: autoUpdater.autoDownload
+          ? `Version ${info.version} is downloading.`
+          : `Version ${info.version} is available. Click to download.`,
         silent: true
       });
-      notification.on('click', () => {
-        autoUpdater.downloadUpdate();
-      });
+      if (!autoUpdater.autoDownload) {
+        notification.on('click', () => {
+          autoUpdater.downloadUpdate().catch((err) => updaterLog.error('Update download failed:', err));
+        });
+      }
       notification.show();
     } else {
       // Fallback to log
@@ -512,6 +556,64 @@ function setupAutoUpdater() {
   autoUpdater.on('error', (err) => {
     updaterLog.error('AutoUpdater error:', err);
   });
+}
+
+// Help > About > Check for Updates. Unlike the startup check, this answers
+// every outcome with a dialog.
+async function checkForUpdatesInteractive() {
+  const { dialog } = require('electron');
+  const show = (type, message, detail) =>
+    dialog.showMessageBox(mainWindow, { type, title: 'Check for Updates', message, detail, noLink: true })
+      .catch((err) => updaterLog.error('Update dialog failed:', err));
+  const reason = (err) => String((err && err.message) || err);
+  const downloadFailed = (err) => show('warning', 'Could not download the update', reason(err));
+
+  let result;
+  interactiveUpdateCheck = true;
+  try {
+    result = await autoUpdater.checkForUpdates();
+  } catch (err) {
+    await show('warning', 'Could not check for updates', reason(err));
+    return;
+  } finally {
+    interactiveUpdateCheck = false;
+  }
+
+  // electron-updater answers null when it is inactive, as in a copy that is
+  // not an installed build (npm run electron, for example).
+  if (!result) {
+    await show('info', 'Updates work only in the installed app',
+      'This copy was not installed from a release, so it cannot check for updates.');
+    return;
+  }
+  if (!result.isUpdateAvailable) {
+    await show('info', 'You are up to date', `Version ${app.getVersion()} is the latest version.`);
+    return;
+  }
+
+  const version = result.updateInfo.version;
+  if (autoUpdater.autoDownload) {
+    // The download is already running; the update-downloaded handler asks
+    // to restart once it finishes.
+    if (result.downloadPromise) result.downloadPromise.catch(downloadFailed);
+    await show('info', `Version ${version} is downloading`,
+      'You will be asked to restart when it is ready.');
+    return;
+  }
+  const { response } = await dialog.showMessageBox(mainWindow, {
+    type: 'info',
+    title: 'Check for Updates',
+    message: `Version ${version} is available`,
+    detail: `You have version ${app.getVersion()}.`,
+    buttons: ['Download', 'Later'],
+    defaultId: 0,
+    cancelId: 1,
+    noLink: true
+  });
+  if (response === 0) {
+    // The update-downloaded handler asks to restart once the download completes.
+    autoUpdater.downloadUpdate().catch(downloadFailed);
+  }
 }
 {{/updates_enabled}}
 
@@ -1011,6 +1113,30 @@ app.whenReady().then(() => {
   log('info', 'Backend: {{backend_module}}');
   log('info', 'Platform:', process.platform, process.arch);
   log('info', 'Preferred port: {{server_port}}');
+
+  // The native About panel, which the macOS App menu opens, shows the same
+  // metadata as Help > About. Electron shows credits on macOS and Windows,
+  // and website and authors on Linux.
+  app.setAboutPanelOptions({
+    applicationName: '{{{app_name_js}}}',
+    applicationVersion: '{{{app_version_js}}}',
+    {{#has_app_copyright}}
+    copyright: '{{{app_copyright_js}}}',
+    {{/has_app_copyright}}
+    {{#has_about_credits}}
+    credits: [
+      {{#has_app_description}}'{{{app_description_js}}}',{{/has_app_description}}
+      {{#has_app_author}}'Author: {{{app_author_js}}}',{{/has_app_author}}
+    ].join('\n'),
+    {{/has_about_credits}}
+    {{#has_app_homepage}}
+    website: '{{{app_homepage_js}}}',
+    {{/has_app_homepage}}
+    {{#has_app_author}}
+    authors: ['{{{app_author_js}}}'],
+    {{/has_app_author}}
+  });
+
   createWindow();
 
   {{#tray_enabled}}

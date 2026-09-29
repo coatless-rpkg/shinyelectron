@@ -218,3 +218,38 @@ test_that("wizard advanced path records github as the update provider", {
   expect_equal(config$updates$provider, "github")
   expect_true(isTRUE(config$updates$enabled))
 })
+
+# ---------------------------------------------------------------------------
+# Slug
+# ---------------------------------------------------------------------------
+
+test_that("wizard writes the directory's slug, whatever the app name", {
+  tmp <- file.path(withr::local_tempdir(), "dash-app")
+  dir.create(tmp)
+  run_wizard_quiet(tmp, c("Sales Dashboard", rep("", 8L)))
+
+  config <- yaml::read_yaml(file.path(tmp, "_shinyelectron.yml"))
+  expect_equal(config$app$name, "Sales Dashboard")
+  expect_equal(config$app$slug, "dash-app")
+  expect_equal(names(config$app), c("name", "slug", "version"))
+})
+
+test_that("wizard says to set app.slug when no slug can be derived", {
+  appdir <- file.path(withr::local_tempdir(), "\u6570\u636e")
+  dir.create(appdir)
+  mockery::stub(wizard, "interactive", function() TRUE)
+  mockery::stub(wizard, "readline", make_readline_responder(c("\u5206\u6790", rep("", 8L))))
+  mockery::stub(wizard, "validate_config_file", function(...) invisible(TRUE))
+
+  messages <- character(0)
+  withCallingHandlers(
+    capture.output(wizard(appdir), type = "output"),
+    message = function(m) {
+      messages <<- c(messages, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+  expect_true(any(grepl("app.slug", messages, fixed = TRUE)))
+  config <- yaml::read_yaml(file.path(appdir, "_shinyelectron.yml"))
+  expect_null(config$app$slug)
+})

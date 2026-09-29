@@ -15,6 +15,10 @@ default_config <- function() {
       name = NULL,
       slug = NULL,
       version = SHINYELECTRON_DEFAULTS$app_version,
+      description = NULL,
+      author = NULL,
+      homepage = NULL,
+      copyright = NULL,
       log_dir = SHINYELECTRON_DEFAULTS$logging$log_dir,
       log_level = SHINYELECTRON_DEFAULTS$logging$log_level
     ),
@@ -566,6 +570,47 @@ validate_config <- function(config) {
     ))
   }
 
+  # YAML reads an unquoted name or slug such as 2048 as a number; read a
+  # single number as text. export() checks both values before it builds.
+  for (key in c("name", "slug")) {
+    value <- config$app[[key]]
+    if (is.numeric(value) && length(value) == 1L && !is.na(value)) {
+      config$app[[key]] <- format(value, scientific = FALSE, trim = TRUE, digits = 15)
+    }
+  }
+
+  # Validate the app metadata that fills package.json and the About dialog.
+  for (key in c("description", "copyright")) {
+    value <- config$app[[key]]
+    if (!is.null(value) && !(is.character(value) && length(value) == 1L)) {
+      cli::cli_warn(c(
+        "Invalid {.field app.{key}} in config",
+        "i" = "Must be a single string; ignoring it",
+        "i" = "Edit {.field app.{key}} in {.file _shinyelectron.yml}"
+      ))
+      config$app[[key]] <- NULL
+    }
+  }
+
+  # app.author is an npm person string or a map. A malformed value is
+  # dropped; normalize_app_author() explains why.
+  if (!is.null(config$app$author) && is.null(normalize_app_author(config$app$author))) {
+    config$app$author <- NULL
+  }
+
+  # The About dialog opens app.homepage in the browser, so it must be a web
+  # URL. A blank value counts as unset.
+  homepage <- config$app$homepage
+  homepage_blank <- is.character(homepage) && length(homepage) == 1L &&
+    (is.na(homepage) || !nzchar(trimws(homepage)))
+  if (!is.null(homepage) && !homepage_blank && !is_http_url(homepage)) {
+    cli::cli_abort(c(
+      "Invalid {.field app.homepage} in config: it must start with {.val http://} or {.val https://}",
+      "x" = if (is.character(homepage) && length(homepage) == 1L) "Found {.val {homepage}}",
+      "i" = "Edit {.field app.homepage} in {.file _shinyelectron.yml}"
+    ), class = "shinyelectron_invalid_homepage")
+  }
+
   config
 }
 
@@ -637,15 +682,46 @@ init_config <- function(appdir, app_name = NULL, overwrite = FALSE, verbose = TR
   app_name_safe <- gsub("\\", "\\\\", app_name, fixed = TRUE)
   app_name_safe <- gsub('"', '\\"', app_name_safe, fixed = TRUE)
 
+  # Write the slug out, so the app keeps its identity when the name changes.
+  # As export() does without an app_name argument, it comes from the
+  # directory name; app_name only sets the display name.
+  dir_path <- normalizePath(appdir, mustWork = FALSE)
+  slug <- resolve_app_slug(list(), NULL, dir_path)
+
+  # The slug of the config being replaced: its app.slug or, without one,
+  # the directory's, which export() used for it.
+  old_slug <- NULL
+  if (fs::file_exists(config_path)) {
+    old <- tryCatch(yaml::read_yaml(config_path), error = function(e) NULL)
+    old_slug <- if (!is.null(old$app$slug)) {
+      as.character(old$app$slug)[1]
+    } else {
+      slug_or_null(basename(dir_path))
+    }
+  }
+
+  slug_line <- if (is.null(slug)) {
+    '# slug: null             # Set a lowercase ASCII slug such as "my-app"'
+  } else {
+    paste0('slug: "', slug, '"')
+  }
+
   # Template content with all configuration sections
   template <- '# shinyelectron configuration file
 # Documentation: https://r-pkg.thecoatlessprofessor.com/shinyelectron/
 
 app:
   name: "{{{app_name}}}"
+  # The slug is the app identity: package name, app ID, user data folder,
+  # and installer file names. Keep it once the app has shipped, even if
+  # the name changes.
+  {{{slug_line}}}
   version: "1.0.0"
-  # Uncomment to set a custom URL-safe slug (default: derived from name)
-  # slug: null
+  # Uncomment to describe the app in Help > About and the installer metadata
+  # description: null        # null = "<slug> - Shiny Electron App"
+  # author: null             # "Name <email> (url)", or a map of name, email, url
+  # homepage: null           # http:// or https:// URL for a Visit Website button
+  # copyright: null          # e.g. "Copyright 2026 Example Inc."
 
 # Uncomment to configure logging (app.log_dir and app.log_level also work)
 # logging:
@@ -817,12 +893,22 @@ nodejs:
 #   prompt_runtime_version: false # true = ask which R/Python version to use
 '
 
-  content <- whisker::whisker.render(template, list(app_name = app_name_safe))
+  content <- whisker::whisker.render(
+    template, list(app_name = app_name_safe, slug_line = slug_line)
+  )
   writeLines(content, config_path)
+
+  if (!is.null(old_slug) && !is.null(slug) && !identical(old_slug, slug)) {
+    cli::cli_warn(c(
+      "The new configuration gives the app the slug {.val {slug}}; the one it replaced gave {.val {old_slug}}.",
+      "i" = "Copies installed from builds with the old slug will not update to builds with the new one. To keep them updating, set {.code slug: \"{old_slug}\"} in {.path {config_path}}."
+    ), class = "shinyelectron_config_slug_changed")
+  }
 
   if (verbose) {
     cli::cli_alert_success("Created configuration file: {.path {config_path}}")
     cli::cli_alert_info("Edit this file to customize your Electron app settings")
+    if (is.null(slug)) alert_missing_slug()
   }
 
   validate_config_file(config_path)
@@ -920,12 +1006,15 @@ show_config <- function(appdir = ".") {
 
   cat("\n")
 
-  # App section
+  # App section. The slug follows the same rules as export() without an
+  # app_name argument: app.slug, else the directory name.
+  app_name <- config$app$name %||% basename(appdir)
+  slug <- resolve_app_slug(config, NULL, appdir)
   cli::cli_h2("Application")
   cli::cli_bullets(c(
-    "*" = "Name: {.val {config$app$name %||% basename(appdir)}}",
+    "*" = "Name: {.val {app_name}}",
     "*" = "Version: {.val {config$app$version %||% '1.0.0'}}",
-    "*" = "Slug: {.val {config$app$slug %||% slugify(config$app$name %||% basename(appdir))}}"
+    "*" = "Slug: {.val {slug %||% '(none; set app.slug)'}}"
   ))
 
   # Build section

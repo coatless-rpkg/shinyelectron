@@ -184,6 +184,7 @@ The action does not take an icon input. Put project settings like the icon in a 
 ```yaml
 app:
   name: "My Shiny Dashboard"
+  slug: "my-shiny-dashboard"
   version: "1.0.0"
 
 build:

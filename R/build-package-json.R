@@ -6,6 +6,8 @@
 #'
 #' @param app_slug Character string. The slugified app name.
 #' @param app_version Character string. The app version.
+#' @param app_name Character string or NULL. Display name, used as the
+#'   electron-builder productName. `NULL` uses the slug.
 #' @param backend Character string. The backend module name without .js (e.g., "shinylive", "native-r").
 #' @param config List. The effective configuration.
 #' @param has_icon Logical. Whether an icon is provided.
@@ -13,12 +15,20 @@
 #' @keywords internal
 generate_package_json <- function(app_slug, app_version, backend, config,
                                   has_icon = FALSE, sign = FALSE,
-                                  is_multi_app = FALSE) {
+                                  is_multi_app = FALSE, app_name = NULL) {
+  metadata <- app_metadata(config)
+  # electron-builder writes the product name, the copyright, and the author's
+  # name into double-quoted Windows installer strings without escaping them,
+  # so their straight double quotes become typographic ones (see
+  # smart_quotes()). It already does this for the description.
+  author <- metadata$author
+  if (!is.null(author)) author$name <- smart_quotes(author$name)
+
   # Base structure
   pkg <- list(
     name = app_slug,
     version = app_version,
-    description = paste0(app_slug, " - Shiny Electron App"),
+    description = metadata$description %||% paste0(app_slug, " - Shiny Electron App"),
     main = "main.js",
     # --publish never suppresses electron-builder's publish pipeline, which
     # 26.x crashes in ("Cannot read properties of null (reading 'channel')")
@@ -39,13 +49,16 @@ generate_package_json <- function(app_slug, app_version, backend, config,
       `build-linux-x64` = "electron-builder --linux --x64 --publish never",
       `build-linux-arm64` = "electron-builder --linux --arm64 --publish never"
     ),
-    author = "",
+    # npm's object form of a person, leaving out unset fields.
+    author = if (is.null(author)) "" else Filter(Negate(is.null), author),
     license = "AGPL-3.0-or-later",
     devDependencies = list(
       electron = paste0("^", resolve_runtime_version("electron", config)),
       `electron-builder` = paste0("^", SHINYELECTRON_DEFAULTS$electron_toolchain$builder)
     )
   )
+  # electron-builder links the homepage from the Windows uninstall entry.
+  pkg$homepage <- metadata$homepage
 
   # Dependencies vary by backend
   deps <- list()
@@ -65,12 +78,22 @@ generate_package_json <- function(app_slug, app_version, backend, config,
     pkg$dependencies <- deps
   }
 
-  # Build configuration
+  # Build configuration. The display name labels the installed app (the
+  # macOS .app, the Windows shortcuts and uninstall entry); file names keep
+  # the slug.
   build_config <- list(
     appId = config$installer$app_id %||% paste0("com.shinyelectron.", app_slug),
-    productName = app_slug,
+    productName = smart_quotes(app_name %||% app_slug),
+    # ${name} is the package.json name, the slug, so installer names are safe
+    # for GitHub Releases. ${arch} keeps the build of each architecture, all
+    # written to the same dist/, from overwriting another.
+    artifactName = "${name}-${version}-${arch}.${ext}",
     directories = list(output = "dist")
   )
+  # The copyright goes into the Windows file properties and the macOS
+  # Info.plist, which the native About panel reads. Unset, electron-builder
+  # writes a default notice with the year and the author name (or productName).
+  build_config$copyright <- smart_quotes(metadata$copyright)
 
   # Publish config for auto-updates
   if (updates_enabled) {
@@ -103,10 +126,22 @@ generate_package_json <- function(app_slug, app_version, backend, config,
     build_config$asarUnpack <- unpack
   }
 
-  # Platform targets
-  win_config <- list(target = "nsis")
+  # Platform targets. On Windows the executable keeps the slug, so renaming
+  # the app does not break pinned shortcuts, and updates reuse the folder an
+  # existing install was registered with. The installer name adds "Setup".
+  win_config <- list(
+    target = "nsis",
+    executableName = app_slug,
+    artifactName = "${name}-Setup-${version}-${arch}.${ext}"
+  )
   mac_config <- list(target = "dmg")
-  linux_config <- list(target = "AppImage")
+  # Electron names the window class (WM_CLASS) after app.name, the slug,
+  # while electron-builder writes the product name into the desktop entry's
+  # StartupWMClass; they must match for the launcher to group the windows.
+  linux_config <- list(
+    target = "AppImage",
+    desktop = list(entry = list(StartupWMClass = app_slug))
+  )
 
   if (has_icon) {
     win_config$icon <- "assets/icon.ico"

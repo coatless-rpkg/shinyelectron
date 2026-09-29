@@ -429,3 +429,404 @@ test_that("lifecycle and launcher scripts parse and keep their values", {
   expect_equal(apps[[1]]$name, hostile_apps()[[1]]$name)
   expect_equal(apps[[1]]$description, hostile_apps()[[1]]$description)
 })
+
+# --- About dialog ---
+
+# App metadata with quotes, backslashes, markup, and a line break, each of
+# which would end or change a JavaScript literal if it were not escaped.
+about_metadata <- function() {
+  list(
+    description = "It's a \"test\" \\ with <b>markup</b>\nand a second line",
+    author = "Jane O'Hara <jane@example.org>",
+    homepage = "https://example.org/it's?a=1&b=2",
+    copyright = "Copyright 2026 O'Hara & Co \\ Ltd"
+  )
+}
+
+about_flags <- c(
+  "has_app_description", "has_app_author", "has_app_email",
+  "has_app_homepage", "has_app_copyright"
+)
+
+about_variables <- function(app) {
+  generate_template_variables(
+    app_name = "Test App", app_slug = "test-app", app_type = "r-shiny",
+    runtime_strategy = "system", icon = NULL, backend_module = "native-r.js",
+    brand = NULL, config = list(app = app)
+  )
+}
+
+# The lines of the rendered showAboutDialog() function.
+about_code <- function(main) {
+  start <- grep("async function showAboutDialog()", main, fixed = TRUE)
+  end <- start + which(main[-seq_len(start)] == "}")[1]
+  main[start:end]
+}
+
+test_that("About metadata gets escaped *_js entries and flags", {
+  vars <- about_variables(about_metadata())
+  expect_identical(vars$app_description_js, js_str(about_metadata()$description))
+  expect_identical(vars$app_author_js, "Jane O\\'Hara")
+  expect_identical(vars$app_email_js, "jane@example.org")
+  expect_identical(vars$app_homepage_js, "https://example.org/it\\'s?a=1&b=2")
+  expect_identical(vars$app_copyright_js, "Copyright 2026 O\\'Hara & Co \\\\ Ltd")
+  expect_true(all(unlist(vars[about_flags])))
+})
+
+test_that("unset or blank About metadata leaves its flag off", {
+  expect_false(any(unlist(about_variables(list())[about_flags])))
+  blank <- list(description = "", author = "", homepage = "", copyright = "")
+  expect_false(any(unlist(about_variables(blank)[about_flags])))
+})
+
+test_that("the About dialog offers only the buttons that apply", {
+  plain <- about_code(readLines(render_main_js(list())))
+  expect_false(any(grepl("buttons.push(", plain, fixed = TRUE)))
+  expect_true(any(grepl("noLink: true", plain, fixed = TRUE)))
+
+  full <- about_code(readLines(render_main_js(
+    list(app = about_metadata(), updates = list(enabled = TRUE))
+  )))
+  for (button in c("Check for Updates", "Visit Website", "Email")) {
+    expect_true(any(grepl(paste0("buttons.push('", button, "')"), full, fixed = TRUE)), info = button)
+  }
+  # The update check is not offered on macOS.
+  guard <- grep("process.platform !== 'darwin'", full, fixed = TRUE)
+  expect_length(guard, 1)
+  expect_match(full[guard + 1], "Check for Updates", fixed = TRUE)
+
+  no_updates <- about_code(readLines(render_main_js(
+    list(app = about_metadata(), updates = list(enabled = FALSE))
+  )))
+  expect_false(any(grepl("Check for Updates", no_updates, fixed = TRUE)))
+})
+
+test_that("main.js parses with quoted About metadata, with and without updates", {
+  skip_on_cran()
+  skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
+
+  for (updates in c(TRUE, FALSE)) {
+    for (template in c("default", "minimal")) {
+      config <- list(
+        app = about_metadata(), updates = list(enabled = updates),
+        menu = list(template = template)
+      )
+      main_path <- render_main_js(config, app_name = "Bob's \"Best\" C:\\Apps")
+      check <- processx::run("node", c("--check", main_path), error_on_status = FALSE)
+      expect_equal(
+        check$status, 0L,
+        info = paste0("updates = ", updates, ", ", template, ": ", check$stderr)
+      )
+    }
+  }
+})
+
+test_that("About dialog literals evaluate to the configured metadata", {
+  skip_on_cran()
+  skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
+
+  about <- about_code(readLines(render_main_js(
+    list(app = about_metadata()), app_name = "Bob's App"
+  )))
+  first <- grep("const detail = [", about, fixed = TRUE) + 1
+  last <- grep("].join('\\n');", about, fixed = TRUE) - 1
+  detail <- node_values(paste0(
+    "[", paste(about[first:last], collapse = "\n"), "].join('\\n')"
+  ))
+  expect_equal(detail, paste(
+    "Version 1.0.0",
+    "It's a \"test\" \\ with <b>markup</b> and a second line",
+    "Author: Jane O'Hara",
+    "Copyright 2026 O'Hara & Co \\ Ltd",
+    "Built with shinyelectron",
+    sep = "\n\n"
+  ))
+  expect_equal(
+    js_values(about, "shell.openExternal("),
+    c("https://example.org/it's?a=1&b=2", "mailto:jane@example.org")
+  )
+  expect_equal(js_values(about, "title: 'About "), "About Bob's App")
+})
+
+# --- Check for Updates ---
+
+# Run the rendered checkForUpdatesInteractive() under node against a fake
+# electron-updater and dialog module, once per scenario. Returns, for each
+# scenario, what the user saw: "<type>: <message> [<buttons>]" for a dialog,
+# and "download" when an update download started.
+run_update_check <- function(scenarios) {
+  main <- readLines(render_main_js(list(updates = list(enabled = TRUE))))
+  start <- grep("^async function checkForUpdatesInteractive\\(\\)", main)
+  end <- start + which(main[-seq_len(start)] == "}")[1]
+  script <- withr::local_tempfile(fileext = ".js", lines = c(
+    "(async () => {",
+    "  let scenario;",
+    "  let events = [];",
+    "  const dialog = {",
+    "    showMessageBox: async (win, o) => {",
+    "      events.push(o.type + ': ' + o.message + (o.buttons ? ' [' + o.buttons.join('|') + ']' : ''));",
+    "      return { response: scenario.response || 0 };",
+    "    }",
+    "  };",
+    "  const require = () => ({ dialog });",
+    "  const app = { getVersion: () => '1.0.0' };",
+    "  const mainWindow = null;",
+    "  const updaterLog = { error: () => {} };",
+    "  let interactiveUpdateCheck = false;",
+    "  const autoUpdater = {",
+    "    autoDownload: false,",
+    "    checkForUpdates: async () => {",
+    "      if (scenario.checkError) throw new Error(scenario.checkError);",
+    "      return scenario.result;",
+    "    },",
+    "    downloadUpdate: async () => {",
+    "      events.push('download');",
+    "      if (scenario.downloadError) throw new Error(scenario.downloadError);",
+    "    }",
+    "  };",
+    main[start:end],
+    "  const out = [];",
+    paste0("  for (const s of ", jsonlite::toJSON(scenarios, auto_unbox = TRUE, null = "null"), ") {"),
+    "    scenario = s;",
+    "    events = [];",
+    "    autoUpdater.autoDownload = !!s.autoDownload;",
+    "    if (s.result && s.autoDownload) s.result.downloadPromise = Promise.resolve();",
+    "    await checkForUpdatesInteractive();",
+    "    await new Promise((resolve) => setTimeout(resolve, 10));",
+    "    out.push(events);",
+    "  }",
+    "  process.stdout.write(JSON.stringify(out));",
+    "})();"
+  ))
+  lapply(
+    jsonlite::fromJSON(processx::run("node", script)$stdout, simplifyVector = FALSE),
+    unlist
+  )
+}
+
+test_that("Check for Updates answers every outcome with a dialog", {
+  skip_on_cran()
+  skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
+
+  current <- list(isUpdateAvailable = FALSE, updateInfo = list(version = "1.0.0"))
+  newer <- list(isUpdateAvailable = TRUE, updateInfo = list(version = "2.0.0"))
+  offer <- "info: Version 2.0.0 is available [Download|Later]"
+  out <- run_update_check(list(
+    list(result = NULL),
+    list(result = current),
+    list(result = newer, response = 0),
+    list(result = newer, response = 1),
+    list(result = newer, autoDownload = TRUE),
+    list(checkError = "net::ERR_INTERNET_DISCONNECTED"),
+    list(result = newer, response = 0, downloadError = "404 Not Found")
+  ))
+
+  expect_equal(out[[1]], "info: Updates work only in the installed app")
+  expect_equal(out[[2]], "info: You are up to date")
+  expect_equal(out[[3]], c(offer, "download"))
+  expect_equal(out[[4]], offer)
+  expect_equal(out[[5]], "info: Version 2.0.0 is downloading")
+  expect_equal(out[[6]], "warning: Could not check for updates")
+  expect_equal(out[[7]], c(offer, "download", "warning: Could not download the update"))
+})
+
+test_that("Check for Updates no longer attaches listeners or calls checkForUpdatesAndNotify", {
+  main <- readLines(render_main_js(list(updates = list(enabled = TRUE))))
+  start <- grep("^async function checkForUpdatesInteractive\\(\\)", main)
+  end <- start + which(main[-seq_len(start)] == "}")[1]
+  check <- main[start:end]
+  expect_false(any(grepl("autoUpdater.on(", check, fixed = TRUE)))
+  expect_false(any(grepl("checkForUpdatesAndNotify", check, fixed = TRUE)))
+  expect_true(any(grepl("await autoUpdater.checkForUpdates()", check, fixed = TRUE)))
+})
+
+# --- Native About panel ---
+
+# The options main.js passes to app.setAboutPanelOptions(), as node reads
+# them.
+about_panel_options <- function(config, app_name = "Test App") {
+  main <- readLines(render_main_js(config, app_name = app_name))
+  start <- grep("app.setAboutPanelOptions({", main, fixed = TRUE)
+  end <- start + grep("});", main[-seq_len(start)], fixed = TRUE)[1]
+  object <- c("({", main[(start + 1):(end - 1)], "})")
+  node_values(paste(object, collapse = "\n"), simplify = FALSE)[[1]]
+}
+
+test_that("the native About panel shows the app metadata", {
+  skip_on_cran()
+  skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
+
+  expect_equal(
+    about_panel_options(list()),
+    list(applicationName = "Test App", applicationVersion = "1.0.0")
+  )
+
+  # macOS shows the credits; Linux shows the website and the authors.
+  expect_equal(
+    about_panel_options(list(app = about_metadata()), app_name = "Bob's App"),
+    list(
+      applicationName = "Bob's App",
+      applicationVersion = "1.0.0",
+      copyright = "Copyright 2026 O'Hara & Co \\ Ltd",
+      credits = paste(
+        "It's a \"test\" \\ with <b>markup</b> and a second line",
+        "Author: Jane O'Hara",
+        sep = "\n"
+      ),
+      website = "https://example.org/it's?a=1&b=2",
+      authors = list("Jane O'Hara")
+    )
+  )
+
+  # Credits hold whichever of the description and the author is set.
+  author_only <- about_panel_options(list(app = list(author = "Jane Doe")))
+  expect_equal(author_only$credits, "Author: Jane Doe")
+})
+
+test_that("main.js sets the About panel on every platform", {
+  main <- readLines(render_main_js(list()))
+  call <- grep("app.setAboutPanelOptions({", main, fixed = TRUE)
+  expect_length(call, 1)
+  expect_false(any(grepl("process.platform", main[(call - 4):call], fixed = TRUE)))
+})
+
+# Run the rendered showAboutDialog() under node as if on `platform`, choosing
+# each of its buttons in turn. Returns the button labels and what each one
+# did: "check" for the update check, "open <url>" for shell.openExternal().
+run_about_dialog <- function(config, platform) {
+  about <- about_code(readLines(render_main_js(config)))
+  script <- withr::local_tempfile(fileext = ".js", lines = c(
+    "(async () => {",
+    paste0("  Object.defineProperty(process, 'platform', { value: '", platform, "' });"),
+    "  let pick = 0;",
+    "  let buttons = null;",
+    "  const done = [];",
+    "  const dialog = {",
+    "    showMessageBox: async (win, o) => {",
+    "      buttons = o.buttons;",
+    "      return { response: pick };",
+    "    }",
+    "  };",
+    "  const shell = { openExternal: async (url) => { done.push('open ' + url); } };",
+    "  const require = () => ({ dialog, shell });",
+    "  const mainWindow = null;",
+    "  const checkForUpdatesInteractive = async () => { done.push('check'); };",
+    about,
+    "  await showAboutDialog();",
+    "  const actions = [];",
+    "  for (let i = 0; i < buttons.length; i++) {",
+    "    pick = i;",
+    "    done.length = 0;",
+    "    await showAboutDialog();",
+    "    actions.push(done.join(', '));",
+    "  }",
+    "  process.stdout.write(JSON.stringify({ buttons, actions }));",
+    "})();"
+  ))
+  jsonlite::fromJSON(processx::run("node", script)$stdout)
+}
+
+test_that("each About button runs its own action, and macOS has no update check", {
+  skip_on_cran()
+  skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
+
+  config <- list(app = about_metadata(), updates = list(enabled = TRUE))
+  homepage <- "open https://example.org/it's?a=1&b=2"
+  email <- "open mailto:jane@example.org"
+
+  linux <- run_about_dialog(config, "linux")
+  expect_equal(linux$buttons, c("OK", "Check for Updates", "Visit Website", "Email"))
+  expect_equal(linux$actions, c("", "check", homepage, email))
+
+  mac <- run_about_dialog(config, "darwin")
+  expect_equal(mac$buttons, c("OK", "Visit Website", "Email"))
+  expect_equal(mac$actions, c("", homepage, email))
+
+  plain <- run_about_dialog(list(), "win32")
+  expect_equal(plain$buttons, "OK")
+  expect_equal(plain$actions, "")
+})
+
+# --- macOS App menu ---
+
+test_that("the macOS App menu shows the display name instead of the slug", {
+  for (template in c("default", "minimal")) {
+    main <- readLines(render_main_js(
+      list(menu = list(template = template)), app_name = "Bob's App"
+    ))
+    for (item in c("{ role: 'about', label: 'About Bob\\'s App' }",
+                   "{ role: 'quit', label: 'Quit Bob\\'s App' }")) {
+      expect_true(any(grepl(item, main, fixed = TRUE)), info = paste(template, item))
+    }
+    expect_false(any(grepl("label: app.name", main, fixed = TRUE)), info = template)
+  }
+  main <- readLines(render_main_js(list(), app_name = "Bob's App"))
+  expect_true(any(grepl("{ role: 'hide', label: 'Hide Bob\\'s App' }", main, fixed = TRUE)))
+})
+
+# Run the rendered setupAutoUpdater() and checkForUpdatesInteractive() under
+# node against a fake electron-updater that always finds version 2.0.0.
+# Checks once from Help > About, then once as the startup check does, and
+# returns the notifications and dialogs each check showed.
+run_update_notifications <- function(config) {
+  main <- readLines(render_main_js(config))
+  functions <- unlist(lapply(
+    c("^function setupAutoUpdater\\(\\)", "^async function checkForUpdatesInteractive\\(\\)"),
+    function(pattern) {
+      start <- grep(pattern, main)
+      main[start:(start + which(main[-seq_len(start)] == "}")[1])]
+    }
+  ))
+  script <- withr::local_tempfile(fileext = ".js", lines = c(
+    "const { EventEmitter } = require('events');",
+    "(async () => {",
+    "  let seen = [];",
+    "  class Notification {",
+    "    constructor(options) { this.options = options; }",
+    "    static isSupported() { return true; }",
+    "    on() {}",
+    "    show() { seen.push('notification: ' + this.options.body); }",
+    "  }",
+    "  const dialog = {",
+    "    showMessageBox: async (win, o) => { seen.push('dialog: ' + o.message); return { response: 1 }; }",
+    "  };",
+    "  const require = () => ({ dialog, Notification });",
+    "  const app = { getVersion: () => '1.0.0' };",
+    "  const mainWindow = null;",
+    "  const updaterLog = { info() {}, error() {}, transports: { file: {} } };",
+    grep("^let interactiveUpdateCheck", main, value = TRUE),
+    "  const autoUpdater = new EventEmitter();",
+    "  autoUpdater.checkForUpdates = async () => {",
+    "    const info = { version: '2.0.0' };",
+    "    autoUpdater.emit('update-available', info);",
+    "    return { isUpdateAvailable: true, updateInfo: info,",
+    "             downloadPromise: autoUpdater.autoDownload ? Promise.resolve() : null };",
+    "  };",
+    "  autoUpdater.downloadUpdate = async () => {};",
+    functions,
+    "  setupAutoUpdater();",
+    "  const out = {};",
+    "  await checkForUpdatesInteractive();",
+    "  out.interactive = seen; seen = [];",
+    "  await autoUpdater.checkForUpdates();",
+    "  out.startup = seen;",
+    "  process.stdout.write(JSON.stringify(out));",
+    "})();"
+  ))
+  jsonlite::fromJSON(processx::run("node", script)$stdout)
+}
+
+test_that("Check for Updates keeps the update notification quiet", {
+  skip_on_cran()
+  skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
+
+  manual <- run_update_notifications(list(updates = list(enabled = TRUE)))
+  expect_equal(manual$interactive, "dialog: Version 2.0.0 is available")
+  expect_equal(manual$startup, "notification: Version 2.0.0 is available. Click to download.")
+
+  automatic <- run_update_notifications(
+    list(updates = list(enabled = TRUE, auto_download = TRUE))
+  )
+  expect_equal(automatic$interactive, "dialog: Version 2.0.0 is downloading")
+  expect_equal(automatic$startup, "notification: Version 2.0.0 is downloading.")
+})

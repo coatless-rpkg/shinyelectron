@@ -161,9 +161,12 @@ wizard <- function(appdir) {
     }
   }
 
-  # Build the YAML content
+  # Build the YAML content. The slug is written out so the app keeps its
+  # identity when the name changes later. As in export(), it comes from the
+  # directory name; the app name only sets the display name.
+  slug <- resolve_app_slug(list(), NULL, normalizePath(appdir, mustWork = FALSE))
   config <- list(
-    app = list(name = app_name, version = app_version),
+    app = Filter(Negate(is.null), list(name = app_name, slug = slug, version = app_version)),
     build = list(type = app_type, platforms = platforms)
   )
 
@@ -194,6 +197,7 @@ wizard <- function(appdir) {
   validate_config_file(config_path)
 
   cli::cli_alert_success("Created {.file {config_path}}")
+  if (is.null(slug)) alert_missing_slug()
   cat("\n")
   cli::cli_alert_info("Next steps:")
   cli::cli_alert_info("  1. Review and edit {.file _shinyelectron.yml}")
