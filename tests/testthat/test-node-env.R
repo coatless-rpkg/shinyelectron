@@ -48,6 +48,30 @@ test_that("run_command_safe preserves the inherited env and handles values with 
   expect_match(res$stdout, "HASPATH=yes", fixed = TRUE)  # inherited PATH survived
 })
 
+test_that("run_command_safe gives the child a compile cache and removes it afterwards", {
+  rscript <- file.path(R.home("bin"), "Rscript")
+  res <- run_command_safe(
+    rscript,
+    c("-e", "d <- Sys.getenv('NODE_COMPILE_CACHE'); cat(d, dir.exists(d), sep = '|')")
+  )
+  expect_equal(res$status, 0L)
+  parts <- strsplit(res$stdout, "|", fixed = TRUE)[[1]]
+  expect_match(parts[[1]], "node-compile-cache-", fixed = TRUE)
+  expect_equal(parts[[2]], "TRUE")
+  expect_false(dir.exists(parts[[1]]))
+})
+
+test_that("package code does not call withr, which is only suggested", {
+  ns <- asNamespace("shinyelectron")
+  fns <- Filter(is.function, mget(ls(ns, all.names = TRUE), envir = ns))
+  uses_withr <- vapply(
+    fns,
+    function(f) any(grepl("withr::", deparse(f), fixed = TRUE)),
+    logical(1)
+  )
+  expect_equal(names(fns)[uses_withr], character(0))
+})
+
 test_that("run_command_safe reports a missing command as failure without throwing", {
   res <- run_command_safe("shinyelectron-no-such-command-xyz", "--version")
   expect_true(is.list(res))
