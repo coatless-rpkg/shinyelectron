@@ -103,7 +103,11 @@ running of a Shiny application as an Electron desktop application.</p>
 
 
 <dt id="arg-app-name">app_name<a class="anchor" aria-label="anchor" href="#arg-app-name"></a></dt>
-<dd><p>Character string. Name of the application. If NULL, uses the base name of appdir.</p></dd>
+<dd><p>Character string. Display name of the application. If NULL,
+uses <code>app.name</code> from <code>_shinyelectron.yml</code>, then the base name of appdir.
+Unless <code>app.slug</code> is set, this argument also gives the app's slug, its
+identity for installed copies and updates; without it the slug comes
+from the base name of appdir, never from <code>app.name</code>.</p></dd>
 
 
 <dt id="arg-app-type">app_type<a class="anchor" aria-label="anchor" href="#arg-app-type"></a></dt>

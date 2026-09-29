@@ -184,14 +184,14 @@ Update flow: the installed app reads a manifest, fetches a signed artifact, then
 <li>Go to your repo on GitHub.</li>
 <li>Click Releases, then Create a new release.</li>
 <li>Create a tag such as <code>v1.0.0</code>.</li>
-<li>Upload the built installers and update manifests:
+<li>Upload the built installers and update manifests. For an app whose slug is <code>my-app</code>:
 <ul>
 <li>
-<code>MyApp-1.0.0.dmg</code> (macOS)</li>
+<code>my-app-1.0.0-arm64.dmg</code> and <code>my-app-1.0.0-x64.dmg</code> (macOS)</li>
 <li>
-<code>MyApp-Setup-1.0.0.exe</code> (Windows)</li>
+<code>my-app-Setup-1.0.0-x64.exe</code> (Windows)</li>
 <li>
-<code>MyApp-1.0.0.AppImage</code> (Linux)</li>
+<code>my-app-1.0.0-x86_64.AppImage</code> (Linux)</li>
 <li>
 <code>latest-mac.yml</code> (macOS update manifest)</li>
 <li>
@@ -205,7 +205,7 @@ Update flow: the installed app reads a manifest, fetches a signed artifact, then
 <div>
 <blockquote>
 <p><strong>Note</strong></p>
-<p>File names must match <code>{productName}-{version}.{ext}</code>. electron-updater uses that pattern to find artifacts.</p>
+<p>Upload the files under the names electron-builder gave them. electron-updater downloads the file that <code>latest.yml</code>, <code>latest-mac.yml</code>, or <code>latest-linux.yml</code> names. Those names are built from the app’s slug, version, and architecture (<code>&lt;slug&gt;-&lt;version&gt;-&lt;arch&gt;.&lt;ext&gt;</code>, with <code>Setup</code> in the Windows installer’s name), so they are safe to upload to GitHub Releases as they are.</p>
 </blockquote>
 </div>
 </section><section class="level3"><h3 id="what-the-user-sees">What the user sees<a class="anchor" aria-label="anchor" href="#what-the-user-sees"></a>
@@ -216,7 +216,9 @@ Update flow: the installed app reads a manifest, fetches a signed artifact, then
 <li>A notification tells the user an update is available.</li>
 <li>The installer downloads, silently if <code>auto_download = TRUE</code>, otherwise on consent.</li>
 <li>The app prompts to restart and install.</li>
-</ol></section></section><section class="level2"><h2 id="configuration">Configuration<a class="anchor" aria-label="anchor" href="#configuration"></a>
+</ol>
+<p>Users can also check at any time from Help &gt; About &gt; Check for Updates on Windows and Linux, which reports the result in a dialog. The button is left out on macOS, where a build ships only a disk image and electron-updater needs a zip archive to update the app.</p>
+</section></section><section class="level2"><h2 id="configuration">Configuration<a class="anchor" aria-label="anchor" href="#configuration"></a>
 </h2>
 <p>The full <code>updates</code> block in <code>_shinyelectron.yml</code>:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">updates</span><span class="kw">:</span></span>
@@ -304,9 +306,9 @@ Update flow: the installed app reads a manifest, fetches a signed artifact, then
     ├── latest.yml           # Update manifest
     ├── latest-mac.yml       # macOS manifest
     ├── latest-linux.yml     # Linux manifest
-    ├── MyApp-1.0.0.dmg
-    ├── MyApp-Setup-1.0.0.exe
-    └── MyApp-1.0.0.AppImage</code></pre>
+    ├── my-app-1.0.0-arm64.dmg
+    ├── my-app-Setup-1.0.0-x64.exe
+    └── my-app-1.0.0-x86_64.AppImage</code></pre>
 <p>AWS credentials come from the environment.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">AWS_ACCESS_KEY_ID</span><span class="op">=</span>xxx</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">AWS_SECRET_ACCESS_KEY</span><span class="op">=</span>xxx</span></code></pre></div>
@@ -333,10 +335,10 @@ Update flow: the installed app reads a manifest, fetches a signed artifact, then
 <p>A minimal <code>latest.yml</code> looks like this:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="fl">1.1.0</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">files</span><span class="kw">:</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">url</span><span class="kw">:</span><span class="at"> MyApp-Setup-1.1.0.exe</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">url</span><span class="kw">:</span><span class="at"> my-app-Setup-1.1.0-x64.exe</span></span>
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">sha512</span><span class="kw">:</span><span class="at"> abc123...</span></span>
 <span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">size</span><span class="kw">:</span><span class="at"> </span><span class="dv">75000000</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="fu">path</span><span class="kw">:</span><span class="at"> MyApp-Setup-1.1.0.exe</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="fu">path</span><span class="kw">:</span><span class="at"> my-app-Setup-1.1.0-x64.exe</span></span>
 <span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="fu">sha512</span><span class="kw">:</span><span class="at"> abc123...</span></span>
 <span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="fu">releaseDate</span><span class="kw">:</span><span class="at"> </span><span class="st">'2024-01-15T12:00:00.000Z'</span></span></code></pre></div>
 </section><section class="level2"><h2 id="code-signing">Code signing<a class="anchor" aria-label="anchor" href="#code-signing"></a>
@@ -391,19 +393,19 @@ Update flow: the installed app reads a manifest, fetches a signed artifact, then
 <ol type="1">
 <li>
 <code>package.json</code> version must match the release tag.</li>
-<li>Artifact names must follow <code>{productName}-{version}.{ext}</code>.</li>
+<li>The uploaded files must keep the names electron-builder gave them, which the <code>latest*.yml</code> manifests list.</li>
 <li>The release must be published, not saved as a draft.</li>
 </ol></section><section class="level3"><h3 id="debug-logging">Debug logging<a class="anchor" aria-label="anchor" href="#debug-logging"></a>
 </h3>
 <p>Turn on verbose logs.</p>
 <div class="sourceCode" id="cb19"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">ELECTRON_ENABLE_LOGGING</span><span class="op">=</span>1</span></code></pre></div>
-<p>Logs land per platform:</p>
+<p>Logs land per platform, in a folder named after the app’s slug:</p>
 <ul>
-<li>macOS: <code>~/Library/Logs/{app name}/</code>
+<li>macOS: <code>~/Library/Logs/{slug}/</code>
 </li>
-<li>Windows: <code>%USERPROFILE%\AppData\Roaming\{app name}\logs\</code>
+<li>Windows: <code>%USERPROFILE%\AppData\Roaming\{slug}\logs\</code>
 </li>
-<li>Linux: <code>~/.config/{app name}/logs/</code>
+<li>Linux: <code>~/.config/{slug}/logs/</code>
 </li>
 </ul></section></section><section class="level2"><h2 id="publishing-from-ci">Publishing from CI<a class="anchor" aria-label="anchor" href="#publishing-from-ci"></a>
 </h2>

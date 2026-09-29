@@ -86,10 +86,11 @@ export("path/to/app", destdir = "build")
 1.  Go to your repo on GitHub.
 2.  Click Releases, then Create a new release.
 3.  Create a tag such as `v1.0.0`.
-4.  Upload the built installers and update manifests:
-    - `MyApp-1.0.0.dmg` (macOS)
-    - `MyApp-Setup-1.0.0.exe` (Windows)
-    - `MyApp-1.0.0.AppImage` (Linux)
+4.  Upload the built installers and update manifests. For an app whose
+    slug is `my-app`:
+    - `my-app-1.0.0-arm64.dmg` and `my-app-1.0.0-x64.dmg` (macOS)
+    - `my-app-Setup-1.0.0-x64.exe` (Windows)
+    - `my-app-1.0.0-x86_64.AppImage` (Linux)
     - `latest-mac.yml` (macOS update manifest)
     - `latest.yml` (Windows update manifest)
     - `latest-linux.yml` (Linux update manifest)
@@ -97,8 +98,13 @@ export("path/to/app", destdir = "build")
 
 > **Note**
 >
-> File names must match `{productName}-{version}.{ext}`.
-> electron-updater uses that pattern to find artifacts.
+> Upload the files under the names electron-builder gave them.
+> electron-updater downloads the file that `latest.yml`,
+> `latest-mac.yml`, or `latest-linux.yml` names. Those names are built
+> from the app’s slug, version, and architecture
+> (`<slug>-<version>-<arch>.<ext>`, with `Setup` in the Windows
+> installer’s name), so they are safe to upload to GitHub Releases as
+> they are.
 
 ### What the user sees
 
@@ -110,6 +116,11 @@ update cycle:
 3.  The installer downloads, silently if `auto_download = TRUE`,
     otherwise on consent.
 4.  The app prompts to restart and install.
+
+Users can also check at any time from Help \> About \> Check for Updates
+on Windows and Linux, which reports the result in a dialog. The button
+is left out on macOS, where a build ships only a disk image and
+electron-updater needs a zip archive to update the app.
 
 ## Configuration
 
@@ -218,9 +229,9 @@ per-platform manifests beside the installers.
         ├── latest.yml           # Update manifest
         ├── latest-mac.yml       # macOS manifest
         ├── latest-linux.yml     # Linux manifest
-        ├── MyApp-1.0.0.dmg
-        ├── MyApp-Setup-1.0.0.exe
-        └── MyApp-1.0.0.AppImage
+        ├── my-app-1.0.0-arm64.dmg
+        ├── my-app-Setup-1.0.0-x64.exe
+        └── my-app-1.0.0-x86_64.AppImage
 
 AWS credentials come from the environment.
 
@@ -262,10 +273,10 @@ A minimal `latest.yml` looks like this:
 ``` yaml
 version: 1.1.0
 files:
-  - url: MyApp-Setup-1.1.0.exe
+  - url: my-app-Setup-1.1.0-x64.exe
     sha512: abc123...
     size: 75000000
-path: MyApp-Setup-1.1.0.exe
+path: my-app-Setup-1.1.0-x64.exe
 sha512: abc123...
 releaseDate: '2024-01-15T12:00:00.000Z'
 ```
@@ -335,7 +346,8 @@ Symptom: the update arrives but the app does not swap in on restart.
 Symptom: the app never sees a newer version.
 
 1.  `package.json` version must match the release tag.
-2.  Artifact names must follow `{productName}-{version}.{ext}`.
+2.  The uploaded files must keep the names electron-builder gave them,
+    which the `latest*.yml` manifests list.
 3.  The release must be published, not saved as a draft.
 
 ### Debug logging
@@ -346,11 +358,11 @@ Turn on verbose logs.
 export ELECTRON_ENABLE_LOGGING=1
 ```
 
-Logs land per platform:
+Logs land per platform, in a folder named after the app’s slug:
 
-- macOS: `~/Library/Logs/{app name}/`
-- Windows: `%USERPROFILE%\AppData\Roaming\{app name}\logs\`
-- Linux: `~/.config/{app name}/logs/`
+- macOS: `~/Library/Logs/{slug}/`
+- Windows: `%USERPROFILE%\AppData\Roaming\{slug}\logs\`
+- Linux: `~/.config/{slug}/logs/`
 
 ## Publishing from CI
 

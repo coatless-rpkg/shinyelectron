@@ -2,6 +2,8 @@
 
 ## shinyelectron (development version)
 
+### Breaking changes
+
 - shinyelectron now requires R 4.5.0 or newer, since it verifies
   downloaded runtimes with
   [`tools::sha256sum()`](https://rdrr.io/r/tools/sha256sum.html), which
@@ -9,6 +11,84 @@
   [`sitrep_electron_system()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/sitrep_electron_system.md)
   now report this minimum. Apps built with the `system` strategy still
   accept R 4.4.0 or newer on the end user’s machine.
+
+- Installer and artifact file names change. They now come from the slug
+  and always include the architecture, as in `my-app-1.0.0-arm64.dmg`,
+  `my-app-Setup-1.0.0-x64.exe`, and `my-app-1.0.0-x86_64.AppImage`, so
+  building several architectures into one `dist/` no longer overwrites
+  installers. Update release scripts that look for the old names.
+
+- The installed app now carries the display name instead of the slug:
+  the macOS app bundle and App menu, the Windows Start Menu shortcut and
+  Apps & Features entry, and the installer window.
+  [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+  now also takes the display name from `app.name` in
+  `_shinyelectron.yml` when no `app_name` is given, as documented,
+  instead of from the directory name. The slug, which is the app’s
+  identity, keeps coming from `app.slug`, then the `app_name` argument,
+  then the directory name, so installed copies keep updating. The
+  Windows executable keeps the slug as well, and updates reuse the
+  existing install folder, so pinned shortcuts and existing installs
+  carry over. On macOS, reinstalling from the disk image leaves the old
+  `<slug>.app` in Applications to delete by hand.
+
+### New features
+
+- New `lifecycle.startup_timeout` sets how long, in milliseconds, an app
+  waits for its R, Python, or container server to start (default 180000,
+  three minutes). R and Python apps used to give up after 60 seconds and
+  container apps after 120. This timeout and
+  `lifecycle.shutdown_timeout` must be whole numbers from 1000 to
+  2147483647; any other value warns and falls back to the default.
+  Before, a `shutdown_timeout` such as `"10s"` built an app that could
+  not launch.
+
+- `installer.allow_to_change_installation_directory: true` adds a page
+  to the Windows setup wizard where users choose the installation
+  folder. It requires `installer.one_click: false`; otherwise reading
+  the configuration fails with an error.
+
+- `installer.per_machine: true` installs the Windows app for all users.
+  Every install and update then needs administrator rights.
+
+- Bundled R builds now leave out files that a running app does not use:
+  the test suites (`tests/`, `testme/`, `tinytest/`) of every embedded
+  package, and the portable R’s own regression tests, PDF and HTML
+  manuals, and news and FAQ files. Package examples, demos, NEWS files,
+  and headers are kept, as are R’s license notices. Pruning is on by
+  default; set `dependencies.r.prune: false` in `_shinyelectron.yml` to
+  ship the runtime unchanged. A quoted `"true"` or `"false"` is read
+  with a warning, and any other value stops the build before anything is
+  downloaded.
+
+- New `app.description`, `app.author`, `app.homepage`, and
+  `app.copyright` settings describe the app. They fill the generated
+  `package.json` and the installer metadata, and Help \> About shows
+  them, with buttons to visit the homepage or email the author.
+  `app.author` takes an npm-style `"Name <email> (url)"` string or a map
+  with `name`, `email`, and `url`, and `app.homepage` must be an
+  `http://` or `https://` URL. On macOS, the App menu’s About panel
+  shows the same name, version, copyright, description, and author.
+  Straight double quotes in the app name, author, and copyright become
+  typographic quotes in the installer metadata, and a `$` in the app
+  name, description, author, or copyright, which the Windows installer
+  cannot hold, stops a Windows build.
+
+- With auto-updates enabled, Help \> About offers Check for Updates on
+  Windows and Linux. It reports that the app is up to date, offers to
+  download a newer version, or explains why the check failed.
+
+- [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+  shows the app’s slug next to its display name and says when `app.slug`
+  could choose another.
+  [`init_config()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/init_config.md)
+  and
+  [`wizard()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/wizard.md)
+  write the slug into the new configuration, and
+  [`init_config()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/init_config.md)
+  warns when a configuration it replaces gave a different slug.
+
+### Minor improvements and fixes
 
 - shinyelectron now imports rlang. cli builds `cli_abort()` and
   `cli_warn()` on rlang but only suggests it. Without rlang installed,
@@ -90,15 +170,6 @@
   to restart the app. Pressing Esc in the Update Ready dialog now means
   Later.
 
-- New `lifecycle.startup_timeout` sets how long, in milliseconds, an app
-  waits for its R, Python, or container server to start (default 180000,
-  three minutes). R and Python apps used to give up after 60 seconds and
-  container apps after 120. This timeout and
-  `lifecycle.shutdown_timeout` must be whole numbers from 1000 to
-  2147483647; any other value warns and falls back to the default.
-  Before, a `shutdown_timeout` such as `"10s"` built an app that could
-  not launch.
-
 - Signed builds no longer fail when `_shinyelectron.yml` sets
   `signing.win.certificate_file`. The certificate settings were written
   where electron-builder 26 no longer accepts them, so its configuration
@@ -127,14 +198,6 @@
   so installed binary packages could crash when loaded. `~/.Renviron`
   and `~/.Rprofile` still apply.
 
-- `installer.allow_to_change_installation_directory: true` adds a page
-  to the Windows setup wizard where users choose the installation
-  folder. It requires `installer.one_click: false`; otherwise reading
-  the configuration fails with an error.
-
-- `installer.per_machine: true` installs the Windows app for all users.
-  Every install and update then needs administrator rights.
-
 - `installer.one_click`,
   `installer.allow_to_change_installation_directory`, and
   `installer.per_machine` are checked when the configuration is read. A
@@ -154,16 +217,6 @@
   [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
   instead of listing them as warnings, and it checks that
   `installer.license_file` exists.
-
-- Bundled R builds now leave out files that a running app does not use:
-  the test suites (`tests/`, `testme/`, `tinytest/`) of every embedded
-  package, and the portable R’s own regression tests, PDF and HTML
-  manuals, and news and FAQ files. Package examples, demos, NEWS files,
-  and headers are kept, as are R’s license notices. Pruning is on by
-  default; set `dependencies.r.prune: false` in `_shinyelectron.yml` to
-  ship the runtime unchanged. A quoted `"true"` or `"false"` is read
-  with a warning, and any other value stops the build before anything is
-  downloaded.
 
 - Paths in `_shinyelectron.yml` are now resolved against the app
   directory (the suite root for a multi-app suite) as documented, not
@@ -187,6 +240,20 @@
   [`app_check()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_check.md)
   checks these files the same way and reports a missing icon as an
   error.
+
+- With `updates.auto_download` on, the update notification now says the
+  new version is downloading, instead of asking the user to click to
+  download.
+
+- An `app_name` with no ASCII letters or digits, such as one written
+  only in Chinese characters, no longer stops
+  [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+  late in the build; the slug comes from the directory name instead.
+  When no slug can be derived, or `app.slug` is invalid,
+  [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+  now stops before converting the app, and
+  [`show_config()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/show_config.md)
+  no longer fails on a non-ASCII `app.name`.
 
 ## shinyelectron 0.2.1
 

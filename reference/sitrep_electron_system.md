@@ -31,8 +31,8 @@ sitrep_electron_system()
 #> ✔ Architecture: x64
 #> ℹ Local Node.js (shinyelectron): Not installed
 #> ℹ   Install with: `shinyelectron::install_nodejs()`
-#> ✔ Active Node.js: v22.23.2 (system)
-#> ! npm: v10.9.8 (version 11.5.0+ required)
+#> ✔ Active Node.js: v22.23.3 (system)
+#> ! npm: v10.9.9 (version 11.5.0+ required)
 #> ✔ R: v4.6.1
 #> 
 #> ── Python ──

@@ -184,16 +184,17 @@ runtime.
         ├── package.json
         ├── node_modules/
         └── dist/               # Ready-to-distribute binaries
+            ├── my-app-1.0.0-arm64.dmg          # macOS disk image
             ├── mac-arm64/
             │   └── My App.app
-            ├── win-x64/
-            │   └── My App Setup.exe
-            └── linux-x64/
-                └── My App.AppImage
+            ├── my-app-Setup-1.0.0-x64.exe      # Windows installer
+            └── my-app-1.0.0-x86_64.AppImage    # Linux app
 
 Ship `dist/`. The rest is build scaffolding, though the sibling app
 directory is useful when you want to inspect exactly what Electron is
-serving.
+serving. Installer names use the app’s slug (`my-app`, derived from
+`"My App"`), its version, and the architecture; the installed app shows
+the display name.
 
 ## Build for several platforms in one call
 
@@ -258,6 +259,7 @@ init_config("my-app")
 ``` yaml
 app:
   name: "My Dashboard"
+  slug: "my-dashboard"
   version: "1.0.0"
 
 build:

@@ -62,6 +62,7 @@ Read live from `inst/demos/demo-r-app-suite/_shinyelectron.yml`:
 ``` yaml
 app:
   name: "R Shiny Demo Suite"
+  slug: "demo-r-app-suite"
   version: "1.0.0"
 
 build:
@@ -96,6 +97,7 @@ Only `build.type` changes. Read live from
 ``` yaml
 app:
   name: "Python Shiny Demo Suite"
+  slug: "demo-py-app-suite"
   version: "1.0.0"
 
 build:
@@ -152,6 +154,7 @@ do not compile to WebAssembly.
 # _shinyelectron.yml
 app:
   name: "Mixed Suite"
+  slug: "mixed-suite"
   version: "1.0.0"
 
 build:

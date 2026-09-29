@@ -39,8 +39,11 @@ export(
 
 - app_name:
 
-  Character string. Name of the application. If NULL, uses the base name
-  of appdir.
+  Character string. Display name of the application. If NULL, uses
+  `app.name` from `_shinyelectron.yml`, then the base name of appdir.
+  Unless `app.slug` is set, this argument also gives the app's slug, its
+  identity for installed copies and updates; without it the slug comes
+  from the base name of appdir, never from `app.name`.
 
 - app_type:
 

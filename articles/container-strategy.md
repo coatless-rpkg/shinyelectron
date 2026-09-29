@@ -107,6 +107,7 @@ Set `runtime_strategy: container` in `_shinyelectron.yml`:
 ``` yaml
 app:
   name: "My Containerized App"
+  slug: "my-containerized-app"
   version: "1.0.0"
 
 build:

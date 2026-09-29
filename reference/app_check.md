@@ -86,11 +86,12 @@ app_check(example_app("r"))
 #> ℹ Runtime strategy: "shinylive"
 #> ℹ Platform(s): "linux"
 #> ✔ App structure: app.R found
-#> ✔ Node.js: 22.23.2 + npm 10.9.8
+#> ✔ Node.js: 22.23.3 + npm 10.9.9
 #> ✔ shinylive R package: installed
 #> ✔ Dependencies: bslib, shiny
 #> ℹ Code signing: "disabled"
 #> ℹ Icon: not configured (default Electron icon)
+#> ✔ App slug: "demo-single"
 #> 
 #> ── Result ──
 #> 
@@ -105,11 +106,12 @@ app_check(example_app("r"), app_type = "r-shiny", runtime_strategy = "system")
 #> ℹ Runtime strategy: "system"
 #> ℹ Platform(s): "linux"
 #> ✔ App structure: app.R found
-#> ✔ Node.js: 22.23.2 + npm 10.9.8
+#> ✔ Node.js: 22.23.3 + npm 10.9.9
 #> ✔ R: available at /usr/local/bin/Rscript
 #> ✔ Dependencies: bslib, shiny
 #> ℹ Code signing: "disabled"
 #> ℹ Icon: not configured (default Electron icon)
+#> ✔ App slug: "demo-single"
 #> 
 #> ── Result ──
 #> 

@@ -583,6 +583,50 @@ Side-by-side comparison of the default and minimal menu templates, with each top
 </tbody>
 </table>
 <p>On Windows, Alt+F4 is an OS-level shortcut that closes the active window. That is distinct from the menu’s Quit item, and is what <code>close_to_tray</code> intercepts when enabled.</p>
+</section><section class="level3"><h3 id="about-dialog">About dialog<a class="anchor" aria-label="anchor" href="#about-dialog"></a>
+</h3>
+<p>Help &gt; About shows the app name and version, plus whatever metadata you set under <code>app</code>: the description, the author’s name, and the copyright notice.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"Sales Dashboard"</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">slug</span><span class="kw">:</span><span class="at"> </span><span class="st">"sales-dashboard"</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">"Quarterly sales explorer"</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">author</span><span class="kw">:</span><span class="at"> </span><span class="st">"Jane Doe &lt;jane@example.org&gt;"</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">homepage</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://example.org/sales"</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">copyright</span><span class="kw">:</span><span class="at"> </span><span class="st">"Copyright 2026 Example Inc."</span></span></code></pre></div>
+<p>Buttons appear for the settings that apply:</p>
+<table class="table caption-top">
+<colgroup>
+<col style="width: 40%">
+<col style="width: 60%">
+</colgroup>
+<thead><tr class="header">
+<th>Button</th>
+<th>Shown when</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>OK</td>
+<td>Always</td>
+</tr>
+<tr class="even">
+<td>Check for Updates</td>
+<td>
+<code>updates.enabled</code> is <code>true</code>, on Windows and Linux</td>
+</tr>
+<tr class="odd">
+<td>Visit Website</td>
+<td>
+<code>app.homepage</code> is set</td>
+</tr>
+<tr class="even">
+<td>Email</td>
+<td>
+<code>app.author</code> includes an email address</td>
+</tr>
+</tbody>
+</table>
+<p>Check for Updates answers in a dialog: the app is up to date, a newer version is ready to download (or already downloading when <code>updates.auto_download</code> is on), or the check failed, with the reason. It is left out on macOS, where a build ships only a disk image and electron-updater needs a zip archive to update the app.</p>
+<p>On macOS, the App menu’s About item opens the system About panel instead, and it shows the same name, version, copyright, description, and author. The <a href="configuration.html">Configuration Guide</a> describes each <code>app</code> key.</p>
 </section><section class="level3"><h3 id="devtools">DevTools<a class="anchor" aria-label="anchor" href="#devtools"></a>
 </h3>
 <p>Set <code>menu.show_dev_tools: true</code> during development to add <strong>View → Toggle Developer Tools</strong>. Users open it with Cmd+Option+I (macOS) or Ctrl+Shift+I (Windows, Linux). Leave it off in production builds: DevTools lets anyone in the page inspect and execute JavaScript, which is exactly what you do not want a shipped app to allow. See <a href="security.html">Security Considerations</a> for the longer version.</p>
@@ -590,35 +634,36 @@ Side-by-side comparison of the default and minimal menu templates, with each top
 </section></section><section class="level2"><h2 id="wiring-it-all-together">Wiring it all together<a class="anchor" aria-label="anchor" href="#wiring-it-all-together"></a>
 </h2>
 <p>A complete config that uses all three knobs at once. Drop this into <code>_shinyelectron.yml</code> and adjust to taste:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"My Dashboard"</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"1.0.0"</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">splash</span><span class="kw">:</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">text</span><span class="kw">:</span><span class="at"> </span><span class="st">"Loading dashboard..."</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">image</span><span class="kw">:</span><span class="at"> </span><span class="st">"assets/logo.png"</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">background</span><span class="kw">:</span><span class="at"> </span><span class="st">"#1a1a2e"</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">text_color</span><span class="kw">:</span><span class="at"> </span><span class="st">"#eaeaea"</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">duration</span><span class="kw">:</span><span class="at"> </span><span class="dv">2000</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="fu">preloader</span><span class="kw">:</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">message</span><span class="kw">:</span><span class="at"> </span><span class="st">"Starting your dashboard..."</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">style</span><span class="kw">:</span><span class="at"> </span><span class="st">"spinner"</span></span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="fu">tray</span><span class="kw">:</span></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">close_to_tray</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">tooltip</span><span class="kw">:</span><span class="at"> </span><span class="st">"My Dashboard (running)"</span></span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a><span class="fu">menu</span><span class="kw">:</span></span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">template</span><span class="kw">:</span><span class="at"> </span><span class="st">"minimal"</span></span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">help_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://docs.example.com/my-dashboard"</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">app</span><span class="kw">:</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"My Dashboard"</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">slug</span><span class="kw">:</span><span class="at"> </span><span class="st">"my-dashboard"</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"1.0.0"</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">splash</span><span class="kw">:</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">text</span><span class="kw">:</span><span class="at"> </span><span class="st">"Loading dashboard..."</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">image</span><span class="kw">:</span><span class="at"> </span><span class="st">"assets/logo.png"</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">background</span><span class="kw">:</span><span class="at"> </span><span class="st">"#1a1a2e"</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">text_color</span><span class="kw">:</span><span class="at"> </span><span class="st">"#eaeaea"</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">duration</span><span class="kw">:</span><span class="at"> </span><span class="dv">2000</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="fu">preloader</span><span class="kw">:</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">message</span><span class="kw">:</span><span class="at"> </span><span class="st">"Starting your dashboard..."</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">style</span><span class="kw">:</span><span class="at"> </span><span class="st">"spinner"</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="fu">tray</span><span class="kw">:</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">close_to_tray</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">tooltip</span><span class="kw">:</span><span class="at"> </span><span class="st">"My Dashboard (running)"</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a><span class="fu">menu</span><span class="kw">:</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">template</span><span class="kw">:</span><span class="at"> </span><span class="st">"minimal"</span></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">help_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://docs.example.com/my-dashboard"</span></span></code></pre></div>
 <p>That gives you a dark branded splash that lingers for two seconds, a spinner during runtime startup, a tray icon that holds onto the app when the user closes the window, and a clean three-menu bar with a Help &gt; Documentation entry pointing at your docs. Every other key uses its default.</p>
 </section><section class="level2"><h2 id="editing-config-from-r">Editing config from R<a class="anchor" aria-label="anchor" href="#editing-config-from-r"></a>
 </h2>
 <p><code>_shinyelectron.yml</code> is just a YAML file. To edit it from R, read it with <code><a href="https://yaml.r-lib.org/reference/read_yaml.html" class="external-link">yaml::read_yaml()</a></code>, mutate the list, and write it back:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">config_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="st">"path/to/app"</span>, <span class="st">"_shinyelectron.yml"</span><span class="op">)</span></span>
 <span><span class="va">config</span> <span class="op">&lt;-</span> <span class="fu">yaml</span><span class="fu">::</span><span class="fu"><a href="https://yaml.r-lib.org/reference/read_yaml.html" class="external-link">read_yaml</a></span><span class="op">(</span><span class="va">config_path</span><span class="op">)</span></span>
 <span></span>

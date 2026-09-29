@@ -14,7 +14,8 @@ generate_package_json(
   config,
   has_icon = FALSE,
   sign = FALSE,
-  is_multi_app = FALSE
+  is_multi_app = FALSE,
+  app_name = NULL
 )
 ```
 
@@ -40,6 +41,11 @@ generate_package_json(
 - has_icon:
 
   Logical. Whether an icon is provided.
+
+- app_name:
+
+  Character string or NULL. Display name, used as the electron-builder
+  productName. `NULL` uses the slug.
 
 ## Value
 

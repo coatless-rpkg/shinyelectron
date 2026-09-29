@@ -378,6 +378,43 @@ On Windows, Alt+F4 is an OS-level shortcut that closes the active
 window. That is distinct from the menu’s Quit item, and is what
 `close_to_tray` intercepts when enabled.
 
+### About dialog
+
+Help \> About shows the app name and version, plus whatever metadata you
+set under `app`: the description, the author’s name, and the copyright
+notice.
+
+``` yaml
+app:
+  name: "Sales Dashboard"
+  slug: "sales-dashboard"
+  description: "Quarterly sales explorer"
+  author: "Jane Doe <jane@example.org>"
+  homepage: "https://example.org/sales"
+  copyright: "Copyright 2026 Example Inc."
+```
+
+Buttons appear for the settings that apply:
+
+| Button            | Shown when                                        |
+|-------------------|---------------------------------------------------|
+| OK                | Always                                            |
+| Check for Updates | `updates.enabled` is `true`, on Windows and Linux |
+| Visit Website     | `app.homepage` is set                             |
+| Email             | `app.author` includes an email address            |
+
+Check for Updates answers in a dialog: the app is up to date, a newer
+version is ready to download (or already downloading when
+`updates.auto_download` is on), or the check failed, with the reason. It
+is left out on macOS, where a build ships only a disk image and
+electron-updater needs a zip archive to update the app.
+
+On macOS, the App menu’s About item opens the system About panel
+instead, and it shows the same name, version, copyright, description,
+and author. The [Configuration
+Guide](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/configuration.md)
+describes each `app` key.
+
 ### DevTools
 
 Set `menu.show_dev_tools: true` during development to add **View →
@@ -402,6 +439,7 @@ A complete config that uses all three knobs at once. Drop this into
 ``` yaml
 app:
   name: "My Dashboard"
+  slug: "my-dashboard"
   version: "1.0.0"
 
 splash:

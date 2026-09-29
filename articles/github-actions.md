@@ -265,6 +265,7 @@ for every option.
 ``` yaml
 app:
   name: "My Shiny Dashboard"
+  slug: "my-shiny-dashboard"
   version: "1.0.0"
 
 build:
