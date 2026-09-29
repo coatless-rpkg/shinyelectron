@@ -332,7 +332,7 @@ dependencies:
     prune: false
 ```
 
-The value must be `true` or `false`; anything else stops the build with an error.
+Write `true` or `false` without quotes. A quoted `"true"` or `"false"` is read as the matching value with a warning; any other value stops the build before anything is downloaded.
 
 #### Python-specific dependency options
 
@@ -582,7 +582,7 @@ shinyelectron validates values on read and degrades gracefully rather than abort
 - Window dimensions under 100 pixels warn and use defaults.
 - Invalid port numbers warn and use `3838`.
 
-`dependencies.r.prune` is stricter: anything other than `true` or `false` stops the build with an error, because falling back to the default could remove files you meant to keep.
+`dependencies.r.prune` is stricter. A quoted `"true"` or `"false"` is read as the matching value with a warning, but any other value stops the build with an error before anything is downloaded, because falling back to the default could remove files you meant to keep.
 
 If the YAML itself fails to parse, shinyelectron warns and uses all defaults. This is deliberate: a broken config file should never block you from producing a build during development.
 

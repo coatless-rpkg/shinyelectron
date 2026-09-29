@@ -487,6 +487,28 @@ test_that("build_multi_app passes dependencies.r.prune from config to embed_r_ru
   )
 
   expect_false(forwarded)
+
+  # A quoted "false" in a config built in R also turns pruning off, with a
+  # single warning from the up-front check.
+  config$dependencies$r$prune <- "false"
+  forwarded <- NULL
+  n_quoted <- 0L
+  withCallingHandlers(
+    build_multi_app(
+      apps_dir = apps_dir, output_dir = output_dir, app_name = "Suite",
+      apps_manifest = apps_manifest, default_type = "r-shiny",
+      runtime_strategy = "bundled", sign = FALSE,
+      platform = "mac", arch = "arm64", icon = NULL, config = config,
+      overwrite = TRUE, verbose = FALSE,
+      r_packages = "shiny"
+    ),
+    shinyelectron_quoted_flag = function(w) {
+      n_quoted <<- n_quoted + 1L
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_equal(n_quoted, 1L)
+  expect_false(forwarded)
 })
 
 test_that("build_multi_app rejects a bad dependencies.r.prune before creating or downloading anything", {
@@ -497,7 +519,7 @@ test_that("build_multi_app rejects a bad dependencies.r.prune before creating or
 
   config <- list(
     build = list(type = "r-shiny", runtime_strategy = "bundled"),
-    dependencies = list(r = list(prune = "no")),
+    dependencies = list(r = list(prune = "maybe")),
     apps = list(
       list(id = "dash",   name = "Dash",   path = "./apps/dash"),
       list(id = "report", name = "Report", path = "./apps/report")
@@ -537,7 +559,8 @@ test_that("build_multi_app rejects a bad dependencies.r.prune before creating or
       overwrite = TRUE, verbose = FALSE,
       r_packages = "shiny"
     ),
-    "dependencies.r.prune"
+    "dependencies.r.prune",
+    class = "shinyelectron_invalid_flag"
   )
   expect_equal(calls, character(0))
   expect_false(dir.exists(output_dir))

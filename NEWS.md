@@ -5,7 +5,9 @@
   the portable R's own regression tests, PDF and HTML manuals, and news and FAQ
   files. Package examples, demos, NEWS files, and headers are kept, as are R's
   license notices. Pruning is on by default; set `dependencies.r.prune: false`
-  in `_shinyelectron.yml` to ship the runtime unchanged.
+  in `_shinyelectron.yml` to ship the runtime unchanged. A quoted `"true"` or
+  `"false"` is read with a warning, and any other value stops the build before
+  anything is downloaded.
 
 # shinyelectron 0.2.1
 

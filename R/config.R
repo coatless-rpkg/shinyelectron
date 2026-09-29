@@ -334,10 +334,14 @@ validate_config <- function(config) {
     }
   }
 
-  # Validate dependencies.r.prune: a single true/false. Unlike the checks
-  # above, an invalid value aborts rather than falling back to the default,
-  # because a quoted "false" must never lead to files being removed.
-  resolve_r_prune(config)
+  # Normalize dependencies.r.prune to a logical here, so a quoted "true" or
+  # "false" warns once when the file is read and later lookups see TRUE or
+  # FALSE. Unlike the checks above, any other value aborts rather than falling
+  # back to the default, because guessing could remove files the user meant
+  # to keep.
+  if (!is.null(config$dependencies$r$prune)) {
+    config$dependencies$r$prune <- resolve_r_prune(config)
+  }
 
   # Validate dependencies$system_packages: must be a character vector or NULL.
   sp <- config$dependencies$system_packages

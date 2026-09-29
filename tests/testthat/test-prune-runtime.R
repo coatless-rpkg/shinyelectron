@@ -250,19 +250,51 @@ test_that("dependencies.r.prune defaults to TRUE and is read from the config fil
   expect_true(resolve_r_prune(read_config(appdir)))
 })
 
+test_that("a quoted true or false in the config file is read with one warning", {
+  appdir <- withr::local_tempdir()
+  cfg_file <- file.path(appdir, "_shinyelectron.yml")
+
+  read_counting_warnings <- function() {
+    n <- 0L
+    cfg <- withCallingHandlers(
+      read_config(appdir),
+      shinyelectron_quoted_flag = function(w) {
+        n <<- n + 1L
+        invokeRestart("muffleWarning")
+      }
+    )
+    list(config = cfg, warnings = n)
+  }
+
+  writeLines(c("dependencies:", "  r:", '    prune: "false"'), cfg_file)
+  res <- read_counting_warnings()
+  expect_equal(res$warnings, 1L)
+  expect_false(res$config$dependencies$r$prune)
+  # The value is normalized when read, so later lookups do not warn again.
+  expect_no_warning(prune <- resolve_r_prune(res$config))
+  expect_false(prune)
+
+  writeLines(c("dependencies:", "  r:", '    prune: "TRUE"'), cfg_file)
+  res <- read_counting_warnings()
+  expect_equal(res$warnings, 1L)
+  expect_true(res$config$dependencies$r$prune)
+})
+
 test_that("an invalid dependencies.r.prune aborts instead of guessing", {
   appdir <- withr::local_tempdir()
   cfg_file <- file.path(appdir, "_shinyelectron.yml")
 
-  for (value in c('"false"', "1", "[true, false]", ".na")) {
+  for (value in c('"maybe"', "1", "[true, false]", ".na")) {
     writeLines(c("dependencies:", "  r:", paste("    prune:", value)), cfg_file)
-    expect_error(read_config(appdir), "dependencies.r.prune", info = value)
+    expect_error(read_config(appdir), "dependencies.r.prune",
+                 class = "shinyelectron_invalid_flag", info = value)
   }
 
   expect_error(
-    validate_config(list(dependencies = list(r = list(prune = "yes")))),
-    "dependencies.r.prune"
+    validate_config(list(dependencies = list(r = list(prune = "maybe")))),
+    "dependencies.r.prune",
+    class = "shinyelectron_invalid_flag"
   )
   expect_error(resolve_r_prune(list(dependencies = list(r = list(prune = NA)))),
-               "dependencies.r.prune")
+               "dependencies.r.prune", class = "shinyelectron_invalid_flag")
 })

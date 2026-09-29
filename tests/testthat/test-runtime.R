@@ -495,6 +495,23 @@ test_that("build_electron_app passes dependencies.r.prune from config to embed_r
                      config = list(dependencies = list(r = list(prune = FALSE))),
                      verbose = FALSE)
   expect_false(forwarded)
+
+  # A quoted "false" in a config built in R also turns pruning off, with a
+  # single warning from the up-front check.
+  forwarded <- NULL
+  n_quoted <- 0L
+  withCallingHandlers(
+    build_electron_app(app_dir, fs::path(tmp, "out2"), app_type = "r-shiny",
+                       runtime_strategy = "bundled", platform = "mac", arch = "arm64",
+                       config = list(dependencies = list(r = list(prune = "false"))),
+                       verbose = FALSE),
+    shinyelectron_quoted_flag = function(w) {
+      n_quoted <<- n_quoted + 1L
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_equal(n_quoted, 1L)
+  expect_false(forwarded)
 })
 
 test_that("build_electron_app rejects a bad dependencies.r.prune before touching output or runtimes", {
@@ -523,14 +540,16 @@ test_that("build_electron_app rejects a bad dependencies.r.prune before touching
     copy_dir_contents = record("copy_dir_contents")
   )
 
-  # A config built in R skips read_config(), so a quoted "false" must still
-  # stop the build, and before the previous output is deleted.
+  # A config built in R skips read_config(), so a value that is neither true
+  # nor false must still stop the build, and before the previous output is
+  # deleted.
   expect_error(
     build_electron_app(app_dir, out, app_type = "r-shiny",
                        runtime_strategy = "bundled", platform = "mac", arch = "arm64",
-                       config = list(dependencies = list(r = list(prune = "false"))),
+                       config = list(dependencies = list(r = list(prune = "maybe"))),
                        overwrite = TRUE, verbose = FALSE),
-    "dependencies.r.prune"
+    "dependencies.r.prune",
+    class = "shinyelectron_invalid_flag"
   )
   expect_equal(calls, character(0))
   expect_true(fs::file_exists(fs::path(out, "previous.txt")))

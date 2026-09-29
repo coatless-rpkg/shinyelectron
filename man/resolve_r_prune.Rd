@@ -14,7 +14,8 @@ resolve_r_prune(config)
 }
 \description{
 Returns whether a bundled R runtime is pruned: the configured value, or
-\code{TRUE} when it is unset. Anything other than a single \code{TRUE} or \code{FALSE}
-aborts, so a quoted \code{"false"} can never turn into a prune.
+\code{TRUE} when it is unset. A quoted \code{"true"} or \code{"false"} is read as the
+matching logical with a warning, and any other value aborts (see
+\code{\link[=config_flag]{config_flag()}}), so a typo never silently decides which files ship.
 }
 \keyword{internal}
