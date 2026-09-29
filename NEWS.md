@@ -57,6 +57,37 @@
 * Help > Documentation appears only when `menu.help_url` is set, instead of
   in every app with a link that opened nothing.
 
+* R and Python apps whose UI takes several seconds to render no longer fail to
+  start. The startup check used to request the app's page, which ran the UI
+  code on every attempt; it now requests a path the app does not serve, so the
+  UI is rendered once, when the window loads it.
+
+* When an app does not start in time, only its own R or Python process or
+  container is stopped, and the error screen stays up with its Retry and Quit
+  buttons. For a container, the error names the container and its details
+  show the container's logs. Going back to the launcher while an app is still
+  starting no longer leaves that start running, where it could later stop the
+  next app's process or container or replace the window with the abandoned
+  app, and switching between container apps no longer shows the previous
+  container's shutdown messages.
+
+* An R or Python app killed by a signal while starting (a segfault, or the
+  system running out of memory), or one that exits before its server answers,
+  now shows the error at once instead of after the startup timeout.
+
+* Restarting to install a downloaded update now stops the app's R or Python
+  process (or its container) and waits for it to exit before the installer
+  runs. If the update cannot be installed, a dialog asks you to restart the
+  app. Pressing Esc in the Update Ready dialog now means Later.
+
+* New `lifecycle.startup_timeout` sets how long, in milliseconds, an app waits
+  for its R, Python, or container server to start (default 180000, three
+  minutes). R and Python apps used to give up after 60 seconds and container
+  apps after 120. This timeout and `lifecycle.shutdown_timeout` must be whole
+  numbers from 1000 to 2147483647; any other value warns and falls back to the
+  default. Before, a `shutdown_timeout` such as `"10s"` built an app that could
+  not launch.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the

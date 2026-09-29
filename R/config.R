@@ -445,6 +445,22 @@ validate_config <- function(config) {
     config$container$engine <- NULL
   }
 
+  # Validate lifecycle timeouts. Both are milliseconds, and shutdown_timeout
+  # is written into main.js as a JavaScript literal, so a value such as "10s"
+  # would stop the app from launching.
+  for (key in c("startup_timeout", "shutdown_timeout")) {
+    value <- config$lifecycle[[key]]
+    if (!is.null(value) && !is_timeout_ms(value)) {
+      default_value <- SHINYELECTRON_DEFAULTS$lifecycle[[key]]
+      cli::cli_warn(c(
+        "Invalid {.field lifecycle.{key}} in config: {.val {value}}",
+        "i" = "Must be a whole number of milliseconds between 1000 and 2147483647; using default: {.val {default_value}}",
+        "i" = "Edit {.field lifecycle.{key}} in {.file _shinyelectron.yml}"
+      ))
+      config$lifecycle[[key]] <- default_value
+    }
+  }
+
   # Validate dependencies version strings: r, python, electron.
   # Each must be a single character string (e.g. "4.5.1" or "latest") or NULL.
   for (rt in c("r", "python", "electron")) {
@@ -471,6 +487,30 @@ validate_config <- function(config) {
   }
 
   config
+}
+
+#' Check a lifecycle timeout value
+#'
+#' @param x Value to check.
+#' @return `TRUE` if `x` is a single whole number of milliseconds between
+#'   1000 and 2147483647 (the largest R integer), otherwise `FALSE`.
+#' @keywords internal
+is_timeout_ms <- function(x) {
+  is.numeric(x) && length(x) == 1L && !is.na(x) &&
+    x >= 1000 && x <= .Machine$integer.max && x == round(x)
+}
+
+#' Look up a lifecycle timeout for the generated app
+#'
+#' @param config List. Effective configuration.
+#' @param key Character. `"startup_timeout"` or `"shutdown_timeout"`.
+#' @return Integer milliseconds: the configured value, or the default when it
+#'   is missing or invalid (for example a config that skipped
+#'   [validate_config()]).
+#' @keywords internal
+lifecycle_timeout <- function(config, key) {
+  value <- config$lifecycle[[key]]
+  if (is_timeout_ms(value)) as.integer(value) else SHINYELECTRON_DEFAULTS$lifecycle[[key]]
 }
 
 #' Initialize configuration file
@@ -681,7 +721,8 @@ nodejs:
 # lifecycle:
 #   show_phase_details: true
 #   error_show_logs: true
-#   shutdown_timeout: 10000
+#   startup_timeout: 180000       # ms to wait for the R, Python, or container server to start
+#   shutdown_timeout: 10000       # ms to wait for the server to stop when quitting
 #   custom_splash_html: null
 #   custom_error_html: null
 #   prompt_before_install: false  # true = ask before installing packages
