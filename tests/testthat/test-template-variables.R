@@ -707,3 +707,20 @@ test_that("each About button runs its own action, and macOS has no update check"
   expect_equal(plain$buttons, "OK")
   expect_equal(plain$actions, "")
 })
+
+# --- macOS App menu ---
+
+test_that("the macOS App menu shows the display name instead of the slug", {
+  for (template in c("default", "minimal")) {
+    main <- readLines(render_main_js(
+      list(menu = list(template = template)), app_name = "Bob's App"
+    ))
+    for (item in c("{ role: 'about', label: 'About Bob\\'s App' }",
+                   "{ role: 'quit', label: 'Quit Bob\\'s App' }")) {
+      expect_true(any(grepl(item, main, fixed = TRUE)), info = paste(template, item))
+    }
+    expect_false(any(grepl("label: app.name", main, fixed = TRUE)), info = template)
+  }
+  main <- readLines(render_main_js(list(), app_name = "Bob's App"))
+  expect_true(any(grepl("{ role: 'hide', label: 'Hide Bob\\'s App' }", main, fixed = TRUE)))
+})

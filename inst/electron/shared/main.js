@@ -224,11 +224,12 @@ function createMenu() {
   // Minimal menu -- File, Edit, Help only
   const template = [
     ...(isMac ? [{
-      label: app.name,
+      // Electron would label these items with app.name, which is the slug.
+      label: '{{{app_name_js}}}',
       submenu: [
-        { role: 'about' },
+        { role: 'about', label: 'About {{{app_name_js}}}' },
         { type: 'separator' },
-        { role: 'quit' }
+        { role: 'quit', label: 'Quit {{{app_name_js}}}' }
       ]
     }] : []),
     {
@@ -301,17 +302,18 @@ function createMenu() {
   // Default menu -- full menu bar
   const template = [
     ...(isMac ? [{
-      label: app.name,
+      // Electron would label these items with app.name, which is the slug.
+      label: '{{{app_name_js}}}',
       submenu: [
-        { role: 'about' },
+        { role: 'about', label: 'About {{{app_name_js}}}' },
         { type: 'separator' },
         { role: 'services' },
         { type: 'separator' },
-        { role: 'hide' },
+        { role: 'hide', label: 'Hide {{{app_name_js}}}' },
         { role: 'hideOthers' },
         { role: 'unhide' },
         { type: 'separator' },
-        { role: 'quit' }
+        { role: 'quit', label: 'Quit {{{app_name_js}}}' }
       ]
     }] : []),
     {

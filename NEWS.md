@@ -19,11 +19,11 @@
   installers. Update release scripts that look for the old names.
 
 * The installed app now carries the display name (`app.name`) instead of the
-  slug: the macOS app bundle, the Windows Start Menu shortcut and Apps &
-  Features entry, and the installer window. The Windows executable and
-  install folder keep the slug, so pinned shortcuts and existing installs
-  carry over. On macOS, reinstalling from the disk image leaves the old
-  `<slug>.app` in Applications to delete by hand.
+  slug: the macOS app bundle and App menu, the Windows Start Menu shortcut
+  and Apps & Features entry, and the installer window. The Windows
+  executable and install folder keep the slug, so pinned shortcuts and
+  existing installs carry over. On macOS, reinstalling from the disk image
+  leaves the old `<slug>.app` in Applications to delete by hand.
 
 ## New features
 
