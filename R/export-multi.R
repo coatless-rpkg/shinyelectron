@@ -360,7 +360,8 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
     embed_r_runtime(
       output_dir = output_dir,
       packages = sort(unique(r_packages)),
-      repos = r_repos %||% SHINYELECTRON_DEFAULTS$dependencies$r$repos,
+      repos = r_repos %||% config$dependencies$r$repos %||%
+        SHINYELECTRON_DEFAULTS$dependencies$r$repos,
       version = resolve_runtime_version("r", config),
       platform = platform[1],
       arch = arch[1],
