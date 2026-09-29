@@ -34,6 +34,10 @@
   `"Name <email> (url)"` string or a map with `name`, `email`, and `url`,
   and `app.homepage` must be an `http://` or `https://` URL. On macOS, the
   App menu's About panel shows the same name, version, and copyright.
+  Straight double quotes in the app name, author, and copyright become
+  typographic quotes in the installer metadata, and a `$` in the app name,
+  description, author, or copyright, which the Windows installer cannot
+  hold, stops a Windows build.
 
 * With auto-updates enabled, Help > About offers Check for Updates on
   Windows and Linux. It reports that the app is up to date, offers to

@@ -37,6 +37,70 @@ metadata_text <- function(x) {
   if (nzchar(x)) x else NULL
 }
 
+#' Replace straight double quotes with typographic ones
+#'
+#' electron-builder writes the product name, the copyright, and the author's
+#' name into double-quoted strings of the Windows installer (NSIS) script
+#' without escaping them, so a straight double quote ends the string and the
+#' installer build fails. electron-builder already turns the quotes in the
+#' description into typographic ones; this applies the same rule to the other
+#' values `generate_package_json()` writes.
+#'
+#' @param x A string, or `NULL`.
+#' @return `x` with each `"` replaced by an opening or closing typographic
+#'   quote, or `NULL` when `x` is `NULL`.
+#' @keywords internal
+smart_quotes <- function(x) {
+  if (is.null(x)) return(NULL)
+  x <- gsub("(^|[-\u2014/[(\u2018[:space:]])\"", "\\1\u201c", x, perl = TRUE)
+  gsub("\"", "\u201d", x, fixed = TRUE)
+}
+
+#' Stop or warn when app text contains `$`
+#'
+#' electron-builder passes the app name, description, author's name, and
+#' copyright to NSIS, which builds the Windows installer, without escaping
+#' `$`. NSIS reads `$` as the start of a variable: the build fails on an
+#' unknown one (electron-builder treats NSIS warnings as errors), and a known
+#' one silently changes the text. So a `$` stops an export that builds a
+#' Windows installer, before any conversion, and warns for any other.
+#'
+#' @param app_name Character string. The display name.
+#' @param config List. The effective configuration.
+#' @param windows Logical. Whether the export builds a Windows installer.
+#' @return Invisible `TRUE`; aborts or warns when a value contains `$`.
+#' @keywords internal
+check_installer_text <- function(app_name, config, windows) {
+  metadata <- app_metadata(config)
+  values <- list(
+    "app name" = app_name,
+    app.description = metadata$description,
+    app.author = metadata$author$name,
+    app.copyright = metadata$copyright
+  )
+  has_dollar <- vapply(values, function(value) {
+    is_nonempty_string(value) && grepl("$", value, fixed = TRUE)
+  }, logical(1))
+  if (!any(has_dollar)) return(invisible(TRUE))
+
+  fields <- names(values)[has_dollar]
+  problem <- c(
+    "{.field {fields}} {?contains/contain} {.code $}, which a Windows installer cannot hold.",
+    "i" = "electron-builder passes {cli::qty(fields)}{?this value/these values} to NSIS without escaping, and NSIS reads {.code $} as the start of a variable, so the installer build fails or the text changes."
+  )
+  if (windows) {
+    cli::cli_abort(
+      c(problem, "i" = "Remove the {.code $} and export again."),
+      class = "shinyelectron_installer_dollar"
+    )
+  }
+  cli::cli_warn(
+    c(problem, "i" = "Remove the {.code $} before you build for Windows."),
+    class = "shinyelectron_installer_dollar"
+  )
+  invisible(TRUE)
+}
+
 #' Test for an http or https URL
 #'
 #' @param x Value to test.

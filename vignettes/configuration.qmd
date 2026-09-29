@@ -190,7 +190,7 @@ Application metadata.
 | `homepage` | string | `null` | An `http://` or `https://` URL. Adds a Visit Website button to Help > About and a support link to the Windows uninstall entry |
 | `copyright` | string | `null` | Shown in Help > About, the macOS About panel, and the Windows file properties; `null` lets electron-builder write a notice with the year and the author |
 
-Line breaks in `description`, `author`, and `copyright` become spaces, because the installer metadata holds a single line. electron-builder also expands macros such as `${author}` in the copyright it writes to the installer, so avoid `${` in that text.
+Line breaks in `description`, `author`, and `copyright` become spaces, because the installer metadata holds a single line. The Windows installer script keeps the app name, the author's name, and the copyright in double-quoted strings, so their straight double quotes become typographic ones in the installer metadata, as electron-builder already does for the description. That script cannot hold a `$` at all: `export()` stops a Windows build when the app name, description, author, or copyright contains one, and warns when you build for other platforms. The same rule keeps electron-builder's `${...}` macros out of the copyright.
 
 ::: {.callout-important}
 ## Settle the slug before you ship
@@ -592,7 +592,7 @@ shinyelectron validates values on read and degrades gracefully rather than abort
 
 If the YAML itself fails to parse, shinyelectron warns and uses all defaults. This is deliberate: a broken config file should never block you from producing a build during development.
 
-`app.homepage` is stricter: a value that is not an `http://` or `https://` URL stops the build, because the About dialog opens it in the browser.
+`app.homepage` is stricter: a value that is not an `http://` or `https://` URL stops the build, because the About dialog opens it in the browser. So is a `$` in the app name, `app.description`, `app.author`, or `app.copyright` when the build includes Windows, because the Windows installer cannot hold one; for other platforms it only warns.
 
 ## Next steps
 

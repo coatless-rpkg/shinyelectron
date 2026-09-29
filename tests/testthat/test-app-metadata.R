@@ -207,3 +207,79 @@ test_that("metadata text is reduced to one line", {
   expect_equal(pkg$author, list(name = "Jane Doe"))
   expect_null(metadata_text(" \n "))
 })
+
+# --- Windows installer strings ---
+
+test_that("smart_quotes turns straight double quotes into typographic ones", {
+  expect_equal(smart_quotes('Sales "Q3" Dashboard'), "Sales “Q3” Dashboard")
+  expect_equal(smart_quotes('"Acme" Inc.'), "“Acme” Inc.")
+  expect_equal(smart_quotes('A 5" screen'), "A 5” screen")
+  expect_equal(smart_quotes("Plain"), "Plain")
+  expect_null(smart_quotes(NULL))
+})
+
+test_that("package.json keeps straight double quotes out of Windows installer strings", {
+  pkg <- package_json(
+    list(app = list(
+      author = 'Jane "JD" Doe <jane@example.org>',
+      copyright = 'Copyright 2026 "Acme" Inc.',
+      description = 'The "best" app'
+    )),
+    app_name = 'Sales "Q3" Dashboard'
+  )
+  expect_equal(pkg$build$productName, "Sales “Q3” Dashboard")
+  expect_equal(pkg$build$copyright, "Copyright 2026 “Acme” Inc.")
+  expect_equal(pkg$author, list(name = "Jane “JD” Doe", email = "jane@example.org"))
+  # electron-builder smartens the description's quotes itself.
+  expect_equal(pkg$description, 'The "best" app')
+})
+
+test_that("a $ in the app name or metadata stops a Windows build and warns otherwise", {
+  config <- list(app = list(copyright = "Copyright $YEAR Acme"))
+  expect_error(
+    check_installer_text("Price Tracker", config, windows = TRUE),
+    "app.copyright", class = "shinyelectron_installer_dollar"
+  )
+  expect_warning(
+    check_installer_text("Price Tracker", config, windows = FALSE),
+    "app.copyright", class = "shinyelectron_installer_dollar"
+  )
+  expect_error(
+    check_installer_text("Price$Tracker", list(), windows = TRUE),
+    "app name", class = "shinyelectron_installer_dollar"
+  )
+  for (field in c("description", "author")) {
+    app <- stats::setNames(list("Save $5"), field)
+    expect_error(
+      check_installer_text("Price Tracker", list(app = app), windows = TRUE),
+      paste0("app.", field), class = "shinyelectron_installer_dollar"
+    )
+  }
+  expect_silent(check_installer_text(
+    "Price Tracker", list(app = list(copyright = "Copyright 2026 Acme")), windows = TRUE
+  ))
+})
+
+test_that("export() stops a Windows build with a $ in the app name before converting", {
+  appdir <- withr::local_tempdir()
+  writeLines(
+    "library(shiny)\nshinyApp(ui = fluidPage(), server = function(input, output) {})",
+    file.path(appdir, "app.R")
+  )
+  mockery::stub(export, "convert_app_to_shinylive", function(...) stop("converted"))
+  mockery::stub(export, "build_electron_app", function(...) stop("built"))
+  expect_error(
+    export(appdir, withr::local_tempdir(), app_name = "Price$Tracker",
+           platform = "win", overwrite = TRUE, verbose = FALSE),
+    class = "shinyelectron_installer_dollar"
+  )
+
+  # Building for another platform only warns, and the export goes on.
+  mockery::stub(export, "convert_app_to_shinylive", function(...) tempdir())
+  mockery::stub(export, "build_electron_app", function(...) tempdir())
+  expect_warning(
+    export(appdir, withr::local_tempdir(), app_name = "Price$Tracker",
+           platform = "mac", overwrite = TRUE, verbose = FALSE),
+    class = "shinyelectron_installer_dollar"
+  )
+})

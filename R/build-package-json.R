@@ -17,7 +17,12 @@ generate_package_json <- function(app_slug, app_version, backend, config,
                                   has_icon = FALSE, sign = FALSE,
                                   is_multi_app = FALSE, app_name = NULL) {
   metadata <- app_metadata(config)
+  # electron-builder writes the product name, the copyright, and the author's
+  # name into double-quoted Windows installer strings without escaping them,
+  # so their straight double quotes become typographic ones (see
+  # smart_quotes()). It already does this for the description.
   author <- metadata$author
+  if (!is.null(author)) author$name <- smart_quotes(author$name)
 
   # Base structure
   pkg <- list(
@@ -78,7 +83,7 @@ generate_package_json <- function(app_slug, app_version, backend, config,
   # the slug.
   build_config <- list(
     appId = config$installer$app_id %||% paste0("com.shinyelectron.", app_slug),
-    productName = app_name %||% app_slug,
+    productName = smart_quotes(app_name %||% app_slug),
     # ${name} is the package.json name, the slug, so installer names are safe
     # for GitHub Releases. ${arch} keeps the build of each architecture, all
     # written to the same dist/, from overwriting another.
@@ -88,7 +93,7 @@ generate_package_json <- function(app_slug, app_version, backend, config,
   # The copyright goes into the Windows file properties and the macOS
   # Info.plist, which the native About panel reads. Unset, electron-builder
   # writes a default notice with the year and the author name (or productName).
-  build_config$copyright <- metadata$copyright
+  build_config$copyright <- smart_quotes(metadata$copyright)
 
   # Publish config for auto-updates
   if (updates_enabled) {

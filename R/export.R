@@ -134,6 +134,13 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   # known; process_templates() takes it from the config.
   config$app$slug <- resolve_app_slug(config, app_name, appdir, name_from_config)
 
+  # The Windows installer cannot hold a $ in the app's name or metadata; stop
+  # a Windows build here, before any conversion or runtime download.
+  check_installer_text(
+    app_name, config,
+    windows = build && "win" %in% (platform %||% detect_current_platform())
+  )
+
   # Detect multi-app mode (skip single-app structure validation)
   if (is_multi_app(config)) {
     return(export_multi_app(appdir, destdir, config,
