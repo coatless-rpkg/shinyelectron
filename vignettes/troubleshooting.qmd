@@ -507,7 +507,7 @@ signing:
     certificate_file: "path/to/cert.pfx"
 ```
 
-Set `CSC_LINK` and `CSC_KEY_PASSWORD` before building.
+Keep the certificate password out of the file: set `CSC_KEY_PASSWORD` before building. Without `certificate_file`, electron-builder reads the certificate from `CSC_LINK` instead.
 
 For **local testing**, click "More info" then "Run anyway".
 
