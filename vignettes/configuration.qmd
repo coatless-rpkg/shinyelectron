@@ -448,6 +448,8 @@ Controls installer branding and behavior for the Windows (NSIS) installer produc
 | `app_id` | string | `null` | Unique application identifier (e.g. `"com.example.myapp"`); `null` derives one from the app name |
 | `license_file` | string | `null` | Path to a license file shown during installation (Windows NSIS only) |
 | `one_click` | boolean | `true` | Use a one-click installer on Windows; set to `false` for a wizard-style installer |
+| `allow_to_change_installation_directory` | boolean | `null` | `true` adds a wizard page where users choose the installation folder. Requires `one_click: false` |
+| `per_machine` | boolean | `null` | `true` installs for all users, which needs administrator rights on every install and update. When unset, the one-click installer installs for the current user and the wizard lets the user choose |
 
 **Example:**
 
@@ -456,7 +458,14 @@ installer:
   app_id: "com.example.my-dashboard"
   license_file: "LICENSE.txt"
   one_click: false
+  allow_to_change_installation_directory: true
 ```
+
+::: {.callout-warning}
+## Decide on `per_machine` before the first release
+
+A per-machine install goes to Program Files, and every later update shows an administrator prompt. Turning `per_machine` on for an app that has already shipped per-user moves the next install there too. A standard user who approves that prompt with an administrator's credentials can end up with the old per-user copy still installed next to the new one.
+:::
 
 ## Common recipes
 

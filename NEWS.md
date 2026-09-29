@@ -1,3 +1,20 @@
+# shinyelectron (development version)
+
+## Breaking changes
+
+* `installer.one_click` must now be an unquoted `true` or `false`. A quoted
+  value such as `"false"`, which electron-builder used to accept, now stops
+  `export()` with an error that names the key.
+
+## New features
+
+* `installer.allow_to_change_installation_directory: true` adds a page to the
+  Windows setup wizard where users choose the installation folder. It requires
+  `installer.one_click: false`, and `export()` stops with an error otherwise.
+
+* `installer.per_machine: true` installs the Windows app for all users. Every
+  install and update then needs administrator rights.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the
