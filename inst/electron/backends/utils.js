@@ -188,7 +188,7 @@ function isOnline() {
 }
 
 // Processes killProcessTree() was already asked to kill. A second request is
-// ignored, so a process is never signalled again once its PID may be reused.
+// ignored rather than signalling the process again.
 const killRequested = new WeakSet();
 
 /**
@@ -208,6 +208,9 @@ function killProcessTree(proc) {
     } else {
       proc.kill('SIGTERM');
       setTimeout(() => {
+        // Skip the fallback once the process has exited: its PID may already
+        // belong to another process.
+        if (proc.exitCode !== null || proc.signalCode !== null) return;
         try { process.kill(proc.pid, 'SIGKILL'); } catch { /* already dead */ }
       }, 500);
     }
