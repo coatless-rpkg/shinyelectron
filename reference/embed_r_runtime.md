@@ -4,10 +4,13 @@ Behavior-preserving extraction of the R bundled-embedding block from
 [`build_electron_app()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/build_electron_app.md).
 ALWAYS installs + copies the interpreter (and resolves symlinks) so the
 shared `runtime/R` path exists for suite-wide bundled detection; only
-the package install is gated on a non-empty `packages` set. `packages`
-is the DIRECT set (as stored in `dependencies.json`); the recursive
-dependency closure and the `pre_installed` setdiff are resolved here,
-against the freshly-created `runtime/R/library`.
+the package install is gated on a non-empty package set (`packages` plus
+any local packages and their declared dependencies). `packages` is the
+DIRECT set (as stored in `dependencies.json`); the recursive dependency
+closure and the `pre_installed` setdiff are resolved here, against the
+freshly-created `runtime/R/library`. Local packages are installed last,
+with
+[`install_local_r_packages()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_local_r_packages.md).
 
 ## Usage
 
@@ -20,7 +23,8 @@ embed_r_runtime(
   platform,
   arch,
   verbose = TRUE,
-  prune = TRUE
+  prune = TRUE,
+  local_packages = character(0)
 )
 ```
 
@@ -36,7 +40,8 @@ embed_r_runtime(
 
 - repos:
 
-  Character vector. CRAN-like repository URLs.
+  Character vector. CRAN-like repository URLs. `NULL` uses the default
+  CRAN mirror.
 
 - version:
 
@@ -60,6 +65,15 @@ embed_r_runtime(
   [`prune_bundled_r_runtime()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/prune_bundled_r_runtime.md)
   allowlists once the packages are installed. Callers pass the validated
   `dependencies.r.prune` setting.
+
+- local_packages:
+
+  Character vector. Paths to local R package source folders or `.tar.gz`
+  source tarballs to install into the bundled library after the
+  repository packages.
+  [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+  passes absolute paths; relative paths resolve against the working
+  directory.
 
 ## Value
 

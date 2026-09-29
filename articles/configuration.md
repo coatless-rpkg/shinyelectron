@@ -204,6 +204,7 @@ are. These keys name files:
 - `tray.icon`
 - `signing.win.certificate_file`
 - `installer.license_file`
+- the entries of `dependencies.r.local_packages`
 - `path` and `icon` in each `apps` entry
 
 Path arguments follow the usual R rule instead:
@@ -217,8 +218,9 @@ When one of these files does not exist, the message names the key and
 the full path that was checked. A missing app icon stops
 [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md),
 just as a missing `icon` argument does, and so does a missing
-`installer.license_file`. A missing splash image, tray icon, or launcher
-icon gives a warning, and the build uses the default instead. A missing
+`installer.license_file` or `dependencies.r.local_packages` entry. A
+missing splash image, tray icon, or launcher icon gives a warning, and
+the build uses the default instead. A missing
 `signing.win.certificate_file` gives a warning when
 [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
 signs a Windows build.
@@ -460,9 +462,9 @@ end user’s installed R or Python.
 
 #### R-specific dependency options
 
-These keys sit under `dependencies.r`. All but `prune` apply to the
-`bundled`, `auto-download`, and `system` strategies; `prune` applies to
-`bundled` only.
+These keys sit under `dependencies.r` and apply to the `bundled`,
+`auto-download`, and `system` strategies, except `r.prune` and
+`r.local_packages`, which only the `bundled` strategy uses.
 
 | Key | Type | Default | Description |
 |----|----|----|----|
@@ -470,6 +472,7 @@ These keys sit under `dependencies.r`. All but `prune` apply to the
 | `r.repos` | list of strings | `["https://cloud.r-project.org"]` | CRAN-compatible repository URLs to use when installing R packages |
 | `r.lib_path` | string | `null` | Custom library path where R packages are installed; `null` uses the default R library |
 | `r.prune` | boolean | `true` | Remove package test suites and R’s own tests, manuals, and news from the embedded runtime (see below) |
+| `r.local_packages` | list of strings | `[]` | Package source folders or `.tar.gz` source tarballs to install into a bundled R library; see [Local R packages](#local-r-packages) |
 
 #### Pruning the bundled R runtime
 
@@ -505,6 +508,63 @@ dependencies:
 Write `true` or `false` without quotes. A quoted `"true"` or `"false"`
 is read as the matching value with a warning; any other value stops the
 build before anything is downloaded.
+
+#### Local R packages
+
+`r.local_packages` installs R packages that are not on a repository,
+such as your own in-house packages, into the R library of a `bundled`
+build. List package source folders (the folder that holds `DESCRIPTION`)
+or source tarballs as `R CMD build` creates them:
+
+``` yaml
+build:
+  runtime_strategy: "bundled"
+
+dependencies:
+  r:
+    local_packages:
+      - ../mypkg                         # a source folder next to the app
+      - ../vendor/otherpkg_1.2.0.tar.gz  # a source tarball
+```
+
+- Only R apps that use the `bundled` strategy can use local packages.
+  [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+  stops with an error when the key is set for any other strategy, or for
+  a suite without a bundled R app.
+- Relative paths resolve against the folder that holds
+  `_shinyelectron.yml`: the app directory, or the suite root for a
+  multi-app suite. A suite reads `local_packages` only from its root
+  `_shinyelectron.yml`, not from the config files of its apps.
+- [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+  checks every entry before it downloads anything. Zip files and binary
+  builds (such as the `.tgz` files CRAN publishes for macOS) are
+  rejected, because local packages are compiled for the bundled R.
+- A source folder is first built into a tarball in a temporary directory
+  with the bundled R’s `R CMD build`, so nothing is compiled or written
+  inside it. The build runs after the package’s dependencies are
+  installed, so help pages whose `\Sexpr` macros need the package at
+  build time work too.
+- The `Depends`, `Imports`, and `LinkingTo` packages of each local
+  package are installed from `r.repos` first. `Remotes:` fields are not
+  read, so list a dependency that is not on a repository under
+  `local_packages` too, or add its repository to `r.repos`.
+- Local packages install in dependency order among themselves, so the
+  order of the list does not matter. Local packages that depend on each
+  other in a cycle stop the build.
+- A local package replaces a repository package with the same name.
+- Each package must load in a fresh R session from the bundled library,
+  or the build stops with the load error and the last lines of the
+  install output. Building or installing one package may take up to 30
+  minutes.
+- Packages with C, C++, or Fortran code need a compiler toolchain that
+  works with the bundled R on the build machine, such as the Xcode
+  Command Line Tools on macOS or Rtools on Windows.
+- Compiled code is linked on the build machine. System libraries that a
+  package links against, such as Homebrew libraries found by its
+  `configure` script or named in `~/.R/Makevars`, are not copied into
+  the app, so they must also be installed on your users’ machines.
+- Keep package sources outside the app directory: everything in the app
+  directory is copied into the app.
 
 #### Python-specific dependency options
 
