@@ -2,11 +2,23 @@
 % Please edit documentation in R/build-templates.R
 \name{copy_brand_assets}
 \alias{copy_brand_assets}
-\title{Copy branding assets (icon, splash image, tray icon) into the build}
+\title{Copy branding assets into the build}
 \usage{
-copy_brand_assets(output_dir, icon, config)
+copy_brand_assets(output_dir, icon, config, apps = NULL)
+}
+\arguments{
+\item{output_dir}{Character. The Electron project directory.}
+
+\item{icon}{Character path to the app icon, or \code{NULL}.}
+
+\item{config}{List. The effective configuration.}
+
+\item{apps}{List or \code{NULL}. The \code{apps} entries of a multi-app suite.}
 }
 \description{
-Copy branding assets (icon, splash image, tray icon) into the build
+Copies the app icon, the splash image, the tray icon and, for a multi-app
+suite, each app's launcher icon (to \code{\link[=app_icon_asset]{app_icon_asset()}}). The paths are
+used as given: \code{\link[=export]{export()}} has resolved them against the app directory, and
+\code{\link[=process_templates]{process_templates()}} has dropped optional files that do not exist.
 }
 \keyword{internal}

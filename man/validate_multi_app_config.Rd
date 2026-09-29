@@ -9,7 +9,8 @@ validate_multi_app_config(config, basedir)
 \arguments{
 \item{config}{List. Configuration with apps array.}
 
-\item{basedir}{Character. Base directory for resolving relative paths.}
+\item{basedir}{Character. Base directory for resolving relative paths (see
+\code{\link[=resolve_config_path]{resolve_config_path()}}).}
 }
 \description{
 Validate multi-app configuration

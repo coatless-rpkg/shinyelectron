@@ -18,15 +18,20 @@
 #'   `"shinylive"`.
 #' @param platform Character vector. Target platforms: "win", "mac", "linux". If NULL, builds for current platform.
 #' @param arch Character vector. Target architectures: "x64", "arm64". If NULL, uses current architecture.
-#' @param icon Character string. Path to application icon file. Platform-specific format required.
+#' @param icon Character string. Path to application icon file, absolute or
+#'   relative to the working directory. Platform-specific format required.
+#'   The `icon` and `icons` keys of `config` are not read here.
 #' @param sign Logical. Whether to enable code signing for the built application.
 #'   Default is FALSE.
 #' @param config List. Configuration from _shinyelectron.yml file (optional). Used for
 #'   template variables like window dimensions, port, and app version. File
-#'   paths in a config passed here, such as `installer.license_file`, must be
-#'   absolute or relative to the working directory. ([export()] reads
-#'   `_shinyelectron.yml` itself and resolves `installer.license_file` against
-#'   the app directory.)
+#'   paths in it, such as `splash.image`, `tray.icon`,
+#'   `signing.win.certificate_file` and `installer.license_file`, are used as
+#'   given: absolute, or relative to the working directory, like the `icon`
+#'   argument. [export()] reads `_shinyelectron.yml` itself and first resolves
+#'   those paths against the app directory. A splash image or tray icon that
+#'   does not exist is left out with a warning; a missing license file stops
+#'   the build.
 #' @param overwrite Logical. Whether to overwrite existing output directory. Default is FALSE.
 #' @param verbose Logical. Whether to display detailed progress information. Default is TRUE.
 #'

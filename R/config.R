@@ -676,7 +676,8 @@ window:
 server:
   port: 3838
 
-# Uncomment to specify custom icons (platform-specific)
+# Uncomment to specify custom icons (platform-specific).
+# File paths in this file are relative to the directory that holds it.
 # icons:
 #   mac: "icons/icon.icns"
 #   win: "icons/icon.ico"
@@ -732,7 +733,7 @@ nodejs:
 #   enabled: true
 #   duration: 1500          # Minimum display time in ms before transitioning out
 #   background: null        # null = inherit from _brand.yml; or hex/CSS colour
-#   image: null             # Path to a PNG logo (rendered up to 128 px square)
+#   image: null             # Path to a PNG logo, relative to this file (up to 128 px square)
 #   text: "Loading..."
 #   text_color: "#333333"
 
@@ -743,7 +744,7 @@ nodejs:
 #   minimize_to_tray: true
 #   close_to_tray: false
 #   tooltip: null           # Uses app name if null
-#   icon: null              # Uses app icon if null
+#   icon: null              # Path relative to this file; null uses the app icon
 
 # Application menu configuration
 # menu:
@@ -787,7 +788,7 @@ nodejs:
 #     team_id: null             # Apple Team ID
 #     notarize: false           # Notarize for Gatekeeper
 #   win:
-#     certificate_file: null    # Path to .pfx code signing certificate
+#     certificate_file: null    # Path to .pfx certificate, relative to this file
 #   linux:
 #     gpg_sign: false           # GPG-sign AppImage
 
