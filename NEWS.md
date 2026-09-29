@@ -1,13 +1,5 @@
 # shinyelectron (development version)
 
-## Breaking changes
-
-* `installer.one_click` must now be an unquoted `true` or `false`. A quoted
-  value such as `"false"`, which electron-builder used to accept, is now a
-  configuration error that names the key: `export()`, `show_config()`, and
-  `check_auto_update_status()` stop, and `app_check()` reports it as a
-  failure.
-
 ## New features
 
 * `installer.allow_to_change_installation_directory: true` adds a page to the
@@ -19,6 +11,12 @@
   install and update then needs administrator rights.
 
 ## Minor improvements and fixes
+
+* `installer.one_click`, `installer.allow_to_change_installation_directory`,
+  and `installer.per_machine` are checked when the configuration is read. A
+  quoted `"true"` or `"false"` (or `"yes"` or `"no"`) is read as the matching
+  value with a warning; any other value that is not `true` or `false` stops
+  the build with an error that names the key.
 
 * `installer.license_file` no longer fails every build with electron-builder's
   "unknown property 'license'" error. The file is resolved relative to the app

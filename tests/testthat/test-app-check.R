@@ -88,6 +88,18 @@ test_that("app_check fails for installer settings that export() rejects", {
   expect_false(any(grepl("Config error", res$warnings)))
 })
 
+test_that("app_check reports a quoted installer flag as a warning", {
+  appdir <- withr::local_tempdir()
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "app.R"))
+  writeLines(c("installer:", "  one_click: \"false\""),
+             file.path(appdir, "_shinyelectron.yml"))
+
+  res <- app_check(appdir, verbose = FALSE)
+  expect_true(any(grepl("installer.one_click", res$warnings, fixed = TRUE)))
+  expect_false(any(grepl("installer.one_click", res$errors, fixed = TRUE)))
+})
+
 test_that("app_check fails when the installer license file is missing", {
   appdir <- withr::local_tempdir()
   writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",

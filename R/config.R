@@ -188,9 +188,10 @@ merge_config_deep <- function(defaults, config) {
 
 #' Validate configuration values
 #'
-#' Checks configuration values and warns about invalid entries. Invalid
-#' Windows installer flags abort instead, as does
-#' `installer.allow_to_change_installation_directory: true` without
+#' Checks configuration values and warns about invalid entries. The Windows
+#' installer flags are read with [config_flag()]: a quoted `"true"` or
+#' `"false"` is used with a warning, but any other invalid value aborts, as
+#' does `installer.allow_to_change_installation_directory: true` without
 #' `installer.one_click: false`, because falling back to a default would
 #' build a different installer than the one requested.
 #'
@@ -390,19 +391,16 @@ validate_config <- function(config) {
     config$dependencies$system_packages <- NULL
   }
 
-  # Validate the Windows installer flags: each must be a single true/false or
-  # unset. Quoted values abort instead of being coerced, since isTRUE("true")
-  # is FALSE and would silently turn a one-click installer into the wizard.
+  # Read the Windows installer flags with config_flag(): a quoted "true" or
+  # "false" becomes the logical with a warning, and any other value aborts.
+  # Storing the logicals means build_nsis_config() and the check below never
+  # see a string (isTRUE("true") is FALSE, which would silently turn a
+  # one-click installer into the wizard), and the warning fires once per read.
   for (key in c("one_click", "allow_to_change_installation_directory",
                 "per_machine")) {
-    value <- config$installer[[key]]
-    if (!is.null(value) &&
-        !(is.logical(value) && length(value) == 1L && !is.na(value))) {
-      cli::cli_abort(c(
-        "Invalid {.field installer.{key}} in config: {.val {value}}",
-        "i" = "Must be {.code true} or {.code false} without quotes, or left unset",
-        "i" = "Edit {.field installer.{key}} in {.file _shinyelectron.yml}"
-      ))
+    flag <- config_flag(config$installer[[key]], paste0("installer.", key))
+    if (!is.null(flag)) {
+      config$installer[[key]] <- flag
     }
   }
 

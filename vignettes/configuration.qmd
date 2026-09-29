@@ -575,7 +575,7 @@ shinyelectron validates values on read and degrades gracefully rather than abort
 - Window dimensions under 100 pixels warn and use defaults.
 - Invalid port numbers warn and use `3838`.
 
-The `installer` settings are stricter: `one_click`, `allow_to_change_installation_directory`, and `per_machine` must be unquoted `true` or `false`, `allow_to_change_installation_directory: true` needs `one_click: false`, and a `license_file` that does not exist stops the build. electron-builder would otherwise reject these late in the Windows build, after the runtime download.
+The `installer` settings are stricter. `one_click`, `allow_to_change_installation_directory`, and `per_machine` take `true` or `false`: a quoted `"true"` or `"false"` is read with a warning, and any other value stops the build. `allow_to_change_installation_directory: true` needs `one_click: false`, and a `license_file` that does not exist also stops the build. electron-builder would otherwise reject these late in the Windows build, after the runtime download.
 
 If the YAML itself fails to parse, shinyelectron warns and uses all defaults. This is deliberate: a broken config file should never block you from producing a build during development.
 

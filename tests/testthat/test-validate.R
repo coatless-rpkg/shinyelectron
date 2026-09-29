@@ -191,14 +191,33 @@ test_that("validate_config accepts unset and logical installer flags", {
   expect_equal(out$installer, cfg$installer)
 })
 
-test_that("validate_config rejects non-logical installer flags", {
+test_that("validate_config reads quoted installer flags with a warning", {
+  cfg <- list(installer = list(one_click = "false"))
+  expect_warning(out <- validate_config(cfg), class = "shinyelectron_quoted_flag")
+  expect_identical(out$installer$one_click, FALSE)
+
+  cfg <- list(installer = list(
+    one_click = FALSE,
+    allow_to_change_installation_directory = "true"
+  ))
+  expect_warning(out <- validate_config(cfg), "installer.allow_to_change_installation_directory",
+                 class = "shinyelectron_quoted_flag")
+  expect_identical(out$installer$allow_to_change_installation_directory, TRUE)
+
+  cfg <- list(installer = list(per_machine = "Yes"))
+  expect_warning(out <- validate_config(cfg), class = "shinyelectron_quoted_flag")
+  expect_identical(out$installer$per_machine, TRUE)
+})
+
+test_that("validate_config rejects other non-logical installer flags", {
   keys <- c("one_click", "allow_to_change_installation_directory", "per_machine")
-  bad_values <- list("true", "false", 1L, NA, c(TRUE, FALSE))
+  bad_values <- list("maybe", "", 1L, NA, c(TRUE, FALSE))
   for (key in keys) {
     for (bad in bad_values) {
       cfg <- list(installer = list(one_click = FALSE))
       cfg$installer[key] <- list(bad)
-      expect_error(validate_config(cfg), paste0("installer.", key), fixed = TRUE)
+      expect_error(validate_config(cfg), paste0("installer.", key), fixed = TRUE,
+                   class = "shinyelectron_invalid_flag")
     }
   }
 })
@@ -213,6 +232,20 @@ test_that("validate_config requires the wizard for a directory page", {
   # An unset one_click falls back to electron-builder's one-click default.
   cfg$installer$one_click <- NULL
   expect_error(validate_config(cfg), "requires\\s+installer\\.one_click")
+
+  # Quoted values are read first, so the check still applies to them.
+  quoted <- list(
+    list(one_click = "true", allow_to_change_installation_directory = TRUE),
+    list(one_click = TRUE, allow_to_change_installation_directory = "yes"),
+    list(allow_to_change_installation_directory = "true")
+  )
+  for (installer in quoted) {
+    expect_error(
+      suppressWarnings(validate_config(list(installer = installer)),
+                       classes = "shinyelectron_quoted_flag"),
+      "requires\\s+installer\\.one_click"
+    )
+  }
 })
 
 test_that("read_config aborts on installer settings electron-builder would reject", {
@@ -223,8 +256,9 @@ test_that("read_config aborts on installer settings electron-builder would rejec
              config_path)
   expect_error(read_config(tmp), "requires\\s+installer\\.one_click")
 
-  writeLines(c("installer:", "  one_click: \"false\""), config_path)
-  expect_error(read_config(tmp), "installer.one_click", fixed = TRUE)
+  writeLines(c("installer:", "  one_click: maybe"), config_path)
+  expect_error(read_config(tmp), "installer.one_click", fixed = TRUE,
+               class = "shinyelectron_invalid_flag")
 
   writeLines(c("installer:", "  one_click: false",
                "  allow_to_change_installation_directory: true"),
@@ -232,6 +266,32 @@ test_that("read_config aborts on installer settings electron-builder would rejec
   cfg <- read_config(tmp)
   expect_false(cfg$installer$one_click)
   expect_true(cfg$installer$allow_to_change_installation_directory)
+})
+
+test_that("a quoted one_click warns once and still builds a wizard", {
+  tmp <- withr::local_tempdir()
+  writeLines(c("installer:", "  one_click: \"false\""),
+             file.path(tmp, "_shinyelectron.yml"))
+
+  quoted_warnings <- 0L
+  cfg <- withCallingHandlers(
+    read_config(tmp),
+    shinyelectron_quoted_flag = function(w) {
+      quoted_warnings <<- quoted_warnings + 1L
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_equal(quoted_warnings, 1L)
+  expect_identical(cfg$installer$one_click, FALSE)
+
+  # The stored logical reaches package.json without a second warning.
+  expect_no_warning(
+    parsed <- jsonlite::fromJSON(
+      generate_package_json("my-app", "1.0.0", "native-r", cfg),
+      simplifyVector = FALSE
+    )
+  )
+  expect_equal(parsed$build$nsis, list(oneClick = FALSE))
 })
 
 # --- Windows installer license ---
