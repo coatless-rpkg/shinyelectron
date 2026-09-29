@@ -1,3 +1,8 @@
+# shinyelectron (development version)
+
+* Help > Documentation appears only when `menu.help_url` is set. An empty
+  `help_url` no longer adds a menu item that opens nothing.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the

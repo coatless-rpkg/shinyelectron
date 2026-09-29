@@ -103,7 +103,9 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     menu_minimal = identical(config$menu$template %||% "default", "minimal"),
     show_dev_tools = config$menu$show_dev_tools %||% SHINYELECTRON_DEFAULTS$menu$show_dev_tools,
     help_url = config$menu$help_url %||% "",
-    has_help_url = !is.null(config$menu$help_url),
+    # whisker renders a section for "", so gate Help > Documentation on a
+    # real URL rather than on the value itself.
+    has_help_url = is_nonempty_string(config$menu$help_url),
 
     # Auto-updates
     updates_enabled = config$updates$enabled %||% SHINYELECTRON_DEFAULTS$updates$enabled,
@@ -146,4 +148,16 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     is_multi_app = is_multi_app,
     apps_json = if (is_multi_app) jsonlite::toJSON(apps_manifest, auto_unbox = TRUE) else "[]"
   )
+}
+
+#' Test for a single non-empty string
+#'
+#' Template flags use this so an optional setting renders only when it holds
+#' real text: `NULL`, `""`, `NA`, and non-character values all count as unset.
+#'
+#' @param x Value to test.
+#' @return `TRUE` or `FALSE`.
+#' @keywords internal
+is_nonempty_string <- function(x) {
+  is.character(x) && length(x) == 1L && !is.na(x) && nzchar(x)
 }
