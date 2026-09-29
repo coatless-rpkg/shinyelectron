@@ -12,6 +12,8 @@ class ContainerBackend extends EventEmitter {
     this.containerId = null;
     this.containerEngine = null;
     this.containerHost = null;
+    // Teardowns already started, by container ID; see removeContainer().
+    this.removals = new Map();
   }
 
   /**
@@ -419,11 +421,13 @@ class ContainerBackend extends EventEmitter {
     args.push(image);
 
     return new Promise((resolve, reject) => {
-      logDebug(`Running: ${this.containerEngine} ${args.join(' ')}`);
+      const engine = this.containerEngine;
+      const env = this.getContainerEnv();
+      logDebug(`Running: ${engine} ${args.join(' ')}`);
 
-      const proc = spawn(this.containerEngine, args, {
+      const proc = spawn(engine, args, {
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: this.getContainerEnv()
+        env
       });
 
       let stdout = '';
@@ -445,15 +449,18 @@ class ContainerBackend extends EventEmitter {
           return;
         }
 
-        this.containerId = stdout.trim().substring(0, 12);
-        logDebug(`Container started: ${this.containerId}`);
+        // The container this start created. Failure handling below tears down
+        // this one, not this.containerId, which a later start may replace.
+        const containerId = stdout.trim().substring(0, 12);
+        this.containerId = containerId;
+        logDebug(`Container started: ${containerId}`);
 
         // Read the host port Docker assigned (output like "127.0.0.1:54321").
         let hostPort;
         try {
           const portOut = execFileSync(
-            this.containerEngine, ['port', this.containerId, `${containerPort}/tcp`],
-            { encoding: 'utf8', env: this.getContainerEnv() }
+            engine, ['port', containerId, `${containerPort}/tcp`],
+            { encoding: 'utf8', env }
           ).trim();
           const match = portOut.split('\n')[0].match(/:(\d+)\s*$/);
           hostPort = match ? parseInt(match[1], 10) : null;
@@ -465,12 +472,12 @@ class ContainerBackend extends EventEmitter {
           reject(new Error('Could not determine the container host port'));
           return;
         }
-        logDebug(`Container ${this.containerId} mapped ${containerPort} -> host ${hostPort}`);
+        logDebug(`Container ${containerId} mapped ${containerPort} -> host ${hostPort}`);
 
         // Stream container logs while waiting for startup
-        const logProc = spawn(this.containerEngine, ['logs', '-f', this.containerId], {
+        const logProc = spawn(engine, ['logs', '-f', containerId], {
           stdio: ['ignore', 'pipe', 'pipe'],
-          env: this.getContainerEnv()
+          env
         });
         logProc.on('error', () => {}); // ignore EPIPE
         logProc.stdout.on('data', (data) => {
@@ -498,18 +505,22 @@ class ContainerBackend extends EventEmitter {
             this.emit('status', { phase: 'server_ready', message: 'Container ready' });
             resolve({ port: hostPort });
           })
-          .catch((err) => {
+          .catch(() => {
             logProc.kill();
             // Get container logs for debugging
             try {
-              const logs = execFileSync(this.containerEngine, ['logs', this.containerId], { encoding: 'utf8', env: this.getContainerEnv() });
+              const logs = execFileSync(engine, ['logs', containerId], { encoding: 'utf8', env });
               console.error(`Container logs:\n${logs}`);
             } catch { /* ignore */ }
 
-            this.stop();
+            // Remove only the container this start created. stop() would
+            // remove whichever container is current and emit shutdown
+            // statuses that replace the error screen and its Retry button.
+            if (this.containerId === containerId) this.containerId = null;
+            if (containerId) this.removeContainer(containerId, engine, env);
             const startErr = new Error(
               `Container server failed to start within ${formatSeconds(startupTimeout)}.\n\n` +
-              `Container ID: ${this.containerId}\n` +
+              (containerId ? `Container ID: ${containerId}\n` : '') +
               `Image: ${image}\n\n` +
               `Possible causes:\n` +
               `- Container image does not contain required dependencies\n` +
@@ -530,7 +541,58 @@ class ContainerBackend extends EventEmitter {
   }
 
   /**
-   * Stop and remove the container.
+   * Stop and remove one container in the background. `docker/podman stop`
+   * blocks for the container's stop grace period (10s by default), and doing
+   * that synchronously freezes the main/UI thread so the shutdown screen
+   * can't render. Run it detached (and `-t 3` to shorten the grace) so the UI
+   * is free immediately; the child finishes even if the app quits first.
+   * Only the first call for a given container does anything; later calls
+   * return the same promise.
+   * @param {string} id - Container ID.
+   * @param {string} engine - Container engine command.
+   * @param {object} env - Environment with the engine host set.
+   * @param {function} [onRemoving] - Called when removal starts, so stop()
+   *   can report that step.
+   * @returns {Promise<string>} Resolves with a summary once the container is
+   *   gone or tearing it down failed.
+   */
+  removeContainer(id, engine, env, onRemoving = () => {}) {
+    if (this.removals.has(id)) return this.removals.get(id);
+    const removal = new Promise((resolve) => {
+      let finished = false;
+      const finish = (message) => {
+        finished = true;
+        resolve(message);
+      };
+      try {
+        const proc = spawn(engine, ['stop', '-t', '3', id], { stdio: 'ignore', env, detached: true });
+        proc.on('error', (err) => {
+          console.warn(`Failed to stop container: ${err.message}`);
+          finish('Shutdown complete');
+        });
+        proc.on('close', () => {
+          if (finished) return;
+          onRemoving();
+          try {
+            const rm = spawn(engine, ['rm', '-f', id], { stdio: 'ignore', env, detached: true });
+            rm.on('error', () => finish('Shutdown complete'));
+            rm.on('close', () => finish('Container removed. Shutting down...'));
+            rm.unref();
+          } catch { finish('Shutdown complete'); }
+        });
+        proc.unref();
+      } catch (err) {
+        console.warn(`Failed to stop container: ${err.message}`);
+        finish('Shutdown complete');
+      }
+    });
+    this.removals.set(id, removal);
+    return removal;
+  }
+
+  /**
+   * Stop and remove the container, reporting each stage so the shutdown
+   * screen can show the breakdown.
    * @returns {Promise<void>} Resolves once the container has been stopped and
    *   removed (or the attempt failed), or right away if none is running.
    */
@@ -545,39 +607,11 @@ class ContainerBackend extends EventEmitter {
       this.emit('status', { phase: 'stopping_server', message: `Stopping container ${short}...` });
       logDebug(`Stopping container ${id}...`);
 
-      // Stop and remove asynchronously and detached. `docker/podman stop` blocks
-      // for the container's stop grace period (10s by default), and doing that
-      // synchronously freezes the main/UI thread so the shutdown screen can't
-      // render. Run it detached (and `-t 3` to shorten the grace) so the UI is
-      // free immediately; the child finishes even if the app quits first. Each
-      // stage emits a status so the shutdown screen can show the breakdown.
-      let resolveStopped;
-      const stopped = new Promise((resolve) => { resolveStopped = resolve; });
-      const done = (message) => {
+      return this.removeContainer(id, engine, env, () => {
+        this.emit('status', { phase: 'cleanup', message: 'Removing container...' });
+      }).then((message) => {
         this.emit('status', { phase: 'app_exit', message });
-        resolveStopped();
-      };
-      try {
-        const proc = spawn(engine, ['stop', '-t', '3', id], { stdio: 'ignore', env, detached: true });
-        proc.on('error', (err) => {
-          console.warn(`Failed to stop container: ${err.message}`);
-          done('Shutdown complete');
-        });
-        proc.on('close', () => {
-          this.emit('status', { phase: 'cleanup', message: 'Removing container...' });
-          try {
-            const rm = spawn(engine, ['rm', '-f', id], { stdio: 'ignore', env, detached: true });
-            rm.on('error', () => done('Shutdown complete'));
-            rm.on('close', () => done('Container removed. Shutting down...'));
-            rm.unref();
-          } catch { done('Shutdown complete'); }
-        });
-        proc.unref();
-      } catch (err) {
-        console.warn(`Failed to stop container: ${err.message}`);
-        done('Shutdown complete');
-      }
-      return stopped;
+      });
     } else {
       // Nothing to tear down, but still signal completion so the shutdown
       // flow can proceed promptly.
