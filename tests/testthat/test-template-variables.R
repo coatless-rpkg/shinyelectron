@@ -81,6 +81,23 @@ script_bodies <- function(html) {
   gsub("^<script[^>]*>|</script>$", "", blocks, perl = TRUE)
 }
 
+# The script code of every template that render_shared_templates() renders,
+# as lines: whole .js files and the <script> blocks of .html files.
+template_scripts <- function() {
+  shared <- system.file("electron", "shared", package = "shinyelectron")
+  files <- list.files(shared, recursive = TRUE)
+  scripts <- lapply(files, function(file) {
+    text <- read_text(file.path(shared, file))
+    code <- switch(tools::file_ext(file),
+      js = text,
+      html = script_bodies(text),
+      stop("No script rule for template ", file)
+    )
+    unlist(strsplit(code, "\n", fixed = TRUE))
+  })
+  stats::setNames(scripts, files)
+}
+
 # Case-insensitive count of a fixed string in `text`.
 count_fixed <- function(text, pattern) {
   sum(gregexpr(tolower(pattern), tolower(text), fixed = TRUE)[[1]] > 0)
@@ -230,33 +247,54 @@ test_that("templates put config strings into JavaScript only through escaped var
   # A double mustache HTML-escapes but does not JavaScript-escape, so script
   # code may use one only for numbers and for values the package builds or
   # validates (the slug, the app type, internal file names). Everything else
-  # must come through a triple-mustache *_js (js_str()) or *_json (JSON)
-  # variable. main.js is all script; the HTML templates are checked inside
-  # their <script> blocks, while their markup keeps the double mustache.
+  # must come through a triple-mustache *_js (js_str()) or *_json
+  # (json_for_script()) variable. Every rendered template is checked: .js
+  # files as a whole and .html files inside their <script> blocks, while
+  # HTML markup keeps the double mustache.
   safe_double <- c(
     "backend_module", "app_type", "app_slug", "icon_file", "server_port",
     "window_width", "window_height", "shutdown_timeout", "splash_duration"
   )
-  shared <- system.file("electron", "shared", package = "shinyelectron")
-  scripts <- list(
-    main.js = read_text(file.path(shared, "main.js")),
-    lifecycle.html = script_bodies(read_text(file.path(shared, "lifecycle.html"))),
-    launcher.html = script_bodies(read_text(file.path(shared, "launcher.html")))
-  )
+  scripts <- template_scripts()
+  expect_true(all(c("main.js", "preload.js", "lifecycle.html", "launcher.html") %in% names(scripts)))
+  triple_seen <- character(0)
   for (file in names(scripts)) {
-    code <- paste(scripts[[file]], collapse = "\n")
+    lines <- scripts[[file]]
     tags <- unlist(regmatches(
-      code, gregexpr("\\{\\{\\{?[^#^/!{}][^{}]*\\}\\}\\}?", code, perl = TRUE)
+      lines, gregexpr("\\{\\{\\{?[^#^/!{}][^{}]*\\}\\}\\}?", lines, perl = TRUE)
     ))
     triple <- startsWith(tags, "{{{")
     vars <- gsub("[{}[:space:]]", "", tags)
-    expect_true(any(triple), info = file)
+    triple_seen <- c(triple_seen, vars[triple])
     expect_equal(
       vars[triple][!grepl("_(js|json)$", vars[triple])], character(0),
       info = file
     )
     expect_equal(setdiff(vars[!triple], safe_double), character(0), info = file)
   }
+  # The scan reaches main.js and the script blocks of both HTML pages.
+  expect_true(all(c("app_name_js", "preloader_background_js", "apps_json") %in% triple_seen))
+})
+
+test_that("*_js values sit inside single-quoted strings in template scripts", {
+  # js_str() escapes for single-quoted literals only. Backticks, ${ and
+  # double quotes pass through, so a *_js value in a template literal or a
+  # double-quoted string would not be safe. Each one must follow an odd
+  # number of unescaped single quotes on its line.
+  scripts <- template_scripts()
+  sites <- 0L
+  for (file in names(scripts)) {
+    for (line in scripts[[file]]) {
+      starts <- gregexpr("\\{\\{\\{[^{}]*_js\\}\\}\\}", line, perl = TRUE)[[1]]
+      for (start in starts[starts > 0]) {
+        sites <- sites + 1L
+        before <- gsub("\\\\.", "", substr(line, 1, start - 1), perl = TRUE)
+        quotes <- nchar(gsub("[^']", "", before))
+        expect_true(quotes %% 2 == 1, info = paste0(file, ": ", trimws(line)))
+      }
+    }
+  }
+  expect_gt(sites, 0)
 })
 
 test_that("main.js carries config strings into JavaScript literals intact", {
@@ -319,11 +357,14 @@ test_that("lifecycle and launcher scripts keep hostile settings inside their val
   )))
 })
 
-test_that("main.js parses for app names with quotes, backslashes, and newlines", {
+test_that("main.js parses for app names with quotes, backslashes, backticks, and newlines", {
   skip_on_cran()
   skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
 
-  names <- c("Bob's App", "The \"Best\" App", "C:\\Apps\\new", "Line one\nLine two")
+  names <- c(
+    "Bob's App", "The \"Best\" App", "C:\\Apps\\new", "Line one\nLine two",
+    "Tick `x` ${x} App"
+  )
   for (name in names) {
     for (tray in c(FALSE, TRUE)) {
       main_path <- render_escaping_main_js(name, tray = tray)
@@ -337,8 +378,8 @@ test_that("main.js string literals evaluate to the configured values", {
   skip_on_cran()
   skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
 
-  name <- "Bob's \"Best\" C:\\Apps\nDashboard"
-  shown <- "Bob's \"Best\" C:\\Apps Dashboard"
+  name <- "Bob's \"Best\" `C:\\Apps` ${x}\nDashboard"
+  shown <- "Bob's \"Best\" `C:\\Apps` ${x} Dashboard"
 
   main <- readLines(render_escaping_main_js(name))
   expect_equal(js_values(main, "const logDir = "), "C:\\Users\\me\\new-logs")

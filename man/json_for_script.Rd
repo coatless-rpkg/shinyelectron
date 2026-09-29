@@ -2,7 +2,7 @@
 % Please edit documentation in R/template-variables.R
 \name{json_for_script}
 \alias{json_for_script}
-\title{Serialize a value as JSON for an inline HTML script}
+\title{Serialize a value as JSON to inline in a script}
 \usage{
 json_for_script(x)
 }
@@ -14,10 +14,12 @@ A single string of JSON.
 }
 \description{
 JSON from \code{\link[jsonlite:toJSON]{jsonlite::toJSON()}} is a valid JavaScript expression, but a
-string in it that contains \verb{<!--} or \verb{<script} can stop the HTML parser
-from ending the surrounding \verb{<script>} block at its closing tag. This
+string in it that contains \verb{<!--} followed by \verb{<script} can stop the HTML
+parser from ending the surrounding \verb{<script>} block at its closing tag. This
 writes every \code{<} as \verb{\\u003C}, and U+2028 and U+2029 as escape sequences,
-so the JSON stays valid and keeps its value, as needed for
-\verb{var apps = \{\{\{apps_json\}\}\};} in \code{launcher.html}.
+so the JSON stays valid and keeps its value. Templates use it for every
+JSON value they inline into script code, such as
+\verb{var apps = \{\{\{apps_json\}\}\};} in \code{launcher.html} and the backend config in
+\code{main.js}.
 }
 \keyword{internal}

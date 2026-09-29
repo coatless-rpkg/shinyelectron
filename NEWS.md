@@ -4,10 +4,11 @@
   break the generated app. Settings placed in JavaScript strings in `main.js`
   or in the splash and preloader page are now escaped, so a name like
   "Children's Dashboard" or a Windows `log_dir` such as `C:\Users\me\logs`
-  works, and the quit dialog and tray tooltip show `&` instead of `&amp;`.
+  works, and the About and quit dialogs and the tray tooltip show `&` instead
+  of `&amp;`.
 
-* App names and descriptions in a multi-app suite that contain markup such
-  as `<!--` or `<script>` no longer break the launcher page.
+* App names and descriptions in a multi-app suite that contain `<!--`
+  followed by `<script>` no longer break the launcher page.
 
 * Help > Documentation opens help URLs with query strings correctly instead
   of turning `&` into `&amp;`.

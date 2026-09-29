@@ -88,7 +88,7 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     window_height = config$window$height %||% SHINYELECTRON_DEFAULTS$window_height,
     server_port = config$server$port %||% SHINYELECTRON_DEFAULTS$server_port,
     backend_module = backend_module,
-    backend_config_json = jsonlite::toJSON(backend_config, auto_unbox = TRUE),
+    backend_config_json = json_for_script(backend_config),
 
     # Brand variables (from _brand.yml or defaults)
     brand_primary = brand$color$primary %||% "#2563eb",
@@ -201,14 +201,16 @@ js_str <- function(x) {
   x
 }
 
-#' Serialize a value as JSON for an inline HTML script
+#' Serialize a value as JSON to inline in a script
 #'
 #' JSON from [jsonlite::toJSON()] is a valid JavaScript expression, but a
-#' string in it that contains `<!--` or `<script` can stop the HTML parser
-#' from ending the surrounding `<script>` block at its closing tag. This
+#' string in it that contains `<!--` followed by `<script` can stop the HTML
+#' parser from ending the surrounding `<script>` block at its closing tag. This
 #' writes every `<` as `\u003C`, and U+2028 and U+2029 as escape sequences,
-#' so the JSON stays valid and keeps its value, as needed for
-#' `var apps = {{{apps_json}}};` in `launcher.html`.
+#' so the JSON stays valid and keeps its value. Templates use it for every
+#' JSON value they inline into script code, such as
+#' `var apps = {{{apps_json}}};` in `launcher.html` and the backend config in
+#' `main.js`.
 #'
 #' @param x Value to serialize (with `auto_unbox = TRUE`).
 #' @return A single string of JSON.
