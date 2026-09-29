@@ -11,11 +11,12 @@
 #' template) or are reserved for future placeholders. Adding a new
 #' placeholder requires adding it here.
 #'
-#' A configuration string that `main.js` places inside a single-quoted
-#' JavaScript literal also has an escaped `*_js` entry (see [js_str()]),
-#' which the template renders with a triple mustache, as in
-#' `'{{{app_name_js}}}'`. The plain entries are HTML-escaped by a double
-#' mustache and belong in the HTML templates.
+#' A configuration string that a template's JavaScript (`main.js` or an
+#' inline `<script>` in an HTML template) places inside a single-quoted
+#' literal also has an escaped `*_js` entry (see [js_str()]), which the
+#' template renders with a triple mustache, as in `'{{{app_name_js}}}'`.
+#' JSON inlined into a script is built with [json_for_script()]. The plain
+#' entries are HTML-escaped by a double mustache and belong in HTML markup.
 #'
 #' @param app_name Character. Display name of the app.
 #' @param app_slug Character. Path-safe slug derived from app_name.
@@ -57,8 +58,9 @@ generate_template_variables <- function(app_name, app_slug, app_type,
   # container_image becoming {} instead of being absent).
   backend_config <- Filter(Negate(is.null), backend_config)
 
-  # Config strings that main.js places inside single-quoted JavaScript
-  # literals. Each one also gets a js_str()-escaped `*_js` entry below.
+  # Config strings that main.js or the lifecycle page script places inside
+  # single-quoted JavaScript literals. Each one also gets a js_str()-escaped
+  # `*_js` entry below.
   app_version <- config$app$version %||% SHINYELECTRON_DEFAULTS$app_version
   tray_tooltip <- config$tray$tooltip %||% app_name
   # copy_brand_assets() writes the tray icon to assets/<basename>, and
@@ -68,6 +70,8 @@ generate_template_variables <- function(app_name, app_slug, app_type,
   help_url <- config$menu$help_url %||% ""
   log_level <- config$app$log_level %||% SHINYELECTRON_DEFAULTS$logging$log_level
   log_dir <- config$app$log_dir %||% ""
+  preloader_background <- config$preloader$background %||%
+    (brand$color$background %||% "#f8fafc")
 
   list(
     app_name = app_name,
@@ -140,7 +144,8 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     preloader_style_bar = identical(config$preloader$style %||% "spinner", "bar"),
     preloader_style_dots = identical(config$preloader$style %||% "spinner", "dots"),
     preloader_message = config$preloader$message %||% SHINYELECTRON_DEFAULTS$preloader$message,
-    preloader_background = config$preloader$background %||% (brand$color$background %||% "#f8fafc"),
+    preloader_background = preloader_background,
+    preloader_background_js = js_str(preloader_background),
 
     # Custom lifecycle HTML
     has_custom_splash = !is.null(config$lifecycle$custom_splash_html),
@@ -157,23 +162,26 @@ generate_template_variables <- function(app_name, app_slug, app_type,
 
     # Multi-app
     is_multi_app = is_multi_app,
-    apps_json = if (is_multi_app) jsonlite::toJSON(apps_manifest, auto_unbox = TRUE) else "[]"
+    apps_json = if (is_multi_app) json_for_script(apps_manifest) else "[]"
   )
 }
 
 #' Escape a value for a single-quoted JavaScript string literal
 #'
-#' Rendered JavaScript templates such as `main.js` place configuration
-#' strings between single quotes, as in `title: 'Close {{{app_name_js}}}'`.
-#' This escapes backslashes and then single quotes, turns carriage returns
-#' and line feeds into spaces, and writes U+2028 and U+2029 as escape
-#' sequences, so no value can end the literal early or change its meaning
-#' (a Windows path keeps its backslashes). Double quotes are left alone, so
-#' use the result only inside single quotes.
+#' Rendered templates place configuration strings between single quotes in
+#' JavaScript, both in `main.js` and in the inline `<script>` of
+#' `lifecycle.html`, as in `title: 'Close {{{app_name_js}}}'`. This escapes
+#' backslashes and then single quotes, turns carriage returns and line feeds
+#' into spaces, and writes U+2028, U+2029, and every `<` as escape sequences
+#' (`<` becomes `\u003C`). No value can then end the literal early, change
+#' its meaning (a Windows path keeps its backslashes), or end or disturb an
+#' HTML `<script>` block. Double quotes are left alone, so use the result
+#' only inside single quotes.
 #'
 #' Render the result with a triple mustache (`{{{name_js}}}`). A double
 #' mustache would HTML-escape it again and turn `&` into `&amp;`. HTML
-#' templates such as `lifecycle.html` keep the double mustache.
+#' markup, such as the page title in `lifecycle.html`, keeps the double
+#' mustache.
 #'
 #' @param x A character vector, a non-character scalar (coerced with
 #'   [as.character()], such as a version that YAML read as a number), or
@@ -189,7 +197,27 @@ js_str <- function(x) {
   x <- gsub("\n", " ", x, fixed = TRUE)
   x <- gsub("\u2028", "\\u2028", x, fixed = TRUE)
   x <- gsub("\u2029", "\\u2029", x, fixed = TRUE)
+  x <- gsub("<", "\\u003C", x, fixed = TRUE)
   x
+}
+
+#' Serialize a value as JSON for an inline HTML script
+#'
+#' JSON from [jsonlite::toJSON()] is a valid JavaScript expression, but a
+#' string in it that contains `<!--` or `<script` can stop the HTML parser
+#' from ending the surrounding `<script>` block at its closing tag. This
+#' writes every `<` as `\u003C`, and U+2028 and U+2029 as escape sequences,
+#' so the JSON stays valid and keeps its value, as needed for
+#' `var apps = {{{apps_json}}};` in `launcher.html`.
+#'
+#' @param x Value to serialize (with `auto_unbox = TRUE`).
+#' @return A single string of JSON.
+#' @keywords internal
+json_for_script <- function(x) {
+  json <- as.character(jsonlite::toJSON(x, auto_unbox = TRUE))
+  json <- gsub("<", "\\u003C", json, fixed = TRUE)
+  json <- gsub("\u2028", "\\u2028", json, fixed = TRUE)
+  gsub("\u2029", "\\u2029", json, fixed = TRUE)
 }
 
 #' Test for a single non-empty string

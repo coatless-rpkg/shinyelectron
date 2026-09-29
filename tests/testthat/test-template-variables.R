@@ -47,19 +47,72 @@ render_escaping_main_js <- function(app_name, tray = FALSE, env = parent.frame()
   )
 }
 
+# Settings that land in the inline scripts of lifecycle.html (the preloader
+# background) and launcher.html (the suite's app list), with text that can
+# end or confuse an HTML <script> block.
+hostile_background <- "url('it's.png') #0f0 & \"x\" </script><!--<script> \\ end"
+hostile_apps <- function() {
+  list(list(
+    id = "app1", name = "Bob's <App>",
+    description = paste0(
+      "Tom's \"R&D\" </script><!--<script> \\ ", intToUtf8(0x2028), " end"
+    ),
+    path = "src/apps/app1", type = "r-shiny"
+  ))
+}
+
+# Render a suite with the hostile settings; returns the output directory.
+render_html_pages <- function(app_name = "Test App", env = parent.frame()) {
+  main_path <- render_main_js(
+    list(preloader = list(background = hostile_background)),
+    app_name = app_name, is_multi_app = TRUE, apps_manifest = hostile_apps(),
+    env = env
+  )
+  dirname(main_path)
+}
+
+read_text <- function(path) paste(readLines(path, warn = FALSE), collapse = "\n")
+
+# The code inside each <script> block of an HTML page.
+script_bodies <- function(html) {
+  blocks <- regmatches(
+    html, gregexpr("<script[^>]*>[\\s\\S]*?</script>", html, perl = TRUE)
+  )[[1]]
+  gsub("^<script[^>]*>|</script>$", "", blocks, perl = TRUE)
+}
+
+# Case-insensitive count of a fixed string in `text`.
+count_fixed <- function(text, pattern) {
+  sum(gregexpr(tolower(pattern), tolower(text), fixed = TRUE)[[1]] > 0)
+}
+
+# Evaluate JavaScript expressions with node and return their values. The
+# JSON travels back as ASCII, with other characters as \u escapes.
+node_values <- function(expressions, simplify = TRUE) {
+  script <- withr::local_tempfile(
+    lines = paste0(
+      "const out = JSON.stringify([", paste(expressions, collapse = ", "), "]);\n",
+      "process.stdout.write(out.replace(/[^\\x00-\\x7e]/g, (c) => ",
+      "'\\\\u' + c.charCodeAt(0).toString(16).padStart(4, '0')));"
+    ),
+    fileext = ".js"
+  )
+  jsonlite::fromJSON(processx::run("node", script)$stdout, simplifyVector = simplify)
+}
+
 # Evaluate with node the first single-quoted JavaScript literal on each line
 # of `lines` that contains `pattern`, returning the strings node sees.
 js_values <- function(lines, pattern) {
   hits <- grep(pattern, lines, fixed = TRUE, value = TRUE)
-  literals <- regmatches(hits, regexpr("'(?:[^'\\\\]|\\\\.)*'", hits, perl = TRUE))
-  script <- withr::local_tempfile(
-    lines = sprintf(
-      "process.stdout.write(JSON.stringify([%s]));",
-      paste(literals, collapse = ", ")
-    ),
-    fileext = ".js"
-  )
-  jsonlite::fromJSON(processx::run("node", script)$stdout)
+  node_values(regmatches(hits, regexpr("'(?:[^'\\\\]|\\\\.)*'", hits, perl = TRUE)))
+}
+
+# The JavaScript expression assigned on the first line of `lines` that
+# contains `prefix` (such as "var apps = "), without the closing semicolon.
+js_assignment <- function(lines, prefix) {
+  line <- grep(prefix, lines, fixed = TRUE, value = TRUE)[1]
+  start <- regexpr(prefix, line, fixed = TRUE) + nchar(prefix)
+  sub(";\\s*$", "", substring(line, start))
 }
 
 # --- Help menu ---
@@ -104,8 +157,15 @@ test_that("js_str escapes backslashes before single quotes", {
   expect_identical(js_str("C:\\new"), "C:\\\\new")
   # A backslash in front of a quote must not cancel the quote's escape.
   expect_identical(js_str("a\\'b"), "a\\\\\\'b")
-  # Double quotes and HTML characters pass through untouched.
-  expect_identical(js_str("R&D \"<Lab>\""), "R&D \"<Lab>\"")
+  # Double quotes and ampersands pass through untouched.
+  expect_identical(js_str("R&D \"Lab\""), "R&D \"Lab\"")
+})
+
+test_that("js_str output cannot end or disturb an HTML script block", {
+  expect_identical(
+    js_str("</script><!--<SCRIPT>"),
+    "\\u003C/script>\\u003C!--\\u003CSCRIPT>"
+  )
 })
 
 test_that("js_str keeps line terminators out of the literal", {
@@ -120,6 +180,20 @@ test_that("js_str returns NULL for NULL and coerces scalars", {
   expect_identical(js_str(c("a'", "b")), c("a\\'", "b"))
 })
 
+test_that("json_for_script keeps JSON valid and inert inside a script block", {
+  separators <- intToUtf8(c(0x2028, 0x2029), multiple = TRUE)
+  x <- list(list(
+    name = "a </script><!--<script> b",
+    note = paste0("c", separators[1], "d", separators[2], "e")
+  ))
+  json <- json_for_script(x)
+  expect_type(json, "character")
+  expect_false(grepl("<", json, fixed = TRUE))
+  expect_false(any(vapply(separators, grepl, logical(1), json, fixed = TRUE)))
+  expect_true(jsonlite::validate(json))
+  expect_identical(jsonlite::fromJSON(json, simplifyVector = FALSE), x)
+})
+
 test_that("config strings used in JavaScript literals get escaped *_js entries", {
   vars <- generate_template_variables(
     app_name = "Bob's App", app_slug = "bobs-app", app_type = "r-shiny",
@@ -128,8 +202,11 @@ test_that("config strings used in JavaScript literals get escaped *_js entries",
     config = list(
       app = list(version = 2, log_level = "info", log_dir = "C:\\logs"),
       tray = list(icon = "icons/Bob's tray.png"),
-      menu = list(help_url = "https://example.org/?a=1&b=it's")
-    )
+      menu = list(help_url = "https://example.org/?a=1&b=it's"),
+      preloader = list(background = "url('bg.png') #fff")
+    ),
+    is_multi_app = TRUE,
+    apps_manifest = list(list(id = "a", name = "<A>", description = "", path = "p", type = "r-shiny"))
   )
   expect_identical(vars$app_name_js, "Bob\\'s App")
   expect_identical(vars$app_version_js, "2")
@@ -139,32 +216,47 @@ test_that("config strings used in JavaScript literals get escaped *_js entries",
   expect_identical(vars$help_url_js, "https://example.org/?a=1&b=it\\'s")
   expect_identical(vars$log_dir_js, "C:\\\\logs")
   expect_identical(vars$log_level_js, "info")
+  expect_identical(vars$preloader_background_js, "url(\\'bg.png\\') #fff")
+  expect_identical(
+    vars$apps_json,
+    '[{"id":"a","name":"\\u003CA>","description":"","path":"p","type":"r-shiny"}]'
+  )
   # The plain entries stay as they are for the HTML templates.
   expect_identical(vars$app_name, "Bob's App")
+  expect_identical(vars$preloader_background, "url('bg.png') #fff")
 })
 
-test_that("main.js interpolates config strings only through escaped variables", {
-  # A double mustache HTML-escapes but does not JavaScript-escape, so main.js
-  # may use one only for numbers and for values the package builds or
+test_that("templates put config strings into JavaScript only through escaped variables", {
+  # A double mustache HTML-escapes but does not JavaScript-escape, so script
+  # code may use one only for numbers and for values the package builds or
   # validates (the slug, the app type, internal file names). Everything else
-  # must come through a triple-mustache *_js (js_str()) or *_json (jsonlite)
-  # variable.
+  # must come through a triple-mustache *_js (js_str()) or *_json (JSON)
+  # variable. main.js is all script; the HTML templates are checked inside
+  # their <script> blocks, while their markup keeps the double mustache.
   safe_double <- c(
-    "backend_module", "app_type", "app_slug", "icon_file",
-    "server_port", "window_width", "window_height", "shutdown_timeout"
+    "backend_module", "app_type", "app_slug", "icon_file", "server_port",
+    "window_width", "window_height", "shutdown_timeout", "splash_duration"
   )
-  template <- readLines(
-    system.file("electron", "shared", "main.js", package = "shinyelectron")
+  shared <- system.file("electron", "shared", package = "shinyelectron")
+  scripts <- list(
+    main.js = read_text(file.path(shared, "main.js")),
+    lifecycle.html = script_bodies(read_text(file.path(shared, "lifecycle.html"))),
+    launcher.html = script_bodies(read_text(file.path(shared, "launcher.html")))
   )
-  tags <- unlist(regmatches(
-    template,
-    gregexpr("\\{\\{\\{?[^#^/!{}][^{}]*\\}\\}\\}?", template, perl = TRUE)
-  ))
-  triple <- startsWith(tags, "{{{")
-  vars <- gsub("[{}[:space:]]", "", tags)
-  expect_gt(length(vars), 0)
-  expect_equal(vars[triple][!grepl("_(js|json)$", vars[triple])], character(0))
-  expect_equal(setdiff(vars[!triple], safe_double), character(0))
+  for (file in names(scripts)) {
+    code <- paste(scripts[[file]], collapse = "\n")
+    tags <- unlist(regmatches(
+      code, gregexpr("\\{\\{\\{?[^#^/!{}][^{}]*\\}\\}\\}?", code, perl = TRUE)
+    ))
+    triple <- startsWith(tags, "{{{")
+    vars <- gsub("[{}[:space:]]", "", tags)
+    expect_true(any(triple), info = file)
+    expect_equal(
+      vars[triple][!grepl("_(js|json)$", vars[triple])], character(0),
+      info = file
+    )
+    expect_equal(setdiff(vars[!triple], safe_double), character(0), info = file)
+  }
 })
 
 test_that("main.js carries config strings into JavaScript literals intact", {
@@ -187,13 +279,44 @@ test_that("main.js carries config strings into JavaScript literals intact", {
   expect_true(any(grepl("'assets', 'Bob\\'s tray.png'", tray, fixed = TRUE)))
 })
 
-test_that("HTML templates keep HTML-escaping the app name", {
-  main_path <- render_main_js(app_name = "R&D <Lab>")
-  lifecycle <- readLines(file.path(dirname(main_path), "lifecycle.html"))
+test_that("HTML markup keeps HTML-escaping the app name", {
+  out <- render_html_pages(app_name = "R&D <Lab>")
+  lifecycle <- readLines(file.path(out, "lifecycle.html"))
   expect_true(any(grepl("<title>R&amp;D &lt;Lab&gt;</title>", lifecycle, fixed = TRUE)))
-  # main.js shows the name as typed rather than as HTML entities.
-  main <- readLines(main_path)
-  expect_true(any(grepl("title: 'Close R&D <Lab>',", main, fixed = TRUE)))
+  launcher <- readLines(file.path(out, "launcher.html"))
+  expect_true(any(grepl("<h1>R&amp;D &lt;Lab&gt;</h1>", launcher, fixed = TRUE)))
+  # main.js escapes the name for JavaScript instead of HTML, so the quit
+  # dialog shows it as typed.
+  main <- readLines(file.path(out, "main.js"))
+  expect_true(any(grepl("title: 'Close R&D \\u003CLab>',", main, fixed = TRUE)))
+})
+
+test_that("lifecycle and launcher scripts keep hostile settings inside their values", {
+  out <- render_html_pages()
+  shared <- system.file("electron", "shared", package = "shinyelectron")
+  for (page in c("lifecycle.html", "launcher.html")) {
+    template <- read_text(file.path(shared, page))
+    rendered <- read_text(file.path(out, page))
+    # A setting must not add anything that ends a script block or changes
+    # where the HTML parser ends it.
+    for (marker in c("<script", "</script", "<!--")) {
+      expect_equal(
+        count_fixed(rendered, marker), count_fixed(template, marker),
+        info = paste(page, marker)
+      )
+    }
+  }
+  lifecycle <- readLines(file.path(out, "lifecycle.html"))
+  expect_true(any(grepl(
+    paste0("var preloaderBackground = '", js_str(hostile_background), "';"),
+    lifecycle, fixed = TRUE
+  )))
+  expect_false(any(grepl("&amp;", lifecycle, fixed = TRUE)))
+  launcher <- readLines(file.path(out, "launcher.html"))
+  expect_true(any(grepl(
+    paste0("var apps = ", json_for_script(hostile_apps()), ";"),
+    launcher, fixed = TRUE
+  )))
 })
 
 test_that("main.js parses for app names with quotes, backslashes, and newlines", {
@@ -232,4 +355,26 @@ test_that("main.js string literals evaluate to the configured values", {
     c("Joe's \"tray\"", paste(shown, "- "), shown)
   )
   expect_equal(js_values(tray, "title: 'About "), paste("About", shown))
+})
+
+test_that("lifecycle and launcher scripts parse and keep their values", {
+  skip_on_cran()
+  skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
+
+  out <- render_html_pages()
+  for (page in c("lifecycle.html", "launcher.html")) {
+    bodies <- script_bodies(read_text(file.path(out, page)))
+    expect_length(bodies, 1)
+    script <- withr::local_tempfile(lines = bodies, fileext = ".js")
+    check <- processx::run("node", c("--check", script), error_on_status = FALSE)
+    expect_equal(check$status, 0L, info = paste0(page, ": ", check$stderr))
+  }
+
+  lifecycle <- readLines(file.path(out, "lifecycle.html"))
+  expect_equal(js_values(lifecycle, "var preloaderBackground = "), hostile_background)
+
+  launcher <- readLines(file.path(out, "launcher.html"))
+  apps <- node_values(js_assignment(launcher, "var apps = "), simplify = FALSE)[[1]]
+  expect_equal(apps[[1]]$name, hostile_apps()[[1]]$name)
+  expect_equal(apps[[1]]$description, hostile_apps()[[1]]$description)
 })

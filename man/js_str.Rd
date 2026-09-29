@@ -15,17 +15,20 @@ js_str(x)
 A character vector, or \code{NULL} when \code{x} is \code{NULL}.
 }
 \description{
-Rendered JavaScript templates such as \code{main.js} place configuration
-strings between single quotes, as in \code{title: 'Close {{{app_name_js}}}'}.
-This escapes backslashes and then single quotes, turns carriage returns
-and line feeds into spaces, and writes U+2028 and U+2029 as escape
-sequences, so no value can end the literal early or change its meaning
-(a Windows path keeps its backslashes). Double quotes are left alone, so
-use the result only inside single quotes.
+Rendered templates place configuration strings between single quotes in
+JavaScript, both in \code{main.js} and in the inline \verb{<script>} of
+\code{lifecycle.html}, as in \code{title: 'Close {{{app_name_js}}}'}. This escapes
+backslashes and then single quotes, turns carriage returns and line feeds
+into spaces, and writes U+2028, U+2029, and every \code{<} as escape sequences
+(\code{<} becomes \verb{\\u003C}). No value can then end the literal early, change
+its meaning (a Windows path keeps its backslashes), or end or disturb an
+HTML \verb{<script>} block. Double quotes are left alone, so use the result
+only inside single quotes.
 }
 \details{
 Render the result with a triple mustache (\code{{{{name_js}}}}). A double
 mustache would HTML-escape it again and turn \code{&} into \verb{&amp;}. HTML
-templates such as \code{lifecycle.html} keep the double mustache.
+markup, such as the page title in \code{lifecycle.html}, keeps the double
+mustache.
 }
 \keyword{internal}

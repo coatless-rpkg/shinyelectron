@@ -55,10 +55,11 @@ The list is a superset: some entries are serialized into
 template) or are reserved for future placeholders. Adding a new
 placeholder requires adding it here.
 
-A configuration string that \code{main.js} places inside a single-quoted
-JavaScript literal also has an escaped \verb{*_js} entry (see \code{\link[=js_str]{js_str()}}),
-which the template renders with a triple mustache, as in
-\code{'{{{app_name_js}}}'}. The plain entries are HTML-escaped by a double
-mustache and belong in the HTML templates.
+A configuration string that a template's JavaScript (\code{main.js} or an
+inline \verb{<script>} in an HTML template) places inside a single-quoted
+literal also has an escaped \verb{*_js} entry (see \code{\link[=js_str]{js_str()}}), which the
+template renders with a triple mustache, as in \code{'{{{app_name_js}}}'}.
+JSON inlined into a script is built with \code{\link[=json_for_script]{json_for_script()}}. The plain
+entries are HTML-escaped by a double mustache and belong in HTML markup.
 }
 \keyword{internal}
