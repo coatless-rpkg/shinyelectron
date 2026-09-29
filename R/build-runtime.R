@@ -3,10 +3,12 @@
 #' Behavior-preserving extraction of the R bundled-embedding block from
 #' [build_electron_app()]. ALWAYS installs + copies the interpreter (and resolves
 #' symlinks) so the shared `runtime/R` path exists for suite-wide bundled
-#' detection; only the package install is gated on a non-empty `packages` set.
+#' detection; only the package install is gated on a non-empty package set
+#' (`packages` plus any local packages and their declared dependencies).
 #' `packages` is the DIRECT set (as stored in `dependencies.json`); the recursive
 #' dependency closure and the `pre_installed` setdiff are resolved here, against
-#' the freshly-created `runtime/R/library`.
+#' the freshly-created `runtime/R/library`. Local packages are installed last,
+#' with [install_local_r_packages()].
 #'
 #' @param output_dir Character. The Electron app output directory.
 #' @param packages Character vector. DIRECT R package names (may be empty/NULL).

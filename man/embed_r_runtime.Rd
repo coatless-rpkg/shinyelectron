@@ -43,9 +43,11 @@ Invisibly, the path to the embedded \code{runtime/R} directory.
 Behavior-preserving extraction of the R bundled-embedding block from
 \code{\link[=build_electron_app]{build_electron_app()}}. ALWAYS installs + copies the interpreter (and resolves
 symlinks) so the shared \code{runtime/R} path exists for suite-wide bundled
-detection; only the package install is gated on a non-empty \code{packages} set.
+detection; only the package install is gated on a non-empty package set
+(\code{packages} plus any local packages and their declared dependencies).
 \code{packages} is the DIRECT set (as stored in \code{dependencies.json}); the recursive
 dependency closure and the \code{pre_installed} setdiff are resolved here, against
-the freshly-created \code{runtime/R/library}.
+the freshly-created \code{runtime/R/library}. Local packages are installed last,
+with \code{\link[=install_local_r_packages]{install_local_r_packages()}}.
 }
 \keyword{internal}

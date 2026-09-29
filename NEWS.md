@@ -1,3 +1,13 @@
+# shinyelectron (development version)
+
+## New features
+
+* `dependencies.r.local_packages` installs R packages that are not on a
+  repository, such as in-house packages, into the R library of a `bundled`
+  build. List package source folders or `.tar.gz` source tarballs relative to
+  the app directory. Each package is built and installed with the bundled R
+  after its dependencies, and the build stops unless it loads.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the

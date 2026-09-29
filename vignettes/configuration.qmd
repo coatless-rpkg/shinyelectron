@@ -304,13 +304,40 @@ The support toolchain (`electron-builder`, `electron-updater`, `electron-log`) i
 
 #### R-specific dependency options
 
-These keys sit under `dependencies.r` and apply to the `bundled`, `auto-download`, and `system` strategies.
+These keys sit under `dependencies.r` and apply to the `bundled`, `auto-download`, and `system` strategies, except `r.local_packages`, which only the `bundled` strategy uses.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `r.packages` | list of strings | `[]` | R packages to install alongside the app |
 | `r.repos` | list of strings | `["https://cloud.r-project.org"]` | CRAN-compatible repository URLs to use when installing R packages |
 | `r.lib_path` | string | `null` | Custom library path where R packages are installed; `null` uses the default R library |
+| `r.local_packages` | list of strings | `[]` | Package source folders or `.tar.gz` source tarballs to install into a bundled R library; see [Local R packages](#local-r-packages) |
+
+#### Local R packages
+
+`r.local_packages` installs R packages that are not on a repository, such as your own in-house packages, into the R library of a `bundled` build. List package source folders (the folder that holds `DESCRIPTION`) or source tarballs as `R CMD build` creates them:
+
+```yaml
+build:
+  runtime_strategy: "bundled"
+
+dependencies:
+  r:
+    local_packages:
+      - ../mypkg                         # a source folder next to the app
+      - ../vendor/otherpkg_1.2.0.tar.gz  # a source tarball
+```
+
+- Only R apps that use the `bundled` strategy can use local packages. `export()` stops with an error when the key is set for any other strategy, or for a suite without a bundled R app.
+- Relative paths resolve against the folder that holds `_shinyelectron.yml`: the app directory, or the suite root for a multi-app suite. A suite reads `local_packages` only from its root `_shinyelectron.yml`, not from the config files of its apps.
+- `export()` checks every entry before it downloads anything. Zip files and binary builds (such as the `.tgz` files CRAN publishes for macOS) are rejected, because local packages are compiled for the bundled R.
+- A source folder is first built into a tarball in a temporary directory with `R CMD build`, so nothing is compiled or written inside it.
+- The `Depends`, `Imports`, and `LinkingTo` packages of each local package are installed from `r.repos` first. `Remotes:` fields are not read, so list a dependency that is not on a repository under `local_packages` too, or add its repository to `r.repos`.
+- Local packages install in dependency order among themselves, so the order of the list does not matter. Local packages that depend on each other in a cycle stop the build.
+- A local package replaces a repository package with the same name.
+- Each package must load in a fresh R session from the bundled library, or the build stops with the load error and the path to the install log. Building or installing one package may take up to 30 minutes.
+- Packages with C, C++, or Fortran code need a compiler toolchain that works with the bundled R on the build machine, such as the Xcode Command Line Tools on macOS or Rtools on Windows.
+- Keep package sources outside the app directory: everything in the app directory is copied into the app.
 
 #### Python-specific dependency options
 

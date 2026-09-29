@@ -454,7 +454,7 @@ nodejs:
 #     repos:
 #       - "https://cloud.r-project.org"
 #     lib_path: null         # null = R default, "app-local", or custom path
-#     local_packages: []     # Local source dirs/tarballs installed into the bundle (override same-named CRAN versions)
+#     local_packages: []     # Bundled R only: package source folders or .tar.gz files, relative to this file
 #   python:
 #     # null = the maintained latest pin; "latest" = always newest; "3.12.0" = exact pin
 #     version: null
