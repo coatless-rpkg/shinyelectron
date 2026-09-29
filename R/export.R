@@ -87,14 +87,14 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   app_type <- normalized$app_type
   runtime_strategy <- normalized$runtime_strategy
 
-  if (is.null(app_name)) {
-    app_name <- basename(appdir)
-  }
-  validate_app_name(app_name)
-
   # Read config file (or get defaults) -- must happen before structure
   # validation so multi-app mode can be detected early
   config <- read_config(appdir)
+
+  # App display name: explicit argument > config app.name > directory basename
+  # (mirrors export_multi_app(), so app.name is honored for single apps too).
+  app_name <- app_name %||% config$app$name %||% basename(appdir)
+  validate_app_name(app_name)
 
   # Resolve the icon: function arg > config `icon:` > per-platform `icons:`.
   # Wiring the YAML keys here makes them effective for both single and

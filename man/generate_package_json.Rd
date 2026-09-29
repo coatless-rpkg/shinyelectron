@@ -11,7 +11,8 @@ generate_package_json(
   config,
   has_icon = FALSE,
   sign = FALSE,
-  is_multi_app = FALSE
+  is_multi_app = FALSE,
+  app_name = NULL
 )
 }
 \arguments{
@@ -24,6 +25,8 @@ generate_package_json(
 \item{config}{List. The effective configuration.}
 
 \item{has_icon}{Logical. Whether an icon is provided.}
+
+\item{app_name}{Character string or NULL. Display name used as the default electron-builder productName when \code{app: product_name} is not set.}
 }
 \value{
 Character string. The JSON content for package.json.

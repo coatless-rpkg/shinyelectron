@@ -44,6 +44,7 @@ process_templates <- function(output_dir, app_name, app_type,
   writeLines(
     generate_package_json(
       app_slug = app_slug,
+      app_name = app_name,
       app_version = config$app$version %||% SHINYELECTRON_DEFAULTS$app_version,
       backend = gsub("\\.js$", "", backend_module),
       config = config,

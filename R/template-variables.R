@@ -58,6 +58,15 @@ generate_template_variables <- function(app_name, app_slug, app_type,
   # container_image becoming {} instead of being absent).
   backend_config <- Filter(Negate(is.null), backend_config)
 
+  # About dialog: allow "Name <email>" in the author field and split out the email.
+  about_author <- config$app$author
+  about_email <- config$app$email
+  if (is.null(about_email) && !is.null(about_author) &&
+      grepl("<[^>]+>", about_author)) {
+    about_email <- sub(".*<([^>]+)>.*", "\\1", about_author)
+    about_author <- trimws(sub("<[^>]+>", "", about_author))
+  }
+
   # Config strings that main.js or the lifecycle page script places inside
   # single-quoted JavaScript literals. Each one also gets a js_str()-escaped
   # `*_js` entry below.
@@ -80,6 +89,18 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     app_type = app_type,
     app_version = app_version,
     app_version_js = js_str(app_version),
+
+    # About dialog metadata
+    app_description = js_str(config$app$description) %||% "",
+    has_app_description = !is.null(config$app$description),
+    app_author = js_str(about_author) %||% "",
+    has_app_author = !is.null(about_author),
+    app_email = js_str(about_email) %||% "",
+    has_app_email = !is.null(about_email),
+    app_homepage = js_str(config$app$homepage) %||% "",
+    has_app_homepage = !is.null(config$app$homepage),
+    app_copyright = js_str(config$app$copyright) %||% "",
+    has_app_copyright = !is.null(config$app$copyright),
     has_icon = !is.null(icon),
     # copy_brand_assets() preserves the icon's extension (icon.ico/.icns/.png);
     # carry the real filename so the BrowserWindow icon path is not broken.

@@ -6,6 +6,7 @@
 #'
 #' @param app_slug Character string. The slugified app name.
 #' @param app_version Character string. The app version.
+#' @param app_name Character string or NULL. Display name used as the default electron-builder productName when `app: product_name` is not set.
 #' @param backend Character string. The backend module name without .js (e.g., "shinylive", "native-r").
 #' @param config List. The effective configuration.
 #' @param has_icon Logical. Whether an icon is provided.
@@ -13,12 +14,12 @@
 #' @keywords internal
 generate_package_json <- function(app_slug, app_version, backend, config,
                                   has_icon = FALSE, sign = FALSE,
-                                  is_multi_app = FALSE) {
+                                  is_multi_app = FALSE, app_name = NULL) {
   # Base structure
   pkg <- list(
     name = app_slug,
     version = app_version,
-    description = paste0(app_slug, " - Shiny Electron App"),
+    description = config$app$description %||% paste0(app_slug, " - Shiny Electron App"),
     main = "main.js",
     # --publish never suppresses electron-builder's publish pipeline, which
     # 26.x crashes in ("Cannot read properties of null (reading 'channel')")
@@ -39,7 +40,7 @@ generate_package_json <- function(app_slug, app_version, backend, config,
       `build-linux-x64` = "electron-builder --linux --x64 --publish never",
       `build-linux-arm64` = "electron-builder --linux --arm64 --publish never"
     ),
-    author = "",
+    author = config$app$author %||% "",
     license = "AGPL-3.0-or-later",
     devDependencies = list(
       electron = paste0("^", resolve_runtime_version("electron", config)),
@@ -65,10 +66,18 @@ generate_package_json <- function(app_slug, app_version, backend, config,
     pkg$dependencies <- deps
   }
 
+  # Resolve the display name once and derive a GitHub-safe artifact prefix
+  # from it. GitHub Releases rewrites spaces in asset names and electron-updater
+  # builds the download URL from latest.yml's path, so a product name with
+  # spaces (possible for a custom display name) would 404 the update.
+  product_name <- config$app$product_name %||% app_name %||% app_slug
+  product_name_safe <- gsub("[^A-Za-z0-9._-]+", "-", product_name)
+
   # Build configuration
   build_config <- list(
     appId = config$installer$app_id %||% paste0("com.shinyelectron.", app_slug),
-    productName = app_slug,
+    productName = product_name,
+    artifactName = paste0(product_name_safe, "-Setup-${version}.${ext}"),
     directories = list(output = "dist")
   )
 
