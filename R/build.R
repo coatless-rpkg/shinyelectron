@@ -81,6 +81,10 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
   }
   validate_app_name(app_name)
 
+  # Resolve the R pruning flag now: a config built in R skips read_config(),
+  # and a bad value must fail before any output is deleted or runtime fetched.
+  prune <- resolve_r_prune(config)
+
   if (verbose) {
     cli::cli_h1("Building Electron application")
     cli::cli_alert_info("App: {.val {app_name}}")
@@ -179,6 +183,7 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
         platform = platform[1],
         arch = arch[1],
         verbose = verbose,
+        prune = prune,
         local_packages = unlist(config$dependencies$r$local_packages) %||% character(0)
       )
     }

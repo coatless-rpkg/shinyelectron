@@ -12,6 +12,7 @@ embed_r_runtime(
   platform,
   arch,
   verbose = TRUE,
+  prune = TRUE,
   local_packages = character(0)
 )
 }
@@ -30,6 +31,10 @@ default CRAN mirror.}
 \item{arch}{Character scalar. Target architecture ("x64"/"arm64").}
 
 \item{verbose}{Logical. Whether to display progress.}
+
+\item{prune}{Logical. Whether to remove the test and documentation files
+that \code{\link[=prune_bundled_r_runtime]{prune_bundled_r_runtime()}} allowlists once the packages are
+installed. Callers pass the validated \code{dependencies.r.prune} setting.}
 
 \item{local_packages}{Character vector. Paths to local R package source
 folders or \code{.tar.gz} source tarballs to install into the bundled library

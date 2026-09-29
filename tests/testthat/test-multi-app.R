@@ -413,11 +413,15 @@ test_that("build_multi_app embeds the R runtime once with the unioned package se
   union_pkgs <- c("shiny", "bslib", "shiny", "DT")
 
   captured <- NULL
+  captured_prune <- NULL
+  captured_local <- NULL
   n_calls <- 0
   mockery::stub(build_multi_app, "embed_r_runtime",
     function(output_dir, packages, repos, version, platform, arch, verbose = TRUE,
-             local_packages = character(0)) {
+             prune, local_packages) {
       captured <<- packages
+      captured_prune <<- prune
+      captured_local <<- local_packages
       n_calls <<- n_calls + 1
       invisible(TRUE)
     })
@@ -439,6 +443,135 @@ test_that("build_multi_app embeds the R runtime once with the unioned package se
 
   expect_equal(n_calls, 1)
   expect_equal(captured, sort(unique(union_pkgs)))
+  expect_true(captured_prune)   # dependencies.r.prune defaults to TRUE
+  expect_equal(captured_local, character(0))   # no dependencies.r.local_packages
+})
+
+test_that("build_multi_app passes dependencies.r.prune from config to embed_r_runtime", {
+  skip_if_not_installed("mockery")
+
+  apps_dir <- withr::local_tempdir()
+  output_dir <- file.path(withr::local_tempdir(), "electron-app")
+
+  config <- list(
+    build = list(type = "r-shiny", runtime_strategy = "bundled"),
+    dependencies = list(r = list(prune = FALSE)),
+    apps = list(
+      list(id = "dash",   name = "Dash",   path = "./apps/dash"),
+      list(id = "report", name = "Report", path = "./apps/report")
+    )
+  )
+  apps_manifest <- list(
+    list(id = "dash", name = "Dash", path = "src/apps/dash",
+         type = "r-shiny", runtime_strategy = "bundled"),
+    list(id = "report", name = "Report", path = "src/apps/report",
+         type = "r-shiny", runtime_strategy = "bundled")
+  )
+
+  forwarded <- NULL
+  forwarded_local <- NULL
+  mockery::stub(build_multi_app, "embed_r_runtime",
+    function(output_dir, packages, repos, version, platform, arch, verbose = TRUE,
+             prune, local_packages) {
+      forwarded <<- prune
+      forwarded_local <<- local_packages
+      invisible(TRUE)
+    })
+  mockery::stub(build_multi_app, "validate_node_npm", function() invisible(TRUE))
+  mockery::stub(build_multi_app, "setup_electron_project", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "process_templates", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "install_npm_dependencies", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "build_for_platforms", function(...) invisible(TRUE))
+  mockery::stub(build_multi_app, "validate_build_output", function(...) invisible(TRUE))
+
+  build_multi_app(
+    apps_dir = apps_dir, output_dir = output_dir, app_name = "Suite",
+    apps_manifest = apps_manifest, default_type = "r-shiny",
+    runtime_strategy = "bundled", sign = FALSE,
+    platform = "mac", arch = "arm64", icon = NULL, config = config,
+    overwrite = TRUE, verbose = FALSE,
+    r_packages = "shiny"
+  )
+
+  expect_false(forwarded)
+  expect_equal(forwarded_local, character(0))
+
+  # A quoted "false" in a config built in R also turns pruning off, with a
+  # single warning from the up-front check.
+  config$dependencies$r$prune <- "false"
+  forwarded <- NULL
+  n_quoted <- 0L
+  withCallingHandlers(
+    build_multi_app(
+      apps_dir = apps_dir, output_dir = output_dir, app_name = "Suite",
+      apps_manifest = apps_manifest, default_type = "r-shiny",
+      runtime_strategy = "bundled", sign = FALSE,
+      platform = "mac", arch = "arm64", icon = NULL, config = config,
+      overwrite = TRUE, verbose = FALSE,
+      r_packages = "shiny"
+    ),
+    shinyelectron_quoted_flag = function(w) {
+      n_quoted <<- n_quoted + 1L
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_equal(n_quoted, 1L)
+  expect_false(forwarded)
+})
+
+test_that("build_multi_app rejects a bad dependencies.r.prune before creating or downloading anything", {
+  apps_dir <- withr::local_tempdir()
+  dir.create(file.path(apps_dir, "dash"))
+  writeLines("library(shiny)", file.path(apps_dir, "dash", "app.R"))
+  output_dir <- file.path(withr::local_tempdir(), "electron-app")
+
+  config <- list(
+    build = list(type = "r-shiny", runtime_strategy = "bundled"),
+    dependencies = list(r = list(prune = "maybe")),
+    apps = list(
+      list(id = "dash",   name = "Dash",   path = "./apps/dash"),
+      list(id = "report", name = "Report", path = "./apps/report")
+    )
+  )
+  apps_manifest <- list(
+    list(id = "dash", name = "Dash", path = "src/apps/dash",
+         type = "r-shiny", runtime_strategy = "bundled"),
+    list(id = "report", name = "Report", path = "src/apps/report",
+         type = "r-shiny", runtime_strategy = "bundled")
+  )
+
+  # The real embed_r_runtime() runs; record whether it gets as far as
+  # downloading or copying a runtime.
+  calls <- character(0)
+  record <- function(name, value = NULL) {
+    force(value)
+    function(...) {
+      calls <<- c(calls, name)
+      value
+    }
+  }
+  local_mocked_bindings(
+    validate_node_npm = function(...) invisible(TRUE),
+    setup_electron_project = record("setup_electron_project"),
+    resolve_runtime_version = function(...) "4.6.1",
+    install_r_portable = record("install_r_portable", file.path(apps_dir, "cached-r")),
+    copy_dir_contents = record("copy_dir_contents")
+  )
+
+  expect_error(
+    build_multi_app(
+      apps_dir = apps_dir, output_dir = output_dir, app_name = "Suite",
+      apps_manifest = apps_manifest, default_type = "r-shiny",
+      runtime_strategy = "bundled", sign = FALSE,
+      platform = "mac", arch = "arm64", icon = NULL, config = config,
+      overwrite = TRUE, verbose = FALSE,
+      r_packages = "shiny"
+    ),
+    "dependencies.r.prune",
+    class = "shinyelectron_invalid_flag"
+  )
+  expect_equal(calls, character(0))
+  expect_false(dir.exists(output_dir))
 })
 
 test_that("build_multi_app writes runtime-manifest.json into each auto-download app dir", {
@@ -627,6 +760,8 @@ test_that("export_multi_app does not include container-app packages in bundled e
 
   destdir <- withr::local_tempdir()
   captured_packages <- NULL
+  captured_prune <- NULL
+  captured_local <- NULL
 
   local_mocked_bindings(
     # Controlled dependency resolution: bundled app gets pkgA, container gets pkgB.
@@ -646,8 +781,10 @@ test_that("export_multi_app does not include container-app packages in bundled e
     # Capture what embed_r_runtime receives.
     embed_r_runtime = function(output_dir, packages, repos, version,
                                platform, arch, verbose = TRUE,
-                               local_packages = character(0)) {
+                               prune, local_packages) {
       captured_packages <<- packages
+      captured_prune <<- prune
+      captured_local <<- local_packages
       invisible(TRUE)
     },
     # Stub the heavy build-pipeline steps that require npm / Electron.
@@ -678,4 +815,6 @@ test_that("export_multi_app does not include container-app packages in bundled e
     label = "bundled app's package (pkgA) must reach embed_r_runtime")
   expect_false("pkgB" %in% captured_packages,
     label = "container app's package (pkgB) must NOT reach embed_r_runtime")
+  expect_true(captured_prune)   # dependencies.r.prune defaults to TRUE
+  expect_equal(captured_local, character(0))   # no dependencies.r.local_packages
 })

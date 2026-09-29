@@ -104,6 +104,7 @@ build:
 dependencies:               # Runtime version pins and system packages
   r:
     version: null           # null = maintained pin; "latest" = live query; "4.6.1" = exact
+    prune: true             # Bundled only: remove package tests, R manuals and news
   python:
     version: null           # null = maintained pin; "latest" = live query; "3.12.0" = exact
   electron:
@@ -303,14 +304,35 @@ The support toolchain (`electron-builder`, `electron-updater`, `electron-log`) i
 
 #### R-specific dependency options
 
-These keys sit under `dependencies.r` and apply to the `bundled`, `auto-download`, and `system` strategies, except `r.local_packages`, which only the `bundled` strategy uses.
+These keys sit under `dependencies.r` and apply to the `bundled`, `auto-download`, and `system` strategies, except `r.prune` and `r.local_packages`, which only the `bundled` strategy uses.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `r.packages` | list of strings | `[]` | R packages to install alongside the app |
 | `r.repos` | list of strings | `["https://cloud.r-project.org"]` | CRAN-compatible repository URLs to use when installing R packages |
 | `r.lib_path` | string | `null` | Custom library path where R packages are installed; `null` uses the default R library |
+| `r.prune` | boolean | `true` | Remove package test suites and R's own tests, manuals, and news from the embedded runtime (see below) |
 | `r.local_packages` | list of strings | `[]` | Package source folders or `.tar.gz` source tarballs to install into a bundled R library; see [Local R packages](#local-r-packages) |
+
+#### Pruning the bundled R runtime
+
+With the `bundled` strategy, shinyelectron trims the embedded R runtime after installing your packages, leaving out files that a running app does not use:
+
+- the test suites (`tests/`, `testme/`, `tinytest/`) of every installed package, including R's base and recommended packages;
+- R's own regression tests;
+- R's PDF and HTML manuals and its news and FAQ files.
+
+Everything else stays. Package code, data, help pages, `examples/`, `demo/`, NEWS files, and `include/` headers are kept, because some packages and apps read them at runtime: `shinyjs::runExample()` reads its examples, a "What's new" panel may show a package's `NEWS.md`, and `Rcpp::sourceCpp()` needs the headers. R's license files (`COPYING`, and `COPYRIGHTS` with the notices that binary distributions of R must include), its author list, and the mirror lists that `utils::getCRANmirrors()` reads are kept too.
+
+Pruning is on by default. To ship the runtime exactly as installed, turn it off:
+
+```yaml
+dependencies:
+  r:
+    prune: false
+```
+
+Write `true` or `false` without quotes. A quoted `"true"` or `"false"` is read as the matching value with a warning; any other value stops the build before anything is downloaded.
 
 #### Local R packages
 
@@ -623,6 +645,8 @@ shinyelectron validates values on read and degrades gracefully rather than abort
 Keys that shinyelectron does not recognize, such as a misspelled `widht` or a key placed in the wrong section, are reported in a single warning that lists each one by its dotted path (for example `window.widht`), and the build goes on without them. Entries under `apps` and the contents of maps such as `container.env` are not checked.
 
 The `installer` settings are stricter. `one_click`, `allow_to_change_installation_directory`, and `per_machine` take `true` or `false`: a quoted `"true"` or `"false"` is read with a warning, and any other value stops the build. `allow_to_change_installation_directory: true` needs `one_click: false`, and a `license_file` that does not exist also stops the build. electron-builder would otherwise reject these late in the Windows build, after the runtime download.
+
+`dependencies.r.prune` is stricter. A quoted `"true"` or `"false"` is read as the matching value with a warning, but any other value stops the build with an error before anything is downloaded, because falling back to the default could remove files you meant to keep.
 
 If the YAML itself fails to parse, shinyelectron warns and uses all defaults. This is deliberate: a broken config file should never block you from producing a build during development.
 

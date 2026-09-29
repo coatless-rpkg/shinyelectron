@@ -641,10 +641,12 @@ test_that("build_electron_app passes the configured local packages to embed_r_ru
   mockery::stub(build_electron_app, "validate_build_output", function(...) invisible(TRUE))
   mockery::stub(build_electron_app, "resolve_runtime_version", function(runtime, config) "4.6.1")
   captured <- NULL
+  captured_prune <- NULL
   mockery::stub(build_electron_app, "embed_r_runtime",
                 function(output_dir, packages, repos, version, platform, arch,
-                         verbose, local_packages) {
+                         verbose, prune, local_packages) {
     captured <<- local_packages
+    captured_prune <<- prune
     invisible(fs::path(output_dir, "runtime", "R"))
   })
 
@@ -657,6 +659,7 @@ test_that("build_electron_app passes the configured local packages to embed_r_ru
   )
 
   expect_equal(captured, local_packages)
+  expect_true(captured_prune)   # dependencies.r.prune defaults to TRUE
 })
 
 test_that("build_multi_app passes the configured local packages to embed_r_runtime", {
@@ -675,10 +678,12 @@ test_that("build_multi_app passes the configured local packages to embed_r_runti
   )
 
   captured <- NULL
+  captured_prune <- NULL
   mockery::stub(build_multi_app, "embed_r_runtime",
                 function(output_dir, packages, repos, version, platform, arch,
-                         verbose, local_packages) {
+                         verbose, prune, local_packages) {
     captured <<- local_packages
+    captured_prune <<- prune
     invisible(TRUE)
   })
   mockery::stub(build_multi_app, "validate_node_npm", function() invisible(TRUE))
@@ -698,6 +703,7 @@ test_that("build_multi_app passes the configured local packages to embed_r_runti
   )
 
   expect_equal(captured, "/abs/pkgs/MyPkg")
+  expect_true(captured_prune)   # dependencies.r.prune defaults to TRUE
 })
 
 test_that("build_multi_app falls back to the configured repositories", {
@@ -720,7 +726,7 @@ test_that("build_multi_app falls back to the configured repositories", {
   captured <- NULL
   mockery::stub(build_multi_app, "embed_r_runtime",
                 function(output_dir, packages, repos, version, platform, arch,
-                         verbose, local_packages) {
+                         verbose, prune, local_packages) {
     captured <<- repos
     invisible(TRUE)
   })
