@@ -26,7 +26,8 @@ generate_package_json(
 
 \item{has_icon}{Logical. Whether an icon is provided.}
 
-\item{app_name}{Character string or NULL. Display name used as the default electron-builder productName when \code{app: product_name} is not set.}
+\item{app_name}{Character string or NULL. Display name, used as the
+electron-builder productName. \code{NULL} uses the slug.}
 }
 \value{
 Character string. The JSON content for package.json.

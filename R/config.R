@@ -15,10 +15,8 @@ default_config <- function() {
       name = NULL,
       slug = NULL,
       version = SHINYELECTRON_DEFAULTS$app_version,
-      product_name = NULL,
       description = NULL,
       author = NULL,
-      email = NULL,
       homepage = NULL,
       copyright = NULL,
       log_dir = SHINYELECTRON_DEFAULTS$logging$log_dir,
@@ -405,10 +403,6 @@ init_config <- function(appdir, app_name = NULL, overwrite = FALSE, verbose = TR
 app:
   name: "{{{app_name}}}"
   version: "1.0.0"
-  # product_name overrides the installer / executable / Start Menu name.
-  # Defaults to the app name (falls back to the slug). Unlike slug, it may contain
-  # spaces, mixed case and non-ASCII characters.
-  # product_name: null
   # description: null       # Installer description (default: "<slug> - Shiny Electron App")
   # author: null            # Author shown by the installer (default: empty)
   # Uncomment to set a custom URL-safe slug (default: derived from name)

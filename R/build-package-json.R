@@ -6,7 +6,8 @@
 #'
 #' @param app_slug Character string. The slugified app name.
 #' @param app_version Character string. The app version.
-#' @param app_name Character string or NULL. Display name used as the default electron-builder productName when `app: product_name` is not set.
+#' @param app_name Character string or NULL. Display name, used as the
+#'   electron-builder productName. `NULL` uses the slug.
 #' @param backend Character string. The backend module name without .js (e.g., "shinylive", "native-r").
 #' @param config List. The effective configuration.
 #' @param has_icon Logical. Whether an icon is provided.
@@ -70,7 +71,7 @@ generate_package_json <- function(app_slug, app_version, backend, config,
   # from it. GitHub Releases rewrites spaces in asset names and electron-updater
   # builds the download URL from latest.yml's path, so a product name with
   # spaces (possible for a custom display name) would 404 the update.
-  product_name <- config$app$product_name %||% app_name %||% app_slug
+  product_name <- app_name %||% app_slug
   product_name_safe <- gsub("[^A-Za-z0-9._-]+", "-", product_name)
 
   # Build configuration

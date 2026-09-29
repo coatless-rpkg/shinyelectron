@@ -140,11 +140,10 @@ test_that("generate_package_json respects config electron version override", {
   expect_equal(parsed$devDependencies$electron, "^42.1.0")
 })
 
-test_that("generate_package_json honours custom product name, description and author", {
-  cfg <- list(app = list(product_name = "My App", description = "Custom desc",
-                         author = "Jane <j@x.org>"))
+test_that("generate_package_json honours custom display name, description and author", {
+  cfg <- list(app = list(description = "Custom desc", author = "Jane <j@x.org>"))
   parsed <- jsonlite::fromJSON(
-    generate_package_json("myapp", "0.1.9", "native-r", cfg, app_name = "Fallback"),
+    generate_package_json("myapp", "0.1.9", "native-r", cfg, app_name = "My App"),
     simplifyVector = FALSE
   )
 
@@ -153,6 +152,14 @@ test_that("generate_package_json honours custom product name, description and au
   expect_equal(parsed$description, "Custom desc")
   expect_equal(parsed$author, "Jane <j@x.org>")
   expect_equal(parsed$build$productName, "My App")
+})
+
+test_that("generate_package_json uses the slug as productName without a display name", {
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("myapp", "1.0.0", "native-r", list()),
+    simplifyVector = FALSE
+  )
+  expect_equal(parsed$build$productName, "myapp")
 })
 
 test_that("generate_package_json falls back to slug description and name product", {

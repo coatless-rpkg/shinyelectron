@@ -60,9 +60,8 @@ generate_template_variables <- function(app_name, app_slug, app_type,
 
   # About dialog: allow "Name <email>" in the author field and split out the email.
   about_author <- config$app$author
-  about_email <- config$app$email
-  if (is.null(about_email) && !is.null(about_author) &&
-      grepl("<[^>]+>", about_author)) {
+  about_email <- NULL
+  if (!is.null(about_author) && grepl("<[^>]+>", about_author)) {
     about_email <- sub(".*<([^>]+)>.*", "\\1", about_author)
     about_author <- trimws(sub("<[^>]+>", "", about_author))
   }
