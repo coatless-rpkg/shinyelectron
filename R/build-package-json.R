@@ -212,8 +212,9 @@ build_nsis_config <- function(config) {
 #' `license.txt` or `eula.txt`, are avoided because they would also add the
 #' license to other targets, for example as a Linux AppImage EULA. The
 #' extension is kept (lowercased) since electron-builder shows `.html`
-#' licenses differently from plain text and RTF; a file without an
-#' extension is treated as plain text.
+#' licenses differently from plain text and RTF. electron-builder only
+#' recognizes the `.html` suffix, so `.htm` becomes `.html`; a file without
+#' an extension is treated as plain text.
 #'
 #' @param license_file Character. Path to the license file.
 #' @return Character. The license path relative to the Electron project.
@@ -222,6 +223,8 @@ installer_license_path <- function(license_file) {
   ext <- tolower(tools::file_ext(license_file))
   if (!nzchar(ext)) {
     ext <- "txt"
+  } else if (ext == "htm") {
+    ext <- "html"
   }
   paste0("build/installer-license.", ext)
 }

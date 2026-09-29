@@ -222,3 +222,9 @@ test_that("installer_license_path keeps the license format", {
   expect_equal(installer_license_path("terms.html"), "build/installer-license.html")
   expect_equal(installer_license_path("LICENSE"), "build/installer-license.txt")
 })
+
+test_that("installer_license_path renames .htm licenses to .html", {
+  # electron-builder renders a license as HTML only when it ends in .html.
+  expect_equal(installer_license_path("terms.htm"), "build/installer-license.html")
+  expect_equal(installer_license_path("TERMS.HTM"), "build/installer-license.html")
+})

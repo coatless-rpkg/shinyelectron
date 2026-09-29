@@ -18,7 +18,8 @@ under a fixed name. Names that electron-builder finds on its own, such as
 \code{license.txt} or \code{eula.txt}, are avoided because they would also add the
 license to other targets, for example as a Linux AppImage EULA. The
 extension is kept (lowercased) since electron-builder shows \code{.html}
-licenses differently from plain text and RTF; a file without an
-extension is treated as plain text.
+licenses differently from plain text and RTF. electron-builder only
+recognizes the \code{.html} suffix, so \code{.htm} becomes \code{.html}; a file without
+an extension is treated as plain text.
 }
 \keyword{internal}
