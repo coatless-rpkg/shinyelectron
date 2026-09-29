@@ -1,5 +1,17 @@
 # shinyelectron (development version)
 
+* shinyelectron now requires R 4.5.0 or newer, since it verifies downloaded
+  runtimes with `tools::sha256sum()`, which was added in R 4.5.0. The README
+  and `sitrep_electron_system()` now report this minimum. Apps built with the
+  `system` strategy still accept R 4.4.0 or newer on the end user's machine.
+
+* shinyelectron now imports rlang. cli builds `cli_abort()` and `cli_warn()` on
+  rlang but only suggests it. Without rlang installed, errors from
+  `cli_abort()` showed "there is no package called 'rlang'" instead of their
+  own message, and warnings from `cli_warn()` became that same error, stopping
+  operations meant to continue, such as a Node.js install whose checksum list
+  could not be downloaded.
+
 * The situation reports (`sitrep_shinyelectron()` and friends) no longer
   report Node.js, npm or Python as missing when the withr package is not
   installed. withr is only a suggested dependency, and the probe used to fail

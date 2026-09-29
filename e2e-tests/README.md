@@ -5,7 +5,7 @@ Playwright-based end-to-end tests for the shinyelectron Electron app, covering a
 ## Prerequisites
 
 - Node.js >= 18
-- R >= 4.4.0 with the shinyelectron package (loaded via `devtools::load_all()`)
+- R >= 4.5.0 with the shinyelectron package (loaded via `devtools::load_all()`)
 - Strategy-specific requirements (see table below)
 
 ## Setup
