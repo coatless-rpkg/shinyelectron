@@ -638,7 +638,8 @@ test_that("export_multi_app does not include container-app packages in bundled e
     },
     # Avoid network calls inside generate_dependency_manifest (query_sysreqs).
     generate_dependency_manifest = function(packages, language,
-                                            repos = NULL, index_urls = NULL) {
+                                            repos = NULL, index_urls = NULL,
+                                            local_packages = character(0)) {
       '{"schema_version":"2","language":"r","packages":[]}'
     },
     # Capture what embed_r_runtime receives.

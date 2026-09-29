@@ -56,6 +56,7 @@ export_multi_app <- function(appdir, destdir, config,
   if (length(local_packages) > 0) {
     config$dependencies$r$local_packages <- local_packages
   }
+  local_names <- local_r_package_names(local_packages)
 
   # Create destination
   if (fs::dir_exists(destdir)) {
@@ -148,7 +149,8 @@ export_multi_app <- function(appdir, destdir, config,
             packages = dep_info$packages,
             language = dep_info$language,
             repos = dep_info$repos,
-            index_urls = dep_info$index_urls
+            index_urls = dep_info$index_urls,
+            local_packages = local_names
           )
           writeLines(manifest, fs::path(app_dest, "dependencies.json"))
 

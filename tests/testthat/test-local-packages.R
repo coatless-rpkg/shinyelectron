@@ -249,11 +249,15 @@ test_that("export() resolves suite local packages against the suite root", {
   write_local_pkg(file.path(suite, "pkgs"), "MyPkg")
 
   captured <- NULL
+  manifest_local <- NULL
   local_mocked_bindings(
     resolve_app_dependencies = function(appdir, app_type, runtime_strategy, config) {
-      list(language = "r", packages = "shiny", repos = list())
+      list(language = "r", packages = c("shiny", "MyPkg"), repos = list())
     },
-    generate_dependency_manifest = function(...) "{}",
+    generate_dependency_manifest = function(...) {
+      manifest_local <<- list(...)$local_packages
+      "{}"
+    },
     build_multi_app = function(...) {
       captured <<- list(...)$config$dependencies$r$local_packages
       "electron-app"
@@ -265,6 +269,50 @@ test_that("export() resolves suite local packages against the suite root", {
          platform = "mac", arch = "arm64", verbose = FALSE)
 
   expect_equal(normalizePath(captured), normalizePath(file.path(suite, "pkgs", "MyPkg")))
+  # Local package names are kept out of the system-requirements lookup.
+  expect_equal(manifest_local, "MyPkg")
+})
+
+test_that("generate_dependency_manifest keeps local packages out of the sysreqs lookup", {
+  queried <- list()
+  local_mocked_bindings(query_sysreqs = function(pkgs, distribution, release) {
+    queried[[length(queried) + 1]] <<- pkgs
+    character(0)
+  })
+
+  manifest <- jsonlite::fromJSON(generate_dependency_manifest(
+    packages = c("shiny", "MyPkg"), language = "r", local_packages = "MyPkg"
+  ))
+
+  expect_equal(manifest$packages, c("shiny", "MyPkg"))
+  expect_length(queried, 2)
+  for (pkgs in queried) expect_equal(pkgs, "shiny")
+})
+
+test_that("export() keeps local packages out of the sysreqs lookup", {
+  skip_if_not_installed("renv")
+  root <- withr::local_tempdir()
+  write_local_pkg(root, "MyPkg")
+  appdir <- write_app_with_config(file.path(root, "app"), list(
+    build = list(runtime_strategy = "bundled"),
+    dependencies = list(r = list(local_packages = list("../MyPkg")))
+  ))
+  writeLines(c("library(shiny)", "library(MyPkg)"), file.path(appdir, "app.R"))
+
+  queried <- list()
+  local_mocked_bindings(query_sysreqs = function(pkgs, distribution, release) {
+    queried[[length(queried) + 1]] <<- pkgs
+    character(0)
+  })
+
+  result <- export(appdir, file.path(root, "out"), build = FALSE, verbose = FALSE)
+
+  expect_true("MyPkg" %in% result$dependencies$packages)
+  expect_true(length(queried) > 0)
+  for (pkgs in queried) {
+    expect_true("shiny" %in% pkgs)
+    expect_false("MyPkg" %in% pkgs)
+  }
 })
 
 test_that("embed_r_runtime checks local packages before downloading R", {

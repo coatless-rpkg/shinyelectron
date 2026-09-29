@@ -112,9 +112,11 @@ embed_r_runtime <- function(output_dir, packages, repos, version,
     # CRAN network calls during the same export session).
     avail_pkgs <- utils::available.packages(repos = repos)
 
-    # Resolve full dependency tree
+    # Resolve full dependency tree. Local packages are left out: their own
+    # DESCRIPTION dependencies are already in pkgs, and a repository package
+    # of the same name must not pull in its dependencies.
     all_deps <- tools::package_dependencies(
-      pkgs, db = avail_pkgs,
+      setdiff(pkgs, local_names), db = avail_pkgs,
       which = c("Depends", "Imports", "LinkingTo"),
       recursive = TRUE
     )
