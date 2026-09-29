@@ -11,7 +11,9 @@ embed_r_runtime(
   version,
   platform,
   arch,
-  verbose = TRUE
+  verbose = TRUE,
+  prune_r_library = TRUE,
+  prune_r_runtime = TRUE
 )
 }
 \arguments{
@@ -28,6 +30,10 @@ embed_r_runtime(
 \item{arch}{Character scalar. Target architecture ("x64"/"arm64").}
 
 \item{verbose}{Logical. Whether to display progress.}
+
+\item{prune_r_library}{Logical. Prune build-only files (include/, tests/, examples/) from the bundled package library.}
+
+\item{prune_r_runtime}{Logical. Prune doc/, tests/ and include/ from the portable R distribution.}
 }
 \value{
 Invisibly, the path to the embedded \code{runtime/R} directory.

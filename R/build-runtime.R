@@ -15,10 +15,13 @@
 #' @param platform Character scalar. Target platform ("win"/"mac"/"linux").
 #' @param arch Character scalar. Target architecture ("x64"/"arm64").
 #' @param verbose Logical. Whether to display progress.
+#' @param prune_r_library Logical. Prune build-only files (include/, tests/, examples/) from the bundled package library.
+#' @param prune_r_runtime Logical. Prune doc/, tests/ and include/ from the portable R distribution.
 #' @return Invisibly, the path to the embedded `runtime/R` directory.
 #' @keywords internal
 embed_r_runtime <- function(output_dir, packages, repos, version,
-                            platform, arch, verbose = TRUE) {
+                            platform, arch, verbose = TRUE,
+                            prune_r_library = TRUE, prune_r_runtime = TRUE) {
   if (verbose) cli::cli_alert_info("Embedding R runtime for bundled strategy...")
 
   # Resolve the effective version ONCE and pass it to both install_r_portable and
@@ -173,6 +176,16 @@ embed_r_runtime <- function(output_dir, packages, repos, version,
 
     }
   }
+
+  # Trim compile-only / documentation files so the installer has far fewer
+  # entries to unpack. Only allowlisted names are removed (see
+  # prune-runtime.R); runtime-critical files are never touched.
+  prune_bundled_r_runtime(
+    runtime_dest,
+    prune_library = isTRUE(prune_r_library),
+    prune_portable = isTRUE(prune_r_runtime),
+    verbose = verbose
+  )
 
   if (verbose) cli::cli_alert_success("Embedded R runtime")
   invisible(runtime_dest)

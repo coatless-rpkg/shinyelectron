@@ -16,7 +16,9 @@ build_electron_app(
   icon = NULL,
   config = NULL,
   overwrite = FALSE,
-  verbose = TRUE
+  verbose = TRUE,
+  prune_r_library = NULL,
+  prune_r_runtime = NULL
 )
 }
 \arguments{
@@ -53,6 +55,10 @@ template variables like window dimensions, port, and app version.}
 \item{overwrite}{Logical. Whether to overwrite existing output directory. Default is FALSE.}
 
 \item{verbose}{Logical. Whether to display detailed progress information. Default is TRUE.}
+
+\item{prune_r_library}{Logical or NULL. Prune build-only files (include/, tests/, examples/) from the bundled R package library. NULL uses the config \code{optimize: r_library} value, defaulting to TRUE.}
+
+\item{prune_r_runtime}{Logical or NULL. Prune doc/, tests/ and include/ from the portable R distribution. NULL uses the config \code{optimize: r_runtime} value, defaulting to TRUE.}
 }
 \value{
 Character string. Path to the built Electron application directory.

@@ -25,6 +25,8 @@
 #'   template variables like window dimensions, port, and app version.
 #' @param overwrite Logical. Whether to overwrite existing output directory. Default is FALSE.
 #' @param verbose Logical. Whether to display detailed progress information. Default is TRUE.
+#' @param prune_r_library Logical or NULL. Prune build-only files (include/, tests/, examples/) from the bundled R package library. NULL uses the config `optimize: r_library` value, defaulting to TRUE.
+#' @param prune_r_runtime Logical or NULL. Prune doc/, tests/ and include/ from the portable R distribution. NULL uses the config `optimize: r_runtime` value, defaulting to TRUE.
 #'
 #' @return Character string. Path to the built Electron application directory.
 #'
@@ -59,7 +61,8 @@
 build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = "r-shiny",
                                runtime_strategy = "shinylive", sign = FALSE,
                                platform = NULL, arch = NULL, icon = NULL,
-                               config = NULL, overwrite = FALSE, verbose = TRUE) {
+                               config = NULL, overwrite = FALSE, verbose = TRUE,
+                               prune_r_library = NULL, prune_r_runtime = NULL) {
 
   # Validate inputs
   validate_directory_exists(app_dir, "Application directory")
@@ -152,6 +155,10 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
     # helpers live in R/build-runtime.R (shared with the multi-app pipeline);
     # they own dependency-tree resolution and always embed the interpreter, even
     # when no packages are declared.
+    # Resolve runtime pruning: argument > config `optimize:` > default TRUE.
+    prune_r_library <- prune_r_library %||% config$optimize$r_library %||% TRUE
+    prune_r_runtime <- prune_r_runtime %||% config$optimize$r_runtime %||% TRUE
+
     dep_manifest_path <- fs::path(output_dir, "src", "app", "dependencies.json")
 
     if (runtime_strategy == "bundled" && grepl("^r-", app_type)) {
@@ -171,7 +178,9 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
         version = resolve_runtime_version("r", config),
         platform = platform[1],
         arch = arch[1],
-        verbose = verbose
+        verbose = verbose,
+        prune_r_library = prune_r_library,
+        prune_r_runtime = prune_r_runtime
       )
     }
 

@@ -26,6 +26,7 @@ A named list with the following elements:
 \item{signing}{Default code-signing settings}
 \item{lifecycle}{Default lifecycle and prompt settings}
 \item{installer}{Default installer branding settings}
+\item{optimize}{Default pruning of build-only files from bundled runtimes}
 \item{runtime_versions}{Maintained "latest known" runtime version pins (r, python, electron)}
 \item{electron_toolchain}{Pinned versions for electron-builder, electron-updater, electron-log (not config-settable)}
 \item{dependencies$electron}{Default Electron dependency settings; \code{version} is NULL (use pin) or a version string}

@@ -18,7 +18,9 @@ export(
   build = TRUE,
   run_after = FALSE,
   open_after = FALSE,
-  verbose = TRUE
+  verbose = TRUE,
+  prune_r_library = NULL,
+  prune_r_runtime = NULL
 )
 }
 \arguments{
@@ -58,6 +60,10 @@ from environment variables or the config file. Default is FALSE.}
 \item{open_after}{Logical. Whether to open the generated project directory after export. Default is FALSE.}
 
 \item{verbose}{Logical. Whether to display detailed progress information. Default is TRUE.}
+
+\item{prune_r_library}{Logical or NULL. Prune build-only files (include/, tests/, examples/) from the bundled R package library. NULL uses the config \code{optimize: r_library} value, defaulting to TRUE.}
+
+\item{prune_r_runtime}{Logical or NULL. Prune doc/, tests/ and include/ from the portable R distribution. NULL uses the config \code{optimize: r_runtime} value, defaulting to TRUE.}
 }
 \value{
 List containing paths to the converted app and built Electron app (if built).

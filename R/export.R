@@ -26,6 +26,8 @@
 #' @param run_after Logical. Whether to run the application in development mode after export. Default is FALSE.
 #' @param open_after Logical. Whether to open the generated project directory after export. Default is FALSE.
 #' @param verbose Logical. Whether to display detailed progress information. Default is TRUE.
+#' @param prune_r_library Logical or NULL. Prune build-only files (include/, tests/, examples/) from the bundled R package library. NULL uses the config `optimize: r_library` value, defaulting to TRUE.
+#' @param prune_r_runtime Logical or NULL. Prune doc/, tests/ and include/ from the portable R distribution. NULL uses the config `optimize: r_runtime` value, defaulting to TRUE.
 #'
 #' @return List containing paths to the converted app and built Electron app (if built).
 #'
@@ -73,7 +75,8 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
                    runtime_strategy = NULL, sign = FALSE,
                    platform = NULL, arch = NULL, icon = NULL,
                    overwrite = FALSE, build = TRUE, run_after = FALSE,
-                   open_after = FALSE, verbose = TRUE) {
+                   open_after = FALSE, verbose = TRUE,
+                   prune_r_library = NULL, prune_r_runtime = NULL) {
 
   # Expand ~ in paths before passing to external tools (Python, npm, etc.)
   appdir <- path.expand(appdir)
@@ -95,6 +98,10 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   # Read config file (or get defaults) -- must happen before structure
   # validation so multi-app mode can be detected early
   config <- read_config(appdir)
+
+  # Runtime pruning: argument > config `optimize:` > default TRUE.
+  prune_r_library <- prune_r_library %||% config$optimize$r_library %||% TRUE
+  prune_r_runtime <- prune_r_runtime %||% config$optimize$r_runtime %||% TRUE
 
   # Resolve the icon: function arg > config `icon:` > per-platform `icons:`.
   # Wiring the YAML keys here makes them effective for both single and
@@ -134,6 +141,8 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
                             sign = sign, platform = platform, arch = arch,
                             icon = icon, overwrite = overwrite, build = build,
                             run_after = run_after, open_after = open_after,
+                            prune_r_library = prune_r_library,
+                            prune_r_runtime = prune_r_runtime,
                             verbose = verbose))
   }
 
@@ -271,7 +280,9 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
         icon = icon,
         config = config,
         overwrite = TRUE,
-        verbose = verbose
+        verbose = verbose,
+        prune_r_library = prune_r_library,
+        prune_r_runtime = prune_r_runtime
       )
 
       result$electron_app <- built_app_dir

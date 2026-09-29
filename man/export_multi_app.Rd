@@ -18,7 +18,9 @@ export_multi_app(
   build = TRUE,
   run_after = FALSE,
   open_after = FALSE,
-  verbose = TRUE
+  verbose = TRUE,
+  prune_r_library = NULL,
+  prune_r_runtime = NULL
 )
 }
 \description{

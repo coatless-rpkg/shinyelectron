@@ -448,7 +448,7 @@ test_that("build_electron_app delegates bundled R embedding to embed_r_runtime w
 
   embed_args <- NULL
   mockery::stub(build_electron_app, "embed_r_runtime",
-                function(output_dir, packages, repos, version, platform, arch, verbose) {
+                function(output_dir, packages, repos, version, platform, arch, verbose, ...) {
     embed_args <<- list(packages = packages, repos = repos, version = version,
                         platform = platform, arch = arch)
     invisible(fs::path(output_dir, "runtime", "R"))

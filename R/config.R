@@ -49,7 +49,8 @@ default_config <- function() {
     preloader = SHINYELECTRON_DEFAULTS$preloader,
     signing = SHINYELECTRON_DEFAULTS$signing,
     lifecycle = SHINYELECTRON_DEFAULTS$lifecycle,
-    installer = SHINYELECTRON_DEFAULTS$installer
+    installer = SHINYELECTRON_DEFAULTS$installer,
+    optimize = SHINYELECTRON_DEFAULTS$optimize
   )
 }
 
@@ -551,6 +552,15 @@ nodejs:
 #   app_id: null                  # null = "com.shinyelectron.<slug>"
 #   license_file: null            # Path to license file (shown during install)
 #   one_click: true               # Windows: true = silent install, false = wizard
+
+## Build optimization
+## Trim build-only files from the bundled runtime to shrink the installer
+## and speed up installation. Only compile-only / test / changelog files are
+## removed; runtime-critical files (share/, Tcl/, libs/, HTML widgets, ...)
+## are always kept.
+# optimize:
+#   r_library: true   # remove include/ tests/ examples/ NEWS from bundled R packages
+#   r_runtime: true   # remove doc/ tests/ include/ from the portable R runtime
 
 ## Lifecycle UI
 ## Controls the startup, loading, error, and shutdown experience.
