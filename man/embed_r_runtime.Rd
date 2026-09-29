@@ -20,7 +20,8 @@ embed_r_runtime(
 
 \item{packages}{Character vector. DIRECT R package names (may be empty/NULL).}
 
-\item{repos}{Character vector. CRAN-like repository URLs.}
+\item{repos}{Character vector. CRAN-like repository URLs. \code{NULL} uses the
+default CRAN mirror.}
 
 \item{version}{Character. Resolved R version (non-NULL from callers).}
 

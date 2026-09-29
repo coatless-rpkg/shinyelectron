@@ -10,7 +10,8 @@
 #'
 #' @param output_dir Character. The Electron app output directory.
 #' @param packages Character vector. DIRECT R package names (may be empty/NULL).
-#' @param repos Character vector. CRAN-like repository URLs.
+#' @param repos Character vector. CRAN-like repository URLs. `NULL` uses the
+#'   default CRAN mirror.
 #' @param version Character. Resolved R version (non-NULL from callers).
 #' @param platform Character scalar. Target platform ("win"/"mac"/"linux").
 #' @param arch Character scalar. Target architecture ("x64"/"arm64").
@@ -105,7 +106,7 @@ embed_r_runtime <- function(output_dir, packages, repos, version,
     if (verbose) cli::cli_alert_info("Installing packages with bundled R...")
 
     pkgs <- direct_pkgs
-    repos <- unlist(repos)
+    repos <- unlist(repos) %||% unlist(SHINYELECTRON_DEFAULTS$dependencies$r$repos)
 
     # Fetch the available-packages database once (avoids repeated
     # CRAN network calls during the same export session).

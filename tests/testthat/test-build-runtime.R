@@ -106,6 +106,40 @@ test_that("embed_r_runtime embeds the interpreter even when packages is empty", 
   expect_false(run_called)        # install.packages NOT invoked
 })
 
+test_that("embed_r_runtime falls back to the default repository when repos is NULL", {
+  skip_if_not_installed("mockery")
+  out <- withr::local_tempdir()
+  mockery::stub(embed_r_runtime, "install_r_portable", function(...) fs::path(out, "cached-r"))
+  mockery::stub(embed_r_runtime, "copy_dir_contents", function(src, dst) {
+    fs::dir_create(fs::path(dst, "bin"), recurse = TRUE)
+    writeLines("#!/bin/sh", fs::path(dst, "bin", "Rscript"))
+    invisible(dst)
+  })
+  mockery::stub(embed_r_runtime, "r_executable",
+                function(...) fs::path(out, "runtime", "R", "bin", "Rscript"))
+  avail_repos <- NULL
+  mockery::stub(embed_r_runtime, "utils::available.packages", function(repos) {
+    avail_repos <<- repos
+    matrix(nrow = 0, ncol = 0)
+  })
+  mockery::stub(embed_r_runtime, "tools::package_dependencies", function(...) list())
+  mockery::stub(embed_r_runtime, "detect_current_platform", function() "mac")
+  r_code <- NULL
+  mockery::stub(embed_r_runtime, "processx::run", function(command, args, ...) {
+    r_code <<- args[[2]]
+    fs::dir_create(fs::path(out, "runtime", "R", "library", "shiny"), recurse = TRUE)
+    list(status = 0, stdout = "", stderr = "")
+  })
+
+  embed_r_runtime(
+    output_dir = out, packages = "shiny", repos = NULL, version = "4.4.1",
+    platform = "mac", arch = "arm64", verbose = FALSE
+  )
+
+  expect_equal(avail_repos, "https://cloud.r-project.org")
+  expect_match(r_code, "repos = c('https://cloud.r-project.org')", fixed = TRUE)
+})
+
 # --- Python runtime embedding ---
 
 test_that("embed_python_runtime targets bundled site-packages and embeds unconditionally", {
