@@ -1,6 +1,139 @@
 # shinyelectron (development version)
 
-## New features
+* shinyelectron now requires R 4.5.0 or newer, since it verifies downloaded
+  runtimes with `tools::sha256sum()`, which was added in R 4.5.0. The README
+  and `sitrep_electron_system()` now report this minimum. Apps built with the
+  `system` strategy still accept R 4.4.0 or newer on the end user's machine.
+
+* shinyelectron now imports rlang. cli builds `cli_abort()` and `cli_warn()` on
+  rlang but only suggests it. Without rlang installed, errors from
+  `cli_abort()` showed "there is no package called 'rlang'" instead of their
+  own message, and warnings from `cli_warn()` became that same error, stopping
+  operations meant to continue, such as a Node.js install whose checksum list
+  could not be downloaded.
+
+* The situation reports (`sitrep_shinyelectron()` and friends) no longer
+  report Node.js, npm or Python as missing when the withr package is not
+  installed. withr is only a suggested dependency, and the probe used to fail
+  without it.
+
+* The Security Considerations guide gains a "Secrets and per-user credentials"
+  section. It covers which environment variables and `.Renviron` files reach an
+  app's R, Python, or container process, and how to give each user their own
+  token without bundling it.
+
+* Keys in `_shinyelectron.yml` that shinyelectron does not recognize, such as a
+  misspelled `widht` or a key placed in the wrong section, now trigger a
+  warning of class `shinyelectron_unknown_config_key` that names each one by
+  its dotted path (for example `window.widht`). They were previously ignored
+  without notice.
+
+* The top-level `logging` section documented in the Configuration Guide now
+  takes effect; its `log_dir` and `log_level` were previously ignored. If you
+  copied the guide's earlier example, drop its `log_dir: "/var/log/my-app"`
+  line: `log_dir` should be an absolute path that the app's user can write
+  to, and without it logs go to the app's `userData/logs` folder.
+  `app.log_dir` and `app.log_level` still work. When both set a key to
+  different values, `logging` wins with a warning of class
+  `shinyelectron_logging_conflict`. `init_config()` now suggests the
+  `logging` form.
+
+* `init_config()` no longer suggests `nodejs.auto_install`, which has no effect
+  yet.
+
+* App names and other settings that contain quotes or backslashes no longer
+  break the generated app. Settings placed in JavaScript strings in `main.js`
+  or in the splash and preloader page are now escaped, so a name like
+  "Children's Dashboard" or a Windows `log_dir` such as `C:\Users\me\logs`
+  works, and the About and quit dialogs and the tray tooltip show `&` instead
+  of `&amp;`.
+
+* App names and descriptions in a multi-app suite that contain `<!--`
+  followed by `<script>` no longer break the launcher page.
+
+* Help > Documentation opens help URLs with query strings correctly instead
+  of turning `&` into `&amp;`.
+
+* Help > Documentation appears only when `menu.help_url` is set, instead of
+  in every app with a link that opened nothing.
+
+* R and Python apps whose UI takes several seconds to render no longer fail to
+  start. The startup check used to request the app's page, which ran the UI
+  code on every attempt; it now requests a path the app does not serve, so the
+  UI is rendered once, when the window loads it.
+
+* When an app does not start in time, only its own R or Python process or
+  container is stopped, and the error screen stays up with its Retry and Quit
+  buttons. For a container, the error names the container and its details
+  show the container's logs. Going back to the launcher while an app is still
+  starting no longer leaves that start running, where it could later stop the
+  next app's process or container or replace the window with the abandoned
+  app, and switching between container apps no longer shows the previous
+  container's shutdown messages.
+
+* An R or Python app killed by a signal while starting (a segfault, or the
+  system running out of memory), or one that exits before its server answers,
+  now shows the error at once instead of after the startup timeout.
+
+* Restarting to install a downloaded update now stops the app's R or Python
+  process (or its container) and waits for it to exit before the installer
+  runs. If the update cannot be installed, a dialog asks you to restart the
+  app. Pressing Esc in the Update Ready dialog now means Later.
+
+* New `lifecycle.startup_timeout` sets how long, in milliseconds, an app waits
+  for its R, Python, or container server to start (default 180000, three
+  minutes). R and Python apps used to give up after 60 seconds and container
+  apps after 120. This timeout and `lifecycle.shutdown_timeout` must be whole
+  numbers from 1000 to 2147483647; any other value warns and falls back to the
+  default. Before, a `shutdown_timeout` such as `"10s"` built an app that could
+  not launch.
+
+* Signed builds no longer fail when `_shinyelectron.yml` sets
+  `signing.win.certificate_file`. The certificate settings were written where
+  electron-builder 26 no longer accepts them, so its configuration check
+  stopped the build for every platform, macOS and Linux included. They now go
+  under `win.signtoolOptions`, where electron-builder 26 reads them. The
+  certificate password still comes from `CSC_KEY_PASSWORD` and is never
+  written to `package.json`.
+
+* The Windows credential checks in `export()` and `app_check()` now follow
+  electron-builder's lookup order: the certificate from
+  `signing.win.certificate_file`, then `WIN_CSC_LINK`, then `CSC_LINK`, and
+  the password from `WIN_CSC_KEY_PASSWORD`, then `CSC_KEY_PASSWORD`. Setting
+  only the `WIN_CSC_*` variables no longer draws a misleading warning, and a
+  `WIN_CSC_*` variable that is set but empty now warns, because
+  electron-builder stops there instead of falling back to `CSC_*`.
+
+* Bundled R builds now install packages with the portable R's own startup
+  files. The install no longer runs a project `.Rprofile` or `.Renviron` from
+  the working directory, such as renv's autoloader, and ignores `R_ENVIRON`
+  and `R_PROFILE` set for the calling R. A site profile chosen that way
+  skipped the portable R's macOS library fix-up, so installed binary packages
+  could crash when loaded. `~/.Renviron` and `~/.Rprofile` still apply.
+
+* `installer.allow_to_change_installation_directory: true` adds a page to the
+  Windows setup wizard where users choose the installation folder. It requires
+  `installer.one_click: false`; otherwise reading the configuration fails with
+  an error.
+
+* `installer.per_machine: true` installs the Windows app for all users. Every
+  install and update then needs administrator rights.
+
+* `installer.one_click`, `installer.allow_to_change_installation_directory`,
+  and `installer.per_machine` are checked when the configuration is read. A
+  quoted `"true"` or `"false"` (or `"yes"` or `"no"`) is read as the matching
+  value with a warning; any other value that is not `true` or `false` stops
+  the build with an error that names the key.
+
+* `installer.license_file` no longer fails every build with electron-builder's
+  "unknown property 'license'" error. The file is resolved relative to the app
+  directory, copied into the build, and shown as the Windows installer's
+  license page. A UTF-8 text license gets a byte order mark in the copy so
+  the installer shows characters such as the copyright sign correctly.
+
+* `app_check()` now fails on configuration errors that stop `export()`
+  instead of listing them as warnings, and it checks that
+  `installer.license_file` exists.
 
 * `dependencies.r.local_packages` installs R packages that are not on a
   repository, such as in-house packages, into the R library of a `bundled`

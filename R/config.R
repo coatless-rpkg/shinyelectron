@@ -105,8 +105,177 @@ read_config <- function(appdir) {
     return(default_config())
   }
 
+  # Map logging: onto app.log_* on the raw YAML, before the merge fills in
+  # defaults, so that only values written in the file count as set.
+  config <- map_logging_config(config)
+
+  unknown_keys <- collect_unknown_config_keys(config)
+  if (length(unknown_keys) > 0) {
+    cli::cli_warn(c(
+      "Unknown configuration {cli::qty(unknown_keys)}key{?s} in {.file {CONFIG_FILENAME}}: {.val {unknown_keys}}",
+      "i" = "Unknown keys are ignored. Check their spelling and nesting against {.url https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/configuration.html}."
+    ), class = "shinyelectron_unknown_config_key", keys = unknown_keys)
+  }
+
   merged <- merge_config_deep(default_config(), config)
   validate_config(merged)
+}
+
+#' Map the logging section onto the app section
+#'
+#' `_shinyelectron.yml` documents the log settings under a top-level
+#' `logging:` section, while the build reads them from `app.log_dir` and
+#' `app.log_level`, which the file may also set directly. This copies
+#' `logging.log_dir` and `logging.log_level` into `app` on the parsed YAML,
+#' before [merge_config_deep()] fills in the defaults. When both spellings set
+#' a field to different values, the `logging` value wins and a warning of
+#' class `shinyelectron_logging_conflict` names the field. Any other key under
+#' `logging` stays in place so that [collect_unknown_config_keys()] reports it.
+#' A `logging` value that is not a map, such as `logging: debug` or a list, is
+#' dropped with a warning of class `shinyelectron_invalid_logging_section`.
+#'
+#' @param config List. User configuration parsed from the YAML file.
+#' @return `config` with the `logging` fields moved into `app`.
+#' @keywords internal
+map_logging_config <- function(config) {
+  if (!is.list(config) || is.null(config[["logging"]])) {
+    return(config)
+  }
+  logging <- config[["logging"]]
+  if (!is.list(logging) || (length(logging) > 0 && is.null(names(logging)))) {
+    cli::cli_warn(c(
+      "{.field logging} in {.file {CONFIG_FILENAME}} must be a map, not {.obj_type_friendly {logging}}, so it is ignored.",
+      "i" = "Put each setting on its own indented line under {.field logging}, such as {.code log_level: debug}."
+    ), class = "shinyelectron_invalid_logging_section")
+    config[["logging"]] <- NULL
+    return(config)
+  }
+  app <- config[["app"]]
+  if (!(is.null(app) || is.list(app))) {
+    return(config)
+  }
+
+  for (field in names(SHINYELECTRON_DEFAULTS$logging)) {
+    value <- logging[[field]]
+    logging[[field]] <- NULL
+    if (is.null(value)) next
+    if (!is.null(app[[field]]) && !identical(app[[field]], value)) {
+      cli::cli_warn(c(
+        "{.field logging.{field}} and {.field app.{field}} are both set in {.file {CONFIG_FILENAME}}.",
+        "i" = "Using the {.field logging} value {.val {value}}."
+      ), class = "shinyelectron_logging_conflict")
+    }
+    app[[field]] <- value
+  }
+
+  if (!is.null(app)) config[["app"]] <- app
+  config[["logging"]] <- if (length(logging) > 0) logging
+  config
+}
+
+#' Configuration keys accepted in _shinyelectron.yml
+#'
+#' The keys of [default_config()] plus the top-level keys that have no
+#' default: the `icon` shortcut, the multi-app `apps` list and the `logging`
+#' section that [map_logging_config()] maps onto `app.log_dir` and
+#' `app.log_level`.
+#'
+#' @return Named list shaped like [default_config()].
+#' @keywords internal
+config_schema <- function() {
+  c(default_config(), list(
+    icon = NULL,
+    apps = list(),
+    logging = SHINYELECTRON_DEFAULTS$logging
+  ))
+}
+
+#' Collect unknown configuration keys
+#'
+#' Compares the keys in the config file against the accepted keys
+#' ([config_schema()]) and returns the dotted paths of any key that would
+#' otherwise be silently ignored. It descends only where both the config
+#' value and the default are named lists, the rule [merge_config_deep()] uses,
+#' so a value that the merge takes whole is not inspected: free-form maps
+#' (`container.volumes`, `container.env`), values whose default is a list
+#' (`dependencies.r.repos`), the entries of the multi-app `apps` list and the
+#' top-level `icon` shortcut.
+#'
+#' @param config List. User configuration parsed from the YAML file.
+#' @param defaults List. Schema to compare against (defaults to the full schema).
+#' @param path Character vector. Internal recursion path.
+#' @return Character vector of unknown dotted key paths (possibly empty).
+#' @keywords internal
+collect_unknown_config_keys <- function(config, defaults = config_schema(),
+                                        path = character(0)) {
+  if (!is.list(config) || is.null(names(config))) {
+    return(character(0))
+  }
+  unknown <- character(0)
+  for (name in names(config)) {
+    full <- c(path, name)
+    if (!name %in% names(defaults)) {
+      unknown <- c(unknown, paste(full, collapse = "."))
+    } else if (is_named_list(config[[name]]) &&
+               is_named_list(defaults[[name]])) {
+      unknown <- c(unknown, collect_unknown_config_keys(config[[name]], defaults[[name]], full))
+    }
+  }
+  unknown
+}
+
+#' Test for a map-like list
+#'
+#' `TRUE` for a list whose elements all have non-empty names, the shape YAML
+#' gives a mapping. YAML sequences, scalars and lists with an unnamed element
+#' are not map-like.
+#'
+#' @param x Object to test.
+#' @return A single logical.
+#' @keywords internal
+is_named_list <- function(x) {
+  is.list(x) && !is.null(names(x)) && all(nzchar(names(x)))
+}
+
+#' Resolve the Windows installer license against the app directory
+#'
+#' `installer.license_file` is written relative to the app directory, while
+#' electron-builder runs inside the generated Electron project. Resolving the
+#' path up front lets the build copy the file into the project, and stops on
+#' a missing file before any runtime is downloaded.
+#'
+#' @param config List. The effective configuration.
+#' @param appdir Character. The app directory the configuration was read from.
+#' @return `config`, with `installer$license_file` made absolute when it is set.
+#' @keywords internal
+resolve_installer_license <- function(config, appdir) {
+  license_file <- config$installer$license_file
+  if (is.null(license_file)) {
+    return(config)
+  }
+  if (!is.character(license_file) || length(license_file) != 1L ||
+      is.na(license_file) || !nzchar(license_file)) {
+    cli::cli_abort(c(
+      "Invalid {.field installer.license_file} in config: {.val {license_file}}",
+      "i" = "Must be the path to a license file, relative to the app directory",
+      "i" = "Edit {.field installer.license_file} in {.file _shinyelectron.yml}"
+    ))
+  }
+
+  path <- fs::path_expand(license_file)
+  if (!fs::is_absolute_path(path)) {
+    path <- fs::path(appdir, path)
+  }
+  if (!fs::is_file(path)) {
+    cli::cli_abort(c(
+      "License file not found: {.path {path}}",
+      "i" = "{.field installer.license_file} is resolved relative to the app directory",
+      "i" = "Edit {.field installer.license_file} in {.file _shinyelectron.yml}"
+    ))
+  }
+
+  config$installer$license_file <- as.character(fs::path_abs(path))
+  config
 }
 
 #' Deep merge two lists
@@ -122,14 +291,11 @@ merge_config_deep <- function(defaults, config) {
     return(defaults)
   }
 
-  # Only recurse into map-like (fully named) lists. Unnamed YAML sequences
-  # (repos, index_urls, package lists) and scalars must override the default
-  # wholesale; recursing into them would iterate an empty `names()` and
-  # silently return the default, discarding the user's value.
-  is_named_list <- function(x) {
-    is.list(x) && !is.null(names(x)) && all(nzchar(names(x)))
-  }
-
+  # Only recurse into map-like (fully named) lists, as tested by
+  # is_named_list(). Unnamed YAML sequences (repos, index_urls, package lists)
+  # and scalars must override the default wholesale; recursing into them would
+  # iterate an empty `names()` and silently return the default, discarding the
+  # user's value.
   result <- defaults
 
   for (name in names(config)) {
@@ -147,7 +313,12 @@ merge_config_deep <- function(defaults, config) {
 
 #' Validate configuration values
 #'
-#' Checks configuration values and warns about invalid entries.
+#' Checks configuration values and warns about invalid entries. The Windows
+#' installer flags are read with [config_flag()]: a quoted `"true"` or
+#' `"false"` is used with a warning, but any other invalid value aborts, as
+#' does `installer.allow_to_change_installation_directory: true` without
+#' `installer.one_click: false`, because falling back to a default would
+#' build a different installer than the one requested.
 #'
 #' @param config List of configuration values
 #' @return List of validated configuration
@@ -320,6 +491,22 @@ validate_config <- function(config) {
     config$container$engine <- NULL
   }
 
+  # Validate lifecycle timeouts. Both are milliseconds, and shutdown_timeout
+  # is written into main.js as a JavaScript literal, so a value such as "10s"
+  # would stop the app from launching.
+  for (key in c("startup_timeout", "shutdown_timeout")) {
+    value <- config$lifecycle[[key]]
+    if (!is.null(value) && !is_timeout_ms(value)) {
+      default_value <- SHINYELECTRON_DEFAULTS$lifecycle[[key]]
+      cli::cli_warn(c(
+        "Invalid {.field lifecycle.{key}} in config: {.val {value}}",
+        "i" = "Must be a whole number of milliseconds between 1000 and 2147483647; using default: {.val {default_value}}",
+        "i" = "Edit {.field lifecycle.{key}} in {.file _shinyelectron.yml}"
+      ))
+      config$lifecycle[[key]] <- default_value
+    }
+  }
+
   # Validate dependencies version strings: r, python, electron.
   # Each must be a single character string (e.g. "4.5.1" or "latest") or NULL.
   for (rt in c("r", "python", "electron")) {
@@ -345,7 +532,56 @@ validate_config <- function(config) {
     config$dependencies$system_packages <- NULL
   }
 
+  # Read the Windows installer flags with config_flag(): a quoted "true" or
+  # "false" becomes the logical with a warning, and any other value aborts.
+  # Storing the logicals means build_nsis_config() and the check below never
+  # see a string (isTRUE("true") is FALSE, which would silently turn a
+  # one-click installer into the wizard), and the warning fires once per read.
+  for (key in c("one_click", "allow_to_change_installation_directory",
+                "per_machine")) {
+    flag <- config_flag(config$installer[[key]], paste0("installer.", key))
+    if (!is.null(flag)) {
+      config$installer[[key]] <- flag
+    }
+  }
+
+  # electron-builder only lets the wizard installer change the installation
+  # directory, and it rejects the combination only while building the Windows
+  # installer, after the runtime download. An unset one_click means one-click.
+  if (isTRUE(config$installer$allow_to_change_installation_directory) &&
+      !isFALSE(config$installer$one_click)) {
+    cli::cli_abort(c(
+      "{.field installer.allow_to_change_installation_directory} requires {.field installer.one_click} to be {.code false}",
+      "i" = "Only the wizard installer can ask where to install the app",
+      "i" = "Set {.field installer.one_click} to {.code false} in {.file _shinyelectron.yml}, or remove {.field installer.allow_to_change_installation_directory}"
+    ))
+  }
+
   config
+}
+
+#' Check a lifecycle timeout value
+#'
+#' @param x Value to check.
+#' @return `TRUE` if `x` is a single whole number of milliseconds between
+#'   1000 and 2147483647 (the largest R integer), otherwise `FALSE`.
+#' @keywords internal
+is_timeout_ms <- function(x) {
+  is.numeric(x) && length(x) == 1L && !is.na(x) &&
+    x >= 1000 && x <= .Machine$integer.max && x == round(x)
+}
+
+#' Look up a lifecycle timeout for the generated app
+#'
+#' @param config List. Effective configuration.
+#' @param key Character. `"startup_timeout"` or `"shutdown_timeout"`.
+#' @return Integer milliseconds: the configured value, or the default when it
+#'   is missing or invalid (for example a config that skipped
+#'   [validate_config()]).
+#' @keywords internal
+lifecycle_timeout <- function(config, key) {
+  value <- config$lifecycle[[key]]
+  if (is_timeout_ms(value)) as.integer(value) else SHINYELECTRON_DEFAULTS$lifecycle[[key]]
 }
 
 #' Initialize configuration file
@@ -401,9 +637,11 @@ app:
   version: "1.0.0"
   # Uncomment to set a custom URL-safe slug (default: derived from name)
   # slug: null
-  # Uncomment to configure logging
-  # log_dir: null            # null = default log directory
-  # log_level: "info"        # "debug", "info", "warn", "error"
+
+# Uncomment to configure logging (app.log_dir and app.log_level also work)
+# logging:
+#   log_dir: null            # null = default log directory
+#   log_level: "info"        # "debug", "info", "warn", "error"
 
 build:
   # type is autodetected from files in the app directory (app.R, ui.R/server.R, or app.py).
@@ -438,9 +676,6 @@ server:
 nodejs:
   # Version to install (null = latest LTS)
   version: null
-  # auto_install is planned but not yet active; a missing Node.js aborts the build.
-  # When ready, set auto_install: true to let export() install Node.js automatically.
-  # auto_install: false
 
 # Dependency configuration
 # Controls R and Python package dependencies, the bundled Electron version, and container system packages.
@@ -550,15 +785,21 @@ nodejs:
 ## Customize the installer appearance and behavior.
 # installer:
 #   app_id: null                  # null = "com.shinyelectron.<slug>"
-#   license_file: null            # Path to license file (shown during install)
+#   license_file: null            # Windows installer license page; path relative to the app dir
 #   one_click: true               # Windows: true = silent install, false = wizard
+#   # true adds a page for choosing the install directory; requires one_click: false
+#   allow_to_change_installation_directory: null
+#   # true = install for all users (admin prompt on every update). Unset or
+#   # false: the one-click installer installs per user; the wizard lets the user choose.
+#   per_machine: null
 
 ## Lifecycle UI
 ## Controls the startup, loading, error, and shutdown experience.
 # lifecycle:
 #   show_phase_details: true
 #   error_show_logs: true
-#   shutdown_timeout: 10000
+#   startup_timeout: 180000       # ms to wait for the R, Python, or container server to start
+#   shutdown_timeout: 10000       # ms to wait for the server to stop when quitting
 #   custom_splash_html: null
 #   custom_error_html: null
 #   prompt_before_install: false  # true = ask before installing packages

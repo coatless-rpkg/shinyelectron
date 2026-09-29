@@ -5,10 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "npx playwright test",
-    "test:fast": "npx playwright test single-app multi-app-launcher error-recovery",
+    "test:fast": "npx playwright test single-app multi-app-launcher error-recovery startup-timeout",
     "test:single": "npx playwright test single-app",
     "test:multi": "npx playwright test multi-app-launcher",
     "test:error": "npx playwright test error-recovery",
+    "test:timeout": "npx playwright test startup-timeout",
     "test:r-shinylive": "npx playwright test r-shinylive",
     "test:py-shinylive": "npx playwright test py-shinylive",
     "test:py-system": "npx playwright test py-shiny-system",

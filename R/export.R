@@ -96,6 +96,11 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   # validation so multi-app mode can be detected early
   config <- read_config(appdir)
 
+  # installer.license_file is relative to the app directory, but
+  # electron-builder runs in the generated project. Resolve it now so the
+  # build can copy it there and a missing file fails before any work starts.
+  config <- resolve_installer_license(config, appdir)
+
   # Resolve the icon: function arg > config `icon:` > per-platform `icons:`.
   # Wiring the YAML keys here makes them effective for both single and
   # multi-app builds (previously only the icon= argument was honored).

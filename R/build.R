@@ -22,7 +22,11 @@
 #' @param sign Logical. Whether to enable code signing for the built application.
 #'   Default is FALSE.
 #' @param config List. Configuration from _shinyelectron.yml file (optional). Used for
-#'   template variables like window dimensions, port, and app version.
+#'   template variables like window dimensions, port, and app version. File
+#'   paths in a config passed here, such as `installer.license_file`, must be
+#'   absolute or relative to the working directory. ([export()] reads
+#'   `_shinyelectron.yml` itself and resolves `installer.license_file` against
+#'   the app directory.)
 #' @param overwrite Logical. Whether to overwrite existing output directory. Default is FALSE.
 #' @param verbose Logical. Whether to display detailed progress information. Default is TRUE.
 #'
