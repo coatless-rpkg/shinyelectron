@@ -70,10 +70,10 @@ embed_r_runtime <- function(output_dir, packages, repos, version,
     }
   }
 
-  # Install packages using the BUNDLED portable R itself (not the cache,
-  # and not system R). This ensures binary packages are linked against
-  # matching dylibs AND are installed into the exact library the app
-  # will load from at runtime.
+  # Install packages with the portable R that ships in the app (run from its
+  # cached copy, see below), not system R. This ensures binary packages are
+  # linked against matching dylibs AND are installed into the exact library
+  # the app will load from at runtime.
   if (length(direct_pkgs) > 0) {
 
     # Install into a SIBLING library directory (runtime_dest/library/),
@@ -190,33 +190,13 @@ embed_r_runtime <- function(output_dir, packages, repos, version,
   }
 
   # Install any user-supplied local R package sources AFTER the repository
-  # packages, so a local build overrides a same-named package from CRAN.
+  # packages, with the same Rscript. Their names were left out of the
+  # repository install, so the local build is the one that ships. Local
+  # packages always make the block above run, so lib_path and
+  # bundled_rscript are set.
   if (length(local_packages) > 0) {
-    local_lib <- fs::path(runtime_dest, "library")
-    fs::dir_create(local_lib, recurse = TRUE)
-
-    local_rscript <- r_executable(
-      version = effective_version,
-      platform = platform,
-      arch = arch
-    )
-    if (is.null(local_rscript) || !fs::file_exists(local_rscript)) {
-      cli::cli_abort(c(
-        "Could not locate the cached portable Rscript",
-        "i" = "Try: {.code shinyelectron::install_r_portable(force = TRUE)}"
-      ))
-    }
-
-    install_local_r_packages(local_rscript, local_packages, local_lib,
+    install_local_r_packages(bundled_rscript, local_packages, lib_path,
                              verbose = verbose)
-
-    present_local <- list.dirs(local_lib, recursive = FALSE, full.names = FALSE)
-    missing_local <- setdiff(local_names, present_local)
-    if (length(missing_local) > 0) {
-      cli::cli_abort(
-        "Failed to install local R package(s): {paste(missing_local, collapse = ', ')}"
-      )
-    }
   }
 
   if (verbose) cli::cli_alert_success("Embedded R runtime")
@@ -518,119 +498,254 @@ local_read_archive_description <- function(path) {
   tryCatch(read.dcf(desc), error = function(e) NULL)
 }
 
+#' Order local R packages so each installs after the local packages it needs
+#'
+#' A stable topological sort over `Depends`, `Imports` and `LinkingTo`,
+#' restricted to the local packages themselves. Packages keep their listed
+#' order where their dependencies allow it.
+#'
+#' @param info List from [local_r_package_info()].
+#' @return Character vector of package names in install order.
+#' @keywords internal
+local_r_install_order <- function(info) {
+  pkgs <- unique(names(info))
+  needs <- lapply(info[pkgs], function(p) setdiff(intersect(p$deps, pkgs), p$package))
+  order <- character(0)
+  while (length(order) < length(pkgs)) {
+    remaining <- setdiff(pkgs, order)
+    ready <- remaining[vapply(remaining, function(p) all(needs[[p]] %in% order),
+                              logical(1))]
+    if (length(ready) == 0) {
+      cli::cli_abort(c(
+        "Cannot order the local R packages {.pkg {remaining}}: their dependencies form a cycle.",
+        "i" = "Check the {.field Depends}, {.field Imports} and {.field LinkingTo} fields of these packages."
+      ), class = "shinyelectron_local_packages_cycle")
+    }
+    order <- c(order, ready[[1]])
+  }
+  order
+}
+
 #' Install local R package sources into the bundled library
 #'
-#' Installs source directories or archives with the bundled R (matching the
-#' runtime version), after the repository install step, so a local build
-#' overrides a same-named package from the repositories. The bundled library is
-#' placed on `.libPaths()` and exported as `R_LIBS` / `R_LIBS_USER` /
-#' `R_LIBS_SITE` so the `R CMD INSTALL` child spawned by `install.packages()`
-#' resolves the package's imports. The call fails loudly when a local package
-#' does not end up installed.
+#' Installs each local package with the cached portable `Rscript` that also
+#' installs the repository packages, one package at a time and after the
+#' local packages it depends on ([local_r_install_order()]). A source folder is
+#' first built into a tarball in a temporary directory with the host R's
+#' `R CMD build`, so nothing is compiled or written inside the folder and
+#' stale object files in it never reach the bundle.
 #'
-#' The bundled R's lazy-load subprocess can crash at process exit (a Windows
-#' DLL-unload fault in the dependency stack, e.g. rlang) after it has already
-#' written the lazy-load database, which makes `R CMD INSTALL` report a spurious
-#' "lazy loading failed" and a non-zero exit. We therefore install with
-#' `--no-staged-install --no-clean-on-error` (so every file lands directly in
-#' the final library and the complete package is kept), and verify success by
-#' checking that the installed package's metadata and lazy-load database exist
-#' instead of trusting the exit status.
+#' A package counts as installed only when a fresh process of the same
+#' `Rscript` loads it from the bundled library. That check catches compile
+#' errors, `.onLoad()` failures and timed-out installs, and because it looks
+#' for a line printed after loading rather than at the exit status, it also
+#' tolerates the Windows crash described below. On failure the build stops
+#' with the load error and the path to the install log.
 #'
-#' @param bundled_rscript Character. Path to the bundled `Rscript`.
-#' @param local_packages Character vector. Local package paths (directories or archives).
+#' The install and the check run with the caller's environment plus `R_LIBS`,
+#' `R_LIBS_USER` and `R_LIBS_SITE` set to the bundled library. `R_LIBS_SITE`
+#' is the one that matters: the portable R's `Rprofile.site` resets
+#' `.libPaths()` to its own library plus the site library, including in the
+#' child processes of `R CMD INSTALL`.
+#'
+#' On Windows hosts the install adds `--no-staged-install --no-clean-on-error`.
+#' There the bundled R's lazy-load step can crash while exiting, after it has
+#' written the package, and `R CMD INSTALL` then reports a failure. These
+#' options keep the files in place so the load check can decide. Elsewhere the
+#' default staged install keeps a failed package out of the library.
+#'
+#' @param rscript Character. Path to the cached portable `Rscript`.
+#' @param local_packages Character vector. Paths to package source folders or
+#'   source tarballs.
 #' @param lib_path Character. Destination library (the bundled library).
 #' @param verbose Logical. Whether to display progress.
-#' @return Invisibly, the normalised package paths.
+#' @param timeout Numeric. Seconds allowed for building or installing one
+#'   package. The default of 30 minutes leaves room for large packages with
+#'   compiled code.
+#' @return Invisibly, the installed package names in install order.
 #' @keywords internal
-install_local_r_packages <- function(bundled_rscript, local_packages, lib_path,
-                                     verbose = TRUE) {
-  if (length(local_packages) == 0) {
+install_local_r_packages <- function(rscript, local_packages, lib_path,
+                                     verbose = TRUE, timeout = 1800) {
+  info <- local_r_package_info(local_packages)
+  if (length(info) == 0) {
     return(invisible(character(0)))
   }
-  paths <- normalizePath(unlist(local_packages), winslash = "/", mustWork = TRUE)
-  lib <- gsub("\\\\", "/", lib_path)
-  names <- local_r_package_names(paths)
-  # Emit paths/names as proper R string literals so an apostrophe or backslash
-  # in a path cannot produce an unparsable -e expression.
+  info <- info[local_r_install_order(info)]
+  lib <- normalizePath(lib_path, winslash = "/", mustWork = TRUE)
+
+  build_dir <- tempfile("shinyelectron-local-")
+  dir.create(build_dir)
+  on.exit(unlink(build_dir, recursive = TRUE), add = TRUE)
+
+  if (verbose) {
+    cli::cli_alert_info(
+      "Installing {length(info)} local R package{?s} with bundled R: {.pkg {names(info)}}"
+    )
+  }
+  for (pkg in info) {
+    source <- if (pkg$is_dir) {
+      build_local_r_package(pkg, build_dir, timeout = timeout, verbose = verbose)
+    } else {
+      normalizePath(pkg$path, winslash = "/", mustWork = TRUE)
+    }
+    install_local_r_package(rscript, pkg$package, source, lib,
+                            timeout = timeout, verbose = verbose)
+  }
+  invisible(names(info))
+}
+
+# Build a source tarball of a local package folder into `build_dir` with the
+# host R. R CMD build works on a copy of the folder: it cleans src/ and
+# applies .Rbuildignore without changing the folder itself.
+build_local_r_package <- function(pkg, build_dir, timeout = 1800, verbose = TRUE) {
+  r_bin <- file.path(
+    R.home("bin"),
+    if (.Platform$OS.type == "windows") "R.exe" else "R"
+  )
+  if (verbose) cli::cli_alert_info("Building a source tarball of {.pkg {pkg$package}}...")
+  result <- processx::run(
+    r_bin,
+    c("CMD", "build", "--no-build-vignettes", "--no-manual",
+      normalizePath(pkg$path, winslash = "/", mustWork = TRUE)),
+    wd = build_dir, error_on_status = FALSE, echo = verbose,
+    stderr_to_stdout = TRUE, timeout = timeout, cleanup_tree = TRUE
+  )
+  tarball <- file.path(build_dir, paste0(pkg$package, "_", pkg$version, ".tar.gz"))
+  if (!isTRUE(result$status == 0) || !file.exists(tarball)) {
+    cli::cli_abort(c(
+      "Could not build a source tarball of local R package {.pkg {pkg$package}} from {.path {pkg$path}}.",
+      if (isTRUE(result$timeout)) {
+        c("x" = "{.code R CMD build} did not finish within {local_r_duration(timeout)}.")
+      },
+      "x" = "Last lines of the {.code R CMD build} output:",
+      local_r_output_bullets(result$stdout)
+    ), class = "shinyelectron_local_packages_build")
+  }
+  normalizePath(tarball, winslash = "/")
+}
+
+# Install one local package from a source tarball with the cached portable
+# Rscript, then check that it loads from `lib` in a fresh process.
+install_local_r_package <- function(rscript, pkg, source, lib,
+                                    timeout = 1800, verbose = TRUE) {
   r_lit <- function(x) encodeString(x, quote = "'")
-  lib_lit <- r_lit(lib)
-  pkg_lit <- paste(vapply(paths, r_lit, character(1)), collapse = ", ")
-  names_lit <- paste(vapply(names, r_lit, character(1)), collapse = ", ")
+  # Keep the caller's environment (PATH, HOME, TMPDIR, Makevars settings) and
+  # make the bundled library the user and site library.
+  env <- c("current", R_LIBS = lib, R_LIBS_USER = lib, R_LIBS_SITE = lib)
+
+  # Start from an empty slot so the load check can only pass for the package
+  # installed here.
+  unlink(file.path(lib, pkg), recursive = TRUE)
+
+  # On Windows the bundled R's lazy-load step can crash while exiting, after
+  # it has written the package, so R CMD INSTALL reports a failure. Keep the
+  # files where they land and let the load check decide. Elsewhere the staged
+  # install keeps a failed package out of the library.
+  install_opts <- if (identical(detect_current_platform(), "win")) {
+    ", INSTALL_opts = c('--no-staged-install', '--no-clean-on-error')"
+  } else {
+    ""
+  }
   r_code <- sprintf(
     paste0(
       ".libPaths(c(%s, .libPaths())); ",
-      "Sys.setenv(R_LIBS = %s, R_LIBS_USER = %s, R_LIBS_SITE = %s); ",
-      "install.packages(c(%s), lib = %s, repos = NULL, type = 'source', ",
-      "dependencies = FALSE, INSTALL_opts = c('--no-staged-install', '--no-clean-on-error')); ",
-      "missing <- setdiff(c(%s), rownames(installed.packages(lib.loc = %s))); ",
-      "if (length(missing)) stop('local package install failed: ', paste(missing, collapse = ', '))"
+      "install.packages(%s, lib = %s, repos = NULL, type = 'source', ",
+      "dependencies = FALSE%s)"
     ),
-    lib_lit, lib_lit, lib_lit, lib_lit, pkg_lit, lib_lit, names_lit, lib_lit
+    r_lit(lib), r_lit(source), r_lit(lib), install_opts
   )
-  if (verbose) cli::cli_alert_info("Installing local R package(s) from source...")
+
+  if (verbose) cli::cli_alert_info("Installing {.pkg {pkg}} from source...")
+  # Same Rscript and startup flags as the repository install.
   result <- processx::run(
-    bundled_rscript, c("--vanilla", "-e", r_code),
-    env = c(R_LIBS = lib, R_LIBS_USER = lib, R_LIBS_SITE = lib),
-    error_on_status = FALSE, echo = verbose, timeout = 600
+    rscript, c("-e", r_code),
+    env = env, error_on_status = FALSE, echo = verbose,
+    stderr_to_stdout = TRUE, timeout = timeout, cleanup_tree = TRUE
   )
-  present <- vapply(names, function(nm) {
-    has_loader <- fs::file_exists(fs::path(lib, nm, "R", nm))
-    has_rdb <- fs::file_exists(fs::path(lib, nm, "R", paste0(nm, ".rdb")))
-    fs::file_exists(fs::path(lib, nm, "DESCRIPTION")) &&
-      fs::file_exists(fs::path(lib, nm, "Meta", "package.rds")) &&
-      fs::file_exists(fs::path(lib, nm, "NAMESPACE")) &&
-      # Packages that opt out of lazy loading (LazyLoad: no) or ship no R code
-      # legitimately have no .rdb; require it only when a loader file exists.
-      (!has_loader || has_rdb)
-  }, logical(1))
-  missing <- names[!present]
-  if (length(missing) > 0) {
-    err_full <- trimws(result$stderr %||% "")
-    out_tail <- trimws(result$stdout %||% "")
-    if (nchar(out_tail) > 3000) out_tail <- substr(out_tail, nchar(out_tail) - 2999, nchar(out_tail))
-    logf <- tempfile("shinyelectron-local-install-", fileext = ".log")
-    writeLines(c("== stdout ==", result$stdout, "", "== stderr ==", result$stderr), logf)
-    diag_txt <- local_install_diagnostic(bundled_rscript, paths, lib, names)
+
+  # A killed or failed install can leave its lock directory behind.
+  unlink(list.files(lib, pattern = "^00LOCK", full.names = TRUE), recursive = TRUE)
+
+  log_file <- tempfile(paste0("shinyelectron-install-", pkg, "-"), fileext = ".log")
+  writeLines(c(
+    paste("Package:", pkg), paste("Source:", source),
+    paste("Library:", lib), paste("Rscript:", rscript), "",
+    result$stdout %||% ""
+  ), log_file)
+
+  if (isTRUE(result$timeout)) {
+    unlink(file.path(lib, pkg), recursive = TRUE)
     cli::cli_abort(c(
-      "Failed to install local R package(s) into the bundled library",
-      "x" = "Missing after install: {paste(missing, collapse = ', ')}",
-      "x" = "Paths: {.path {paths}}",
-      "i" = "log: {.path {logf}}",
-      "x" = "stderr: {err_full}",
-      "i" = "stdout tail: {out_tail}",
-      "i" = "lazy-load diagnostic: {diag_txt}"
-    ))
+      "Installing local R package {.pkg {pkg}} did not finish within {local_r_duration(timeout)}.",
+      "i" = "Install log: {.path {log_file}}"
+    ), class = "shinyelectron_local_packages_install")
   }
-  if (verbose) cli::cli_alert_info(
-    "Installed local R package(s) from source (a benign R CMD INSTALL exit code is expected and ignored)"
-  )
-  invisible(paths)
+
+  check <- check_local_r_package_loads(rscript, pkg, lib, env)
+  cat(c("", "== load check ==", check$stdout, check$stderr),
+      file = log_file, sep = "\n", append = TRUE)
+  if (!check$ok) {
+    installed <- dir.exists(file.path(lib, pkg))
+    unlink(file.path(lib, pkg), recursive = TRUE)
+    cli::cli_abort(c(
+      if (installed) {
+        "Local R package {.pkg {pkg}} does not load from the bundled library."
+      } else {
+        "Local R package {.pkg {pkg}} did not install into the bundled library."
+      },
+      if (!installed) {
+        c("x" = "Last lines of the {.code R CMD INSTALL} output:",
+          local_r_output_bullets(result$stdout, n = 15))
+      },
+      "x" = "Loading it in a fresh R session failed:",
+      local_r_output_bullets(check$stderr),
+      if (check$timeout) {
+        c("x" = "Loading did not finish within {local_r_duration(300)}.")
+      },
+      "i" = "Install log: {.path {log_file}}"
+    ), class = "shinyelectron_local_packages_install")
+  }
+
+  if (verbose) cli::cli_alert_success("Installed {.pkg {pkg}}")
+  invisible(TRUE)
 }
-local_install_diagnostic <- function(bundled_rscript, paths, lib, names) {
-  pkgname <- names[[1]]
-  lit <- function(x) encodeString(x, quote = "'")
-  diag_code <- sprintf(
-    paste0(
-      ".libPaths(c(%s, .libPaths())); ",
-      "Sys.setenv(R_LIBS = %s, R_LIBS_USER = %s, R_LIBS_SITE = %s); ",
-      "td <- tempfile('seldiag'); dir.create(td); ",
-      "utils::untar(%s, exdir = td); ",
-      "setwd(file.path(td, %s)); ",
-      "cat('LIBS:', paste(.libPaths(), collapse = ' | ')); ",
-      "res1 <- tryCatch({ suppressPackageStartupMessages(.getRequiredPackages(quietly = TRUE)); 'OK' }, error = function(e) paste('ERR', conditionMessage(e))); ",
-      "cat(' GETREQ:', res1); ",
-      "cat(' LIBPKGS:', paste(intersect(list.dirs(%s, recursive = FALSE, full.names = FALSE), c('Seurat','SeuratObject','ggplot2','dplyr','shiny','rlang','DT','qs2','shinyjqui')), collapse = ',')); ",
-      "cat(' NSLOADED:', paste(intersect(loadedNamespaces(), c('Seurat','SeuratObject','ggplot2','dplyr','shiny','rlang')), collapse = ',')); ",
-      "cat(' DONE')"
-    ),
-    lit(lib), lit(lib), lit(lib), lit(lib), lit(paths[[1]]), lit(pkgname), lit(lib)
+
+# Load `pkg` from `lib` in a fresh process of `rscript`. Success is a line
+# printed after loading, not the exit status, so a crash while the process
+# exits does not count as a failure.
+check_local_r_package_loads <- function(rscript, pkg, lib, env, timeout = 300) {
+  r_lit <- function(x) encodeString(x, quote = "'")
+  r_code <- sprintf(
+    "invisible(loadNamespace(%s, lib.loc = %s)); cat('\\n<<SE_LOAD_OK>>\\n')",
+    r_lit(pkg), r_lit(lib)
   )
-  diag <- processx::run(
-    bundled_rscript, c("--vanilla", "-e", diag_code),
-    env = c(R_LIBS = lib, R_LIBS_USER = lib, R_LIBS_SITE = lib),
-    error_on_status = FALSE, timeout = 600
+  result <- processx::run(
+    rscript, c("-e", r_code),
+    env = env, error_on_status = FALSE, timeout = timeout, cleanup_tree = TRUE
   )
-  paste0("[status ", diag$status, "] [stdout] ", trimws(diag$stdout %||% ""),
-         " [stderr] ", trimws(diag$stderr %||% ""))
+  stdout <- result$stdout %||% ""
+  list(
+    ok = grepl("(^|\n)<<SE_LOAD_OK>>\r?(\n|$)", stdout),
+    stdout = stdout,
+    stderr = result$stderr %||% "",
+    timeout = isTRUE(result$timeout)
+  )
+}
+
+# The last `n` non-empty lines of process output as cli bullets, with braces
+# escaped so cli prints them verbatim.
+local_r_output_bullets <- function(text, n = 20) {
+  lines <- strsplit(paste(text %||% "", collapse = "\n"), "\r?\n")[[1]]
+  lines <- utils::tail(lines[nzchar(trimws(lines))], n)
+  lines <- gsub("}", "}}", gsub("{", "{{", lines, fixed = TRUE), fixed = TRUE)
+  stats::setNames(lines, rep(" ", length(lines)))
+}
+
+# "30 minutes" or "45 seconds".
+local_r_duration <- function(seconds) {
+  if (seconds >= 60 && seconds %% 60 == 0) {
+    cli::format_inline("{seconds %/% 60} minute{?s}")
+  } else {
+    cli::format_inline("{seconds} second{?s}")
+  }
 }

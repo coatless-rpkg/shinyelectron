@@ -287,35 +287,142 @@ test_that("embed_r_runtime checks local packages before downloading R", {
   expect_false(downloaded)
 })
 
-test_that("install_local_r_packages installs a package whose import is in the target lib", {
-  skip_on_cran()
-  rscript <- file.path(R.home("bin"),
-                       if (.Platform$OS.type == "windows") "Rscript.exe" else "Rscript")
+test_that("local_r_install_order installs local dependencies first", {
+  parent <- withr::local_tempdir()
+  paths <- c(
+    write_local_pkg(parent, "appPkg", fields = "Imports: midPkg, shiny"),
+    write_local_pkg(parent, "loosePkg"),
+    write_local_pkg(parent, "midPkg", fields = "Depends: R (>= 4.1.0), basePkg"),
+    write_local_pkg(parent, "basePkg", fields = "LinkingTo: Rcpp")
+  )
+
+  expect_equal(
+    local_r_install_order(local_r_package_info(paths)),
+    c("loosePkg", "basePkg", "midPkg", "appPkg")
+  )
+})
+
+test_that("local_r_install_order rejects a dependency cycle", {
+  parent <- withr::local_tempdir()
+  paths <- c(
+    write_local_pkg(parent, "cycA", fields = "Imports: cycB"),
+    write_local_pkg(parent, "cycB", fields = "Imports: cycA")
+  )
+
+  expect_error(
+    local_r_install_order(local_r_package_info(paths)),
+    class = "shinyelectron_local_packages_cycle"
+  )
+})
+
+test_that("check_local_r_package_loads trusts the sentinel line, not the exit status", {
+  skip_if_not_installed("mockery")
+  run_result <- NULL
+  mockery::stub(check_local_r_package_loads, "processx::run",
+                function(...) run_result)
+
+  # A crash while the process exits (seen on Windows) after a successful load.
+  run_result <- list(status = -1073741819L, stdout = "\n<<SE_LOAD_OK>>\r\n",
+                     stderr = "", timeout = FALSE)
+  expect_true(check_local_r_package_loads("Rscript", "pkg", "lib", "current")$ok)
+
+  run_result <- list(status = 1L, stdout = "",
+                     stderr = "Error: .onLoad failed", timeout = FALSE)
+  expect_false(check_local_r_package_loads("Rscript", "pkg", "lib", "current")$ok)
+})
+
+test_that("local installs keep the caller's environment and use the unstaged install only on Windows", {
+  skip_if_not_installed("mockery")
+  lib <- withr::local_tempdir()
+  captured <- NULL
+  mockery::stub(install_local_r_package, "processx::run", function(command, args, ...) {
+    captured <<- list(command = command, args = args, env = list(...)$env)
+    list(status = 0L, stdout = "", stderr = NULL, timeout = FALSE)
+  })
+  mockery::stub(install_local_r_package, "check_local_r_package_loads", function(...) {
+    list(ok = TRUE, stdout = "", stderr = "", timeout = FALSE)
+  })
+
+  mockery::stub(install_local_r_package, "detect_current_platform", function() "mac")
+  install_local_r_package("Rscript", "pkg", "pkg_0.0.1.tar.gz", lib, verbose = FALSE)
+  expect_equal(captured$env[[1]], "current")
+  expect_equal(captured$env[["R_LIBS_SITE"]], lib)
+  expect_false(grepl("--no-staged-install", captured$args[[2]], fixed = TRUE))
+
+  mockery::stub(install_local_r_package, "detect_current_platform", function() "win")
+  install_local_r_package("Rscript", "pkg", "pkg_0.0.1.tar.gz", lib, verbose = FALSE)
+  expect_match(captured$args[[2]], "--no-staged-install", fixed = TRUE)
+  expect_match(captured$args[[2]], "--no-clean-on-error", fixed = TRUE)
+})
+
+test_that("a timed-out local install fails and leaves no lock directory", {
+  skip_if_not_installed("mockery")
+  lib <- withr::local_tempdir()
+  mockery::stub(install_local_r_package, "processx::run", function(...) {
+    # What a killed install leaves behind.
+    dir.create(file.path(lib, "00LOCK-slowpkg", "00new", "slowpkg"), recursive = TRUE)
+    dir.create(file.path(lib, "slowpkg"))
+    list(status = NA_integer_, stdout = "", stderr = NULL, timeout = TRUE)
+  })
+
+  expect_error(
+    install_local_r_package("Rscript", "slowpkg", "slowpkg_0.0.1.tar.gz", lib,
+                            timeout = 90, verbose = FALSE),
+    "90 seconds", class = "shinyelectron_local_packages_install"
+  )
+  expect_length(list.files(lib, all.files = TRUE, no.. = TRUE), 0)
+})
+
+# Real installs with the R running the tests; each builds a tarball first.
+local_test_rscript <- function() {
+  rscript <- file.path(
+    R.home("bin"),
+    if (.Platform$OS.type == "windows") "Rscript.exe" else "Rscript"
+  )
   skip_if_not(file.exists(rscript), "Rscript not available")
+  rscript
+}
 
-  work <- tempfile("lpkg-")
-  dir.create(work)
-  lib <- file.path(work, "lib")
-  dir.create(lib)
+test_that("install_local_r_packages installs local packages in dependency order", {
+  skip_on_cran()
+  rscript <- local_test_rscript()
+  src <- withr::local_tempdir()
+  lib <- withr::local_tempdir()
 
-  dep <- file.path(work, "depPkg")
-  dir.create(file.path(dep, "R"), recursive = TRUE)
-  writeLines(c("Package: depPkg", "Version: 0.0.1", "Title: t", "Description: t.",
-               "License: MIT", "Encoding: UTF-8"), file.path(dep, "DESCRIPTION"))
-  writeLines("export(depfun)", file.path(dep, "NAMESPACE"))
-  writeLines("depfun <- function() 1", file.path(dep, "R", "d.R"))
-  install_local_r_packages(rscript, dep, lib, verbose = FALSE)
+  hello <- write_local_pkg(
+    src, "hello", fields = "Imports: depPkg",
+    namespace = c("export(greet)", "import(depPkg)"),
+    r_code = "greet <- function() depfun()"
+  )
+  dep <- write_local_pkg(
+    src, "depPkg", dir_name = "depPkg-src", namespace = "export(depfun)",
+    r_code = "depfun <- function() 1"
+  )
+  before <- list.files(src, recursive = TRUE, all.files = TRUE)
 
-  pkg <- file.path(work, "hello")
-  dir.create(file.path(pkg, "R"), recursive = TRUE)
-  writeLines(c("Package: hello", "Version: 0.0.1", "Title: t", "Description: t.",
-               "License: MIT", "Encoding: UTF-8", "Imports: depPkg"),
-             file.path(pkg, "DESCRIPTION"))
-  writeLines(c("export(greet)", "import(depPkg)"), file.path(pkg, "NAMESPACE"))
-  writeLines("greet <- function() depfun()", file.path(pkg, "R", "g.R"))
+  # Listed before the package it imports.
+  installed <- install_local_r_packages(rscript, c(hello, dep), lib, verbose = FALSE)
 
-  install_local_r_packages(rscript, pkg, lib, verbose = FALSE)
-
+  expect_equal(installed, c("depPkg", "hello"))
   expect_true(file.exists(file.path(lib, "hello", "DESCRIPTION")))
-  expect_true(file.exists(file.path(lib, "hello", "NAMESPACE")))
+  expect_true(file.exists(file.path(lib, "depPkg", "DESCRIPTION")))
+  # Sources are built into tarballs elsewhere, so nothing is written next to them.
+  expect_equal(list.files(src, recursive = TRUE, all.files = TRUE), before)
+})
+
+test_that("install_local_r_packages aborts when a package fails to load", {
+  skip_on_cran()
+  rscript <- local_test_rscript()
+  lib <- withr::local_tempdir()
+  broken <- write_local_pkg(
+    withr::local_tempdir(), "onloadpkg",
+    r_code = ".onLoad <- function(libname, pkgname) stop('boom from onLoad')"
+  )
+
+  expect_error(
+    install_local_r_packages(rscript, broken, lib, verbose = FALSE),
+    "boom from onLoad", class = "shinyelectron_local_packages_install"
+  )
+  expect_false(dir.exists(file.path(lib, "onloadpkg")))
+  expect_length(list.files(lib, pattern = "^00LOCK"), 0)
 })
