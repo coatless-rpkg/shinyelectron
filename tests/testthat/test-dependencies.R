@@ -164,6 +164,103 @@ test_that("detect_py_dependencies reads pyproject.toml dependencies", {
   expect_true("numpy" %in% deps)
 })
 
+test_that("detect_py_dependencies keeps pyproject.toml entries after one with extras", {
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+  pyproject <- file.path(tmpdir, "pyproject.toml")
+
+  writeLines(c(
+    '[project]',
+    'dependencies = [',
+    '  "uvicorn[standard]>=0.30",',
+    '  "pandas",',
+    '  "plotly",',
+    ']'
+  ), pyproject)
+  expect_equal(detect_py_dependencies(tmpdir), c("pandas", "plotly", "uvicorn"))
+
+  # Extras on the opening line, with the closing bracket after the last entry.
+  writeLines(c(
+    '[project]',
+    'dependencies = ["uvicorn[standard]>=0.30",',
+    '  "pandas"]'
+  ), pyproject)
+  expect_equal(detect_py_dependencies(tmpdir), c("pandas", "uvicorn"))
+
+  writeLines(c(
+    '[project]',
+    'dependencies = ["uvicorn[standard]>=0.30", "pandas"]'
+  ), pyproject)
+  expect_equal(detect_py_dependencies(tmpdir), c("pandas", "uvicorn"))
+})
+
+test_that("detect_py_dependencies reads single-quoted pyproject.toml entries", {
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+
+  writeLines(c(
+    '[project]',
+    'dependencies = [',
+    "  'shiny>=1.0',",
+    "  'tomli; python_version < \"3.11\"',",
+    "  \"exceptiongroup; python_version < '3.11'\",",
+    ']'
+  ), file.path(tmpdir, "pyproject.toml"))
+
+  deps <- detect_py_dependencies(tmpdir)
+  expect_equal(deps, c("exceptiongroup", "shiny", "tomli"))
+})
+
+test_that("detect_py_dependencies skips comments in pyproject.toml dependencies", {
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+
+  writeLines(c(
+    '[project]',
+    'dependencies = [  # runtime packages [see README]',
+    '  "shiny",  # UI framework ]',
+    '  # "dash",  removed [2024]',
+    '  "mypkg @ https://example.com/mypkg-1.0.tar.gz#sha256=abc123",',
+    '  "pandas",',
+    ']'
+  ), file.path(tmpdir, "pyproject.toml"))
+
+  deps <- detect_py_dependencies(tmpdir)
+  expect_equal(deps, c("mypkg", "pandas", "shiny"))
+})
+
+test_that("detect_py_dependencies reads only [project] dependencies from pyproject.toml", {
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+
+  writeLines(c(
+    '[build-system]',
+    'requires = ["hatchling"]',
+    '',
+    '[tool.hatch.envs.test]',
+    'dependencies = ["pytest", "coverage"]',
+    '',
+    '[project]  # package metadata',
+    'name = "my-app"',
+    'dependencies = ["shiny", "pandas"]',
+    '',
+    '[project.optional-dependencies]',
+    'dev = ["ruff"]',
+    '',
+    '[tool.hatch.envs.docs]',
+    'dependencies = [',
+    '  "mkdocs",',
+    ']'
+  ), file.path(tmpdir, "pyproject.toml"))
+
+  deps <- detect_py_dependencies(tmpdir)
+  expect_equal(deps, c("pandas", "shiny"))
+})
+
 test_that("detect_py_dependencies prefers requirements.txt over pyproject.toml", {
   tmpdir <- tempfile()
   dir.create(tmpdir)

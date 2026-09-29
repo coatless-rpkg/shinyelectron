@@ -154,7 +154,7 @@ Source-scan and declared packages merge. Set `dependencies.auto_detect: false` t
 
 shinyelectron does not parse `import` statements: the module-name to package-name mapping is unreliable (`import cv2` is `opencv-python`, `import sklearn` is `scikit-learn`). You declare what gets installed, in one of two places.
 
-**`requirements.txt` or `pyproject.toml`.** A standard Python manifest at the suite root. All apps in the suite share one virtual environment. The demo's `requirements.txt`:
+**`requirements.txt` or `pyproject.toml`.** A standard Python manifest at the suite root. From `pyproject.toml`, shinyelectron reads the `dependencies` list in the `[project]` table. All apps in the suite share one virtual environment. The demo's `requirements.txt`:
 
 ```{r}
 #| echo: false
