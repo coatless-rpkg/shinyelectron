@@ -28,7 +28,7 @@ sitrep_electron_system <- function(verbose = TRUE) {
     node = list(installed = FALSE, version = NULL, source = NULL),
     npm = list(installed = FALSE, version = NULL),
     nodejs_local = list(installed = FALSE, versions = character(0), path = NULL),
-    r_version = paste(R.version$major, R.version$minor, sep = ".")
+    r_version = as.character(getRversion())
   ))
 
   # Check platform and architecture
@@ -131,17 +131,17 @@ sitrep_electron_system <- function(verbose = TRUE) {
     }
   }
 
-  # Check R version (matches DESCRIPTION Depends: R (>= 4.4.0))
+  # Check R version (matches DESCRIPTION Depends: R (>= 4.5.0))
   r_version_num <- numeric_version(results$r_version)
-  if (r_version_num >= "4.4.0") {
+  if (r_version_num >= "4.5.0") {
     if (verbose) {
       cli::cli_alert_success("R: v{results$r_version}")
     }
   } else {
     results$issues <- c(results$issues, "R version too old")
-    results$recommendations <- c(results$recommendations, "Update R to version 4.4.0 or higher")
+    results$recommendations <- c(results$recommendations, "Update R to version 4.5.0 or higher")
     if (verbose) {
-      cli::cli_alert_warning("R: v{results$r_version} (version 4.4.0+ required)")
+      cli::cli_alert_warning("R: v{results$r_version} (version 4.5.0+ required)")
     }
   }
 

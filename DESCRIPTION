@@ -22,6 +22,7 @@ Imports:
     fs (>= 2.1.0),
     jsonlite (>= 2.0.0),
     rappdirs (>= 0.3.4),
+    rlang (>= 1.1.0),
     whisker (>= 0.4.1),
     processx (>= 3.9.0),
     stats,
