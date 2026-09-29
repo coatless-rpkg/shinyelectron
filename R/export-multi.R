@@ -6,8 +6,7 @@ export_multi_app <- function(appdir, destdir, config,
                               platform = NULL, arch = NULL, icon = NULL,
                               overwrite = FALSE, build = TRUE,
                               run_after = FALSE, open_after = FALSE,
-                              verbose = TRUE,
-                              prune_r_library = NULL, prune_r_runtime = NULL) {
+                              verbose = TRUE) {
 
   app_name <- app_name %||% config$app$name %||% basename(appdir)
   validate_app_name(app_name)
@@ -27,10 +26,6 @@ export_multi_app <- function(appdir, destdir, config,
   # resolve_app_strategy() and validate_suite_strategies() use the caller's
   # choice for every app that does not set its own per-app runtime_strategy.
   config$build$runtime_strategy <- runtime_strategy
-
-  # Runtime pruning: argument > config `optimize:` > default TRUE.
-  prune_r_library <- prune_r_library %||% config$optimize$r_library %||% TRUE
-  prune_r_runtime <- prune_r_runtime %||% config$optimize$r_runtime %||% TRUE
 
   if (verbose) {
     cli::cli_h1("Exporting multi-app Shiny suite to Electron")
@@ -218,9 +213,7 @@ export_multi_app <- function(appdir, destdir, config,
         r_packages = sort(unique(r_union_packages)),
         r_repos = r_union_repos,
         py_packages = sort(unique(py_union_packages)),
-        py_index_urls = py_union_index_urls,
-        prune_r_library = prune_r_library,
-        prune_r_runtime = prune_r_runtime
+        py_index_urls = py_union_index_urls
       )
 
       result$electron_app <- built_app_dir
@@ -279,19 +272,13 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
                              icon, config, overwrite, verbose,
                              r_packages = NULL, r_repos = NULL,
                              py_packages = NULL, py_index_urls = NULL,
-                             shinylive_site_dir = NULL,
-                             prune_r_library = NULL, prune_r_runtime = NULL) {
+                             shinylive_site_dir = NULL) {
 
   if (is.null(platform)) platform <- detect_current_platform()
   if (is.null(arch)) arch <- detect_current_arch()
 
   validate_platform(platform)
   validate_arch(arch)
-
-  # Resolve pruning (argument > config optimize: > default TRUE) so the
-  # function is safe to call directly as well as from export_multi_app().
-  prune_r_library <- prune_r_library %||% config$optimize$r_library %||% TRUE
-  prune_r_runtime <- prune_r_runtime %||% config$optimize$r_runtime %||% TRUE
 
   # Resolve each app's type and runtime strategy once; the single-platform
   # guard, runtime embedding, and auto-download manifest writing all key off the
@@ -360,8 +347,7 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
       platform = platform[1],
       arch = arch[1],
       verbose = verbose,
-      prune_r_library = prune_r_library,
-      prune_r_runtime = prune_r_runtime
+      prune = resolve_r_prune(config)
     )
   }
   if (py_bundled) {

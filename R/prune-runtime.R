@@ -111,3 +111,25 @@ prune_bundled_r_runtime <- function(runtime_dir, prune_library = TRUE,
 
   invisible(list(files = total_files, bytes = total_bytes))
 }
+
+#' Resolve the `dependencies.r.prune` setting
+#'
+#' Returns whether a bundled R runtime is pruned: the configured value, or
+#' `TRUE` when it is unset. Anything other than a single `TRUE` or `FALSE`
+#' aborts, so a quoted `"false"` can never turn into a prune.
+#'
+#' @param config List. Configuration, as from [read_config()]. May be `NULL`.
+#' @return `TRUE` or `FALSE`.
+#' @keywords internal
+resolve_r_prune <- function(config) {
+  prune <- config$dependencies$r$prune %||%
+    SHINYELECTRON_DEFAULTS$dependencies$r$prune
+  if (!isTRUE(prune) && !isFALSE(prune)) {
+    cli::cli_abort(c(
+      "Invalid {.field dependencies.r.prune} in config: {.val {prune}}",
+      "i" = "Must be {.code true} or {.code false}.",
+      "i" = "Edit {.field dependencies.r.prune} in {.file _shinyelectron.yml}"
+    ))
+  }
+  prune
+}

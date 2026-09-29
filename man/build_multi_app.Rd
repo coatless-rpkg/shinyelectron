@@ -22,9 +22,7 @@ build_multi_app(
   r_repos = NULL,
   py_packages = NULL,
   py_index_urls = NULL,
-  shinylive_site_dir = NULL,
-  prune_r_library = NULL,
-  prune_r_runtime = NULL
+  shinylive_site_dir = NULL
 )
 }
 \description{

@@ -49,8 +49,7 @@ default_config <- function() {
     preloader = SHINYELECTRON_DEFAULTS$preloader,
     signing = SHINYELECTRON_DEFAULTS$signing,
     lifecycle = SHINYELECTRON_DEFAULTS$lifecycle,
-    installer = SHINYELECTRON_DEFAULTS$installer,
-    optimize = SHINYELECTRON_DEFAULTS$optimize
+    installer = SHINYELECTRON_DEFAULTS$installer
   )
 }
 
@@ -335,6 +334,11 @@ validate_config <- function(config) {
     }
   }
 
+  # Validate dependencies.r.prune: a single true/false. Unlike the checks
+  # above, an invalid value aborts rather than falling back to the default,
+  # because a quoted "false" must never lead to files being removed.
+  resolve_r_prune(config)
+
   # Validate dependencies$system_packages: must be a character vector or NULL.
   sp <- config$dependencies$system_packages
   if (!is.null(sp) && !is.character(sp)) {
@@ -455,6 +459,7 @@ nodejs:
 #     repos:
 #       - "https://cloud.r-project.org"
 #     lib_path: null         # null = R default, "app-local", or custom path
+#     prune: true            # Bundled only: trim tests and docs from the embedded R
 #   python:
 #     # null = the maintained latest pin; "latest" = always newest; "3.12.0" = exact pin
 #     version: null
@@ -552,15 +557,6 @@ nodejs:
 #   app_id: null                  # null = "com.shinyelectron.<slug>"
 #   license_file: null            # Path to license file (shown during install)
 #   one_click: true               # Windows: true = silent install, false = wizard
-
-## Build optimization
-## Trim build-only files from the bundled runtime to shrink the installer
-## and speed up installation. Only compile-only / test / changelog files are
-## removed; runtime-critical files (share/, Tcl/, libs/, HTML widgets, ...)
-## are always kept.
-# optimize:
-#   r_library: true   # remove include/ tests/ examples/ NEWS from bundled R packages
-#   r_runtime: true   # remove doc/ tests/ include/ from the portable R runtime
 
 ## Lifecycle UI
 ## Controls the startup, loading, error, and shutdown experience.

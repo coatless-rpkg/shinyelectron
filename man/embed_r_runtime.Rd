@@ -12,8 +12,7 @@ embed_r_runtime(
   platform,
   arch,
   verbose = TRUE,
-  prune_r_library = TRUE,
-  prune_r_runtime = TRUE
+  prune = TRUE
 )
 }
 \arguments{
@@ -31,9 +30,9 @@ embed_r_runtime(
 
 \item{verbose}{Logical. Whether to display progress.}
 
-\item{prune_r_library}{Logical. Prune build-only files (include/, tests/, examples/) from the bundled package library.}
-
-\item{prune_r_runtime}{Logical. Prune doc/, tests/ and include/ from the portable R distribution.}
+\item{prune}{Logical. Whether to remove the test and documentation files
+that \code{\link[=prune_bundled_r_runtime]{prune_bundled_r_runtime()}} allowlists once the packages are
+installed. Callers pass the validated \code{dependencies.r.prune} setting.}
 }
 \value{
 Invisibly, the path to the embedded \code{runtime/R} directory.

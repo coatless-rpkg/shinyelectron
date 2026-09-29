@@ -448,9 +448,9 @@ test_that("build_electron_app delegates bundled R embedding to embed_r_runtime w
 
   embed_args <- NULL
   mockery::stub(build_electron_app, "embed_r_runtime",
-                function(output_dir, packages, repos, version, platform, arch, verbose, ...) {
+                function(output_dir, packages, repos, version, platform, arch, verbose, prune) {
     embed_args <<- list(packages = packages, repos = repos, version = version,
-                        platform = platform, arch = arch)
+                        platform = platform, arch = arch, prune = prune)
     invisible(fs::path(output_dir, "runtime", "R"))
   })
 
@@ -464,4 +464,44 @@ test_that("build_electron_app delegates bundled R embedding to embed_r_runtime w
   expect_equal(embed_args$version, "4.4.1")
   expect_equal(embed_args$platform, "mac")
   expect_equal(embed_args$arch, "arm64")
+  expect_true(embed_args$prune)   # dependencies.r.prune defaults to TRUE
+})
+
+test_that("build_electron_app passes dependencies.r.prune from config to embed_r_runtime", {
+  skip_if_not_installed("mockery")
+
+  tmp <- withr::local_tempdir()
+  app_dir <- fs::path(tmp, "app"); fs::dir_create(app_dir)
+  writeLines("library(shiny)", fs::path(app_dir, "app.R"))
+
+  mockery::stub(build_electron_app, "validate_node_npm", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "setup_electron_project", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "copy_app_files", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "process_templates", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "install_npm_dependencies", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "build_for_platforms", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "validate_build_output", function(...) invisible(TRUE))
+  mockery::stub(build_electron_app, "resolve_runtime_version", function(runtime, config) "4.6.1")
+
+  forwarded <- NULL
+  mockery::stub(build_electron_app, "embed_r_runtime",
+                function(output_dir, packages, repos, version, platform, arch, verbose, prune) {
+    forwarded <<- prune
+    invisible(fs::path(output_dir, "runtime", "R"))
+  })
+
+  build_electron_app(app_dir, fs::path(tmp, "out"), app_type = "r-shiny",
+                     runtime_strategy = "bundled", platform = "mac", arch = "arm64",
+                     config = list(dependencies = list(r = list(prune = FALSE))),
+                     verbose = FALSE)
+  expect_false(forwarded)
+
+  # A hand-built config is checked too: a quoted "false" must not prune.
+  expect_error(
+    build_electron_app(app_dir, fs::path(tmp, "out2"), app_type = "r-shiny",
+                       runtime_strategy = "bundled", platform = "mac", arch = "arm64",
+                       config = list(dependencies = list(r = list(prune = "false"))),
+                       verbose = FALSE),
+    "dependencies.r.prune"
+  )
 })
