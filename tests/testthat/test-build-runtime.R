@@ -106,7 +106,7 @@ test_that("embed_r_runtime embeds the interpreter even when packages is empty", 
   expect_false(run_called)        # install.packages NOT invoked
 })
 
-test_that("embed_r_runtime installs local packages after the repository packages", {
+test_that("embed_r_runtime installs local packages after the repository packages and prunes last", {
   skip_if_not_installed("mockery")
   out <- withr::local_tempdir()
   src <- withr::local_tempdir()
@@ -152,6 +152,13 @@ test_that("embed_r_runtime installs local packages after the repository packages
                                       lib_path = lib_path)
                   invisible("MyPkg")
                 })
+  # Pruning runs once everything is installed, so it also covers the local
+  # packages.
+  mockery::stub(embed_r_runtime, "prune_bundled_r_runtime",
+                function(runtime_dir, verbose) {
+                  steps <<- c(steps, "prune")
+                  invisible(list(files = 0L, bytes = 0))
+                })
 
   embed_r_runtime(
     output_dir = out, packages = c("shiny", "MyPkg"),
@@ -167,7 +174,7 @@ test_that("embed_r_runtime installs local packages after the repository packages
   expect_false(grepl("'MyPkg'", r_code, fixed = TRUE))
   expect_false("MyPkg" %in% resolved_for)
 
-  expect_equal(steps, c("repository", "local"))
+  expect_equal(steps, c("repository", "local", "prune"))
   expect_equal(local_args$rscript, cached_rscript)
   expect_equal(normalizePath(local_args$local_packages), normalizePath(local_pkg))
   expect_equal(local_args$lib_path, fs::path(out, "runtime", "R", "library"))
