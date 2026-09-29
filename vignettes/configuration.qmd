@@ -425,6 +425,8 @@ logging:
   log_level: "debug"
 ```
 
+The same two keys are also accepted under `app` as `app.log_dir` and `app.log_level`, which is where earlier versions of `init_config()` put them. If both places set a key to different values, the `logging` value wins and shinyelectron warns.
+
 ### `lifecycle`
 
 Controls the lifecycle window that fills the gap between launch and app readiness. See the [Customizations](customizations.html) guide for the visual options (splash image, preloader style, etc.). The keys below govern behavior and timeout rather than appearance.

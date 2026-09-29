@@ -105,6 +105,10 @@ read_config <- function(appdir) {
     return(default_config())
   }
 
+  # Map logging: onto app.log_* on the raw YAML, before the merge fills in
+  # defaults, so that only values written in the file count as set.
+  config <- map_logging_config(config)
+
   unknown_keys <- collect_unknown_config_keys(config)
   if (length(unknown_keys) > 0) {
     cli::cli_warn(c(
@@ -117,17 +121,62 @@ read_config <- function(appdir) {
   validate_config(merged)
 }
 
+#' Map the logging section onto the app section
+#'
+#' `_shinyelectron.yml` documents the log settings under a top-level
+#' `logging:` section, while the build reads them from `app.log_dir` and
+#' `app.log_level`, which the file may also set directly. This copies
+#' `logging.log_dir` and `logging.log_level` into `app` on the parsed YAML,
+#' before [merge_config_deep()] fills in the defaults. When both spellings set
+#' a field to different values, the `logging` value wins and a warning names
+#' the field. Any other key under `logging` stays in place so that
+#' [collect_unknown_config_keys()] reports it.
+#'
+#' @param config List. User configuration parsed from the YAML file.
+#' @return `config` with the `logging` fields moved into `app`.
+#' @keywords internal
+map_logging_config <- function(config) {
+  if (!is.list(config)) {
+    return(config)
+  }
+  logging <- config[["logging"]]
+  app <- config[["app"]]
+  if (!is.list(logging) || !(is.null(app) || is.list(app))) {
+    return(config)
+  }
+
+  for (field in names(SHINYELECTRON_DEFAULTS$logging)) {
+    value <- logging[[field]]
+    logging[[field]] <- NULL
+    if (is.null(value)) next
+    if (!is.null(app[[field]]) && !identical(app[[field]], value)) {
+      cli::cli_warn(c(
+        "{.field logging.{field}} and {.field app.{field}} are both set in {.file {CONFIG_FILENAME}}.",
+        "i" = "Using the {.field logging} value {.val {value}}."
+      ))
+    }
+    app[[field]] <- value
+  }
+
+  if (!is.null(app)) config[["app"]] <- app
+  config[["logging"]] <- if (length(logging) > 0) logging
+  config
+}
+
 #' Configuration keys accepted in _shinyelectron.yml
 #'
 #' The keys of [default_config()] plus the top-level keys that have no
-#' default: the `icon` shortcut and the multi-app `apps` list.
+#' default: the `icon` shortcut, the multi-app `apps` list and the `logging`
+#' section that [map_logging_config()] maps onto `app.log_dir` and
+#' `app.log_level`.
 #'
 #' @return Named list shaped like [default_config()].
 #' @keywords internal
 config_schema <- function() {
   c(default_config(), list(
     icon = NULL,
-    apps = list()
+    apps = list(),
+    logging = SHINYELECTRON_DEFAULTS$logging
   ))
 }
 
@@ -467,9 +516,11 @@ app:
   version: "1.0.0"
   # Uncomment to set a custom URL-safe slug (default: derived from name)
   # slug: null
-  # Uncomment to configure logging
-  # log_dir: null            # null = default log directory
-  # log_level: "info"        # "debug", "info", "warn", "error"
+
+# Uncomment to configure logging (app.log_dir and app.log_level also work)
+# logging:
+#   log_dir: null            # null = default log directory
+#   log_level: "info"        # "debug", "info", "warn", "error"
 
 build:
   # type is autodetected from files in the app directory (app.R, ui.R/server.R, or app.py).

@@ -33,6 +33,7 @@ test_that("collect_unknown_config_keys accepts valid nested config and exemption
     icon = "x.ico",
     icons = list(win = "x.ico"),
     installer = list(one_click = FALSE, app_id = "com.example.app"),
+    logging = list(log_dir = "logs", log_level = "debug"),
     container = list(engine = "docker", volumes = list("/a" = "/b"),
                      env = list(KEY = "v")),
     dependencies = list(r = list(repos = list("https://cloud.r-project.org"),
@@ -131,4 +132,51 @@ test_that("read_config does not report apps entries or the icon shortcut", {
   expect_no_warning(config <- read_config(dir))
   expect_length(config$apps, 2L)
   expect_equal(config[["icon"]], "icon.png")
+})
+
+test_that("read_config applies a top-level logging section without warning", {
+  dir <- .config_dir(c("logging:", "  log_dir: logs", "  log_level: debug"))
+  expect_no_warning(config <- read_config(dir))
+  expect_equal(config$app$log_level, "debug")
+  expect_equal(config$app$log_dir, "logs")
+  expect_null(config[["logging"]])
+
+  vars <- generate_template_variables(
+    app_name = "Demo", app_slug = "demo", app_type = "r-shiny",
+    runtime_strategy = "shinylive", icon = NULL,
+    backend_module = "shinylive.js", brand = NULL, config = config
+  )
+  expect_equal(vars$log_level, "debug")
+  expect_equal(vars$log_dir, "logs")
+})
+
+test_that("read_config still accepts app.log_dir and app.log_level", {
+  dir <- .config_dir(c("app:", "  log_dir: logs", "  log_level: warn"))
+  expect_no_warning(config <- read_config(dir))
+  expect_equal(config$app$log_level, "warn")
+  expect_equal(config$app$log_dir, "logs")
+})
+
+test_that("read_config prefers logging when it and app set a field differently", {
+  dir <- .config_dir(c(
+    "app:", "  log_dir: logs", "  log_level: warn",
+    "logging:", "  log_level: debug"
+  ))
+  expect_warning(config <- read_config(dir), "logging.log_level", fixed = TRUE)
+  expect_equal(config$app$log_level, "debug")
+  expect_equal(config$app$log_dir, "logs")
+
+  dir <- .config_dir(c("app:", "  log_level: debug",
+                       "logging:", "  log_level: debug"))
+  expect_no_warning(config <- read_config(dir))
+  expect_equal(config$app$log_level, "debug")
+})
+
+test_that("read_config reports unknown keys inside logging", {
+  dir <- .config_dir(c("logging:", "  level: debug", "  log_dir: logs"))
+  w <- expect_warning(config <- read_config(dir),
+                      class = "shinyelectron_unknown_config_key")
+  expect_equal(w$keys, "logging.level")
+  expect_equal(config$app$log_dir, "logs")
+  expect_equal(config$app$log_level, SHINYELECTRON_DEFAULTS$logging$log_level)
 })

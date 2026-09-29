@@ -6,6 +6,12 @@
   its dotted path (for example `window.widht`). They were previously ignored
   without notice.
 
+* The top-level `logging` section documented in the Configuration Guide now
+  takes effect; its `log_dir` and `log_level` were previously ignored.
+  `app.log_dir` and `app.log_level` still work. When both set a key to
+  different values, `logging` wins and shinyelectron warns. `init_config()`
+  now writes the `logging` form.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the

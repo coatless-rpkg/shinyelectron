@@ -11,6 +11,8 @@ Named list shaped like \code{\link[=default_config]{default_config()}}.
 }
 \description{
 The keys of \code{\link[=default_config]{default_config()}} plus the top-level keys that have no
-default: the \code{icon} shortcut and the multi-app \code{apps} list.
+default: the \code{icon} shortcut, the multi-app \code{apps} list and the \code{logging}
+section that \code{\link[=map_logging_config]{map_logging_config()}} maps onto \code{app.log_dir} and
+\code{app.log_level}.
 }
 \keyword{internal}
