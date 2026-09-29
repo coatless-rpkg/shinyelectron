@@ -242,12 +242,86 @@ test_that("validate_signing_config warns about missing Windows cert", {
     win = list(certificate_file = NULL)
   ))
 
-  withr::with_envvar(c(CSC_LINK = NA), {
-    expect_warning(
+  withr::with_envvar(c(CSC_LINK = NA, WIN_CSC_LINK = NA), {
+    w <- expect_warning(
       validate_signing_config(config, platform = "win"),
-      "CSC_LINK"
+      "unsigned"
     )
   })
+  expect_match(conditionMessage(w), "WIN_CSC_LINK")
+  expect_match(conditionMessage(w), "(^|[^_])CSC_LINK")
+  expect_match(conditionMessage(w), "certificate_file")
+})
+
+test_that("validate_signing_config accepts WIN_CSC_LINK or CSC_LINK for Windows", {
+  config <- list(signing = list(sign = TRUE))
+
+  withr::local_envvar(
+    WIN_CSC_LINK = "/ci/win.pfx", WIN_CSC_KEY_PASSWORD = "secret",
+    CSC_LINK = NA, CSC_KEY_PASSWORD = NA
+  )
+  expect_silent(validate_signing_config(config, platform = "win"))
+
+  withr::local_envvar(
+    WIN_CSC_LINK = NA, WIN_CSC_KEY_PASSWORD = NA,
+    CSC_LINK = "/ci/win.pfx", CSC_KEY_PASSWORD = "secret"
+  )
+  expect_silent(validate_signing_config(config, platform = "win"))
+
+  # electron-builder falls back to CSC_KEY_PASSWORD for a WIN_CSC_LINK cert
+  withr::local_envvar(
+    WIN_CSC_LINK = "/ci/win.pfx", WIN_CSC_KEY_PASSWORD = NA,
+    CSC_LINK = NA, CSC_KEY_PASSWORD = "secret"
+  )
+  expect_silent(validate_signing_config(config, platform = "win"))
+})
+
+test_that("validate_signing_config reads the certificate_file password from either variable", {
+  config <- list(signing = list(
+    sign = TRUE,
+    win = list(certificate_file = "certs/signing.pfx")
+  ))
+  withr::local_envvar(WIN_CSC_LINK = NA, CSC_LINK = NA)
+
+  withr::local_envvar(WIN_CSC_KEY_PASSWORD = "secret", CSC_KEY_PASSWORD = NA)
+  expect_silent(validate_signing_config(config, platform = "win"))
+
+  withr::local_envvar(WIN_CSC_KEY_PASSWORD = NA, CSC_KEY_PASSWORD = "secret")
+  expect_silent(validate_signing_config(config, platform = "win"))
+
+  withr::local_envvar(WIN_CSC_KEY_PASSWORD = NA, CSC_KEY_PASSWORD = NA)
+  w <- expect_warning(
+    validate_signing_config(config, platform = "win"),
+    "signing may fail"
+  )
+  expect_match(conditionMessage(w), "WIN_CSC_KEY_PASSWORD")
+  expect_match(conditionMessage(w), "(^|[^_])CSC_KEY_PASSWORD")
+})
+
+test_that("validate_signing_config stops at an empty Windows variable like electron-builder", {
+  # Windows cannot hold an empty environment variable: Sys.setenv(X = "")
+  # unsets it there
+  skip_on_os("windows")
+  config <- list(signing = list(sign = TRUE))
+
+  # An empty WIN_CSC_LINK hides CSC_LINK, so the build is unsigned
+  withr::local_envvar(
+    WIN_CSC_LINK = "", CSC_LINK = "/ci/win.pfx",
+    WIN_CSC_KEY_PASSWORD = NA, CSC_KEY_PASSWORD = "secret"
+  )
+  w <- expect_warning(
+    validate_signing_config(config, platform = "win"),
+    "set but empty"
+  )
+  expect_match(conditionMessage(w), "WIN_CSC_LINK")
+
+  # An empty WIN_CSC_KEY_PASSWORD hides CSC_KEY_PASSWORD
+  withr::local_envvar(WIN_CSC_LINK = "/ci/win.pfx", WIN_CSC_KEY_PASSWORD = "")
+  w <- expect_warning(
+    validate_signing_config(config, platform = "win"),
+    "set but empty"
+  )
+  expect_match(conditionMessage(w), "WIN_CSC_KEY_PASSWORD")
 })
 
 test_that("validate_signing_config is silent when sign is FALSE", {
