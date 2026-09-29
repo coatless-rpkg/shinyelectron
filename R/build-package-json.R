@@ -135,7 +135,13 @@ generate_package_json <- function(app_slug, app_version, backend, config,
     artifactName = "${name}-Setup-${version}-${arch}.${ext}"
   )
   mac_config <- list(target = "dmg")
-  linux_config <- list(target = "AppImage")
+  # Electron names the window class (WM_CLASS) after app.name, the slug,
+  # while electron-builder writes the product name into the desktop entry's
+  # StartupWMClass; they must match for the launcher to group the windows.
+  linux_config <- list(
+    target = "AppImage",
+    desktop = list(entry = list(StartupWMClass = app_slug))
+  )
 
   if (has_icon) {
     win_config$icon <- "assets/icon.ico"

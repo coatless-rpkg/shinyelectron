@@ -196,3 +196,12 @@ test_that("the Windows executable keeps the slug while productName shows the app
   expect_equal(parsed$build$win$executableName, "my-app")
   expect_equal(parsed$build$win$target, "nsis")
 })
+
+test_that("the Linux desktop entry names the slug as the window class", {
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "native-r", list(), app_name = "My App"),
+    simplifyVector = FALSE
+  )
+  expect_equal(parsed$build$linux$target, "AppImage")
+  expect_equal(parsed$build$linux$desktop$entry$StartupWMClass, "my-app")
+})
