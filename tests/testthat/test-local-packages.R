@@ -451,6 +451,17 @@ test_that("local installs keep the caller's environment and use the unstaged ins
   expect_match(captured$args[[2]], "--no-clean-on-error", fixed = TRUE)
 })
 
+test_that("local install failures point out library settings in the user environ file", {
+  renviron <- withr::local_tempfile(lines = c("# personal settings", "R_LIBS_SITE=/opt/site-library"))
+  withr::local_envvar(R_ENVIRON_USER = renviron)
+  hint <- local_r_renviron_hint()
+  expect_named(hint, "i")
+  expect_match(hint, "R_LIBS_SITE", fixed = TRUE)
+
+  writeLines("LANG=en_US.UTF-8", renviron)
+  expect_null(local_r_renviron_hint())
+})
+
 test_that("a timed-out local install fails and leaves no lock directory", {
   skip_if_not_installed("mockery")
   lib <- withr::local_tempdir()

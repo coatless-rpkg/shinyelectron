@@ -662,6 +662,7 @@ build_local_r_package <- function(pkg, rscript, build_dir, env,
         c("x" = "{.code R CMD build} did not finish within {local_r_duration(timeout)}.")
       },
       local_r_output_bullets(result$stdout, "Last lines of the {.code R CMD build} output:"),
+      local_r_renviron_hint(build_dir),
       local_r_verbose_hint(verbose)
     ), class = "shinyelectron_local_packages_build")
   }
@@ -716,6 +717,7 @@ install_local_r_package <- function(rscript, pkg, source, lib,
     cli::cli_abort(c(
       "Installing local R package {.pkg {pkg}} did not finish within {local_r_duration(timeout)}.",
       install_output,
+      local_r_renviron_hint(),
       local_r_verbose_hint(verbose)
     ), class = "shinyelectron_local_packages_install")
   }
@@ -735,6 +737,7 @@ install_local_r_package <- function(rscript, pkg, source, lib,
       if (check$timeout) {
         c("x" = "Loading did not finish within {local_r_duration(check$limit)}.")
       },
+      local_r_renviron_hint(),
       local_r_verbose_hint(verbose)
     ), class = "shinyelectron_local_packages_install")
   }
@@ -780,6 +783,30 @@ local_r_output_bullets <- function(text, heading, n = 25) {
   }
   lines <- gsub("}", "}}", gsub("{", "{{", lines, fixed = TRUE), fixed = TRUE)
   c(c("x" = heading), stats::setNames(lines, rep(" ", length(lines))))
+}
+
+# A hint for failure messages when the user environ file that R reads in `wd`
+# sets a library variable. R applies that file on top of the environment it
+# starts with, so the setting replaces the bundled library in these processes.
+local_r_renviron_hint <- function(wd = getwd()) {
+  file <- Sys.getenv("R_ENVIRON_USER")
+  if (!nzchar(file)) {
+    file <- file.path(wd, ".Renviron")
+    if (!file.exists(file)) file <- file.path(path.expand("~"), ".Renviron")
+  }
+  if (!file.exists(file)) {
+    return(NULL)
+  }
+  lines <- tryCatch(readLines(file, warn = FALSE), error = function(e) character(0))
+  set <- grep("^\\s*R_LIBS(_USER|_SITE)?\\s*=", lines, value = TRUE)
+  if (length(set) == 0) {
+    return(NULL)
+  }
+  vars <- unique(sub("^\\s*(R_LIBS\\w*)\\s*=.*$", "\\1", set))
+  hint <- cli::format_inline(
+    "{.file {file}} sets {.envvar {vars}}, which replaces the bundled library in these R processes."
+  )
+  c("i" = gsub("}", "}}", gsub("{", "{{", hint, fixed = TRUE), fixed = TRUE))
 }
 
 # Points to the full output when it was not shown as it ran.
