@@ -11,7 +11,8 @@ embed_r_runtime(
   version,
   platform,
   arch,
-  verbose = TRUE
+  verbose = TRUE,
+  local_packages = character(0)
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ embed_r_runtime(
 \item{arch}{Character scalar. Target architecture ("x64"/"arm64").}
 
 \item{verbose}{Logical. Whether to display progress.}
+
+\item{local_packages}{Character vector. Paths to local R package source directories or archives to install into the bundled library after the repository packages.}
 }
 \value{
 Invisibly, the path to the embedded \code{runtime/R} directory.

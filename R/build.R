@@ -171,7 +171,8 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
         version = resolve_runtime_version("r", config),
         platform = platform[1],
         arch = arch[1],
-        verbose = verbose
+        verbose = verbose,
+        local_packages = unlist(config$dependencies$r$local_packages) %||% character(0)
       )
     }
 

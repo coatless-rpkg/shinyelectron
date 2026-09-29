@@ -346,7 +346,8 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
       version = resolve_runtime_version("r", config),
       platform = platform[1],
       arch = arch[1],
-      verbose = verbose
+      verbose = verbose,
+      local_packages = unlist(config$dependencies$r$local_packages) %||% character(0)
     )
   }
   if (py_bundled) {

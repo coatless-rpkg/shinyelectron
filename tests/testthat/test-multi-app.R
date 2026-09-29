@@ -415,7 +415,7 @@ test_that("build_multi_app embeds the R runtime once with the unioned package se
   captured <- NULL
   n_calls <- 0
   mockery::stub(build_multi_app, "embed_r_runtime",
-    function(output_dir, packages, repos, version, platform, arch, verbose = TRUE) {
+    function(output_dir, packages, repos, version, platform, arch, verbose = TRUE, ...) {
       captured <<- packages
       n_calls <<- n_calls + 1
       invisible(TRUE)
@@ -643,7 +643,7 @@ test_that("export_multi_app does not include container-app packages in bundled e
     },
     # Capture what embed_r_runtime receives.
     embed_r_runtime = function(output_dir, packages, repos, version,
-                               platform, arch, verbose = TRUE) {
+                               platform, arch, verbose = TRUE, ...) {
       captured_packages <<- packages
       invisible(TRUE)
     },
