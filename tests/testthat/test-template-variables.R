@@ -650,3 +650,60 @@ test_that("the macOS About panel gets the configured metadata", {
   expect_true(any(grepl("website: 'https://example.org/it\\'s?a=1&b=2',", full, fixed = TRUE)))
   expect_true(any(grepl("authors: ['Jane O\\'Hara'],", full, fixed = TRUE)))
 })
+
+# Run the rendered showAboutDialog() under node as if on `platform`, choosing
+# each of its buttons in turn. Returns the button labels and what each one
+# did: "check" for the update check, "open <url>" for shell.openExternal().
+run_about_dialog <- function(config, platform) {
+  about <- about_code(readLines(render_main_js(config)))
+  script <- withr::local_tempfile(fileext = ".js", lines = c(
+    "(async () => {",
+    paste0("  Object.defineProperty(process, 'platform', { value: '", platform, "' });"),
+    "  let pick = 0;",
+    "  let buttons = null;",
+    "  const done = [];",
+    "  const dialog = {",
+    "    showMessageBox: async (win, o) => {",
+    "      buttons = o.buttons;",
+    "      return { response: pick };",
+    "    }",
+    "  };",
+    "  const shell = { openExternal: async (url) => { done.push('open ' + url); } };",
+    "  const require = () => ({ dialog, shell });",
+    "  const mainWindow = null;",
+    "  const checkForUpdatesInteractive = async () => { done.push('check'); };",
+    about,
+    "  await showAboutDialog();",
+    "  const actions = [];",
+    "  for (let i = 0; i < buttons.length; i++) {",
+    "    pick = i;",
+    "    done.length = 0;",
+    "    await showAboutDialog();",
+    "    actions.push(done.join(', '));",
+    "  }",
+    "  process.stdout.write(JSON.stringify({ buttons, actions }));",
+    "})();"
+  ))
+  jsonlite::fromJSON(processx::run("node", script)$stdout)
+}
+
+test_that("each About button runs its own action, and macOS has no update check", {
+  skip_on_cran()
+  skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
+
+  config <- list(app = about_metadata(), updates = list(enabled = TRUE))
+  homepage <- "open https://example.org/it's?a=1&b=2"
+  email <- "open mailto:jane@example.org"
+
+  linux <- run_about_dialog(config, "linux")
+  expect_equal(linux$buttons, c("OK", "Check for Updates", "Visit Website", "Email"))
+  expect_equal(linux$actions, c("", "check", homepage, email))
+
+  mac <- run_about_dialog(config, "darwin")
+  expect_equal(mac$buttons, c("OK", "Visit Website", "Email"))
+  expect_equal(mac$actions, c("", homepage, email))
+
+  plain <- run_about_dialog(list(), "win32")
+  expect_equal(plain$buttons, "OK")
+  expect_equal(plain$actions, "")
+})
