@@ -22,6 +22,25 @@
   app's R, Python, or container process, and how to give each user their own
   token without bundling it.
 
+* Keys in `_shinyelectron.yml` that shinyelectron does not recognize, such as a
+  misspelled `widht` or a key placed in the wrong section, now trigger a
+  warning of class `shinyelectron_unknown_config_key` that names each one by
+  its dotted path (for example `window.widht`). They were previously ignored
+  without notice.
+
+* The top-level `logging` section documented in the Configuration Guide now
+  takes effect; its `log_dir` and `log_level` were previously ignored. If you
+  copied the guide's earlier example, drop its `log_dir: "/var/log/my-app"`
+  line: `log_dir` should be an absolute path that the app's user can write
+  to, and without it logs go to the app's `userData/logs` folder.
+  `app.log_dir` and `app.log_level` still work. When both set a key to
+  different values, `logging` wins with a warning of class
+  `shinyelectron_logging_conflict`. `init_config()` now suggests the
+  `logging` form.
+
+* `init_config()` no longer suggests `nodejs.auto_install`, which has no effect
+  yet.
+
 # shinyelectron 0.2.1
 
 * Examples for functions that install a runtime, launch an app, or clear the
