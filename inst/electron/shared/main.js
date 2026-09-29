@@ -436,13 +436,15 @@ function setupAutoUpdater() {
       title: 'Update Ready',
       message: 'A new version has been downloaded. Restart now to apply the update?',
       buttons: ['Restart', 'Later'],
-      defaultId: 0
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true
     }).then((result) => {
       if (result.response === 0) {
-        // Quit cleanly before handing over to the silent installer: stop the
-        // backend (R/Shiny) and wait for it to exit so it releases the bundled
-        // runtime's files, and suppress the window-close confirmation so the
-        // update cannot be cancelled halfway.
+        // Quit cleanly before handing over to the installer: stop the backend
+        // (R/Shiny) and wait for its process to exit so it releases the
+        // bundled runtime's files, and suppress the window-close confirmation
+        // so the update cannot be cancelled halfway.
         isShuttingDown = true;
         app.isQuitting = true;
 
@@ -450,22 +452,53 @@ function setupAutoUpdater() {
         const handOver = () => {
           if (handedOver) return;
           handedOver = true;
-          autoUpdater.quitAndInstall();
-        };
-
-        if (currentBackend) {
-          const onExit = (d) => {
-            if (d && d.phase === 'app_exit') {
-              currentBackend.removeListener('status', onExit);
-              setTimeout(handOver, 700);
+          // quitAndInstall() reports a failed install through 'error' and
+          // leaves the app running with its backend already stopped. Undo the
+          // shutdown so the window closes normally and tell the user.
+          const onInstallError = (err) => {
+            isShuttingDown = false;
+            app.isQuitting = false;
+            const options = {
+              type: 'error',
+              title: 'Update Failed',
+              message: 'The update could not be installed.',
+              detail: (err && err.message ? err.message + '\n\n' : '') +
+                'Please restart the app manually.',
+              buttons: ['OK'],
+              noLink: true
+            };
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              dialog.showMessageBox(mainWindow, options);
+            } else {
+              dialog.showMessageBox(options);
             }
           };
-          currentBackend.on('status', onExit);
-          currentBackend.stop();
-        }
+          autoUpdater.once('error', onInstallError);
+          try {
+            autoUpdater.quitAndInstall();
+          } catch (err) {
+            autoUpdater.removeListener('error', onInstallError);
+            onInstallError(err);
+          }
+        };
+
         stopSharedShinyliveServer();
-        // Hard fallback if the backend never reports app_exit.
-        setTimeout(handOver, {{shutdown_timeout}});
+        if (!currentBackend) {
+          // No per-app backend is running (launcher or a shinylive app).
+          handOver();
+          return;
+        }
+        // Hand over once the backend process has exited, or after
+        // shutdown_timeout if it is still running by then.
+        let fallback = null;
+        const timedOut = new Promise((resolve) => {
+          fallback = setTimeout(resolve, {{shutdown_timeout}});
+        });
+        const exited = Promise.resolve(currentBackend.stop()).catch(() => {});
+        Promise.race([exited, timedOut]).then(() => {
+          clearTimeout(fallback);
+          handOver();
+        });
       }
     });
   });
