@@ -5,6 +5,8 @@
 //   serve  answer every HTTP request with 404 and log the request
 //   hang   never bind the port
 //   crash  print an error and exit with status 1
+//   signal die by `signal` (default SIGKILL) after `delay` ms, never listening
+//   exit   exit with `code` (default 0) after `delay` ms, never listening
 // With holdStdio: <ms>, it also starts a helper that keeps its stdout and
 // stderr open for that long. With termExitCode: <n>, it exits with status n
 // on SIGTERM, as a process killed by taskkill /f does on Windows. Every run
@@ -12,7 +14,8 @@
 // The fake docker keeps its containers in $FAKE_DOCKER_STATE and logs every
 // call there in calls.log. With lateLogs: <ms>, `docker logs -f` ignores
 // SIGTERM and prints one more line after that long, like log output still
-// in the pipe when the backend stops following the logs.
+// in the pipe when the backend stops following the logs. With noPort: true,
+// `docker port` fails for the container.
 // `fake-runtime.js install <dir>` writes the Rscript, python3 and docker
 // wrappers.
 'use strict';
@@ -74,6 +77,14 @@ function runApp(appDir, port) {
     helper.unref();
   }
 
+  if (mode.mode === 'signal' || mode.mode === 'exit') {
+    setTimeout(() => {
+      appendLine(path.join(appDir, 'fake-died.log'), String(Date.now()));
+      if (mode.mode === 'signal') process.kill(process.pid, mode.signal || 'SIGKILL');
+      else process.exit(mode.code || 0);
+    }, mode.delay || 1000);
+    return;
+  }
   if (mode.mode === 'crash') {
     process.stderr.write('Error in runApp(): boom\n');
     setTimeout(() => process.exit(1), mode.delay || 100);
@@ -142,13 +153,16 @@ function fakeDocker() {
     }
     case 'port': {
       const container = readContainer(args[1]);
-      if (!container) process.exit(1);
+      if (!container || readMode(container.appDir).noPort) process.exit(1);
       process.stdout.write(`127.0.0.1:${container.port}\n`);
       return;
     }
     case 'logs': {
       process.stdout.write('fake container log line\n');
-      if (args[1] !== '-f') return;
+      if (args[1] !== '-f') {
+        process.stderr.write('fake container error line\n');
+        return;
+      }
       exitWithHarness();
       const id = args[args.length - 1];
       const container = readContainer(id);
@@ -191,10 +205,15 @@ function makeWrapper(file, which) {
 if (lang === 'R') {
   const code = args[args.indexOf('-e') + 1] || '';
   const run = /shiny::runApp\('([^']*)', port = (\d+)/.exec(code);
+  const missingCheck = /setdiff\(c\(([^)]*)\)/.exec(code);
   if (args[0] === '--version') {
     process.stdout.write('Rscript (R) version 4.5.1\n');
   } else if (run) {
     runApp(run[1], Number(run[2]));
+  } else if (missingCheck) {
+    // The missing-package check: every requested package is missing.
+    const pkgs = [...missingCheck[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+    process.stdout.write(pkgs.join('\n'));
   } else {
     // The minimum-version probe: cat(paste(R.version$major, ...)).
     process.stdout.write('4.5.1');
@@ -210,6 +229,10 @@ if (lang === 'R') {
     makeWrapper(path.join(venvDir, 'bin', exe), 'python');
   } else if (args[0] === '-m' && args[1] === 'shiny') {
     runApp(args[args.indexOf('--app-dir') + 1], Number(args[args.indexOf('--port') + 1]));
+  } else if (args[0] && args[0].endsWith('.py')) {
+    // The missing-package check script: every requested package is missing.
+    const pkgs = /pkgs = (\[.*\])/.exec(fs.readFileSync(args[0], 'utf8'));
+    process.stdout.write(`${pkgs ? pkgs[1] : '[]'}\n`);
   }
 } else if (lang === 'docker') {
   fakeDocker();

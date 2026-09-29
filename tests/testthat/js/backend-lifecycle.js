@@ -64,6 +64,12 @@ function readLines(file) {
   return fs.readFileSync(file, 'utf8').split('\n').filter(Boolean);
 }
 const runsOf = (app) => readLines(path.join(app, 'fake-runs.log'));
+const diedAt = (app) => Number(readLines(path.join(app, 'fake-died.log'))[0]);
+const killHelpers = (app) => {
+  for (const pid of readLines(path.join(app, 'fake-helpers.log'))) {
+    try { process.kill(Number(pid)); } catch { /* already gone */ }
+  }
+};
 const requestsOf = (app) => readLines(path.join(app, 'fake-requests.log'));
 const dockerCalls = () => readLines(path.join(dockerState, 'calls.log'));
 
@@ -209,6 +215,57 @@ for (const [label, Backend, handle] of [['R', NativeR, 'rProcess'], ['Python', N
     assert(be[handle] === null, 'handle cleared');
   });
 
+  test(label, `${label}: a child killed by a signal during startup is reported at once`, async () => {
+    const be = newBackend(Backend);
+    const events = record(be);
+    const app = makeApp({ mode: 'signal', signal: 'SIGKILL', delay: 1000 });
+    const res = await within(
+      be.start({ appPath: app, port: await freePort(), config: config({ startup_timeout: 20000 }) }),
+      20000, 'start()'
+    );
+    const gap = Date.now() - diedAt(app);
+    assert(!res.ok, 'start() rejects');
+    assert(/exited unexpectedly \(signal SIGKILL\)/.test(res.error.message), `message: ${res.error.message}`);
+    assert(phases(events).includes('server_crashed'), `statuses: ${phases(events)}`);
+    assert(gap < 1500, `reported ${gap} ms after the child died`);
+    assert(be[handle] === null, 'handle cleared');
+  });
+
+  test(label, `${label}: a child that exits before its server is ready fails the start at once`, async () => {
+    const be = newBackend(Backend);
+    const events = record(be);
+    const app = makeApp({ mode: 'exit', code: 0, delay: 1000 });
+    const res = await within(
+      be.start({ appPath: app, port: await freePort(), config: config({ startup_timeout: 20000 }) }),
+      20000, 'start()'
+    );
+    const gap = Date.now() - diedAt(app);
+    assert(!res.ok, 'start() rejects');
+    assert(/exited before the Shiny server was ready/.test(res.error.message), `message: ${res.error.message}`);
+    const last = events[events.length - 1];
+    assertEqual(last.phase, 'error', 'last status');
+    assert(last.detail && typeof last.detail.stderr === 'string', 'the error carries the stderr detail');
+    assert(gap < 1500, `reported ${gap} ms after the child exited`);
+  });
+
+  test(label, `${label}: an early exit is noticed while a helper still holds the output open`, async () => {
+    const be = newBackend(Backend);
+    const app = makeApp({ mode: 'exit', code: 0, delay: 1000, holdStdio: 6000 });
+    try {
+      const res = await within(
+        be.start({ appPath: app, port: await freePort(), config: config({ startup_timeout: 20000 }) }),
+        20000, 'start()'
+      );
+      const gap = Date.now() - diedAt(app);
+      assert(!res.ok, 'start() rejects');
+      assert(/exited before the Shiny server was ready/.test(res.error.message), `message: ${res.error.message}`);
+      assert(gap < 2500, `reported ${gap} ms after the child exited`);
+      assert(be[handle] === null, 'handle cleared');
+    } finally {
+      killHelpers(app);
+    }
+  });
+
   test(label, `${label}: a startup timeout ends on the error status`, async () => {
     const be = newBackend(Backend);
     const events = record(be);
@@ -296,6 +353,54 @@ for (const [label, Backend, handle] of [['R', NativeR, 'rProcess'], ['Python', N
     assert(be[handle] === null, 'the exited child is no longer the handle');
   });
 
+  // An app that needs a package the fake runtime reports as missing, with
+  // prompt_before_install on, so start() waits at the install prompt.
+  const promptStart = async (be, slug) => {
+    const app = makeApp({ mode: 'serve' });
+    fs.writeFileSync(path.join(app, 'dependencies.json'), JSON.stringify({
+      schema_version: '2', language: label === 'R' ? 'r' : 'python', packages: ['shiny']
+    }));
+    const events = record(be);
+    const p = handled(be.start({
+      appPath: app, port: await freePort(),
+      config: config({ startup_timeout: 10000, prompt_before_install: true, app_slug: slug })
+    }));
+    await waitFor(() => phases(events).includes('awaiting_install_confirmation'), 10000, 'the install prompt');
+    return { app, p };
+  };
+  const promptListeners = (be) => be.listenerCount('install-packages') + be.listenerCount('skip-install');
+
+  test(label, `${label}: stop() settles a start that is waiting at the install prompt`, async () => {
+    const be = newBackend(Backend);
+    const { app, p } = await promptStart(be, `prompt-stop-${label}`);
+    be.stop();
+    const res = await within(p, 2000, 'start() to settle');
+    assert(!res.ok && res.error.code === SUPERSEDED, `start() result: ${res.ok ? 'resolved' : res.error.message}`);
+    assertEqual(promptListeners(be), 0, 'prompt listeners left');
+    assertEqual(runsOf(app).length, 0, 'servers spawned');
+  });
+
+  test(label, `${label}: a newer start() settles a start that is waiting at the install prompt`, async () => {
+    const be = newBackend(Backend);
+    const { app, p } = await promptStart(be, `prompt-newer-${label}`);
+    const { child } = await startRunning(be, handle);
+    const res = await within(p, 2000, 'the first start() to settle');
+    assert(!res.ok && res.error.code === SUPERSEDED, `start() result: ${res.ok ? 'resolved' : res.error.message}`);
+    assertEqual(runsOf(app).length, 0, 'servers spawned for the first start');
+    assert(be[handle] === child && isRunning(child), 'the newer start is running');
+    await be.stop();
+  });
+
+  test(label, `${label}: skipping the install prompt lets the start go on`, async () => {
+    const be = newBackend(Backend);
+    const { p } = await promptStart(be, `prompt-skip-${label}`);
+    be.emit('skip-install');
+    const res = await within(p, 20000, 'start()');
+    assert(res.ok, `start() failed: ${res.error && res.error.message}`);
+    assertEqual(promptListeners(be), 0, 'prompt listeners left');
+    await be.stop();
+  });
+
   test(label, `${label}: a newer start() stops the child of the start it replaces`, async () => {
     const be = newBackend(Backend);
     const appA = makeApp({ mode: 'hang' });
@@ -336,6 +441,9 @@ test('container', 'Container: a startup timeout ends on the error status and rem
     assert(!all.includes(phase), `unexpected ${phase} in ${all}`);
   }
   assert(be.containerId === null, 'containerId cleared');
+  const detail = events[events.length - 1].detail;
+  assert(detail && /fake container log line/.test(detail.stderr) && /fake container error line/.test(detail.stderr),
+    `the error carries the container logs: ${JSON.stringify(detail)}`);
 });
 
 test('container', 'Container: stop() during startup keeps the start from creating a container', async () => {
@@ -398,6 +506,61 @@ test('container', 'Container: a superseded start leaves the next container alone
   await within(be.stop(), 10000, 'stop() to resolve');
 });
 
+test('container', 'Container: switching apps keeps the old teardown off the next app', async () => {
+  const be = newBackend(Container);
+  const appA = makeApp({ mode: 'serve' });
+  const ra = await within(
+    be.start({ appPath: appA, port: 3838, config: containerConfig({ startup_timeout: 20000 }) }),
+    20000, 'A to start'
+  );
+  assert(ra.ok, `A failed: ${ra.error && ra.error.message}`);
+  const idA = be.containerId;
+  // What main.js does for Back to Launcher followed by another container
+  // app: drop the old listeners, stop, subscribe the next app, start it.
+  be.removeAllListeners('status');
+  const stopped = be.stop();
+  const events = record(be);
+  const appB = makeApp({ mode: 'serve' });
+  const rb = await within(
+    be.start({ appPath: appB, port: 3838, config: containerConfig({ startup_timeout: 20000 }) }),
+    20000, 'B to start'
+  );
+  assert(rb.ok, `B failed: ${rb.error && rb.error.message}`);
+  const rs = await within(stopped, 10000, 'A\'s teardown to finish');
+  assert(rs.ok, 'stop() resolves');
+  assert(dockerCalls().includes(`rm -f ${idA}`), 'A\'s container was removed');
+  await delay(300);
+  const all = phases(events);
+  for (const phase of ['stopping_server', 'cleanup', 'app_exit']) {
+    assert(!all.includes(phase), `unexpected ${phase} in ${all}`);
+  }
+  assertEqual(all[all.length - 1], 'server_ready', 'B\'s last status');
+  await within(be.stop(), 10000, 'stop() to resolve');
+});
+
+test('container', 'Container: a missing host port removes the container', async () => {
+  const be = newBackend(Container);
+  const events = record(be);
+  const app = makeApp({ mode: 'serve', noPort: true });
+  const before = dockerCalls().length;
+  const res = await within(
+    be.start({ appPath: app, port: 3838, config: containerConfig({ startup_timeout: 20000 }) }),
+    20000, 'start()'
+  );
+  assert(!res.ok, 'start() rejects');
+  assert(/Could not determine the container host port/.test(res.error.message), `message: ${res.error.message}`);
+  const portCall = dockerCalls().slice(before).find((c) => c.startsWith('port '));
+  const id = portCall && portCall.split(' ')[1];
+  assert(id, 'the start asked for the host port');
+  await waitFor(() => dockerCalls().includes(`rm -f ${id}`), 5000, 'the container to be removed');
+  assert(be.containerId === null, 'containerId cleared');
+  const all = phases(events);
+  assertEqual(all[all.length - 1], 'error', 'last status');
+  for (const phase of ['stopping_server', 'cleanup', 'app_exit']) {
+    assert(!all.includes(phase), `unexpected ${phase} in ${all}`);
+  }
+});
+
 test('R', 'stop() does not wait for helpers holding the child\'s output open', async () => {
   const be = newBackend(NativeR);
   const { app, child } = await startRunning(be, 'rProcess', { holdStdio: 5000 });
@@ -408,9 +571,7 @@ test('R', 'stop() does not wait for helpers holding the child\'s output open', a
     assert(res.ok, 'stop() resolves');
     assert(!closed, 'stop() resolved before the output pipes closed');
   } finally {
-    for (const pid of readLines(path.join(app, 'fake-helpers.log'))) {
-      try { process.kill(Number(pid)); } catch { /* already gone */ }
-    }
+    killHelpers(app);
   }
 });
 
@@ -451,6 +612,37 @@ test('probe', 'waitForServer keeps one attempt in flight when the server never a
   } finally {
     for (const s of sockets) s.destroy();
     server.close();
+  }
+});
+
+test('probe', 'killProcessTree sends SIGKILL only to a child that outlives SIGTERM', async () => {
+  const { spawn } = require('child_process');
+  // Each child says "ready" once it is running (and, for the stubborn one,
+  // once it ignores SIGTERM), so no signal arrives before that.
+  const quick = spawn(process.execPath, ['-e', "console.log('ready'); setInterval(() => {}, 1 << 30)"]);
+  const stubborn = spawn(process.execPath,
+    ['-e', "process.on('SIGTERM', () => {}); console.log('ready'); setInterval(() => {}, 1 << 30)"]);
+  const ready = (child) => new Promise((resolve) => child.stdout.once('data', resolve));
+  const killed = [];
+  const kill = process.kill;
+  process.kill = (pid, signal) => {
+    if (signal === 'SIGKILL') killed.push(pid);
+    return kill.call(process, pid, signal);
+  };
+  try {
+    const res = await within(Promise.all([ready(quick), ready(stubborn)]), 10000, 'the children to start');
+    assert(res.ok, 'the children started');
+    utils.killProcessTree(quick);
+    utils.killProcessTree(stubborn);
+    await waitFor(() => !isRunning(stubborn), 3000, 'the stubborn child to be killed');
+    await delay(200);
+    assert(!killed.includes(quick.pid), 'no SIGKILL for the child that exited on SIGTERM');
+    assert(killed.includes(stubborn.pid), 'SIGKILL for the child that ignored SIGTERM');
+  } finally {
+    process.kill = kill;
+    for (const child of [quick, stubborn]) {
+      if (isRunning(child)) child.kill('SIGKILL');
+    }
   }
 });
 
