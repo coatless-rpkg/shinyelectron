@@ -69,11 +69,12 @@ init_config("path/to/my-app")
 ℹ Edit this file to customize your Electron app settings
 ```
 
-The generated file carries the documented defaults you can edit in place. For most projects, the only setting you need to write yourself is the app name:
+The generated file carries the documented defaults you can edit in place. For most projects, the only settings you need are the app name and its slug, which `init_config()` writes for you:
 
 ```yaml
 app:
   name: "My App"
+  slug: "my-app"
 ```
 
 Everything else is filled in by defaults described below.
@@ -87,8 +88,13 @@ Every available option, annotated. Each section is covered in more detail furthe
 # Documentation: https://r-pkg.thecoatlessprofessor.com/shinyelectron/
 
 app:
-  name: "My Application"     # Application display name
+  name: "My Application"     # Display name: window title, About dialog, installed app
+  slug: "my-application"     # Identity: package name, app ID, user data, file names
   version: "1.0.0"           # Application version (used in package metadata)
+  description: "Quarterly sales explorer"   # About dialog and installer metadata
+  author: "Jane Doe <jane@example.org>"     # Or a map with name, email, and url
+  homepage: "https://example.org/sales"     # http:// or https:// only
+  copyright: "Copyright 2026 Example Inc."  # About dialog and installer metadata
 
 build:
   type: "r-shiny"            # Application language (autodetected if omitted)
@@ -176,8 +182,31 @@ Application metadata.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `name` | string | Directory name | Display name shown in window title and system |
+| `name` | string | Directory name | Display name: the window title, the About dialog, and the installed app (the macOS app, the Windows Start Menu entry) |
+| `slug` | string | Derived from `name` | The app's identity: lowercase letters, digits, and hyphens (see below) |
 | `version` | string | `"1.0.0"` | Version number for the built application |
+| `description` | string | `null` | Shown in Help > About and written to the installer metadata; `null` uses `"<slug> - Shiny Electron App"` |
+| `author` | string or map | `null` | npm-style `"Name <email> (url)"`, where the email and URL are optional, or a map with `name`, `email`, and `url`. Help > About shows the name and, with an email, an Email button |
+| `homepage` | string | `null` | An `http://` or `https://` URL. Adds a Visit Website button to Help > About and a support link to the Windows uninstall entry |
+| `copyright` | string | `null` | Shown in Help > About, the macOS About panel, and the Windows file properties; `null` lets electron-builder write a notice with the year and the author |
+
+Line breaks in `description`, `author`, and `copyright` become spaces, because the installer metadata holds a single line. electron-builder also expands macros such as `${author}` in the copyright it writes to the installer, so avoid `${` in that text.
+
+::: {.callout-important}
+## Settle the slug before you ship
+
+`name` is what people see; `slug` is what the operating system tracks. The slug names the package, the user data folder (window size, logs, and browser storage), and the installer files. Unless `installer.app_id` is set, it also gives the app ID, `com.shinyelectron.<slug>`, which Windows installers and macOS use to recognize an installed copy and update it. A build with a different slug is a different app: on Windows it installs next to the old one instead of updating it.
+
+When `slug` is unset, it comes from the name, and `export()` takes the name from its `app_name` argument, then `app.name`, then the directory name. A name with no ASCII letters or digits, such as one written only in Chinese characters, takes the directory's slug instead. `init_config()` and `wizard()` write the slug into the file, so you can rename the app later without changing its identity.
+
+Up to shinyelectron 0.2.1, `export()` ignored `app.name` and derived the slug from the directory name. If `app.name` now gives an app you already ship a different slug, `export()` warns. Add the old slug to keep updating installed copies:
+
+```yaml
+app:
+  name: "Sales Dashboard"
+  slug: "dash-app"      # the directory name the app shipped under
+```
+:::
 
 ### `build`
 
@@ -445,7 +474,7 @@ Controls installer branding and behavior for the Windows (NSIS) installer produc
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `app_id` | string | `null` | Unique application identifier (e.g. `"com.example.myapp"`); `null` derives one from the app name |
+| `app_id` | string | `null` | Unique application identifier (e.g. `"com.example.myapp"`); `null` uses `"com.shinyelectron.<slug>"` |
 | `license_file` | string | `null` | Path to a license file shown during installation (Windows NSIS only) |
 | `one_click` | boolean | `true` | Use a one-click installer on Windows; set to `false` for a wizard-style installer |
 
@@ -559,8 +588,11 @@ shinyelectron validates values on read and degrades gracefully rather than abort
 - Invalid platforms and architectures are dropped with a warning.
 - Window dimensions under 100 pixels warn and use defaults.
 - Invalid port numbers warn and use `3838`.
+- An `app.description` or `app.copyright` that is not text, or an `app.author` that is neither a string nor a map of `name`, `email`, and `url`, warns and is left out.
 
 If the YAML itself fails to parse, shinyelectron warns and uses all defaults. This is deliberate: a broken config file should never block you from producing a build during development.
+
+`app.homepage` is stricter: a value that is not an `http://` or `https://` URL stops the build, because the About dialog opens it in the browser.
 
 ## Next steps
 

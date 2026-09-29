@@ -1,5 +1,46 @@
 # shinyelectron (development version)
 
+## Breaking changes
+
+* `export()` now takes the app name from `app.name` in `_shinyelectron.yml`
+  when no `app_name` is given, as documented, instead of from the directory
+  name. The name also gives the app's slug, which is its identity: the
+  package name, the user data folder, the installer file names, and the
+  default app ID that Windows installers and macOS use to recognize an
+  installed copy. When `app.name` gives an app without `app.slug` a
+  different slug than its directory, `export()` warns and shows the
+  `app: slug:` line that keeps updating existing installs. `init_config()`
+  and `wizard()` now write an explicit `slug:`.
+
+* Installer and artifact file names change. They now come from the slug and
+  always include the architecture, as in `my-app-1.0.0-arm64.dmg`,
+  `my-app-Setup-1.0.0-x64.exe`, and `my-app-1.0.0-x86_64.AppImage`, so
+  building several architectures into one `dist/` no longer overwrites
+  installers. Update release scripts that look for the old names.
+
+* The installed app now carries the display name (`app.name`) instead of the
+  slug: the macOS app bundle, the Windows Start Menu shortcut and Apps &
+  Features entry, and the installer window. The Windows executable and
+  install folder keep the slug, so pinned shortcuts and existing installs
+  carry over. On macOS, reinstalling from the disk image leaves the old
+  `<slug>.app` in Applications to delete by hand.
+
+## New features
+
+* New `app.description`, `app.author`, `app.homepage`, and `app.copyright`
+  settings describe the app. They fill the generated `package.json` and the
+  installer metadata, and Help > About shows them, with buttons to visit the
+  homepage or email the author. `app.author` takes an npm-style
+  `"Name <email> (url)"` string or a map with `name`, `email`, and `url`,
+  and `app.homepage` must be an `http://` or `https://` URL. On macOS, the
+  App menu's About panel shows the same name, version, and copyright.
+
+* With auto-updates enabled, Help > About offers Check for Updates on
+  Windows and Linux. It reports that the app is up to date, offers to
+  download a newer version, or explains why the check failed.
+
+## Minor improvements and fixes
+
 * App names and other settings that contain quotes or backslashes no longer
   break the generated app. Settings placed in JavaScript strings in `main.js`
   or in the splash and preloader page are now escaped, so a name like
@@ -15,6 +56,10 @@
 
 * Help > Documentation appears only when `menu.help_url` is set, instead of
   in every app with a link that opened nothing.
+
+* An app name with no ASCII letters or digits, such as one written only in
+  Chinese characters, no longer stops `export()` late in the build or breaks
+  `show_config()`; the slug comes from the directory name instead.
 
 # shinyelectron 0.2.1
 

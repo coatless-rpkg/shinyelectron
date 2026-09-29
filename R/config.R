@@ -447,8 +447,11 @@ app:
   # the name changes.
   {{{slug_line}}}
   version: "1.0.0"
-  # description: null       # Installer description (default: "<slug> - Shiny Electron App")
-  # author: null            # Author shown by the installer (default: empty)
+  # Uncomment to describe the app in Help > About and the installer metadata
+  # description: null        # null = "<slug> - Shiny Electron App"
+  # author: null             # "Name <email> (url)", or a map of name, email, url
+  # homepage: null           # http:// or https:// URL for a Visit Website button
+  # copyright: null          # e.g. "Copyright 2026 Example Inc."
   # Uncomment to configure logging
   # log_dir: null            # null = default log directory
   # log_level: "info"        # "debug", "info", "warn", "error"
