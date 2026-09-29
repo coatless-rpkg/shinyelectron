@@ -118,7 +118,7 @@ What end users need depends on the runtime strategy: nothing for
 `shinylive`, `bundled`, or `auto-download`; R or Python pre-installed
 for `system`; Docker or Podman for `container`.
 
-- **R** (\>= 4.4.0)
+- **R** (\>= 4.5.0)
 - **Node.js** (\>= 22.0.0): run
   [`install_nodejs()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.md)
   to install locally without admin rights

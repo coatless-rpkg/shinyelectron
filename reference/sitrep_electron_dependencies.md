@@ -38,6 +38,7 @@ sitrep_electron_dependencies()
 #> ✔ fs: v2.1.0
 #> ✔ jsonlite: v2.0.0
 #> ✔ rappdirs: v0.3.4
+#> ✔ rlang: v1.3.0
 #> ✔ whisker: v0.4.1
 #> ✔ processx: v3.9.0
 #> ✔ yaml: v2.3.12

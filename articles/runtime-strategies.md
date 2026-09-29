@@ -184,11 +184,16 @@ export(
     spawns `Rscript` or `python3` as a child process.
 3.  That child starts the Shiny server. Electron connects to it.
 
-Before spawning, the backend checks the resolved runtime version. The
-system strategy requires R 4.4.0 or newer for R apps, or Python 3.9 or
-newer for Python apps. If the user’s runtime is older, the app stops at
-launch with a clear message naming the version found and the version
-required, instead of failing later with an opaque error.
+Before spawning, the backend checks the resolved runtime version. On the
+end user’s machine, the system strategy requires R 4.4.0 or newer for R
+apps, or Python 3.9 or newer for Python apps. If the user’s runtime is
+older, the app stops at launch with a clear message naming the version
+found and the version required, instead of failing later with an opaque
+error. This end-user floor is lower than the R 4.5.0 or newer that
+shinyelectron itself needs on the build machine where you run
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md).
+The packaged app never loads shinyelectron, so it does not pass that
+requirement on to end users.
 
 ### Tradeoffs
 
