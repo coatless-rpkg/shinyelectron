@@ -105,8 +105,53 @@ read_config <- function(appdir) {
     return(default_config())
   }
 
+  unknown_keys <- collect_unknown_config_keys(config)
+  if (length(unknown_keys) > 0) {
+    cli::cli_warn(c(
+      "Unknown configuration key{?s} in {.file {CONFIG_FILENAME}}: {.val {unknown_keys}}",
+      "i" = "Unknown keys are ignored; check the spelling and nesting (see the documented sections)."
+    ))
+  }
+
   merged <- merge_config_deep(default_config(), config)
   validate_config(merged)
+}
+
+#' Collect unknown configuration keys
+#'
+#' Compares the keys in the config file against the documented schema (the
+#' defaults) and returns the dotted paths of any key that would otherwise be
+#' silently ignored. Free-form maps (`container.volumes`, `container.env`), the
+#' multi-app `apps` list and the top-level `icon` shortcut are exempt.
+#'
+#' @param config List. User configuration parsed from the YAML file.
+#' @param defaults List. Schema to compare against (defaults to the full schema).
+#' @param path Character vector. Internal recursion path.
+#' @return Character vector of unknown dotted key paths (possibly empty).
+#' @keywords internal
+collect_unknown_config_keys <- function(config, defaults = default_config(),
+                                        path = character(0)) {
+  if (!is.list(config) || is.null(names(config)) || !all(nzchar(names(config)))) {
+    return(character(0))
+  }
+  extra_top <- c("apps", "icon")
+  skip_subtrees <- c("container.volumes", "container.env", "apps")
+  unknown <- character(0)
+  for (name in names(config)) {
+    full <- c(path, name)
+    full_str <- paste(full, collapse = ".")
+    known <- name %in% names(defaults) ||
+      (length(path) == 0L && name %in% extra_top)
+    if (!known) {
+      unknown <- c(unknown, full_str)
+      next
+    }
+    if (is.list(config[[name]]) && is.list(defaults[[name]]) &&
+        !full_str %in% skip_subtrees) {
+      unknown <- c(unknown, collect_unknown_config_keys(config[[name]], defaults[[name]], full))
+    }
+  }
+  unknown
 }
 
 #' Deep merge two lists
