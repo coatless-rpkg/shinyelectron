@@ -10,10 +10,15 @@ const {
   resolveRuntimeManifestPath
 } = require('./utils');
 
+// Total time allowed for the R Shiny server to become reachable. Single
+// source of truth so the wait and the error messages cannot drift apart.
+const R_READY_TIMEOUT_MS = 180000;
+
 class NativeRBackend extends EventEmitter {
   constructor() {
     super();
     this.rProcess = null;
+    this.stopping = false;
   }
 
   /**
@@ -204,6 +209,7 @@ class NativeRBackend extends EventEmitter {
    * @returns {Promise<{port: number}>} Resolves when the Shiny server is ready.
    */
   async start({ appPath, port, config }) {
+    this.stopping = false;
     // Clear only this backend's one-shot interactive handlers from a prior
     // start(); do NOT removeAllListeners(), which would also wipe the main
     // process's 'status'/'error' subscribers and freeze the lifecycle UI.
@@ -230,6 +236,7 @@ class NativeRBackend extends EventEmitter {
 
           if (!findCachedRuntime(manifest)) {
             const { isOnline } = require('./utils');
+
             if (!await isOnline()) {
               this.emit('status', {
                 phase: 'error',
@@ -429,18 +436,19 @@ class NativeRBackend extends EventEmitter {
       logDebug(`Rscript command: ${rscript}`);
       logDebug(`App path: ${appPath}`);
 
-      this.rProcess = spawn(rscript, ['-e', rCode], {
+      const child = spawn(rscript, ['-e', rCode], {
         stdio: ['ignore', 'pipe', 'pipe'],
         env: { ...process.env }
       });
+      this.rProcess = child;
 
       let stderr = '';
 
-      this.rProcess.stdout.on('data', (data) => {
+      child.stdout.on('data', (data) => {
         logDebug(`[R stdout] ${data.toString().trim()}`);
       });
 
-      this.rProcess.stderr.on('data', (data) => {
+      child.stderr.on('data', (data) => {
         const msg = data.toString().trim();
         stderr += msg + '\n';
         logDebug(`[R stderr] ${msg}`);
@@ -460,15 +468,22 @@ class NativeRBackend extends EventEmitter {
         }
       });
 
-      this.rProcess.on('error', (err) => {
+      child.on('error', (err) => {
+        if (this.rProcess !== child) return;
         this.rProcess = null;
         const error = new Error(`Failed to start Rscript: ${err.message}\n\nIs R installed and Rscript on your PATH?`);
         this.emit('status', { phase: 'error', message: error.message, detail: { stderr } });
         settle(reject, error);
       });
 
-      this.rProcess.on('close', (code) => {
+      child.on('close', (code) => {
+        // Ignore events from a previous child generation (retry or multi-app
+        // switch): a stale close must not clear the new handle or report a crash.
+        if (this.rProcess !== child) return;
         this.rProcess = null;
+        // Intentional shutdown (stop()/quit) kills the child, which exits
+        // non-zero; do not report that as a crash.
+        if (this.stopping) return;
         if (code !== null && code !== 0) {
           const msg = `R process exited unexpectedly (code ${code})`;
           console.error(msg);
@@ -483,7 +498,7 @@ class NativeRBackend extends EventEmitter {
         }
       });
 
-      waitForServer(actualPort, { timeout: 60000, interval: 500 })
+      waitForServer(actualPort, { timeout: R_READY_TIMEOUT_MS, interval: 500 })
         .then(() => {
           if (settled) return;
           logDebug(`R Shiny server ready on http://localhost:${actualPort}`);
@@ -497,11 +512,11 @@ class NativeRBackend extends EventEmitter {
           this.stop();
           this.emit('status', {
             phase: 'error',
-            message: `R Shiny server failed to start within 60 seconds.`,
+            message: `R Shiny server failed to start within ${R_READY_TIMEOUT_MS / 1000} seconds.`,
             detail: { stderr }
           });
           settle(reject, new Error(
-            `R Shiny server failed to start within 60 seconds.\n\n` +
+            `R Shiny server failed to start within ${R_READY_TIMEOUT_MS / 1000} seconds.\n\n` +
             `R stderr output:\n${stderr}\n\n` +
             `Possible causes:\n` +
             `- Rscript is not installed or not on PATH\n` +
@@ -517,11 +532,18 @@ class NativeRBackend extends EventEmitter {
    * Stop the native R Shiny server.
    */
   stop() {
+    this.stopping = true;
     this.emit('status', { phase: 'stopping_server', message: 'Stopping R server...' });
     if (this.rProcess) {
       logDebug('Stopping R Shiny server...');
-      killProcessTree(this.rProcess);
+      const child = this.rProcess;
       this.rProcess = null;
+      // Emit app_exit only after the child has actually exited (its 'close'
+      // event), so callers that wait on it (e.g. the auto-updater handoff) do
+      // not race a still-running process.
+      child.once('close', () => this.emit('status', { phase: 'app_exit' }));
+      killProcessTree(child);
+      return;
     }
     this.emit('status', { phase: 'app_exit' });
   }

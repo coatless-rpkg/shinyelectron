@@ -27,8 +27,16 @@ function logDebug(...args) {
 function waitForServer(port, { timeout = 30000, interval = 500 } = {}) {
   return new Promise((resolve, reject) => {
     const start = Date.now();
+    const fail = () =>
+      reject(new Error(`Server on port ${port} did not start within ${timeout}ms`));
 
     function check() {
+      const remaining = timeout - (Date.now() - start);
+      if (remaining <= 0) {
+        fail();
+        return;
+      }
+
       const req = http.get(`http://localhost:${port}`, (res) => {
         res.resume();
         resolve();
@@ -36,16 +44,19 @@ function waitForServer(port, { timeout = 30000, interval = 500 } = {}) {
 
       req.on('error', () => {
         if (Date.now() - start > timeout) {
-          reject(new Error(`Server on port ${port} did not start within ${timeout}ms`));
+          fail();
         } else {
           setTimeout(check, interval);
         }
       });
 
-      req.setTimeout(1000, () => {
+      // Cap each attempt: long enough for a slow-but-healthy first render, but
+      // not the whole budget, so a stalled connection cannot block polling
+      // until the overall deadline. The retry loop keeps polling meanwhile.
+      req.setTimeout(Math.min(8000, Math.max(1000, remaining)), () => {
         req.destroy();
         if (Date.now() - start > timeout) {
-          reject(new Error(`Server on port ${port} did not start within ${timeout}ms`));
+          fail();
         } else {
           setTimeout(check, interval);
         }

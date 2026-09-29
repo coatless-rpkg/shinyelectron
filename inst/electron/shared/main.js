@@ -393,6 +393,8 @@ function setupAutoUpdater() {
 
   autoUpdater.autoDownload = {{#auto_download}}true{{/auto_download}}{{^auto_download}}false{{/auto_download}};
   autoUpdater.autoInstallOnAppQuit = {{#auto_install}}true{{/auto_install}}{{^auto_install}}false{{/auto_install}};
+  // NSIS updater: ship the full installer, not a web installer.
+  autoUpdater.disableWebInstaller = true;
 
   autoUpdater.on('checking-for-update', () => {
     updaterLog.info('Checking for updates...');
@@ -437,7 +439,33 @@ function setupAutoUpdater() {
       defaultId: 0
     }).then((result) => {
       if (result.response === 0) {
-        autoUpdater.quitAndInstall();
+        // Quit cleanly before handing over to the silent installer: stop the
+        // backend (R/Shiny) and wait for it to exit so it releases the bundled
+        // runtime's files, and suppress the window-close confirmation so the
+        // update cannot be cancelled halfway.
+        isShuttingDown = true;
+        app.isQuitting = true;
+
+        let handedOver = false;
+        const handOver = () => {
+          if (handedOver) return;
+          handedOver = true;
+          autoUpdater.quitAndInstall();
+        };
+
+        if (currentBackend) {
+          const onExit = (d) => {
+            if (d && d.phase === 'app_exit') {
+              currentBackend.removeListener('status', onExit);
+              setTimeout(handOver, 700);
+            }
+          };
+          currentBackend.on('status', onExit);
+          currentBackend.stop();
+        }
+        stopSharedShinyliveServer();
+        // Hard fallback if the backend never reports app_exit.
+        setTimeout(handOver, {{shutdown_timeout}});
       }
     });
   });
