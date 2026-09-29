@@ -495,13 +495,43 @@ test_that("build_electron_app passes dependencies.r.prune from config to embed_r
                      config = list(dependencies = list(r = list(prune = FALSE))),
                      verbose = FALSE)
   expect_false(forwarded)
+})
 
-  # A hand-built config is checked too: a quoted "false" must not prune.
+test_that("build_electron_app rejects a bad dependencies.r.prune before touching output or runtimes", {
+  tmp <- withr::local_tempdir()
+  app_dir <- fs::path(tmp, "app"); fs::dir_create(app_dir)
+  writeLines("library(shiny)", fs::path(app_dir, "app.R"))
+  out <- fs::path(tmp, "out"); fs::dir_create(out)
+  writeLines("previous build", fs::path(out, "previous.txt"))
+
+  # The real embed_r_runtime() runs; record whether it gets as far as
+  # downloading or copying a runtime.
+  calls <- character(0)
+  record <- function(name, value = NULL) {
+    force(value)
+    function(...) {
+      calls <<- c(calls, name)
+      value
+    }
+  }
+  local_mocked_bindings(
+    validate_node_npm = function(...) invisible(TRUE),
+    setup_electron_project = record("setup_electron_project"),
+    copy_app_files = record("copy_app_files"),
+    resolve_runtime_version = function(...) "4.6.1",
+    install_r_portable = record("install_r_portable", fs::path(tmp, "cached-r")),
+    copy_dir_contents = record("copy_dir_contents")
+  )
+
+  # A config built in R skips read_config(), so a quoted "false" must still
+  # stop the build, and before the previous output is deleted.
   expect_error(
-    build_electron_app(app_dir, fs::path(tmp, "out2"), app_type = "r-shiny",
+    build_electron_app(app_dir, out, app_type = "r-shiny",
                        runtime_strategy = "bundled", platform = "mac", arch = "arm64",
                        config = list(dependencies = list(r = list(prune = "false"))),
-                       verbose = FALSE),
+                       overwrite = TRUE, verbose = FALSE),
     "dependencies.r.prune"
   )
+  expect_equal(calls, character(0))
+  expect_true(fs::file_exists(fs::path(out, "previous.txt")))
 })

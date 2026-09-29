@@ -184,8 +184,7 @@ resolve_r_prune <- function(config) {
   if (!isTRUE(prune) && !isFALSE(prune)) {
     cli::cli_abort(c(
       "Invalid {.field dependencies.r.prune} in config: {.val {prune}}",
-      "i" = "Must be {.code true} or {.code false}.",
-      "i" = "Edit {.field dependencies.r.prune} in {.file _shinyelectron.yml}"
+      "i" = "Set it to {.code true} or {.code false} in {.file _shinyelectron.yml}, or to {.code TRUE} or {.code FALSE} in a config list built in R."
     ))
   }
   prune

@@ -489,6 +489,60 @@ test_that("build_multi_app passes dependencies.r.prune from config to embed_r_ru
   expect_false(forwarded)
 })
 
+test_that("build_multi_app rejects a bad dependencies.r.prune before creating or downloading anything", {
+  apps_dir <- withr::local_tempdir()
+  dir.create(file.path(apps_dir, "dash"))
+  writeLines("library(shiny)", file.path(apps_dir, "dash", "app.R"))
+  output_dir <- file.path(withr::local_tempdir(), "electron-app")
+
+  config <- list(
+    build = list(type = "r-shiny", runtime_strategy = "bundled"),
+    dependencies = list(r = list(prune = "no")),
+    apps = list(
+      list(id = "dash",   name = "Dash",   path = "./apps/dash"),
+      list(id = "report", name = "Report", path = "./apps/report")
+    )
+  )
+  apps_manifest <- list(
+    list(id = "dash", name = "Dash", path = "src/apps/dash",
+         type = "r-shiny", runtime_strategy = "bundled"),
+    list(id = "report", name = "Report", path = "src/apps/report",
+         type = "r-shiny", runtime_strategy = "bundled")
+  )
+
+  # The real embed_r_runtime() runs; record whether it gets as far as
+  # downloading or copying a runtime.
+  calls <- character(0)
+  record <- function(name, value = NULL) {
+    force(value)
+    function(...) {
+      calls <<- c(calls, name)
+      value
+    }
+  }
+  local_mocked_bindings(
+    validate_node_npm = function(...) invisible(TRUE),
+    setup_electron_project = record("setup_electron_project"),
+    resolve_runtime_version = function(...) "4.6.1",
+    install_r_portable = record("install_r_portable", file.path(apps_dir, "cached-r")),
+    copy_dir_contents = record("copy_dir_contents")
+  )
+
+  expect_error(
+    build_multi_app(
+      apps_dir = apps_dir, output_dir = output_dir, app_name = "Suite",
+      apps_manifest = apps_manifest, default_type = "r-shiny",
+      runtime_strategy = "bundled", sign = FALSE,
+      platform = "mac", arch = "arm64", icon = NULL, config = config,
+      overwrite = TRUE, verbose = FALSE,
+      r_packages = "shiny"
+    ),
+    "dependencies.r.prune"
+  )
+  expect_equal(calls, character(0))
+  expect_false(dir.exists(output_dir))
+})
+
 test_that("build_multi_app writes runtime-manifest.json into each auto-download app dir", {
   skip_if_not_installed("mockery")
 

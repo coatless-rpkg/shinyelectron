@@ -208,6 +208,29 @@ test_that("embed_r_runtime prunes by default and keeps everything with prune = F
   expect_true(all(file.exists(fixture_removed(unpruned))))
 })
 
+test_that("embed_r_runtime checks prune before downloading or copying a runtime", {
+  skip_if_not_installed("mockery")
+  calls <- character(0)
+  mockery::stub(embed_r_runtime, "install_r_portable", function(...) {
+    calls <<- c(calls, "install_r_portable")
+    tempfile()
+  })
+  mockery::stub(embed_r_runtime, "copy_dir_contents", function(...) {
+    calls <<- c(calls, "copy_dir_contents")
+    invisible(NULL)
+  })
+
+  expect_error(
+    embed_r_runtime(
+      output_dir = withr::local_tempdir(), packages = character(0),
+      repos = "https://cloud.r-project.org", version = "9.9.9",
+      platform = "mac", arch = "arm64", verbose = FALSE, prune = "yes"
+    ),
+    "prune"
+  )
+  expect_equal(calls, character(0))
+})
+
 test_that("dependencies.r.prune defaults to TRUE and is read from the config file", {
   expect_true(SHINYELECTRON_DEFAULTS$dependencies$r$prune)
   expect_true(resolve_r_prune(default_config()))
