@@ -81,11 +81,10 @@ parse_pyproject_toml <- function(path) {
   spec_to_name <- function(spec) {
     trimws(sub("[>=<!~;@\\[,].*", "", spec))
   }
-  add_specs <- function(specs) {
-    for (spec in specs) {
-      pkg <- spec_to_name(spec)
-      if (nzchar(pkg)) packages <<- c(packages, pkg)
-    }
+  # The package names in a set of specs, without empty ones.
+  spec_names <- function(specs) {
+    pkgs <- vapply(specs, spec_to_name, character(1), USE.NAMES = FALSE)
+    pkgs[nzchar(pkgs)]
   }
 
   in_deps <- FALSE
@@ -97,14 +96,14 @@ parse_pyproject_toml <- function(path) {
       # Capture any packages declared on the opening line itself, e.g.
       # dependencies = ["shiny", "pandas"].
       after <- sub("^dependencies\\s*=\\s*\\[", "", trimmed)
-      add_specs(extract_quoted(after))
+      packages <- c(packages, spec_names(extract_quoted(after)))
       # A single-line array closes on the same line.
       if (grepl("\\]", after)) in_deps <- FALSE
       next
     }
 
     if (in_deps) {
-      add_specs(extract_quoted(trimmed))
+      packages <- c(packages, spec_names(extract_quoted(trimmed)))
       # The closing bracket may share a line with the last entry.
       if (grepl("\\]", trimmed)) in_deps <- FALSE
     }
