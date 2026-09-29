@@ -57,18 +57,13 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
   # read_config() reports YAML parse errors and questionable values as
   # warnings and carries on. A hard error (for example an invalid installer
   # setting) also stops export(), so it fails the check.
-  read <- read_config_for_check(appdir)
+  read <- catch_conditions(read_config(appdir))
   for (msg in read$warnings) {
     warnings <- c(warnings, paste0("Config error: ", msg))
     if (verbose) cli::cli_alert_warning("Config: {msg}")
   }
-  if (inherits(read$config, "error")) {
-    msg <- conditionMessage(read$config)
-    errors <- c(errors, paste0("Config error: ", msg))
-    if (verbose) cli::cli_alert_danger("Config: {msg}")
-    config <- list()
-  } else {
-    config <- read$config
+  if (is.null(read$error)) {
+    config <- read$value
     if (verbose) {
       if (is.null(find_config(appdir))) {
         cli::cli_alert_info("Config: no {.file _shinyelectron.yml} (using defaults)")
@@ -76,6 +71,11 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
         cli::cli_alert_success("Config: {.file _shinyelectron.yml} valid")
       }
     }
+  } else {
+    msg <- conditionMessage(read$error)
+    errors <- c(errors, paste0("Config error: ", msg))
+    if (verbose) cli::cli_alert_danger("Config: {msg}")
+    config <- list()
   }
 
   # File paths in the config are relative to the app directory, as in export().
@@ -328,19 +328,19 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
     errors <- c(errors, conditionMessage(err))
     if (verbose) cli::cli_alert_danger("App slug: {conditionMessage(err)}")
   }
-  # check_installer_text() gives at most one condition: an error for a
-  # Windows build, a warning otherwise.
-  problem <- tryCatch({
+  # Other warnings can come before the $ check, so keep them all and carry on.
+  text <- catch_conditions(
     check_installer_text(config$app$name %||% app_name, config,
                          windows = "win" %in% platform)
-    NULL
-  }, warning = identity, error = identity)
-  if (inherits(problem, "error")) {
-    errors <- c(errors, conditionMessage(problem))
-    if (verbose) cli::cli_alert_danger("Installer text: {conditionMessage(problem)}")
-  } else if (!is.null(problem)) {
-    warnings <- c(warnings, conditionMessage(problem))
-    if (verbose) cli::cli_alert_warning("Installer text: {conditionMessage(problem)}")
+  )
+  for (msg in text$warnings) {
+    warnings <- c(warnings, msg)
+    if (verbose) cli::cli_alert_warning("Installer text: {msg}")
+  }
+  if (!is.null(text$error)) {
+    msg <- conditionMessage(text$error)
+    errors <- c(errors, msg)
+    if (verbose) cli::cli_alert_danger("Installer text: {msg}")
   }
 
   # --- Result ---
@@ -384,28 +384,32 @@ catch_error <- function(expr) {
   }, error = identity)
 }
 
-#' Read the configuration for app_check()
+#' Evaluate an expression, collecting its warnings and error
 #'
-#' Runs [read_config()] and collects the warnings it gives instead of
-#' printing them, so [app_check()] can report each one.
+#' Records every warning `expr` gives, in order, and lets it carry on, so
+#' [app_check()] can report each one. An error ends the evaluation; the
+#' warnings given before it are kept.
 #'
-#' @param appdir Character. The app directory.
-#' @return A list with `config`, the configuration or, when reading it
-#'   failed, the error condition, and `warnings`, the messages of the
-#'   warnings given before it finished.
+#' @param expr An expression, evaluated in the calling function's
+#'   environment.
+#' @return A list with `value`, the value of `expr` or `NULL` after an error,
+#'   `error`, the error condition or `NULL`, and `warnings`, the messages of
+#'   the warnings given.
 #' @keywords internal
-read_config_for_check <- function(appdir) {
+catch_conditions <- function(expr) {
+  # A calling handler cannot return values to the caller, so the warnings
+  # go into a field of this local environment.
   collected <- new.env(parent = emptyenv())
   collected$warnings <- character(0)
-  config <- tryCatch(
-    withCallingHandlers(
-      read_config(appdir),
-      warning = function(w) {
+  result <- tryCatch(
+    list(
+      value = withCallingHandlers(expr, warning = function(w) {
         collected$warnings <- c(collected$warnings, conditionMessage(w))
         invokeRestart("muffleWarning")
-      }
+      }),
+      error = NULL
     ),
-    error = identity
+    error = function(e) list(value = NULL, error = e)
   )
-  list(config = config, warnings = collected$warnings)
+  c(result, list(warnings = collected$warnings))
 }
