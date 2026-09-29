@@ -232,3 +232,23 @@ test_that("wizard writes the slug derived from the app name", {
   expect_equal(config$app$slug, "sales-dashboard")
   expect_equal(names(config$app), c("name", "slug", "version"))
 })
+
+test_that("wizard says to set app.slug when no slug can be derived", {
+  appdir <- file.path(withr::local_tempdir(), "数据")
+  dir.create(appdir)
+  mockery::stub(wizard, "interactive", function() TRUE)
+  mockery::stub(wizard, "readline", make_readline_responder(c("分析", rep("", 8L))))
+  mockery::stub(wizard, "validate_config_file", function(...) invisible(TRUE))
+
+  messages <- character(0)
+  withCallingHandlers(
+    capture.output(wizard(appdir), type = "output"),
+    message = function(m) {
+      messages <<- c(messages, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+  expect_true(any(grepl("app.slug", messages, fixed = TRUE)))
+  config <- yaml::read_yaml(file.path(appdir, "_shinyelectron.yml"))
+  expect_null(config$app$slug)
+})

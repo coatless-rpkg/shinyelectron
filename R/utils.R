@@ -136,6 +136,21 @@ resolve_app_slug <- function(config, app_name, appdir, name_from_config = FALSE)
   slug
 }
 
+#' Ask for an app slug when none could be derived
+#'
+#' `init_config()` and `wizard()` write the slug into the new configuration.
+#' When neither the app name nor the directory name gives one, they leave it
+#' out and say so with this alert.
+#'
+#' @param app_name Character. The app name.
+#' @return Called for its message.
+#' @keywords internal
+alert_missing_slug <- function(app_name) {
+  cli::cli_alert_warning(
+    "Set {.field app.slug} in {.file _shinyelectron.yml}: no slug could be derived from {.val {app_name}} or the directory name."
+  )
+}
+
 #' Check the app slug before a build starts
 #'
 #' The build uses the slug only when it assembles the Electron app, after the

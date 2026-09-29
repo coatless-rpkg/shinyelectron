@@ -266,3 +266,19 @@ test_that("export_multi_app() checks the slug before a build too", {
     class = "shinyelectron_invalid_slug"
   )
 })
+
+test_that("init_config() says to set app.slug when none can be derived", {
+  appdir <- local_app(non_ascii_name)
+  messages <- character(0)
+  withCallingHandlers(
+    init_config(appdir),
+    message = function(m) {
+      messages <<- c(messages, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+  expect_true(any(grepl("app.slug", messages, fixed = TRUE)))
+  lines <- readLines(file.path(appdir, "_shinyelectron.yml"))
+  expect_true(any(startsWith(lines, "  # slug: null")))
+  expect_null(read_config(appdir)$app$slug)
+})

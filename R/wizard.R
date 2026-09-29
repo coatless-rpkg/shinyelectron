@@ -196,6 +196,7 @@ wizard <- function(appdir) {
   validate_config_file(config_path)
 
   cli::cli_alert_success("Created {.file {config_path}}")
+  if (is.null(slug)) alert_missing_slug(app_name)
   cat("\n")
   cli::cli_alert_info("Next steps:")
   cli::cli_alert_info("  1. Review and edit {.file _shinyelectron.yml}")

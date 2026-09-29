@@ -632,11 +632,7 @@ nodejs:
   if (verbose) {
     cli::cli_alert_success("Created configuration file: {.path {config_path}}")
     cli::cli_alert_info("Edit this file to customize your Electron app settings")
-    if (is.null(slug)) {
-      cli::cli_alert_warning(
-        "Set {.field app.slug}: no slug could be derived from {.val {app_name}} or the directory name."
-      )
-    }
+    if (is.null(slug)) alert_missing_slug(app_name)
   }
 
   validate_config_file(config_path)
