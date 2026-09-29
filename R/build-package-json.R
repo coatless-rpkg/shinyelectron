@@ -126,9 +126,9 @@ generate_package_json <- function(app_slug, app_version, backend, config,
     build_config$asarUnpack <- unpack
   }
 
-  # Platform targets. On Windows the executable, and with it the install
-  # folder, keeps the slug, so renaming the app does not break pinned
-  # shortcuts or move existing installs; the installer name adds "Setup".
+  # Platform targets. On Windows the executable keeps the slug, so renaming
+  # the app does not break pinned shortcuts, and updates reuse the folder an
+  # existing install was registered with. The installer name adds "Setup".
   win_config <- list(
     target = "nsis",
     executableName = app_slug,

@@ -19,11 +19,11 @@
   display name from `app.name` in `_shinyelectron.yml` when no `app_name` is
   given, as documented, instead of from the directory name. The slug, which
   is the app's identity, keeps coming from `app.slug`, then the `app_name`
-  argument, then the directory name, so installed copies keep updating; the
-  Windows executable and install folder keep the slug as well, so pinned
-  shortcuts and existing installs carry over. On macOS, reinstalling from
-  the disk image leaves the old `<slug>.app` in Applications to delete by
-  hand.
+  argument, then the directory name, so installed copies keep updating. The
+  Windows executable keeps the slug as well, and updates reuse the existing
+  install folder, so pinned shortcuts and existing installs carry over. On
+  macOS, reinstalling from the disk image leaves the old `<slug>.app` in
+  Applications to delete by hand.
 
 ## New features
 
