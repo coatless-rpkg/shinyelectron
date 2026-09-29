@@ -110,9 +110,9 @@ sitrep_electron_system()
 
 > **Not yet implemented**
 >
-> `auto_install` is reserved for a future release and has no effect
-> today. A missing Node.js aborts the build with a message directing you
-> to run
+> `auto_install` is planned for a future release. It is not read yet, so
+> setting it has no effect and is reported as an unknown key. A missing
+> Node.js aborts the build with a message directing you to run
 > [`install_nodejs()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.md)
 > or install Node.js manually from <https://nodejs.org/>.
 

@@ -196,7 +196,7 @@ v npm: v11.5.0</code></pre>
 <div>
 <blockquote>
 <p><strong>Not yet implemented</strong></p>
-<p><code>auto_install</code> is reserved for a future release and has no effect today. A missing Node.js aborts the build with a message directing you to run <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code> or install Node.js manually from <a href="https://nodejs.org/" class="external-link uri">https://nodejs.org/</a>.</p>
+<p><code>auto_install</code> is planned for a future release. It is not read yet, so setting it has no effect and is reported as an unknown key. A missing Node.js aborts the build with a message directing you to run <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code> or install Node.js manually from <a href="https://nodejs.org/" class="external-link uri">https://nodejs.org/</a>.</p>
 </blockquote>
 </div>
 <p>When implemented, setting <code>auto_install: true</code> in <code>_shinyelectron.yml</code> will let <code><a href="../reference/export.html">export()</a></code> fetch Node.js automatically when it cannot find one and then continue the build. For now, call <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code> before running <code><a href="../reference/export.html">export()</a></code>.</p>

@@ -191,30 +191,29 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
 <span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span><span class="co">              # Node.js version (null = latest LTS)</span></span>
-<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a><span class="co">  # auto_install: false      # Planned: auto-install Node.js if not found (not yet implemented)</span></span>
-<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a><span class="fu">container</span><span class="kw">:</span><span class="co">                   # Used when runtime_strategy is "container"</span></span>
-<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">engine</span><span class="kw">:</span><span class="at"> </span><span class="st">"docker"</span><span class="co">           # "docker" or "podman"</span></span>
-<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">image</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span><span class="co">                # Container image (null = use bundled Dockerfile)</span></span>
-<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">tag</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span><span class="co">                  # null = resolved runtime version; "latest" for BYO image</span></span>
-<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">pull_on_start</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span><span class="co">        # Pull latest image on app start</span></span>
-<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">volumes</span><span class="kw">:</span><span class="co">                   # Host-to-container volume map (not a list)</span></span>
-<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">"/data"</span><span class="kw">:</span><span class="at"> </span><span class="st">"/app/data"</span></span>
-<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">env</span><span class="kw">:</span><span class="co">                       # Environment variable map (not a list)</span></span>
-<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">SHINY_LOG_LEVEL</span><span class="kw">:</span><span class="at"> </span><span class="st">"debug"</span></span>
-<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a><span class="co"># Multi-app suite (2+ apps packaged in one Electron shell)</span></span>
-<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a><span class="co"># apps:</span></span>
-<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a><span class="co">#   - id: "dashboard"</span></span>
-<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a><span class="co">#     name: "Dashboard"</span></span>
-<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a><span class="co">#     path: "./apps/dashboard"</span></span>
-<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a><span class="co">#     type: "r-shiny"                   # Optional per-app override (default: build.type)</span></span>
-<span id="cb7-66"><a href="#cb7-66" aria-hidden="true" tabindex="-1"></a><span class="co">#     runtime_strategy: "shinylive"     # Optional per-app override (default: build.runtime_strategy)</span></span>
-<span id="cb7-67"><a href="#cb7-67" aria-hidden="true" tabindex="-1"></a><span class="co">#     description: "Main dashboard"</span></span>
-<span id="cb7-68"><a href="#cb7-68" aria-hidden="true" tabindex="-1"></a><span class="co">#     icon: "icons/dash.png"</span></span>
-<span id="cb7-69"><a href="#cb7-69" aria-hidden="true" tabindex="-1"></a><span class="co">#   - id: "admin"</span></span>
-<span id="cb7-70"><a href="#cb7-70" aria-hidden="true" tabindex="-1"></a><span class="co">#     name: "Admin Panel"</span></span>
-<span id="cb7-71"><a href="#cb7-71" aria-hidden="true" tabindex="-1"></a><span class="co">#     path: "./apps/admin"</span></span></code></pre></div>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a><span class="fu">container</span><span class="kw">:</span><span class="co">                   # Used when runtime_strategy is "container"</span></span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">engine</span><span class="kw">:</span><span class="at"> </span><span class="st">"docker"</span><span class="co">           # "docker" or "podman"</span></span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">image</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span><span class="co">                # Container image (null = use bundled Dockerfile)</span></span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">tag</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span><span class="co">                  # null = resolved runtime version; "latest" for BYO image</span></span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">pull_on_start</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span><span class="co">        # Pull latest image on app start</span></span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">volumes</span><span class="kw">:</span><span class="co">                   # Host-to-container volume map (not a list)</span></span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">"/data"</span><span class="kw">:</span><span class="at"> </span><span class="st">"/app/data"</span></span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">env</span><span class="kw">:</span><span class="co">                       # Environment variable map (not a list)</span></span>
+<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">SHINY_LOG_LEVEL</span><span class="kw">:</span><span class="at"> </span><span class="st">"debug"</span></span>
+<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a><span class="co"># Multi-app suite (2+ apps packaged in one Electron shell)</span></span>
+<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a><span class="co"># apps:</span></span>
+<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a><span class="co">#   - id: "dashboard"</span></span>
+<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a><span class="co">#     name: "Dashboard"</span></span>
+<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a><span class="co">#     path: "./apps/dashboard"</span></span>
+<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a><span class="co">#     type: "r-shiny"                   # Optional per-app override (default: build.type)</span></span>
+<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a><span class="co">#     runtime_strategy: "shinylive"     # Optional per-app override (default: build.runtime_strategy)</span></span>
+<span id="cb7-66"><a href="#cb7-66" aria-hidden="true" tabindex="-1"></a><span class="co">#     description: "Main dashboard"</span></span>
+<span id="cb7-67"><a href="#cb7-67" aria-hidden="true" tabindex="-1"></a><span class="co">#     icon: "icons/dash.png"</span></span>
+<span id="cb7-68"><a href="#cb7-68" aria-hidden="true" tabindex="-1"></a><span class="co">#   - id: "admin"</span></span>
+<span id="cb7-69"><a href="#cb7-69" aria-hidden="true" tabindex="-1"></a><span class="co">#     name: "Admin Panel"</span></span>
+<span id="cb7-70"><a href="#cb7-70" aria-hidden="true" tabindex="-1"></a><span class="co">#     path: "./apps/admin"</span></span></code></pre></div>
 <div>
 <blockquote>
 <p><strong>How values get resolved</strong></p>
@@ -474,7 +473,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <div>
 <blockquote>
 <p><strong><code>auto_install</code> is planned, not yet active</strong></p>
-<p>An <code>auto_install</code> key is reserved for a future release. Today, a missing Node.js aborts the build with guidance to run <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code> or install Node.js manually. Do not rely on <code>auto_install: true</code> having any effect.</p>
+<p>An <code>auto_install</code> key is planned for a future release. It is not read yet, so setting it has no effect and is reported as an unknown key. Today, a missing Node.js aborts the build with guidance to run <code><a href="../reference/install_nodejs.html">install_nodejs()</a></code> or install Node.js manually.</p>
 </blockquote>
 </div>
 </section><section class="level3"><h3 id="dependencies">
@@ -846,7 +845,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <td><code>log_dir</code></td>
 <td>string</td>
 <td><code>null</code></td>
-<td>Directory for log files; <code>null</code> writes to the Electron app’s <code>userData/logs</code> directory</td>
+<td>Directory for log files; <code>null</code> writes to the Electron app’s <code>userData/logs</code> directory. Any other value should be an absolute path that the app’s user can write to: a relative path, including one that starts with <code>~</code>, resolves against the process working directory, and if the directory cannot be created no log file is written</td>
 </tr>
 <tr class="even">
 <td><code>log_level</code></td>
@@ -859,8 +858,8 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 </table>
 <p><strong>Example:</strong></p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">logging</span><span class="kw">:</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">log_dir</span><span class="kw">:</span><span class="at"> </span><span class="st">"/var/log/my-app"</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">log_level</span><span class="kw">:</span><span class="at"> </span><span class="st">"debug"</span></span></code></pre></div>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">log_level</span><span class="kw">:</span><span class="at"> </span><span class="st">"debug"</span><span class="co">        # log_dir is unset, so logs go to userData/logs</span></span></code></pre></div>
+<p>The same two keys are also accepted under <code>app</code> as <code>app.log_dir</code> and <code>app.log_level</code>, which is where earlier versions of <code><a href="../reference/init_config.html">init_config()</a></code> put them. If both places set a key to different values, the <code>logging</code> value wins and shinyelectron warns.</p>
 </section><section class="level3"><h3 id="lifecycle">
 <code>lifecycle</code><a class="anchor" aria-label="anchor" href="#lifecycle"></a>
 </h3>
@@ -1051,6 +1050,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <li>Window dimensions under 100 pixels warn and use defaults.</li>
 <li>Invalid port numbers warn and use <code>3838</code>.</li>
 </ul>
+<p>Keys that shinyelectron does not recognize, such as a misspelled <code>widht</code> or a key placed in the wrong section, are reported in a single warning that lists each one by its dotted path (for example <code>window.widht</code>), and the build goes on without them. Entries under <code>apps</code> and the contents of maps such as <code>container.env</code> are not checked.</p>
 <p>If the YAML itself fails to parse, shinyelectron warns and uses all defaults. This is deliberate: a broken config file should never block you from producing a build during development.</p>
 </section><section class="level2"><h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>

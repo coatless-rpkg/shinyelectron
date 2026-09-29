@@ -139,7 +139,6 @@ icon: "branding/icon.png"    # Single high-res source; electron-builder fans out
 
 nodejs:
   version: null              # Node.js version (null = latest LTS)
-  # auto_install: false      # Planned: auto-install Node.js if not found (not yet implemented)
 
 container:                   # Used when runtime_strategy is "container"
   engine: "docker"           # "docker" or "podman"
@@ -289,11 +288,11 @@ Node.js installation behavior.
 
 > **`auto_install` is planned, not yet active**
 >
-> An `auto_install` key is reserved for a future release. Today, a
-> missing Node.js aborts the build with guidance to run
+> An `auto_install` key is planned for a future release. It is not read
+> yet, so setting it has no effect and is reported as an unknown key.
+> Today, a missing Node.js aborts the build with guidance to run
 > [`install_nodejs()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_nodejs.md)
-> or install Node.js manually. Do not rely on `auto_install: true`
-> having any effect.
+> or install Node.js manually.
 
 ### `dependencies`
 
@@ -484,16 +483,21 @@ Controls where and how the app writes its log files.
 
 | Key | Type | Default | Description |
 |----|----|----|----|
-| `log_dir` | string | `null` | Directory for log files; `null` writes to the Electron app’s `userData/logs` directory |
+| `log_dir` | string | `null` | Directory for log files; `null` writes to the Electron app’s `userData/logs` directory. Any other value should be an absolute path that the app’s user can write to: a relative path, including one that starts with `~`, resolves against the process working directory, and if the directory cannot be created no log file is written |
 | `log_level` | string | `"info"` | Logging verbosity: `"debug"`, `"info"`, `"warn"`, or `"error"` |
 
 **Example:**
 
 ``` yaml
 logging:
-  log_dir: "/var/log/my-app"
-  log_level: "debug"
+  log_level: "debug"        # log_dir is unset, so logs go to userData/logs
 ```
+
+The same two keys are also accepted under `app` as `app.log_dir` and
+`app.log_level`, which is where earlier versions of
+[`init_config()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/init_config.md)
+put them. If both places set a key to different values, the `logging`
+value wins and shinyelectron warns.
 
 ### `lifecycle`
 
@@ -635,6 +639,12 @@ than aborting the build:
 - Invalid platforms and architectures are dropped with a warning.
 - Window dimensions under 100 pixels warn and use defaults.
 - Invalid port numbers warn and use `3838`.
+
+Keys that shinyelectron does not recognize, such as a misspelled `widht`
+or a key placed in the wrong section, are reported in a single warning
+that lists each one by its dotted path (for example `window.widht`), and
+the build goes on without them. Entries under `apps` and the contents of
+maps such as `container.env` are not checked.
 
 If the YAML itself fails to parse, shinyelectron warns and uses all
 defaults. This is deliberate: a broken config file should never block
