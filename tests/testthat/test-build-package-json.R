@@ -139,3 +139,92 @@ test_that("generate_package_json respects config electron version override", {
 
   expect_equal(parsed$devDependencies$electron, "^42.1.0")
 })
+
+test_that("build_nsis_config maps installer options", {
+  expect_equal(
+    build_nsis_config(list(installer = list(one_click = TRUE))),
+    list(oneClick = TRUE)
+  )
+  expect_equal(
+    build_nsis_config(list(installer = list(one_click = FALSE))),
+    list(oneClick = FALSE)
+  )
+  expect_equal(
+    build_nsis_config(list(installer = list(
+      one_click = FALSE,
+      allow_to_change_installation_directory = TRUE,
+      per_machine = FALSE
+    ))),
+    list(oneClick = FALSE, allowToChangeInstallationDirectory = TRUE,
+         perMachine = FALSE)
+  )
+})
+
+test_that("build_nsis_config passes explicit per_machine through", {
+  expect_equal(
+    build_nsis_config(list(installer = list(one_click = TRUE, per_machine = TRUE))),
+    list(oneClick = TRUE, perMachine = TRUE)
+  )
+  expect_equal(
+    build_nsis_config(list(installer = list(
+      one_click = FALSE,
+      allow_to_change_installation_directory = FALSE,
+      per_machine = TRUE
+    ))),
+    list(oneClick = FALSE, allowToChangeInstallationDirectory = FALSE,
+         perMachine = TRUE)
+  )
+})
+
+test_that("build_nsis_config is empty without installer options", {
+  expect_equal(build_nsis_config(list()), list())
+
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "native-r", list()),
+    simplifyVector = FALSE
+  )
+  expect_null(parsed$build$nsis)
+})
+
+test_that("generate_package_json emits only oneClick for the default installer", {
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "native-r", default_config()),
+    simplifyVector = FALSE
+  )
+  expect_equal(parsed$build$nsis, list(oneClick = TRUE))
+})
+
+test_that("generate_package_json adds no directory page to the wizard by default", {
+  cfg <- default_config()
+  cfg$installer$one_click <- FALSE
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "native-r", cfg),
+    simplifyVector = FALSE
+  )
+  expect_equal(parsed$build$nsis, list(oneClick = FALSE))
+})
+
+test_that("generate_package_json emits installer.license_file as the NSIS license", {
+  cfg <- default_config()
+  cfg$installer$license_file <- "/path/to/LICENSE.txt"
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "native-r", cfg),
+    simplifyVector = FALSE
+  )
+  # electron-builder 26 rejects `license` under `win`; it is an NSIS option.
+  expect_null(parsed$build$win$license)
+  expect_equal(parsed$build$nsis,
+               list(oneClick = TRUE, license = "build/installer-license.txt"))
+})
+
+test_that("installer_license_path keeps the license format", {
+  expect_equal(installer_license_path("docs/EULA.RTF"), "build/installer-license.rtf")
+  expect_equal(installer_license_path("terms.html"), "build/installer-license.html")
+  expect_equal(installer_license_path("LICENSE"), "build/installer-license.txt")
+})
+
+test_that("installer_license_path renames .htm licenses to .html", {
+  # electron-builder renders a license as HTML only when it ends in .html.
+  expect_equal(installer_license_path("terms.htm"), "build/installer-license.html")
+  expect_equal(installer_license_path("TERMS.HTM"), "build/installer-license.html")
+})

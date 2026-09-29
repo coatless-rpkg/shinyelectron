@@ -109,7 +109,7 @@ v npm: v11.5.0
 ::: {.callout-warning}
 ## Not yet implemented
 
-`auto_install` is reserved for a future release and has no effect today. A missing Node.js aborts the build with a message directing you to run `install_nodejs()` or install Node.js manually from <https://nodejs.org/>.
+`auto_install` is planned for a future release. It is not read yet, so setting it has no effect and is reported as an unknown key. A missing Node.js aborts the build with a message directing you to run `install_nodejs()` or install Node.js manually from <https://nodejs.org/>.
 :::
 
 When implemented, setting `auto_install: true` in `_shinyelectron.yml` will let `export()` fetch Node.js automatically when it cannot find one and then continue the build. For now, call `install_nodejs()` before running `export()`.

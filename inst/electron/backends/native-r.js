@@ -5,15 +5,45 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const {
-  waitForServer, findAvailablePort, killProcessTree,
-  sortCandidatesByVersion, reportRuntimeCandidates, meetsMinimumVersion, logDebug,
-  resolveRuntimeManifestPath
+  waitForServer, findAvailablePort, killProcessTree, isProcessRunning, waitForExit,
+  startSupersededError, startupTimeoutMs, formatSeconds, sortCandidatesByVersion,
+  reportRuntimeCandidates, meetsMinimumVersion, logDebug, resolveRuntimeManifestPath
 } = require('./utils');
 
 class NativeRBackend extends EventEmitter {
   constructor() {
     super();
     this.rProcess = null;
+    // Bumped by every start() and stop(); see start().
+    this.startToken = 0;
+    // Ends the prompt wait of the current start, if any; see waitForPrompt().
+    this.cancelPrompt = null;
+  }
+
+  /**
+   * Wait for the answer to one of start()'s prompts. stop() and a newer
+   * start() end the wait with START_SUPERSEDED, so a superseded start
+   * settles instead of staying pending forever.
+   * @param {string[]} events - The events that answer the prompt; their
+   *   listeners are removed once the wait ends.
+   * @param {function} executor - Registers those listeners; called with
+   *   (resolve, reject) like a Promise executor.
+   * @returns {Promise<*>}
+   */
+  waitForPrompt(events, executor) {
+    return new Promise((resolve, reject) => {
+      let finished = false;
+      const finish = (settle, value) => {
+        if (finished) return;
+        finished = true;
+        if (this.cancelPrompt === cancel) this.cancelPrompt = null;
+        for (const event of events) this.removeAllListeners(event);
+        settle(value);
+      };
+      const cancel = () => finish(reject, startSupersededError());
+      this.cancelPrompt = cancel;
+      executor((value) => finish(resolve, value), (err) => finish(reject, err));
+    });
   }
 
   /**
@@ -201,9 +231,21 @@ class NativeRBackend extends EventEmitter {
    * @param {string} options.appPath - Path to the Shiny app directory.
    * @param {number} options.port - Port to listen on.
    * @param {object} options.config - Backend configuration.
-   * @returns {Promise<{port: number}>} Resolves when the Shiny server is ready.
+   * @returns {Promise<{port: number}>} Resolves when the Shiny server is
+   *   ready. Rejects with code 'START_SUPERSEDED' when stop() or a newer
+   *   start() supersedes this one.
    */
   async start({ appPath, port, config }) {
+    // stop() and any later start() supersede this start. From then on it must
+    // not spawn R, report status, or touch this.rProcess: the backend is
+    // shared, so all of those now belong to whatever runs next.
+    const token = ++this.startToken;
+    const superseded = () => token !== this.startToken;
+    const throwIfSuperseded = () => {
+      if (superseded()) throw startSupersededError();
+    };
+    if (this.cancelPrompt) this.cancelPrompt();
+
     // Clear only this backend's one-shot interactive handlers from a prior
     // start(); do NOT removeAllListeners(), which would also wipe the main
     // process's 'status'/'error' subscribers and freeze the lifecycle UI.
@@ -230,7 +272,9 @@ class NativeRBackend extends EventEmitter {
 
           if (!findCachedRuntime(manifest)) {
             const { isOnline } = require('./utils');
-            if (!await isOnline()) {
+            const online = await isOnline();
+            throwIfSuperseded();
+            if (!online) {
               this.emit('status', {
                 phase: 'error',
                 message: 'This app needs to download R on first launch but no internet connection was detected.\n\nPlease check your network connection and try again.'
@@ -241,11 +285,15 @@ class NativeRBackend extends EventEmitter {
             this.emit('status', { phase: 'downloading_runtime', message: 'Downloading R runtime...' });
             rscript = await downloadRuntime(manifest, (msg, pct) => {
               logDebug(`[Runtime] ${msg}`);
-              this.emit('status', { phase: 'downloading_runtime', message: `[Runtime] ${msg}` });
+              if (!superseded()) {
+                this.emit('status', { phase: 'downloading_runtime', message: `[Runtime] ${msg}` });
+              }
             });
+            throwIfSuperseded();
           }
         }
       } catch (err) {
+        throwIfSuperseded();
         this.emit('status', { phase: 'error', message: `Failed to set up R runtime: ${err.message}`, detail: { stderr: err.message } });
         throw new Error(`Failed to set up R runtime: ${err.message}`);
       }
@@ -274,7 +322,7 @@ class NativeRBackend extends EventEmitter {
         });
 
         // Wait for user selection
-        const selectedPath = await new Promise((resolve) => {
+        const selectedPath = await this.waitForPrompt(['runtime-selected'], (resolve) => {
           this.once('runtime-selected', (data) => {
             // Save preference
             const currentPrefs = pickerChecker.readPreferences(appSlugPicker) || {};
@@ -283,6 +331,7 @@ class NativeRBackend extends EventEmitter {
             resolve(data.runtimePath);
           });
         });
+        throwIfSuperseded();
 
         rscript = selectedPath;
         this.emit('status', { phase: 'runtime_found', message: `Selected R: ${rscript}` });
@@ -334,6 +383,7 @@ class NativeRBackend extends EventEmitter {
       // runtime/R tree does not exist so a bundledLibCheck would always be
       // false -- that dead check has been removed.
       const missing = await checker.checkMissingR(manifest.packages, rscript, libPath);
+      throwIfSuperseded();
 
       if (missing.length > 0) {
         const promptBeforeInstall = config?.prompt_before_install ?? false;
@@ -347,7 +397,7 @@ class NativeRBackend extends EventEmitter {
             detail: { missing, all: manifest.packages, system_deps: systemDeps }
           });
 
-          await new Promise((resolveInstall, rejectInstall) => {
+          await this.waitForPrompt(['install-packages', 'skip-install'], (resolveInstall, rejectInstall) => {
             this.once('install-packages', async (data) => {
               const chosenPath = data.libPath === 'app-local'
                 ? path.join(os.homedir(), '.shinyelectron', 'libraries', appSlug)
@@ -370,6 +420,7 @@ class NativeRBackend extends EventEmitter {
 
             this.once('skip-install', () => resolveInstall());
           });
+          throwIfSuperseded();
         } else {
           // Auto-install
           if (systemDeps.length > 0) {
@@ -379,6 +430,7 @@ class NativeRBackend extends EventEmitter {
           const result = await checker.installR(missing, manifest.repos || [], rscript, libPath, (pkg, idx, total) => {
             this.emit('status', { phase: 'installing_packages', message: `Installing ${pkg}...`, detail: { index: idx, total } });
           });
+          throwIfSuperseded();
 
           if (!result.success) {
             this.emit('status', { phase: 'install_error', message: result.error });
@@ -392,15 +444,16 @@ class NativeRBackend extends EventEmitter {
     const actualPort = await findAvailablePort(
       port,
       (attempted, next) => {
+        if (superseded()) return;
         this.emit('status', { phase: 'port_conflict', message: `Port ${attempted} in use, trying ${next}...` });
       }
     );
+    throwIfSuperseded();
 
     this.emit('status', { phase: 'starting_server', message: 'Starting R Shiny server...' });
 
     return new Promise((resolve, reject) => {
-      // Guard so the start() promise settles exactly once and a late
-      // waitForServer timeout cannot stop a process a retry has since spawned.
+      // Guard so the start() promise settles exactly once.
       let settled = false;
       const settle = (fn, arg) => { if (settled) return; settled = true; fn(arg); };
 
@@ -429,21 +482,30 @@ class NativeRBackend extends EventEmitter {
       logDebug(`Rscript command: ${rscript}`);
       logDebug(`App path: ${appPath}`);
 
-      this.rProcess = spawn(rscript, ['-e', rCode], {
+      const child = spawn(rscript, ['-e', rCode], {
         stdio: ['ignore', 'pipe', 'pipe'],
         env: { ...process.env }
       });
+      this.rProcess = child;
+
+      // Settle a superseded start without reporting anything or touching
+      // this.rProcess; stop the child it spawned if that is still running.
+      const abandon = () => {
+        if (isProcessRunning(child)) killProcessTree(child);
+        settle(reject, startSupersededError());
+      };
 
       let stderr = '';
 
-      this.rProcess.stdout.on('data', (data) => {
+      child.stdout.on('data', (data) => {
         logDebug(`[R stdout] ${data.toString().trim()}`);
       });
 
-      this.rProcess.stderr.on('data', (data) => {
+      child.stderr.on('data', (data) => {
         const msg = data.toString().trim();
         stderr += msg + '\n';
         logDebug(`[R stderr] ${msg}`);
+        if (superseded()) return;
 
         // Surface R's progress as lifecycle status updates so the splash
         // screen shows what's happening instead of sitting frozen.
@@ -460,48 +522,108 @@ class NativeRBackend extends EventEmitter {
         }
       });
 
-      this.rProcess.on('error', (err) => {
-        this.rProcess = null;
-        const error = new Error(`Failed to start Rscript: ${err.message}\n\nIs R installed and Rscript on your PATH?`);
-        this.emit('status', { phase: 'error', message: error.message, detail: { stderr } });
-        settle(reject, error);
-      });
-
-      this.rProcess.on('close', (code) => {
-        this.rProcess = null;
-        if (code !== null && code !== 0) {
-          const msg = `R process exited unexpectedly (code ${code})`;
+      // The child ended on its own rather than through stop() or this start's
+      // timeout. A crash, including death by a signal (a segfault, the OOM
+      // killer), is reported whenever it happens; a clean exit before the
+      // server answered fails the start at once instead of after the startup
+      // timeout.
+      const reportExit = (code, signal) => {
+        if (signal || (code !== null && code !== 0)) {
+          const msg = `R process exited unexpectedly (${signal ? `signal ${signal}` : `code ${code}`})`;
           console.error(msg);
           console.error(`R stderr output:\n${stderr}`);
           this.emit('status', {
             phase: 'server_crashed',
             message: msg,
-            detail: { stderr, code }
+            detail: { stderr, code, signal }
           });
           // Reject immediately instead of waiting out the readiness poll.
           settle(reject, new Error(`${msg}\n\nR stderr output:\n${stderr}`));
+        } else if (!settled) {
+          const msg = 'R exited before the Shiny server was ready.';
+          this.emit('status', { phase: 'error', message: msg, detail: { stderr } });
+          settle(reject, new Error(`${msg}\n\nR stderr output:\n${stderr}`));
         }
+      };
+
+      child.on('error', (err) => {
+        if (this.rProcess !== child) {
+          if (superseded()) abandon();
+          return;
+        }
+        this.rProcess = null;
+        if (superseded()) {
+          abandon();
+          return;
+        }
+        const error = new Error(`Failed to start Rscript: ${err.message}\n\nIs R installed and Rscript on your PATH?`);
+        this.emit('status', { phase: 'error', message: error.message, detail: { stderr } });
+        settle(reject, error);
       });
 
-      waitForServer(actualPort, { timeout: 60000, interval: 500 })
+      child.on('close', (code, signal) => {
+        // Ignore a child that is no longer current: stop() clears the handle
+        // before killing it, and a retry or multi-app switch replaces it, so
+        // an intentional kill or a stale close never reports a crash. A
+        // start that is still pending was superseded and settles quietly.
+        if (this.rProcess !== child) {
+          if (superseded()) abandon();
+          return;
+        }
+        this.rProcess = null;
+        // A superseded start stays quiet even when its own child is still the
+        // current one, as when a newer start has not spawned yet: killing the
+        // child can end it with a non-zero code (taskkill /f on Windows).
+        if (superseded()) {
+          abandon();
+          return;
+        }
+        reportExit(code, signal);
+      });
+
+      const startupTimeout = startupTimeoutMs(config);
+      waitForServer(actualPort, {
+        timeout: startupTimeout,
+        interval: 500,
+        isCancelled: () => settled || superseded() || !isProcessRunning(child)
+      })
         .then(() => {
           if (settled) return;
+          if (superseded()) {
+            abandon();
+            return;
+          }
           logDebug(`R Shiny server ready on http://localhost:${actualPort}`);
           this.emit('status', { phase: 'server_ready', message: 'R Shiny server ready' });
           settle(resolve, { port: actualPort });
         })
-        .catch((err) => {
-          // A crash close-handler may have already settled and stopped us;
-          // do not stop() again (it could kill a retry's fresh process).
+        .catch(() => {
+          // A crash already settled this start.
           if (settled) return;
-          this.stop();
+          if (superseded()) {
+            abandon();
+            return;
+          }
+          // The child has exited, but its 'close' has not been delivered yet,
+          // as happens while a helper process still holds its output open.
+          if (!isProcessRunning(child)) {
+            if (this.rProcess === child) this.rProcess = null;
+            reportExit(child.exitCode, child.signalCode);
+            return;
+          }
+          // Tear down only the child this start spawned. stop() would kill
+          // whatever process is current, which may already belong to a newer
+          // start, and report a shutdown for an app that never came up.
+          if (this.rProcess === child) this.rProcess = null;
+          if (isProcessRunning(child)) killProcessTree(child);
+          const waited = formatSeconds(startupTimeout);
           this.emit('status', {
             phase: 'error',
-            message: `R Shiny server failed to start within 60 seconds.`,
+            message: `R Shiny server failed to start within ${waited}.`,
             detail: { stderr }
           });
           settle(reject, new Error(
-            `R Shiny server failed to start within 60 seconds.\n\n` +
+            `R Shiny server failed to start within ${waited}.\n\n` +
             `R stderr output:\n${stderr}\n\n` +
             `Possible causes:\n` +
             `- Rscript is not installed or not on PATH\n` +
@@ -514,16 +636,27 @@ class NativeRBackend extends EventEmitter {
   }
 
   /**
-   * Stop the native R Shiny server.
+   * Stop the native R Shiny server, superseding any start() still in
+   * progress. Emits 'stopping_server' and 'app_exit' right away; callers that
+   * must know the R process is gone (the auto-updater handoff) wait on the
+   * result.
+   * @returns {Promise<void>} Resolves once the R process has exited, or right
+   *   away if none was running.
    */
   stop() {
+    this.startToken++;
+    if (this.cancelPrompt) this.cancelPrompt();
     this.emit('status', { phase: 'stopping_server', message: 'Stopping R server...' });
+    let exited = Promise.resolve();
     if (this.rProcess) {
       logDebug('Stopping R Shiny server...');
-      killProcessTree(this.rProcess);
+      const child = this.rProcess;
       this.rProcess = null;
+      exited = waitForExit(child);
+      killProcessTree(child);
     }
     this.emit('status', { phase: 'app_exit' });
+    return exited;
   }
 }
 

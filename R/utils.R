@@ -118,13 +118,16 @@ validate_slug <- function(slug) {
 #' @keywords internal
 run_command_safe <- function(command, args = character(), timeout = 30,
                              env = NULL) {
+  # npm enables Node's V8 compile cache by default, which otherwise writes a
+  # "node-compile-cache" directory into the session temp dir. Point it at a
+  # directory removed when this call returns, threaded into whatever
+  # environment the child receives, so a diagnostic probe leaves no detritus
+  # behind (builds keep the default cache for speed). Base R only: withr is
+  # a suggested package and may not be installed.
+  compile_cache <- tempfile("node-compile-cache-")
+  dir.create(compile_cache, showWarnings = FALSE)
+  on.exit(unlink(compile_cache, recursive = TRUE), add = TRUE)
   tryCatch({
-    # npm enables Node's V8 compile cache by default, which otherwise writes a
-    # "node-compile-cache" directory into the session temp dir. Point it at a
-    # directory removed when this call returns, threaded into whatever
-    # environment the child receives, so a diagnostic probe leaves no detritus
-    # behind (builds keep the default cache for speed).
-    compile_cache <- withr::local_tempdir("node-compile-cache-")
     env <- c(if (is.null(env)) "current" else env,
              NODE_COMPILE_CACHE = compile_cache)
 

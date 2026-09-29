@@ -305,6 +305,23 @@ test_that("e2e: process_templates assembles shinylive with express", {
   expect_true("express" %in% names(pkg$dependencies))
 })
 
+test_that("e2e: process_templates copies the installer license into the build", {
+  d <- tempfile(); dir.create(d)
+  dir.create(file.path(d, "src"), recursive = TRUE)
+  dir.create(file.path(d, "assets"))
+  dir.create(file.path(d, "build"))
+  on.exit(unlink(d, TRUE))
+  license <- withr::local_tempfile(fileext = ".txt")
+  writeLines("Terms of use", license)
+  cfg <- list(app = list(version = "1.0.0"),
+              installer = list(license_file = license))
+  process_templates(d, "Licensed App", "r-shiny", runtime_strategy = "system",
+                    config = cfg, verbose = FALSE)
+  pkg <- jsonlite::fromJSON(file.path(d, "package.json"))
+  expect_equal(pkg$build$nsis$license, "build/installer-license.txt")
+  expect_equal(readLines(file.path(d, pkg$build$nsis$license)), "Terms of use")
+})
+
 # --- Config Round-Trip ---
 
 test_that("e2e: init_config creates valid config that reads back", {

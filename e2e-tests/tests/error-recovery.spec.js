@@ -10,8 +10,9 @@ const APP_DIR = path.join(TMP_DIR, 'app');
 const BUILD_DIR = path.join(TMP_DIR, 'build');
 
 // Error recovery tests need longer timeouts because:
-// - waitForServer in native-r.js polls for 60s before timing out
-// - The error UI only appears after that timeout
+// - waitForServer in native-r.js polls for up to lifecycle.startup_timeout
+//   (180 s by default) before timing out
+// - The error UI only appears after R exits or that timeout passes
 test.describe('Error Recovery - r-shiny system', () => {
   test.setTimeout(120000);
   /** @type {import('@playwright/test').ElectronApplication} */
@@ -52,7 +53,8 @@ test.describe('Error Recovery - r-shiny system', () => {
     await window.waitForLoadState('domcontentloaded');
 
     // Wait for lifecycle page to load, then wait for error state.
-    // R crashes immediately, but waitForServer takes up to 60s to timeout.
+    // R crashes immediately, while waitForServer would wait for the startup
+    // timeout.
     // The server_crashed status fires on R exit, or error fires on timeout.
     try {
       await window.waitForSelector('#state-error.active', { timeout: 90000 });
