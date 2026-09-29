@@ -517,6 +517,30 @@ class NativePyBackend extends EventEmitter {
         }
       });
 
+      // The child ended on its own rather than through stop() or this start's
+      // timeout. A crash, including death by a signal (a segfault, the OOM
+      // killer), is reported whenever it happens; a clean exit before the
+      // server answered fails the start at once instead of after the startup
+      // timeout.
+      const reportExit = (code, signal) => {
+        if (signal || (code !== null && code !== 0)) {
+          const msg = `Python process exited unexpectedly (${signal ? `signal ${signal}` : `code ${code}`})`;
+          console.error(msg);
+          console.error(`Python stderr output:\n${stderr}`);
+          this.emit('status', {
+            phase: 'server_crashed',
+            message: msg,
+            detail: { stderr, code, signal }
+          });
+          // Reject immediately instead of waiting out the readiness poll.
+          settle(reject, new Error(`${msg}\n\nPython stderr output:\n${stderr}`));
+        } else if (!settled) {
+          const msg = 'Python exited before the Shiny server was ready.';
+          this.emit('status', { phase: 'error', message: msg, detail: { stderr } });
+          settle(reject, new Error(`${msg}\n\nPython stderr output:\n${stderr}`));
+        }
+      };
+
       child.on('error', (err) => {
         if (this.pyProcess !== child) {
           if (superseded()) abandon();
@@ -532,7 +556,7 @@ class NativePyBackend extends EventEmitter {
         settle(reject, error);
       });
 
-      child.on('close', (code) => {
+      child.on('close', (code, signal) => {
         // Ignore a child that is no longer current: stop() clears the handle
         // before killing it, and a retry or multi-app switch replaces it, so
         // an intentional kill or a stale close never reports a crash. A
@@ -549,25 +573,14 @@ class NativePyBackend extends EventEmitter {
           abandon();
           return;
         }
-        if (code !== null && code !== 0) {
-          const msg = `Python process exited unexpectedly (code ${code})`;
-          console.error(msg);
-          console.error(`Python stderr output:\n${stderr}`);
-          this.emit('status', {
-            phase: 'server_crashed',
-            message: msg,
-            detail: { stderr, code }
-          });
-          // Reject immediately instead of waiting out the readiness poll.
-          settle(reject, new Error(`${msg}\n\nPython stderr output:\n${stderr}`));
-        }
+        reportExit(code, signal);
       });
 
       const startupTimeout = startupTimeoutMs(config);
       waitForServer(actualPort, {
         timeout: startupTimeout,
         interval: 500,
-        isCancelled: () => settled || superseded()
+        isCancelled: () => settled || superseded() || !isProcessRunning(child)
       })
         .then(() => {
           if (settled) return;
@@ -584,6 +597,13 @@ class NativePyBackend extends EventEmitter {
           if (settled) return;
           if (superseded()) {
             abandon();
+            return;
+          }
+          // The child has exited, but its 'close' has not been delivered yet,
+          // as happens while a helper process still holds its output open.
+          if (!isProcessRunning(child)) {
+            if (this.pyProcess === child) this.pyProcess = null;
+            reportExit(child.exitCode, child.signalCode);
             return;
           }
           // Tear down only the child this start spawned. stop() would kill
