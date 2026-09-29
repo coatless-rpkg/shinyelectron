@@ -446,7 +446,7 @@ Controls installer branding and behavior for the Windows (NSIS) installer produc
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `app_id` | string | `null` | Unique application identifier (e.g. `"com.example.myapp"`); `null` derives one from the app name |
-| `license_file` | string | `null` | Path to a license file, relative to the app directory, that the Windows installer shows before installing. Plain text, `.rtf`, or `.html` |
+| `license_file` | string | `null` | Path to a license file, relative to the app directory, that the Windows installer shows before installing. Plain text (UTF-8), `.rtf`, or `.html` |
 | `one_click` | boolean | `true` | Use a one-click installer on Windows; set to `false` for a wizard-style installer |
 | `allow_to_change_installation_directory` | boolean | `null` | `true` adds a wizard page where users choose the installation folder. Requires `one_click: false` |
 | `per_machine` | boolean | `null` | `true` installs for all users, which needs administrator rights on every install and update. When unset, the one-click installer installs for the current user and the wizard lets the user choose |

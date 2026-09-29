@@ -20,7 +20,8 @@
 * `installer.license_file` no longer fails every build with electron-builder's
   "unknown property 'license'" error. The file is resolved relative to the app
   directory, copied into the build, and shown as the Windows installer's
-  license page.
+  license page. A UTF-8 text license gets a byte order mark in the copy so
+  the installer shows characters such as the copyright sign correctly.
 
 # shinyelectron 0.2.1
 

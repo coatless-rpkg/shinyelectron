@@ -288,7 +288,8 @@ copy_brand_assets <- function(output_dir, icon, config) {
 #' electron-builder runs inside the generated project, so the file named by
 #' `installer.license_file` is copied to [installer_license_path()], which
 #' [build_nsis_config()] references as the NSIS `license`. [export()] has
-#' already resolved the path against the app directory.
+#' already resolved the path against the app directory. A plain-text copy is
+#' passed through [add_utf8_bom()] so NSIS reads it as UTF-8.
 #'
 #' @param output_dir Character. The Electron project directory.
 #' @param config List. The effective configuration.
@@ -308,5 +309,37 @@ copy_installer_license <- function(output_dir, config) {
   dest <- fs::path(output_dir, installer_license_path(license_file))
   fs::dir_create(fs::path_dir(dest))
   fs::file_copy(license_file, dest, overwrite = TRUE)
+  if (identical(tools::file_ext(dest), "txt")) {
+    add_utf8_bom(dest)
+  }
   invisible(dest)
+}
+
+#' Mark a UTF-8 text file with a byte order mark
+#'
+#' NSIS reads a license text file that has no byte order mark in the build
+#' machine's ANSI code page, so UTF-8 text with characters such as the
+#' copyright sign, curly quotes or accented letters shows up garbled in the
+#' installer. electron-builder converts only localized `license_<lang>`
+#' files. This prepends the UTF-8 byte order mark when the file is valid
+#' UTF-8 with some non-ASCII content, and leaves ASCII files, files that
+#' already start with a byte order mark, other encodings such as Latin-1,
+#' and files containing NUL bytes (such as UTF-16) unchanged.
+#'
+#' @param path Character. Path to the text file, rewritten in place.
+#' @return Invisibly, `TRUE` when the byte order mark was added.
+#' @keywords internal
+add_utf8_bom <- function(path) {
+  bytes <- readBin(path, "raw", n = file.size(path))
+  bom <- as.raw(c(0xef, 0xbb, 0xbf))
+  has_bom <- length(bytes) >= 3L && identical(bytes[1:3], bom)
+  # Check for NUL bytes before rawToChar(), which cannot hold them.
+  add <- !has_bom &&
+    !any(bytes == as.raw(0L)) &&
+    any(bytes > as.raw(0x7f)) &&
+    validUTF8(rawToChar(bytes))
+  if (add) {
+    writeBin(c(bom, bytes), path)
+  }
+  invisible(add)
 }

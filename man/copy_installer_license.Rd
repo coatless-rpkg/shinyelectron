@@ -18,6 +18,7 @@ Invisibly, the path of the copy, or \code{NULL} when no license is set.
 electron-builder runs inside the generated project, so the file named by
 \code{installer.license_file} is copied to \code{\link[=installer_license_path]{installer_license_path()}}, which
 \code{\link[=build_nsis_config]{build_nsis_config()}} references as the NSIS \code{license}. \code{\link[=export]{export()}} has
-already resolved the path against the app directory.
+already resolved the path against the app directory. A plain-text copy is
+passed through \code{\link[=add_utf8_bom]{add_utf8_bom()}} so NSIS reads it as UTF-8.
 }
 \keyword{internal}
