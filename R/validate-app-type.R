@@ -136,7 +136,8 @@ resolve_app_strategy <- function(app, config) {
 #' Validate multi-app configuration
 #'
 #' @param config List. Configuration with apps array.
-#' @param basedir Character. Base directory for resolving relative paths.
+#' @param basedir Character. Base directory for resolving relative paths (see
+#'   [resolve_config_path()]).
 #' @keywords internal
 validate_multi_app_config <- function(config, basedir) {
   apps <- config$apps
@@ -175,7 +176,7 @@ validate_multi_app_config <- function(config, basedir) {
 
   # Validate each app directory and structure
   for (app in apps) {
-    app_path <- fs::path(basedir, app$path)
+    app_path <- resolve_config_path(app$path, basedir)
     if (!fs::dir_exists(app_path)) {
       cli::cli_abort("App {.val {app$id}} directory does not exist: {.path {app_path}}")
     }

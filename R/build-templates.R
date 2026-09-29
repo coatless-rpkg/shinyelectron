@@ -20,6 +20,11 @@ process_templates <- function(output_dir, app_name, app_type,
                               verbose = TRUE) {
   if (verbose) cli::cli_alert_info("Processing Electron templates...")
 
+  # export() has already dropped missing files. This catches a config passed
+  # straight to build_electron_app(), whose paths are relative to the working
+  # directory, before the templates refer to a file that is never copied.
+  config <- drop_missing_config_files(config)
+
   app_slug <- config$app$slug %||% slugify(app_name)
   validate_slug(app_slug)
 
@@ -54,7 +59,8 @@ process_templates <- function(output_dir, app_name, app_type,
     fs::path(output_dir, "package.json")
   )
 
-  copy_brand_assets(output_dir, icon, config)
+  copy_brand_assets(output_dir, icon, config,
+                    apps = if (is_multi_app) config$apps)
 
   if (verbose) cli::cli_alert_success("Processed Electron templates")
 }
@@ -260,9 +266,19 @@ bake_dockerfile_dependencies <- function(output_dir, dockerfile_dest, config = N
   writeLines(dockerfile_lines, dockerfile_path)
 }
 
-#' Copy branding assets (icon, splash image, tray icon) into the build
+#' Copy branding assets into the build
+#'
+#' Copies the app icon, the splash image, the tray icon and, for a multi-app
+#' suite, each app's launcher icon (to [app_icon_asset()]). The paths are
+#' used as given: [export()] has resolved them against the app directory, and
+#' [process_templates()] has dropped optional files that do not exist.
+#'
+#' @param output_dir Character. The Electron project directory.
+#' @param icon Character path to the app icon, or `NULL`.
+#' @param config List. The effective configuration.
+#' @param apps List or `NULL`. The `apps` entries of a multi-app suite.
 #' @keywords internal
-copy_brand_assets <- function(output_dir, icon, config) {
+copy_brand_assets <- function(output_dir, icon, config, apps = NULL) {
   if (!is.null(icon)) {
     icon_dest <- fs::path(output_dir, "assets",
                           paste0("icon.", tools::file_ext(icon)))
@@ -270,14 +286,23 @@ copy_brand_assets <- function(output_dir, icon, config) {
   }
 
   splash_image <- config$splash$image
-  if (!is.null(splash_image) && file.exists(splash_image)) {
+  if (!is.null(splash_image)) {
     fs::file_copy(splash_image, fs::path(output_dir, "assets", "splash-image.png"),
                   overwrite = TRUE)
   }
 
   tray_icon <- config$tray$icon
-  if (!is.null(tray_icon) && file.exists(tray_icon)) {
+  if (!is.null(tray_icon)) {
     fs::file_copy(tray_icon, fs::path(output_dir, "assets", basename(tray_icon)),
                   overwrite = TRUE)
+  }
+
+  for (app in apps) {
+    asset <- app_icon_asset(app)
+    if (!is.null(asset)) {
+      dest <- fs::path(output_dir, asset)
+      fs::dir_create(fs::path_dir(dest))
+      fs::file_copy(app[["icon"]], dest, overwrite = TRUE)
+    }
   }
 }

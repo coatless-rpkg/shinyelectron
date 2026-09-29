@@ -47,7 +47,10 @@ from environment variables or the config file. Default is FALSE.}
 
 \item{arch}{Character vector. Target architectures: "x64", "arm64". If NULL, uses current architecture.}
 
-\item{icon}{Character string. Path to application icon file. Platform-specific format required.}
+\item{icon}{Character string. Path to application icon file, absolute or
+relative to the working directory. Platform-specific format required.
+Overrides \code{icon} and \code{icons} in \verb{_shinyelectron.yml}, whose paths are
+relative to \code{appdir}.}
 
 \item{overwrite}{Logical. Whether to overwrite existing output directory. Default is FALSE.}
 

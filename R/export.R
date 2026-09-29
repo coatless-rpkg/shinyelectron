@@ -20,7 +20,10 @@
 #'   from environment variables or the config file. Default is FALSE.
 #' @param platform Character vector. Target platforms: "win", "mac", "linux". If NULL, builds for current platform.
 #' @param arch Character vector. Target architectures: "x64", "arm64". If NULL, uses current architecture.
-#' @param icon Character string. Path to application icon file. Platform-specific format required.
+#' @param icon Character string. Path to application icon file, absolute or
+#'   relative to the working directory. Platform-specific format required.
+#'   Overrides `icon` and `icons` in `_shinyelectron.yml`, whose paths are
+#'   relative to `appdir`.
 #' @param overwrite Logical. Whether to overwrite existing output directory. Default is FALSE.
 #' @param build Logical. Whether to build distributable packages. Default is TRUE.
 #' @param run_after Logical. Whether to run the application in development mode after export. Default is FALSE.
@@ -96,13 +99,20 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   # validation so multi-app mode can be detected early
   config <- read_config(appdir)
 
+  # File paths in the config are relative to the app directory (the suite
+  # root for a multi-app suite), whatever the working directory. Resolve them
+  # before anything uses them, and drop a missing splash image, tray icon or
+  # launcher icon with a warning so the build falls back to its default.
+  config <- resolve_config_paths(config, appdir)
+  config <- drop_missing_config_files(config, base_dir = appdir)
+
   # Resolve the icon: function arg > config `icon:` > per-platform `icons:`.
   # Wiring the YAML keys here makes them effective for both single and
-  # multi-app builds (previously only the icon= argument was honored).
-  # Use [[ exact matching: `config$icon` would partial-match the `icons` list.
+  # multi-app builds. The argument stays relative to the working directory,
+  # like any path argument. A configured icon that does not exist stops the
+  # export now, as a missing argument does in validate_icon().
   icon_platform <- (platform %||% detect_current_platform())[1]
-  icon <- icon %||% config[["icon"]] %||%
-    (if (!is.null(config[["icons"]])) config[["icons"]][[icon_platform]] else NULL)
+  icon <- icon %||% check_config_icon(config, icon_platform, base_dir = appdir)
 
   # Resolve signing before the multi-app branch so suites honor
   # `signing: sign: true`. The function arg can force signing on and the
@@ -112,6 +122,9 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
     sign_platforms <- platform %||% detect_current_platform()
     for (p in sign_platforms) {
       validate_signing_config(config, platform = p)
+    }
+    if ("win" %in% sign_platforms) {
+      check_config_certificate(config, base_dir = appdir)
     }
   }
 

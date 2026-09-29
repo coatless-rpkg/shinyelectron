@@ -45,10 +45,18 @@ Default is FALSE.}
 
 \item{arch}{Character vector. Target architectures: "x64", "arm64". If NULL, uses current architecture.}
 
-\item{icon}{Character string. Path to application icon file. Platform-specific format required.}
+\item{icon}{Character string. Path to application icon file, absolute or
+relative to the working directory. Platform-specific format required.
+The \code{icon} and \code{icons} keys of \code{config} are not read here.}
 
 \item{config}{List. Configuration from _shinyelectron.yml file (optional). Used for
-template variables like window dimensions, port, and app version.}
+template variables like window dimensions, port, and app version. File
+paths in it, such as \code{splash.image}, \code{tray.icon} and
+\code{signing.win.certificate_file}, are used as given: absolute, or relative
+to the working directory, like the \code{icon} argument. \code{\link[=export]{export()}} reads
+\verb{_shinyelectron.yml} itself and first resolves those paths against the
+app directory. A splash image or tray icon that does not exist is left
+out with a warning.}
 
 \item{overwrite}{Logical. Whether to overwrite existing output directory. Default is FALSE.}
 
