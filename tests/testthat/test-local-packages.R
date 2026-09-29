@@ -446,6 +446,11 @@ test_that("install_local_r_packages installs local packages in dependency order"
     src, "depPkg", dir_name = "depPkg-src", namespace = "export(depfun)",
     r_code = "depfun <- function() 1"
   )
+  # A work-in-progress file that .Rbuildignore keeps out of the package:
+  # installing the folder directly would fail to parse it, the built tarball
+  # does not contain it.
+  writeLines("scratch <- function( {", file.path(hello, "R", "scratch.R"))
+  writeLines("^R/scratch\\.R$", file.path(hello, ".Rbuildignore"))
   before <- list.files(src, recursive = TRUE, all.files = TRUE)
 
   # Listed before the package it imports.
