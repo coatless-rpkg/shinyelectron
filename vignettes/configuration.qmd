@@ -560,6 +560,7 @@ shinyelectron validates values on read and degrades gracefully rather than abort
 - Invalid platforms and architectures are dropped with a warning.
 - Window dimensions under 100 pixels warn and use defaults.
 - Invalid port numbers warn and use `3838`.
+- A `lifecycle.startup_timeout` or `lifecycle.shutdown_timeout` that is not a whole number of milliseconds from 1000 to 2147483647 warns and uses the default.
 
 If the YAML itself fails to parse, shinyelectron warns and uses all defaults. This is deliberate: a broken config file should never block you from producing a build during development.
 
