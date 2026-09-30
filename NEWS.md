@@ -268,7 +268,8 @@
   platform now uses the copied file, which electron-builder converts from a
   PNG or `.icns` icon as needed. An `.ico` icon serves Windows only, and the
   format warning from `export()` now names just the platforms that will show
-  the default icon.
+  the default icon. A `tray.icon` file named like the copy, such as
+  `icon.png`, is now copied under another name instead of replacing it.
 
 * A configured splash image, tray icon, or launcher icon that does not exist
   now gives a warning naming the key and the path checked, instead of being

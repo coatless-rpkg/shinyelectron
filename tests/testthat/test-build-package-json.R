@@ -132,9 +132,16 @@ test_that("package.json and main.js name the icon file the build copies", {
     writeBin(as.raw(1:16), icon)
     out <- withr::local_tempdir()
     setup_electron_project(out, "Icon App", "r-shiny", verbose = FALSE)
-    process_templates(out, "Icon App", "r-shiny", runtime_strategy = "system",
-                      icon = icon, config = list(app = list(version = "1.0.0")),
-                      verbose = FALSE)
+    # Without tray.icon the tray loads the app icon. Electron cannot read an
+    # .icns file there, which process_templates() warns about.
+    suppressWarnings(
+      process_templates(out, "Icon App", "r-shiny", runtime_strategy = "system",
+                        icon = icon,
+                        config = list(app = list(version = "1.0.0"),
+                                      tray = list(enabled = TRUE)),
+                        platform = "win", verbose = FALSE),
+      classes = "shinyelectron_tray_icon_unsupported"
+    )
 
     # Compare with the listing, which keeps the case of the file name even
     # on a case-insensitive file system.
@@ -147,14 +154,20 @@ test_that("package.json and main.js name the icon file the build copies", {
     expect_setequal(names(icons), cases[[name]])
     expect_contains(paste0("assets/", copied), unname(icons))
 
-    # The BrowserWindow icon in main.js
+    # The files that main.js loads from assets/ for the BrowserWindow icon
+    # and for the tray
     main <- readLines(fs::path(out, "main.js"))
-    matches <- regmatches(
-      main, regexec("icon: path\\.join\\(__dirname, 'assets', '([^']+)'\\)", main)
-    )
-    window_icon <- vapply(Filter(length, matches), `[`, character(1), 2)
+    loaded <- function(call) {
+      pattern <- paste0(call, "\\(__dirname, 'assets', '([^']+)'\\)")
+      matches <- regmatches(main, regexec(pattern, main))
+      vapply(Filter(length, matches), `[`, character(1), 2)
+    }
+    window_icon <- loaded("icon: path\\.join")
     expect_length(window_icon, 1)
     expect_contains(copied, window_icon)
+    tray_icon <- loaded("createFromPath\\(path\\.join")
+    expect_length(tray_icon, 1)
+    expect_contains(copied, tray_icon)
   }
 })
 
