@@ -197,7 +197,7 @@ test_that("detect_py_dependencies keeps pyproject.toml entries after one with ex
   expect_equal(detect_py_dependencies(tmpdir), c("pandas", "uvicorn"))
 })
 
-test_that("detect_py_dependencies reads single-quoted pyproject.toml entries", {
+test_that("detect_py_dependencies reads single-quoted and escaped pyproject.toml entries", {
   tmpdir <- tempfile()
   dir.create(tmpdir)
   on.exit(unlink(tmpdir, recursive = TRUE))
@@ -208,11 +208,12 @@ test_that("detect_py_dependencies reads single-quoted pyproject.toml entries", {
     "  'shiny>=1.0',",
     "  'tomli; python_version < \"3.11\"',",
     "  \"exceptiongroup; python_version < '3.11'\",",
+    '  "pywin32; sys_platform == \\"win32\\" and python_version >= \\"3.8\\"",',
     ']'
   ), file.path(tmpdir, "pyproject.toml"))
 
   deps <- detect_py_dependencies(tmpdir)
-  expect_equal(deps, c("exceptiongroup", "shiny", "tomli"))
+  expect_equal(deps, c("exceptiongroup", "pywin32", "shiny", "tomli"))
 })
 
 test_that("detect_py_dependencies reads Poetry 2 style pyproject.toml entries", {
@@ -266,12 +267,13 @@ test_that("detect_py_dependencies reads only [project] dependencies from pyproje
     '[tool.hatch.envs.test]',
     'dependencies = ["pytest", "coverage"]',
     '',
-    '[project]  # package metadata',
+    '[ project ]  # package metadata',
     'name = "my-app"',
     'dependencies = ["shiny", "pandas"]',
     '',
+    # An extra named "dependencies" belongs to a sub-table, not to [project].
     '[project.optional-dependencies]',
-    'dev = ["ruff"]',
+    'dependencies = ["ruff"]',
     '',
     '[tool.hatch.envs.docs]',
     'dependencies = [',
@@ -281,6 +283,41 @@ test_that("detect_py_dependencies reads only [project] dependencies from pyproje
 
   deps <- detect_py_dependencies(tmpdir)
   expect_equal(deps, c("pandas", "shiny"))
+})
+
+test_that("detect_py_dependencies reads [project] dependencies after a multi-line string", {
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+
+  # Readme lines that start with "[" are not table headers.
+  writeLines(c(
+    '[project]',
+    'name = "my-app"',
+    'readme = {content-type = "text/markdown", text = """',
+    '[![PyPI](https://img.shields.io/pypi/v/my-app)](https://pypi.org/project/my-app)',
+    '[Shiny] dashboard',
+    '"""}',
+    'dependencies = ["shiny", "pandas"]'
+  ), file.path(tmpdir, "pyproject.toml"))
+
+  deps <- detect_py_dependencies(tmpdir)
+  expect_equal(deps, c("pandas", "shiny"))
+})
+
+test_that("detect_py_dependencies reads a pyproject.toml that starts with a byte order mark", {
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+
+  writeBin(
+    c(as.raw(c(0xef, 0xbb, 0xbf)), charToRaw('[project]\ndependencies = ["shiny"]\n')),
+    file.path(tmpdir, "pyproject.toml")
+  )
+
+  # readLines() drops the mark in a UTF-8 locale but keeps it in the C locale.
+  withr::local_locale(c(LC_CTYPE = "C"))
+  expect_equal(detect_py_dependencies(tmpdir), "shiny")
 })
 
 test_that("detect_py_dependencies prefers requirements.txt over pyproject.toml", {

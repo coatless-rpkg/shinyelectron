@@ -17,7 +17,7 @@ Simple parser for the \verb{[project] dependencies} array in pyproject.toml,
 where PEP 621 lists runtime dependencies. \code{dependencies} arrays in other
 tables, such as Hatch's \verb{[tool.hatch.envs.*]} environments, are ignored.
 Entries may use double or single quotes, and \verb{#} comments are skipped.
-Does not handle complex TOML such as multi-line strings or a dotted
-\code{project.dependencies} key.
+Does not handle complex TOML such as multi-line strings, a quoted
+\verb{["project"]} header, or a dotted \code{project.dependencies} key.
 }
 \keyword{internal}

@@ -68,14 +68,16 @@ parse_requirements_txt <- function(path) {
 #' where PEP 621 lists runtime dependencies. `dependencies` arrays in other
 #' tables, such as Hatch's `[tool.hatch.envs.*]` environments, are ignored.
 #' Entries may use double or single quotes, and `#` comments are skipped.
-#' Does not handle complex TOML such as multi-line strings or a dotted
-#' `project.dependencies` key.
+#' Does not handle complex TOML such as multi-line strings, a quoted
+#' `["project"]` header, or a dotted `project.dependencies` key.
 #'
 #' @param path Character string. Path to pyproject.toml.
 #' @return Character vector of package names.
 #' @keywords internal
 parse_pyproject_toml <- function(path) {
   lines <- readLines(path, warn = FALSE)
+  # readLines() drops a UTF-8 byte order mark only in a UTF-8 locale.
+  if (length(lines)) lines[1] <- sub("^\xef\xbb\xbf", "", lines[1], useBytes = TRUE)
   packages <- character(0)
 
   # The strings, comments, and "]" on a line, in order. A double-quoted
@@ -103,8 +105,10 @@ parse_pyproject_toml <- function(path) {
     trimmed <- trimws(line)
 
     if (!in_deps) {
-      # A table header such as [project] or [tool.hatch.envs.test].
-      if (startsWith(trimmed, "[")) {
+      # A table header such as [project] or [[tool.mypy.overrides]]: a
+      # bracketed name alone on its line, perhaps with a comment. A line of a
+      # multi-line string, such as "[Shiny] dashboard", is not one.
+      if (grepl("^\\[\\[?[^][]*\\]\\]?\\s*(#.*)?$", trimmed)) {
         in_project <- grepl("^\\[\\s*project\\s*\\]\\s*(#.*)?$", trimmed)
         next
       }
