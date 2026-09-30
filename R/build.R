@@ -231,7 +231,8 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
 
     # Step 5: Build for target platforms
     if (verbose) cli::cli_progress_update(id = pb, set = 5)
-    build_for_platforms(output_dir, platform, arch, sign = sign, verbose = verbose)
+    build_for_platforms(output_dir, platform, arch, sign = sign,
+                        config = config, verbose = verbose)
 
     # Step 6: Validate build output
     if (verbose) cli::cli_progress_update(id = pb, set = 6)

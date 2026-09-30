@@ -204,6 +204,25 @@ test_that("generate_package_json omits notarize when notarize is FALSE", {
 
 # --- validate_signing_config tests ---
 
+# Unset every variable electron-builder reads for notarization, then set the
+# given ones, so the checks do not depend on the machine's environment.
+local_notarization_env <- function(..., .local_envir = parent.frame()) {
+  vars <- c("APPLE_ID", "APPLE_APP_SPECIFIC_PASSWORD", "APPLE_TEAM_ID",
+            "APPLE_API_KEY", "APPLE_API_KEY_ID", "APPLE_API_ISSUER",
+            "APPLE_KEYCHAIN", "APPLE_KEYCHAIN_PROFILE")
+  unset <- as.list(stats::setNames(rep(NA_character_, length(vars)), vars))
+  withr::local_envvar(utils::modifyList(unset, list(...)),
+                      .local_envir = .local_envir)
+}
+
+# A signed macOS config with an identity, so only notarization can warn.
+mac_signing_config <- function(...) {
+  list(signing = list(
+    sign = TRUE,
+    mac = list(identity = "Developer ID Application: Test", ...)
+  ))
+}
+
 test_that("validate_signing_config warns about missing macOS team_id", {
   config <- list(signing = list(
     sign = TRUE,
@@ -343,4 +362,56 @@ test_that("validate_signing_config is silent with complete macOS config", {
                        APPLE_APP_SPECIFIC_PASSWORD = "xxxx"), {
     expect_silent(validate_signing_config(config, platform = "mac"))
   })
+})
+
+# --- signing through export() and app_check() ---
+
+local_signing_app <- function(config = NULL, env = parent.frame()) {
+  appdir <- withr::local_tempdir(.local_envir = env)
+  writeLines("library(shiny)\nshinyApp(fluidPage(), function(input, output) {})",
+             fs::path(appdir, "app.R"))
+  if (!is.null(config)) {
+    yaml::write_yaml(config, fs::path(appdir, "_shinyelectron.yml"))
+  }
+  appdir
+}
+
+# Run export() without shinylive, npm or electron-builder. build_for_platforms()
+# still runs; a recorder stands in for processx::run(), so the test sees the
+# environment electron-builder would get.
+local_recorded_build <- function(env = parent.frame()) {
+  local_mocked_bindings(
+    convert_app_to_shinylive = function(appdir, destdir, ...) {
+      out <- fs::path(destdir, "shinylive-app")
+      fs::dir_create(out)
+      writeLines("<html></html>", fs::path(out, "index.html"))
+      out
+    },
+    resolve_app_dependencies = function(...) NULL,
+    validate_node_npm = function(...) invisible(NULL),
+    install_npm_dependencies = function(...) invisible(NULL),
+    nodejs_subprocess_env = function() NULL,
+    validate_build_output = function(...) invisible(NULL),
+    .env = env
+  )
+  run_rec <- mockery::mock(list(status = 0L, stdout = "", stderr = ""),
+                           cycle = TRUE)
+  local_mocked_bindings(run = run_rec, .package = "processx", .env = env)
+  run_rec
+}
+
+test_that("export() passes signing.mac.team_id to electron-builder as APPLE_TEAM_ID", {
+  appdir <- local_signing_app(mac_signing_config(team_id = "TEAM123456"))
+  local_notarization_env(APPLE_ID = "dev@example.com",
+                         APPLE_APP_SPECIFIC_PASSWORD = "not-a-password")
+  run_rec <- local_recorded_build()
+
+  export(appdir, fs::path(withr::local_tempdir(), "out"),
+         platform = "mac", arch = "arm64", verbose = FALSE)
+
+  # electron-builder 26 reads the notarization team ID only from APPLE_TEAM_ID
+  mockery::expect_called(run_rec, 1)
+  env <- mockery::mock_args(run_rec)[[1]]$env
+  expect_equal(env[names(env) == "APPLE_TEAM_ID"],
+               c(APPLE_TEAM_ID = "TEAM123456"))
 })

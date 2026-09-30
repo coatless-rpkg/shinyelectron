@@ -172,6 +172,12 @@
   `WIN_CSC_*` variable that is set but empty now warns, because
   electron-builder stops there instead of falling back to `CSC_*`.
 
+* A signed build now passes `signing.mac.team_id` to electron-builder as
+  `APPLE_TEAM_ID`, the only place electron-builder reads the notarization team
+  ID. Before, when the team ID was set only in `_shinyelectron.yml`, builds
+  that notarize with an Apple ID failed with "APPLE_TEAM_ID env var needs to
+  be set". A team ID already set in `APPLE_TEAM_ID` still wins.
+
 * Bundled R builds now install packages with the portable R's own startup
   files. The install no longer runs a project `.Rprofile` or `.Renviron` from
   the working directory, such as renv's autoloader, and ignores `R_ENVIRON`

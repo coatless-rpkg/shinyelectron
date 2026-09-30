@@ -492,7 +492,7 @@ signing:
     notarize: true
 ```
 
-Set `APPLE_TEAM_ID`, `APPLE_ID`, and `APPLE_APP_SPECIFIC_PASSWORD` before building.
+Set `APPLE_ID` and `APPLE_APP_SPECIFIC_PASSWORD` before building. The team ID comes from `team_id`, or from `APPLE_TEAM_ID` when that is set.
 
 For **local testing**, right-click the app and choose Open, then confirm. That bypasses Gatekeeper for that app only. Or strip the quarantine attribute:
 
