@@ -223,10 +223,12 @@
 * `export()`, `build_electron_app()`, `init_config()`, and `show_config()`
   now name the app after its folder when the app directory is a relative
   path such as `"."` or `".."`. The app was named `"."` or `".."`, and
-  `export()` stopped because it could not derive an app slug. When the app
-  directory is a symbolic link, `app_check()`, `init_config()`, and
-  `wizard()` now take the slug from the link's name, as `export()` does,
-  instead of from the folder it points to.
+  `export()` and `build_electron_app()` stopped because they could not
+  derive an app slug. When `appdir` is the path of a symbolic link,
+  `app_check()`, `init_config()`, and `wizard()` now take the slug from the
+  link's name, as `export()` does, instead of from the folder it points to.
+  `app_check()` also uses the link's name in its report, and `wizard()`
+  offers it as the default app name.
 
 # shinyelectron 0.2.1
 
