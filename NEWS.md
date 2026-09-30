@@ -188,6 +188,12 @@
   such as Hatch's `[tool.hatch.envs.*]` environments, are no longer installed
   with the app.
 
+* Python packages listed with the version in parentheses, as in
+  `"shiny (>=1.0)"`, are now read as `shiny` from `pyproject.toml` and
+  `requirements.txt`. Poetry 2 writes `pyproject.toml` entries this way. They
+  were read as `shiny (`, which pip rejects, so none of the app's Python
+  packages were installed.
+
 * `installer.one_click`, `installer.allow_to_change_installation_directory`,
   and `installer.per_machine` are checked when the configuration is read. A
   quoted `"true"` or `"false"` (or `"yes"` or `"no"`) is read as the matching

@@ -52,7 +52,9 @@ parse_requirements_txt <- function(path) {
     # Bare URL with no package name: nothing usable to install by name.
     if (grepl("://", line)) next
 
-    pkg <- sub("[>=<!~;\\[,].*", "", line)
+    # The name ends at the extras, version, or marker. A version may sit in
+    # parentheses, as in "shiny (>=1.0)".
+    pkg <- sub("[>=<!~;\\[,(].*", "", line)
     pkg <- trimws(pkg)
     if (nzchar(pkg)) packages <- c(packages, pkg)
   }
@@ -84,9 +86,10 @@ parse_pyproject_toml <- function(path) {
     pattern <- "\"(?:[^\"\\\\]|\\\\.)*\"|'[^']*'|#.*|\\]"
     regmatches(s, gregexpr(pattern, s, perl = TRUE))[[1]]
   }
-  # Reduce a PEP 508 spec ("pandas>=2.0", "shiny[theme]", "x @ url") to a name.
+  # Reduce a PEP 508 spec ("pandas>=2.0", "shiny[theme]", "x @ url", or
+  # "shiny (>=1.0)" as Poetry 2 writes it) to a name.
   spec_to_name <- function(spec) {
-    trimws(sub("[>=<!~;@\\[,].*", "", spec))
+    trimws(sub("[>=<!~;@\\[,(].*", "", spec))
   }
   # The package names in a set of specs, without empty ones.
   spec_names <- function(specs) {

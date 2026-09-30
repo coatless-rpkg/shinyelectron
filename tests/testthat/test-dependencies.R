@@ -134,13 +134,15 @@ test_that("detect_py_dependencies strips version specifiers", {
   writeLines(c(
     "pandas>=2.0,<3.0",
     "numpy~=1.24",
-    "flask[async]>=2.0"
+    "flask[async]>=2.0",
+    "plotly (>=5.0,<6.0)"
   ), file.path(tmpdir, "requirements.txt"))
 
   deps <- detect_py_dependencies(tmpdir)
   expect_true("pandas" %in% deps)
   expect_true("numpy" %in% deps)
   expect_true("flask" %in% deps)
+  expect_true("plotly" %in% deps)
 })
 
 test_that("detect_py_dependencies reads pyproject.toml dependencies", {
@@ -211,6 +213,26 @@ test_that("detect_py_dependencies reads single-quoted pyproject.toml entries", {
 
   deps <- detect_py_dependencies(tmpdir)
   expect_equal(deps, c("exceptiongroup", "shiny", "tomli"))
+})
+
+test_that("detect_py_dependencies reads Poetry 2 style pyproject.toml entries", {
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+
+  # Poetry 2 writes the version constraint in parentheses after the name.
+  writeLines(c(
+    '[project]',
+    'dependencies = [',
+    '    "shiny (>=1.0)",',
+    '    "uvicorn[standard] (>=0.54.0,<0.55.0)",',
+    '    "plotly (>=7.1.0,<8.0.0)",',
+    '    "tomli (>=2.4.1,<3.0.0) ; python_version < \\"3.11\\""',
+    ']'
+  ), file.path(tmpdir, "pyproject.toml"))
+
+  deps <- detect_py_dependencies(tmpdir)
+  expect_equal(deps, c("plotly", "shiny", "tomli", "uvicorn"))
 })
 
 test_that("detect_py_dependencies skips comments in pyproject.toml dependencies", {
