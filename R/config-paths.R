@@ -201,6 +201,43 @@ check_config_icon <- function(config, platform, base_dir,
   icon$path
 }
 
+#' Warn about the `icons` entries an export leaves out
+#'
+#' One export copies one app icon and gives it to every target platform
+#' that can use it: `icon`, or else the `icons` entry of the first target
+#' platform (see [config_icon()]). The `icons` entries of the other target
+#' platforms are then not used.
+#'
+#' @param config List. The configuration.
+#' @param platform Character vector. The target platforms, the first one
+#'   first.
+#' @return Invisibly, the fields of the entries that are not used, such as
+#'   `"icons.win"`, or `character(0)`.
+#' @keywords internal
+check_unused_icons <- function(config, platform) {
+  first <- platform[1]
+  chosen <- config_icon(config, first)
+  others <- Filter(function(p) {
+    entry <- config_icon(config, p)
+    !is.null(entry) && !identical(entry$path, chosen$path)
+  }, platform[-1])
+  if (length(others) == 0) {
+    return(invisible(character(0)))
+  }
+
+  unused <- paste0("icons.", others)
+  cli::cli_warn(c(
+    if (is.null(chosen)) {
+      "One export uses one app icon, the {.field icons} entry for the first target platform, {.val {first}}. That entry is not set, so the build has no app icon."
+    } else {
+      "One export uses one app icon: {.field {chosen$field}}, the entry for the first target platform, goes to every target platform."
+    },
+    "i" = "{.field {unused}} {?is/are} not used.",
+    "i" = "To give each platform its own icon, export each one separately, for example with {.code platform = \"{others[1]}\"}."
+  ), class = "shinyelectron_icons_unused")
+  invisible(unused)
+}
+
 #' Warn when the configured Windows signing certificate does not exist
 #'
 #' [export()] calls this when it signs a Windows build, whether signing was

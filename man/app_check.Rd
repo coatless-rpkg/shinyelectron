@@ -48,7 +48,8 @@ looked up relative to \code{appdir}, as \code{\link[=export]{export()}} does. A 
 error, because \code{\link[=export]{export()}} stops on it; other missing files are warnings.
 So is an icon that a target platform cannot use, because of its format or
 the size of its image, since that platform's build shows the default
-Electron icon.
+Electron icon, and an \code{icons} entry that the build leaves out, since it
+gives one icon to every target platform.
 }
 \examples{
 \donttest{

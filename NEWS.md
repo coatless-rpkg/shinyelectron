@@ -276,6 +276,12 @@
   copy, such as `icon.png`, is now copied under another name instead of
   replacing it.
 
+* `export()` and `app_check()` now warn about the `icons` entries that an
+  export leaves out. One export gives one app icon, the `icons` entry for its
+  first target platform, to every platform, so a different entry for another
+  target platform is not used. Export each platform separately to give it
+  its own icon.
+
 * A configured splash image, tray icon, or launcher icon that does not exist
   now gives a warning naming the key and the path checked, instead of being
   skipped silently, and the build uses the default. A missing configured app

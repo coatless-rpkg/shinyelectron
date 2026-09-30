@@ -277,7 +277,7 @@ If you genuinely need different artwork on different platforms (for example, a m
 | `win` | string | `.ico` | Windows icon, with a 256×256 image (multi-resolution recommended) |
 | `linux` | string | `.png` | Linux icon (512×512 recommended) |
 
-Paths are relative to the app directory, or to the suite root of a multi-app suite, whatever the working directory (see [File paths](#file-paths)). `export()` uses `icon` when it is set, and otherwise the `icons` entry for the first target platform. A build for several platforms ships that one icon, so to give each platform its own artwork, export each platform separately with the `platform` argument. The `icon` argument of `export()` overrides both, and is relative to the working directory. If the chosen file does not exist, `export()` stops with an error that names the key and the path it checked. When no icon is set at all, the build uses the default Electron icon.
+Paths are relative to the app directory, or to the suite root of a multi-app suite, whatever the working directory (see [File paths](#file-paths)). `export()` uses `icon` when it is set, and otherwise the `icons` entry for the first target platform. A build for several platforms ships that one icon to every platform that can use it, and `export()` warns about the `icons` entries it leaves out. To give each platform its own artwork, export each platform separately with the `platform` argument. The `icon` argument of `export()` overrides both, and is relative to the working directory. If the chosen file does not exist, `export()` stops with an error that names the key and the path it checked. When no icon is set at all, the build uses the default Electron icon.
 
 ::: {.callout-tip}
 ## Creating icons

@@ -140,7 +140,12 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   # for both single and multi-app builds. The argument stays relative to the
   # working directory, like any path argument. A configured icon that does not
   # exist stops the export now, as a missing argument does in validate_icon().
-  icon <- icon %||% check_config_icon(config, targets$platform[1], base_dir = appdir)
+  # The build gives that one icon to every target platform, so the `icons:`
+  # entries of the others go unused, with a warning.
+  if (is.null(icon)) {
+    icon <- check_config_icon(config, targets$platform[1], base_dir = appdir)
+    check_unused_icons(config, targets$platform)
+  }
 
   # Resolve signing before the multi-app branch so suites honor
   # `signing: sign: true`. The function arg can force signing on and the
