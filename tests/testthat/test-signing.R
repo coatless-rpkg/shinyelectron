@@ -450,6 +450,8 @@ local_recorded_build <- function(env = parent.frame()) {
 }
 
 test_that("export() passes signing.mac.team_id to electron-builder as APPLE_TEAM_ID", {
+  # macOS targets build only on a Mac; pretend to be one on other hosts.
+  local_mocked_bindings(detect_current_platform = function() "mac")
   appdir <- local_signing_app(mac_signing_config(team_id = "TEAM123456"))
   local_notarization_env(APPLE_ID = "dev@example.com",
                          APPLE_APP_SPECIFIC_PASSWORD = "not-a-password")
@@ -466,6 +468,8 @@ test_that("export() passes signing.mac.team_id to electron-builder as APPLE_TEAM
 })
 
 test_that("export(sign = TRUE) checks credentials without signing.sign in the config", {
+  # macOS targets build only on a Mac; pretend to be one on other hosts.
+  local_mocked_bindings(detect_current_platform = function() "mac")
   appdir <- local_signing_app(list(signing = list(
     mac = list(identity = "Developer ID Application: Test")
   )))
