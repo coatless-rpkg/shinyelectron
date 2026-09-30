@@ -284,9 +284,10 @@ installer_license_path <- function(license_file) {
 #'
 #' [copy_brand_assets()] copies the app icon into the generated project
 #' under this name, and package.json and `main.js` refer to the copy. The
-#' extension is kept, lowercased: electron-builder recognizes the format of
-#' an icon file only by a lower-case extension, and stops the build when
-#' asked to make a Linux icon set from a file named, say, `icon.PNG`.
+#' extension is kept, lowercased: up to version 26.14, electron-builder
+#' recognizes the format of an icon file only by a lower-case extension, and
+#' stops the build when asked to make a Linux icon set from a file named,
+#' say, `icon.PNG`.
 #'
 #' @param icon Character. Path to the app icon.
 #' @return Character. The icon path relative to the Electron project, such

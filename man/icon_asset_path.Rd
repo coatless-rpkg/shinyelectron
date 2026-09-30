@@ -16,8 +16,9 @@ as \code{"assets/icon.png"}.
 \description{
 \code{\link[=copy_brand_assets]{copy_brand_assets()}} copies the app icon into the generated project
 under this name, and package.json and \code{main.js} refer to the copy. The
-extension is kept, lowercased: electron-builder recognizes the format of
-an icon file only by a lower-case extension, and stops the build when
-asked to make a Linux icon set from a file named, say, \code{icon.PNG}.
+extension is kept, lowercased: up to version 26.14, electron-builder
+recognizes the format of an icon file only by a lower-case extension, and
+stops the build when asked to make a Linux icon set from a file named,
+say, \code{icon.PNG}.
 }
 \keyword{internal}

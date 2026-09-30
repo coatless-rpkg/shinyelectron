@@ -101,7 +101,8 @@ test_that("generate_package_json names no icon without a usable one", {
 })
 
 test_that("icon_asset_path lowercases the extension", {
-  # electron-builder reads the icon format from a lower-case extension only.
+  # electron-builder up to 26.14 reads the icon format from a lower-case
+  # extension only.
   expect_equal(icon_asset_path("branding/logo.png"), "assets/icon.png")
   expect_equal(icon_asset_path("C:/Art/LOGO.ICNS"), "assets/icon.icns")
   expect_equal(
