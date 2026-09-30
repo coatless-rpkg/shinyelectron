@@ -451,6 +451,8 @@ local_offline_export <- function(frame = parent.frame()) {
 }
 
 test_that("an export reads each local package's DESCRIPTION once", {
+  # macOS targets build only on a Mac; pretend to be one on other hosts.
+  local_mocked_bindings(detect_current_platform = function() "mac")
   skip_if_not_installed("mockery")
   root <- withr::local_tempdir()
   appdir <- write_app_with_config(file.path(root, "app"), list(
@@ -470,6 +472,8 @@ test_that("an export reads each local package's DESCRIPTION once", {
 })
 
 test_that("a suite export reads each local package's DESCRIPTION once", {
+  # macOS targets build only on a Mac; pretend to be one on other hosts.
+  local_mocked_bindings(detect_current_platform = function() "mac")
   skip_if_not_installed("mockery")
   root <- withr::local_tempdir()
   suite <- write_suite_with_config(file.path(root, "suite"), list(
