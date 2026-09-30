@@ -250,7 +250,7 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
     if (verbose) cli::cli_alert_info("Code signing: {.val enabled}")
     # validate_signing_config emits warnings, doesn't error
     for (p in platform) {
-      validate_signing_config(config, platform = p)
+      validate_signing_config(config, platform = p, sign = sign)
     }
   } else {
     info <- c(info, "Code signing: disabled")

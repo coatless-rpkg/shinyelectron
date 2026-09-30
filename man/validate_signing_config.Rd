@@ -4,16 +4,33 @@
 \alias{validate_signing_config}
 \title{Validate code signing configuration}
 \usage{
-validate_signing_config(config, platform = NULL)
+validate_signing_config(
+  config,
+  platform = NULL,
+  sign = isTRUE(config$signing$sign)
+)
 }
 \arguments{
 \item{config}{List. The effective configuration.}
 
 \item{platform}{Character string. Target platform ("mac", "win", "linux").}
+
+\item{sign}{Logical. Whether the build is signed. \code{\link[=export]{export()}} and
+\code{\link[=app_check]{app_check()}} pass the value their \code{sign} argument resolves to, which
+can turn signing on when \code{signing.sign} is off. Defaults to
+\code{signing.sign}.}
 }
 \description{
 Checks that required credentials are available when signing is enabled.
 Issues warnings (not errors) for missing credentials so the build can
 continue -- electron-builder will handle the actual failure.
+}
+\details{
+On macOS, electron-builder notarizes with the first kind of credentials it
+finds in the environment: an Apple ID (\code{APPLE_ID} and
+\code{APPLE_APP_SPECIFIC_PASSWORD}, plus a team ID from \code{APPLE_TEAM_ID} or
+\code{signing.mac.team_id}), an App Store Connect API key (\code{APPLE_API_KEY},
+\code{APPLE_API_KEY_ID} and \code{APPLE_API_ISSUER}), or a \code{notarytool} keychain
+profile (\code{APPLE_KEYCHAIN_PROFILE}).
 }
 \keyword{internal}

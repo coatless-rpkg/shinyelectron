@@ -647,6 +647,50 @@ test_that("build_multi_app writes runtime-manifest.json into each auto-download 
     fs::path(output_dir, "src", "apps", "report", "runtime-manifest.json")))
 })
 
+test_that("build_multi_app passes the signing config to build_for_platforms", {
+  apps_dir <- withr::local_tempdir()
+  output_dir <- file.path(withr::local_tempdir(), "electron-app")
+
+  config <- list(
+    build = list(type = "r-shiny"),
+    signing = list(sign = TRUE, mac = list(team_id = "TEAM123456")),
+    apps = list(
+      list(id = "dash",   name = "Dash",   path = "./apps/dash"),
+      list(id = "report", name = "Report", path = "./apps/report")
+    )
+  )
+  apps_manifest <- list(
+    list(id = "dash", name = "Dash", path = "src/apps/dash",
+         type = "r-shiny", runtime_strategy = "shinylive"),
+    list(id = "report", name = "Report", path = "src/apps/report",
+         type = "r-shiny", runtime_strategy = "shinylive")
+  )
+
+  build_rec <- mockery::mock(invisible(TRUE))
+  local_mocked_bindings(
+    validate_node_npm = function(...) invisible(TRUE),
+    setup_electron_project = function(...) invisible(TRUE),
+    process_templates = function(...) invisible(TRUE),
+    install_npm_dependencies = function(...) invisible(TRUE),
+    build_for_platforms = build_rec,
+    validate_build_output = function(...) invisible(TRUE)
+  )
+
+  build_multi_app(
+    apps_dir = apps_dir, output_dir = output_dir, app_name = "Suite",
+    apps_manifest = apps_manifest, default_type = "r-shiny",
+    runtime_strategy = "shinylive", sign = TRUE,
+    platform = "mac", arch = "arm64", icon = NULL, config = config,
+    overwrite = TRUE, verbose = FALSE
+  )
+
+  # build_for_platforms() hands signing.mac.team_id to electron-builder
+  mockery::expect_called(build_rec, 1)
+  build_args <- mockery::mock_args(build_rec)[[1]]
+  expect_true(build_args$sign)
+  expect_equal(build_args$config$signing$mac$team_id, "TEAM123456")
+})
+
 test_that("resolve_brand_yml finds _brand.yml for native serve descriptor", {
   output_dir <- withr::local_tempdir()
   brand_dir <- file.path(output_dir, "src", "apps", "dash")

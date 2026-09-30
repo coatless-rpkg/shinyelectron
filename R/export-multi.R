@@ -446,7 +446,8 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
   install_npm_dependencies(output_dir, verbose = verbose)
 
   # Build for platforms
-  build_for_platforms(output_dir, platform, arch, sign = sign, verbose = verbose)
+  build_for_platforms(output_dir, platform, arch, sign = sign,
+                      config = config, verbose = verbose)
 
   # Validate the assembled build output (mirrors the single-app pipeline).
   validate_build_output(output_dir, platform)

@@ -4,7 +4,14 @@
 \alias{build_for_platforms}
 \title{Build for target platforms}
 \usage{
-build_for_platforms(output_dir, platform, arch, sign = FALSE, verbose = TRUE)
+build_for_platforms(
+  output_dir,
+  platform,
+  arch,
+  sign = FALSE,
+  config = NULL,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{output_dir}{Character Electron project directory}
@@ -14,6 +21,10 @@ build_for_platforms(output_dir, platform, arch, sign = FALSE, verbose = TRUE)
 \item{arch}{Character vector of target architectures}
 
 \item{sign}{Logical whether to code-sign the build}
+
+\item{config}{List. The effective configuration, or \code{NULL}. A signed
+build passes its \code{signing.mac.team_id} to electron-builder (see
+\code{\link[=electron_builder_env]{electron_builder_env()}}).}
 
 \item{verbose}{Logical whether to show progress}
 }
