@@ -41,9 +41,13 @@ the canonical language plus \code{runtime_strategy = "shinylive"}.}
 \item{sign}{Logical. Whether to enable code signing for the built application.
 Default is FALSE.}
 
-\item{platform}{Character vector. Target platforms: "win", "mac", "linux". If NULL, builds for current platform.}
+\item{platform}{Character vector. Target platforms: "win", "mac", "linux". If NULL, builds for current platform.
+The \code{build.platforms} key of \code{config} is not read here; \code{\link[=export]{export()}}
+reads it.}
 
-\item{arch}{Character vector. Target architectures: "x64", "arm64". If NULL, uses current architecture.}
+\item{arch}{Character vector. Target architectures: "x64", "arm64". If NULL, uses current architecture.
+The \code{build.architectures} key of \code{config} is not read here; \code{\link[=export]{export()}}
+reads it.}
 
 \item{icon}{Character string. Path to application icon file, absolute or
 relative to the working directory. Platform-specific format required.

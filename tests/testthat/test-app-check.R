@@ -145,6 +145,47 @@ test_that("app_check checks installer text for a $ like export()", {
   expect_true(any(grepl("app.description", res$warnings, fixed = TRUE)))
 })
 
+test_that("app_check reports a bundled build for several targets like export()", {
+  appdir <- withr::local_tempdir()
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "app.R"))
+  writeLines(c("build:", "  runtime_strategy: bundled", "  architectures: [x64, arm64]"),
+             file.path(appdir, "_shinyelectron.yml"))
+  local_mocked_bindings(resolve_app_dependencies = function(...) NULL)
+
+  res <- app_check(appdir, verbose = FALSE)
+  expect_false(res$pass)
+  expect_true(any(grepl("build.architectures", res$errors, fixed = TRUE)))
+
+  # One architecture is one target.
+  writeLines(c("build:", "  runtime_strategy: bundled", "  architectures: [x64]"),
+             file.path(appdir, "_shinyelectron.yml"))
+  res <- app_check(appdir, verbose = FALSE)
+  expect_false(any(grepl("build.architectures", res$errors, fixed = TRUE)))
+})
+
+test_that("app_check reports a macOS target off macOS like export()", {
+  local_mocked_bindings(detect_current_platform = function() "linux")
+  appdir <- withr::local_tempdir()
+  writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",
+             file.path(appdir, "app.R"))
+  writeLines(c("build:", "  platforms: [mac]"),
+             file.path(appdir, "_shinyelectron.yml"))
+
+  res <- app_check(appdir, verbose = FALSE)
+  expect_false(res$pass)
+  expect_true(any(grepl("Cannot build the", res$errors, fixed = TRUE) &
+                    grepl("build.platforms", res$errors, fixed = TRUE)))
+
+  # The platform argument overrides the list, as in export().
+  res <- app_check(appdir, platform = "linux", verbose = FALSE)
+  expect_false(any(grepl("Cannot build the", res$errors, fixed = TRUE)))
+
+  # An invalid platform argument stops export(), so it is an error here.
+  res <- app_check(appdir, platform = "windows", verbose = FALSE)
+  expect_true(any(grepl("Invalid platform", res$errors, fixed = TRUE)))
+})
+
 test_that("app_check still reports a $ in installer text after another warning", {
   appdir <- withr::local_tempdir()
   writeLines("library(shiny)\nshinyApp(ui=fluidPage(), server=function(i,o){})",

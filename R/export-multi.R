@@ -30,9 +30,15 @@ export_multi_app <- function(appdir, destdir, config,
   config <- resolve_config_paths(config, appdir)
   config <- drop_missing_config_files(config, base_dir = appdir)
 
+  # Target platforms and architectures: argument > build.platforms and
+  # build.architectures > the build machine. export() passes its own
+  # arguments and has already checked the same targets against the build
+  # machine.
+  targets <- resolve_build_targets(platform, arch, config)
+
   # Validate the icon up front, matching the single-app path.
   if (!is.null(icon)) {
-    validate_icon(icon, platform)
+    validate_icon(icon, targets$platform)
   }
 
   # Normalize suite-level build.type (may be legacy) and resolve strategy
@@ -59,6 +65,15 @@ export_multi_app <- function(appdir, destdir, config,
   # Reject conflicting native runtime strategies within a language before
   # staging (e.g. one bundled and one auto-download R app in the suite).
   validate_suite_strategies(config$apps, config)
+
+  # A bundled or auto-download app takes one target. build_multi_app() stops
+  # on more, but only after every app is staged, so check here first.
+  if (build) {
+    strategies <- vapply(config$apps, function(a) resolve_app_strategy(a, config),
+                         character(1))
+    check_single_target(strategies, targets$platform, targets$arch,
+                        apps = config$apps, from_config = targets$from_config)
+  }
 
   # Local R packages go into the shared bundled R library, so the suite needs
   # a bundled R app. Paths resolve against the suite root, whose config is the
@@ -244,8 +259,8 @@ export_multi_app <- function(appdir, destdir, config,
         default_type = app_type,
         runtime_strategy = runtime_strategy,
         sign = sign,
-        platform = platform,
-        arch = arch,
+        platform = targets$platform,
+        arch = targets$arch,
         icon = icon,
         config = config,
         overwrite = TRUE,
@@ -332,17 +347,7 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
   # Bundled / auto-download native runtimes embed a single platform's runtime,
   # so a suite containing ANY such native app cannot target multiple platforms
   # or architectures in one build, regardless of the suite-level default.
-  if ((length(platform) > 1 || length(arch) > 1) &&
-      any(app_strategies %in% c("bundled", "auto-download"))) {
-    offending_idx <- which(app_strategies %in% c("bundled", "auto-download"))[1]
-    offending_id <- config$apps[[offending_idx]]$id
-    offending_strategy <- app_strategies[offending_idx]
-    cli::cli_abort(c(
-      "The {.val {offending_strategy}} strategy supports only one platform and architecture per build.",
-      "i" = "App {.val {offending_id}} embeds a single-platform runtime that would be packaged into every installer.",
-      "i" = "Build each target separately, or use the {.val system}, {.val container}, or {.val shinylive} strategy for multi-platform builds."
-    ))
-  }
+  check_single_target(app_strategies, platform, arch, apps = config$apps)
 
   validate_node_npm()
 

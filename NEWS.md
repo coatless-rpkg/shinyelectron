@@ -25,6 +25,32 @@
   macOS, reinstalling from the disk image leaves the old `<slug>.app` in
   Applications to delete by hand.
 
+* `export()` now builds for `build.platforms` and `build.architectures` in
+  `_shinyelectron.yml` when its `platform` and `arch` arguments are not
+  given, for single apps and multi-app suites alike. Each argument overrides
+  only its own list. Before, the lists had no effect: the build, the choice
+  of icon, and the signing and Windows installer checks all used the current
+  machine. Check the lists in your configuration files. Earlier versions of
+  `wizard()` suggested `mac` and wrote it to `build.platforms`, so a file
+  written with them on Windows or Linux may list `platforms: mac`; change or
+  remove `platforms` there. `wizard()` now leaves `platforms` out unless you
+  name some, so each build targets the machine it runs on. If you copied the
+  Getting Started or Configuration Guide example that paired
+  `runtime_strategy: "bundled"` with `platforms: [mac, win]`, remove
+  `platforms`, since a `bundled` or `auto-download` build stops when the
+  targets name more than one platform or architecture. A list with no valid
+  value means the current platform or architecture, and a value listed twice
+  is built once.
+
+* `export()` now checks the targets before converting anything. It stops
+  when a target is `mac` and the build machine is not a Mac: macOS apps
+  build only on macOS, and such an export used to report success without
+  making an installer. A `bundled` or `auto-download` build for more than
+  one target now stops before any files are copied, and an invalid
+  `platform` or `arch` argument stops the export even with `build = FALSE`.
+  `app_check()` reports these problems too, and `wizard()` asks for a single
+  platform when you choose the `bundled` or `auto-download` strategy.
+
 ## New features
 
 * New `lifecycle.startup_timeout` sets how long, in milliseconds, an app waits

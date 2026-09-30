@@ -269,12 +269,13 @@ test_that("export() stops a Windows build with a $ in the app name before conver
     class = "shinyelectron_installer_dollar"
   )
 
-  # Building for another platform only warns, and the export goes on.
+  # Building for another platform only warns, and the export goes on. (Linux
+  # rather than macOS, which export() builds only on a Mac.)
   mockery::stub(export, "convert_app_to_shinylive", function(...) tempdir())
   mockery::stub(export, "build_electron_app", function(...) tempdir())
   expect_warning(
     export(appdir, withr::local_tempdir(), app_name = "Price$Tracker",
-           platform = "mac", overwrite = TRUE, verbose = FALSE),
+           platform = "linux", overwrite = TRUE, verbose = FALSE),
     class = "shinyelectron_installer_dollar"
   )
 })

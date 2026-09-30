@@ -1,8 +1,8 @@
 #' Check Shiny Application Readiness for Export
 #'
 #' Validates that a Shiny application can be built as an Electron app.
-#' Checks app structure, configuration, runtime availability, dependencies,
-#' and signing credentials. Reports issues without aborting.
+#' Checks app structure, configuration, build targets, runtime availability,
+#' dependencies, and signing credentials. Reports issues without aborting.
 #'
 #' Files named in `_shinyelectron.yml`, such as `icon` or `splash.image`, are
 #' looked up relative to `appdir`, as [export()] does. A missing icon is an
@@ -12,7 +12,10 @@
 #' @param app_type Character string or NULL. App type override.
 #'   If NULL, reads from config or autodetects from files in `appdir`.
 #' @param runtime_strategy Character string or NULL. Runtime strategy override.
-#' @param platform Character vector or NULL. Target platforms override.
+#' @param platform Character vector or NULL. Target platforms override. If
+#'   NULL, uses `build.platforms` from `_shinyelectron.yml`, then the current
+#'   platform, as [export()] does. The architectures come from
+#'   `build.architectures`, then the current architecture.
 #' @param sign Logical or NULL. Signing override.
 #' @param verbose Logical. Whether to print the report. Default TRUE.
 #'
@@ -105,13 +108,25 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
   }
   runtime_strategy <- runtime_strategy %||% config$build$runtime_strategy %||% "shinylive"
 
-  platform <- platform %||% config$build$platforms %||% detect_current_platform()
+  # Targets as export() resolves them: the platform argument, else
+  # build.platforms, else this machine, and build.architectures, else this
+  # machine's architecture. An invalid platform argument is reported with the
+  # target checks below, and the other checks use it as given.
+  resolved <- catch_conditions(resolve_build_targets(platform, NULL, config))
+  targets_err <- resolved$error
+  targets <- resolved$value %||% list(
+    platform = platform,
+    arch = config$build$architectures %||% detect_current_arch(),
+    from_config = character(0)
+  )
+  platform <- targets$platform
   sign <- sign %||% isTRUE(config$signing$sign)
 
   if (verbose) {
     cli::cli_alert_info("Type: {.val {app_type}}")
     cli::cli_alert_info("Runtime strategy: {.val {runtime_strategy}}")
     cli::cli_alert_info("Platform(s): {.val {platform}}")
+    cli::cli_alert_info("Architecture(s): {.val {targets$arch}}")
   }
 
   # --- Check: App structure ---
@@ -132,6 +147,20 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
   if (!is.null(err)) {
     errors <- c(errors, conditionMessage(err))
     if (verbose) cli::cli_alert_danger("App structure: {err$message}")
+  }
+
+  # --- Check: Build targets ---
+  # export() stops on an invalid platform, on a macOS target anywhere but
+  # macOS, and on a bundled or auto-download build for more than one target.
+  target_errs <- list(
+    targets_err,
+    catch_error(check_build_host(platform, targets$from_config)),
+    catch_error(check_single_target(runtime_strategy, platform, targets$arch,
+                                    from_config = targets$from_config))
+  )
+  for (err in Filter(Negate(is.null), target_errs)) {
+    errors <- c(errors, conditionMessage(err))
+    if (verbose) cli::cli_alert_danger("Targets: {conditionMessage(err)}")
   }
 
   # --- Check: Brand ---

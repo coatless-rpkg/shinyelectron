@@ -332,7 +332,9 @@ test_that("export() resolves suite local packages against the suite root", {
     build_multi_app = function(...) {
       build(local_packages = list(...)$config$dependencies$r$local_packages)
       "electron-app"
-    }
+    },
+    # macOS targets build only on a Mac; pretend to be one on other hosts.
+    detect_current_platform = function() "mac"
   )
   withr::local_dir(withr::local_tempdir())
 

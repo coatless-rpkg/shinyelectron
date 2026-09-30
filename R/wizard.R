@@ -54,12 +54,22 @@ wizard <- function(appdir) {
     "shinylive"
   )
 
-  # Platforms
+  # Platforms. export() builds for these. An empty answer leaves them out
+  # of the config, so each build targets the machine it runs on. A bundled
+  # or auto-download build embeds a runtime for one platform, so for those
+  # strategies ask again until the answer names at most one.
+  one_platform <- runtime_strategy %in% c("bundled", "auto-download")
   cat("\nTarget platforms (comma-separated):\n")
   cat("  mac, win, linux\n")
-  platform_input <- readline("Platforms [mac]: ")
-  if (!nzchar(platform_input)) platform_input <- "mac"
-  platforms <- trimws(strsplit(platform_input, ",")[[1]])
+  repeat {
+    platform_input <- trimws(readline("Platforms [this machine]: "))
+    platforms <- if (nzchar(platform_input)) {
+      unique(trimws(strsplit(platform_input, ",")[[1]]))
+    }
+    if (!one_platform || length(platforms) <= 1) break
+    cat(sprintf("  The %s strategy builds one platform at a time. Enter one platform.\n",
+                runtime_strategy))
+  }
 
   valid_platforms <- SHINYELECTRON_DEFAULTS$valid_platforms
   invalid_platforms <- platforms[!platforms %in% valid_platforms]
@@ -105,7 +115,7 @@ wizard <- function(appdir) {
     sign_enabled <- tolower(sign_input) %in% c("y", "yes")
     if (sign_enabled) {
       signing_config <- list(sign = TRUE)
-      if ("mac" %in% platforms) {
+      if ("mac" %in% (platforms %||% detect_current_platform())) {
         notarize <- readline("  Enable macOS notarization? [y/N]: ")
         signing_config$mac <- list(notarize = tolower(notarize) %in% c("y", "yes"))
       }
@@ -167,7 +177,7 @@ wizard <- function(appdir) {
   slug <- resolve_app_slug(list(), NULL, appdir)
   config <- list(
     app = Filter(Negate(is.null), list(name = app_name, slug = slug, version = app_version)),
-    build = list(type = app_type, platforms = platforms)
+    build = Filter(Negate(is.null), list(type = app_type, platforms = platforms))
   )
 
   config$build$runtime_strategy <- runtime_strategy
