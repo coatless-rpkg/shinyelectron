@@ -63,12 +63,18 @@ build_electron_app(
 - platform:
 
   Character vector. Target platforms: "win", "mac", "linux". If NULL,
-  builds for current platform.
+  builds for current platform. The `build.platforms` key of `config` is
+  not read here;
+  [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+  reads it.
 
 - arch:
 
   Character vector. Target architectures: "x64", "arm64". If NULL, uses
-  current architecture.
+  current architecture. The `build.architectures` key of `config` is not
+  read here;
+  [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+  reads it.
 
 - icon:
 

@@ -126,11 +126,15 @@ Default is FALSE.</p></dd>
 
 
 <dt id="arg-platform">platform<a class="anchor" aria-label="anchor" href="#arg-platform"></a></dt>
-<dd><p>Character vector. Target platforms: "win", "mac", "linux". If NULL, builds for current platform.</p></dd>
+<dd><p>Character vector. Target platforms: "win", "mac", "linux". If NULL, builds for current platform.
+The <code>build.platforms</code> key of <code>config</code> is not read here; <code><a href="export.html">export()</a></code>
+reads it.</p></dd>
 
 
 <dt id="arg-arch">arch<a class="anchor" aria-label="anchor" href="#arg-arch"></a></dt>
-<dd><p>Character vector. Target architectures: "x64", "arm64". If NULL, uses current architecture.</p></dd>
+<dd><p>Character vector. Target architectures: "x64", "arm64". If NULL, uses current architecture.
+The <code>build.architectures</code> key of <code>config</code> is not read here; <code><a href="export.html">export()</a></code>
+reads it.</p></dd>
 
 
 <dt id="arg-icon">icon<a class="anchor" aria-label="anchor" href="#arg-icon"></a></dt>

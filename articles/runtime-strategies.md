@@ -455,8 +455,8 @@ The `bundled` and `auto-download` strategies each embed a single
 platform-specific runtime (or a manifest pointing to one) at export time
 and abort when more than one platform or architecture is requested. To
 ship installers for Windows, macOS, and Linux from one machine, use
-`system`, `container`, or `shinylive`, or build each platform
-separately. The [GitHub
+`system`, `container`, or `shinylive` on a Mac, since macOS apps build
+only on macOS, or build each platform separately. The [GitHub
 Actions](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/github-actions.md)
 vignette shows how to fan out per-platform builds across matrix runners
 in CI.

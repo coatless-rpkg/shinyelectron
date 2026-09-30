@@ -215,10 +215,12 @@ export(
 Not every combination is portable. Two rules to keep in mind:
 
 - **macOS apps build only on macOS.** Apple’s signing and `.app`
-  packaging run through native tools. Windows and Linux installers are
-  not reliably cross-compiled from a macOS host; each platform’s
-  installer is most reliably produced by building on that platform’s own
-  OS.
+  packaging run through native tools, so
+  [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+  stops when asked for a `mac` target on Windows or Linux. Windows and
+  Linux installers are not reliably cross-compiled from a macOS host;
+  each platform’s installer is most reliably produced by building on
+  that platform’s own OS.
 - **The `bundled` and `auto-download` strategies need a per-platform
   build.** Both embed a single platform-specific runtime (or a manifest
   pointing to one) at export time and abort when more than one platform
@@ -264,8 +266,7 @@ app:
 
 build:
   type: "r-shiny"
-  runtime_strategy: "bundled"
-  platforms: [mac, win]
+  runtime_strategy: "shinylive"
 ```
 
 [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
@@ -275,6 +276,24 @@ picks it up automatically.
 
 export(appdir = "my-app", destdir = "output")
 ```
+
+Without `platforms` and `architectures` in the file,
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+builds for the machine it runs on. List them to build several targets in
+one call. The rules above still apply, so this example needs a Mac:
+
+``` yaml
+build:
+  platforms: [mac, win]
+  architectures: [x64, arm64]
+```
+
+Leave out `architectures` and every platform is built for the
+architecture of the machine you are on. On an Apple Silicon Mac, that
+means Windows installers for arm64, which most Windows PCs cannot run.
+The `platform` and `arch` arguments override these lists, each its own,
+so adding `platform = "win"` to the call builds only the Windows
+installers, still for both architectures.
 
 See the [Configuration
 Guide](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/configuration.md)

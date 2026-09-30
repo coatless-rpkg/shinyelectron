@@ -71,12 +71,17 @@ export(
 - platform:
 
   Character vector. Target platforms: "win", "mac", "linux". If NULL,
-  builds for current platform.
+  uses `build.platforms` from `_shinyelectron.yml`, then the current
+  platform. macOS apps build only on macOS, so a `"mac"` target stops
+  the export on Windows and Linux unless `build = FALSE`.
 
 - arch:
 
   Character vector. Target architectures: "x64", "arm64". If NULL, uses
-  current architecture.
+  `build.architectures` from `_shinyelectron.yml`, then the current
+  architecture. Each of `platform` and `arch` replaces only its own
+  list, so `platform = "win"` still builds for every architecture in
+  `build.architectures`.
 
 - icon:
 

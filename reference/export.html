@@ -132,11 +132,18 @@ from environment variables or the config file. Default is FALSE.</p></dd>
 
 
 <dt id="arg-platform">platform<a class="anchor" aria-label="anchor" href="#arg-platform"></a></dt>
-<dd><p>Character vector. Target platforms: "win", "mac", "linux". If NULL, builds for current platform.</p></dd>
+<dd><p>Character vector. Target platforms: "win", "mac", "linux".
+If NULL, uses <code>build.platforms</code> from <code>_shinyelectron.yml</code>, then the
+current platform. macOS apps build only on macOS, so a <code>"mac"</code> target
+stops the export on Windows and Linux unless <code>build = FALSE</code>.</p></dd>
 
 
 <dt id="arg-arch">arch<a class="anchor" aria-label="anchor" href="#arg-arch"></a></dt>
-<dd><p>Character vector. Target architectures: "x64", "arm64". If NULL, uses current architecture.</p></dd>
+<dd><p>Character vector. Target architectures: "x64", "arm64". If
+NULL, uses <code>build.architectures</code> from <code>_shinyelectron.yml</code>, then the
+current architecture. Each of <code>platform</code> and <code>arch</code> replaces only its
+own list, so <code>platform = "win"</code> still builds for every architecture in
+<code>build.architectures</code>.</p></dd>
 
 
 <dt id="arg-icon">icon<a class="anchor" aria-label="anchor" href="#arg-icon"></a></dt>

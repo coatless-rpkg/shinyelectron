@@ -380,6 +380,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 </tr>
 </tbody>
 </table>
+<p><code><a href="../reference/export.html">export()</a></code> builds each listed platform for each listed architecture. Without <code>architectures</code>, every platform is built for the architecture of the machine running the build, so on an Apple Silicon Mac, <code>platforms: [win]</code> gives an arm64 Windows installer. The <code>platform</code> and <code>arch</code> arguments of <code><a href="../reference/export.html">export()</a></code> override these lists, each only its own: with <code>architectures: [arm64]</code> in the file, <code>export(platform = "win")</code> builds Windows for arm64.</p>
 <p><strong>Valid <code>type</code> values:</strong> <code>r-shiny</code> (an <code>app.R</code> or <code>ui.R</code>/<code>server.R</code> Shiny app) or <code>py-shiny</code> (an <code>app.py</code> Shiny for Python app).</p>
 <p><strong>Valid <code>runtime_strategy</code> values:</strong></p>
 <table class="table caption-top">
@@ -418,7 +419,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <div>
 <blockquote>
 <p><strong>Cross-platform caveats</strong></p>
-<p>macOS apps build only on macOS. The <code>bundled</code> strategy ships a platform-specific runtime binary, so exporting for Windows from macOS is not supported for bundled builds. <code>auto-download</code>, <code>system</code>, and <code>container</code> sidestep that constraint. See the Runtime Strategies vignette for the full story.</p>
+<p>macOS apps build only on macOS, so <code><a href="../reference/export.html">export()</a></code> stops when a target is <code>mac</code> on Windows or Linux. The <code>bundled</code> strategy ships a platform-specific runtime binary, so exporting for Windows from macOS is not supported for bundled builds. <code>auto-download</code>, <code>system</code>, and <code>container</code> sidestep that constraint. A <code>bundled</code> or <code>auto-download</code> build targets one platform and one architecture, so it stops when <code>platforms</code> or <code>architectures</code> lists more than one. See the Runtime Strategies vignette for the full story.</p>
 </blockquote>
 </div>
 </section><section class="level3"><h3 id="icon-and-icons">
@@ -462,7 +463,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 </tr>
 </tbody>
 </table>
-<p>Paths are relative to the app directory, or to the suite root of a multi-app suite, whatever the working directory (see <a href="#file-paths">File paths</a>). <code><a href="../reference/export.html">export()</a></code> uses <code>icon</code> when it is set, and otherwise the <code>icons</code> entry for the first target platform. The <code>icon</code> argument of <code><a href="../reference/export.html">export()</a></code> overrides both, and is relative to the working directory. If the chosen file does not exist, <code><a href="../reference/export.html">export()</a></code> stops with an error that names the key and the path it checked. When no icon is set at all, the build uses the default Electron icon.</p>
+<p>Paths are relative to the app directory, or to the suite root of a multi-app suite, whatever the working directory (see <a href="#file-paths">File paths</a>). <code><a href="../reference/export.html">export()</a></code> uses <code>icon</code> when it is set, and otherwise the <code>icons</code> entry for the first target platform. A build for several platforms ships that one icon, so to give each platform its own artwork, export each platform separately with the <code>platform</code> argument. The <code>icon</code> argument of <code><a href="../reference/export.html">export()</a></code> overrides both, and is relative to the working directory. If the chosen file does not exist, <code><a href="../reference/export.html">export()</a></code> stops with an error that names the key and the path it checked. When no icon is set at all, the build uses the default Electron icon.</p>
 <div>
 <blockquote>
 <p><strong>Creating icons</strong></p>
@@ -1214,6 +1215,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a><span class="fu">nodejs</span><span class="kw">:</span></span>
 <span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"22.11.0"</span></span></code></pre></div>
+<p>Run this recipe on a Mac: macOS apps build only on macOS, and <code><a href="../reference/export.html">export()</a></code> stops when <code>platforms</code> lists <code>mac</code> on Windows or Linux. To build each installer on its own operating system instead, pass <code>platform</code> and <code>arch</code> on each CI runner, as the <a href="github-actions.html">GitHub Actions</a> workflow does; the arguments override these lists.</p>
 </section><section class="level3"><h3 id="native-r-app-with-bundled-runtime">Native R app with bundled runtime<a class="anchor" aria-label="anchor" href="#native-r-app-with-bundled-runtime"></a>
 </h3>
 <p>Ship R inside the app:</p>
@@ -1225,13 +1227,11 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
 <span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"r-shiny"</span></span>
 <span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"bundled"</span></span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">platforms</span><span class="kw">:</span></span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> mac</span></span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> win</span></span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="fu">dependencies</span><span class="kw">:</span></span>
-<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">r</span><span class="kw">:</span></span>
-<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"4.4.1"</span></span></code></pre></div>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="fu">dependencies</span><span class="kw">:</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">r</span><span class="kw">:</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">"4.4.1"</span></span></code></pre></div>
+<p>A bundled build embeds R for one platform and architecture, so this recipe leaves out <code>platforms</code> and <code>architectures</code>, and each build targets the machine it runs on. Build on each operating system you ship to, as the <a href="github-actions.html">GitHub Actions</a> workflow does.</p>
 </section><section class="level3"><h3 id="multi-app-suite">Multi-app suite<a class="anchor" aria-label="anchor" href="#multi-app-suite"></a>
 </h3>
 <p>Several apps behind one launcher:</p>
@@ -1260,7 +1260,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <ul>
 <li>Invalid <code>type</code> values warn and fall back to autodetect.</li>
 <li>Invalid <code>runtime_strategy</code> values warn and fall back to <code>shinylive</code>.</li>
-<li>Invalid platforms and architectures are dropped with a warning.</li>
+<li>Invalid platforms and architectures are dropped with a warning. When none is left, the build targets the current platform or architecture.</li>
 <li>Window dimensions under 100 pixels warn and use defaults.</li>
 <li>Invalid port numbers warn and use <code>3838</code>.</li>
 <li>A <code>lifecycle.startup_timeout</code> or <code>lifecycle.shutdown_timeout</code> that is not a whole number of milliseconds from 1000 to 2147483647 warns and uses the default.</li>

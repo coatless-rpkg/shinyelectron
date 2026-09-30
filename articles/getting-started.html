@@ -296,7 +296,7 @@ Three execution modes: Shinylive runs entirely in-browser, Native spawns a real 
 <p>Not every combination is portable. Two rules to keep in mind:</p>
 <ul>
 <li>
-<strong>macOS apps build only on macOS.</strong> Apple’s signing and <code>.app</code> packaging run through native tools. Windows and Linux installers are not reliably cross-compiled from a macOS host; each platform’s installer is most reliably produced by building on that platform’s own OS.</li>
+<strong>macOS apps build only on macOS.</strong> Apple’s signing and <code>.app</code> packaging run through native tools, so <code><a href="../reference/export.html">export()</a></code> stops when asked for a <code>mac</code> target on Windows or Linux. Windows and Linux installers are not reliably cross-compiled from a macOS host; each platform’s installer is most reliably produced by building on that platform’s own OS.</li>
 <li>
 <strong>The <code>bundled</code> and <code>auto-download</code> strategies need a per-platform build.</strong> Both embed a single platform-specific runtime (or a manifest pointing to one) at export time and abort when more than one platform or architecture is requested. Build each target separately, or use <code>system</code>, <code>container</code>, or <code>shinylive</code> for multi-platform builds from a single host.</li>
 </ul>
@@ -326,13 +326,17 @@ Three execution modes: Shinylive runs entirely in-browser, Native spawns a real 
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
 <span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"r-shiny"</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"bundled"</span></span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">platforms</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">mac</span><span class="kw">,</span><span class="at"> win</span><span class="kw">]</span></span></code></pre></div>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">runtime_strategy</span><span class="kw">:</span><span class="at"> </span><span class="st">"shinylive"</span></span></code></pre></div>
 <p><code><a href="../reference/export.html">export()</a></code> picks it up automatically.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span>appdir <span class="op">=</span> <span class="st">"my-app"</span>, destdir <span class="op">=</span> <span class="st">"output"</span><span class="op">)</span></span></code></pre></div>
 </div>
+<p>Without <code>platforms</code> and <code>architectures</code> in the file, <code><a href="../reference/export.html">export()</a></code> builds for the machine it runs on. List them to build several targets in one call. The rules above still apply, so this example needs a Mac:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">build</span><span class="kw">:</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">platforms</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">mac</span><span class="kw">,</span><span class="at"> win</span><span class="kw">]</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">architectures</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">x64</span><span class="kw">,</span><span class="at"> arm64</span><span class="kw">]</span></span></code></pre></div>
+<p>Leave out <code>architectures</code> and every platform is built for the architecture of the machine you are on. On an Apple Silicon Mac, that means Windows installers for arm64, which most Windows PCs cannot run. The <code>platform</code> and <code>arch</code> arguments override these lists, each its own, so adding <code>platform = "win"</code> to the call builds only the Windows installers, still for both architectures.</p>
 <p>See the <a href="configuration.html">Configuration Guide</a> for every option.</p>
 </section><section class="level2"><h2 id="where-to-go-next">Where to go next<a class="anchor" aria-label="anchor" href="#where-to-go-next"></a>
 </h2>

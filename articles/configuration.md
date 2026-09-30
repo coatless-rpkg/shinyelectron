@@ -305,6 +305,16 @@ The build process and its targets.
 | `platforms` | list | Current platform | Target operating systems: `mac`, `win`, `linux` |
 | `architectures` | list | Current arch | Target CPU architectures: `x64`, `arm64` |
 
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+builds each listed platform for each listed architecture. Without
+`architectures`, every platform is built for the architecture of the
+machine running the build, so on an Apple Silicon Mac,
+`platforms: [win]` gives an arm64 Windows installer. The `platform` and
+`arch` arguments of
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+override these lists, each only its own: with `architectures: [arm64]`
+in the file, `export(platform = "win")` builds Windows for arm64.
+
 **Valid `type` values:** `r-shiny` (an `app.R` or `ui.R`/`server.R`
 Shiny app) or `py-shiny` (an `app.py` Shiny for Python app).
 
@@ -325,11 +335,15 @@ vignette for the full discussion.
 
 > **Cross-platform caveats**
 >
-> macOS apps build only on macOS. The `bundled` strategy ships a
-> platform-specific runtime binary, so exporting for Windows from macOS
-> is not supported for bundled builds. `auto-download`, `system`, and
-> `container` sidestep that constraint. See the Runtime Strategies
-> vignette for the full story.
+> macOS apps build only on macOS, so
+> [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+> stops when a target is `mac` on Windows or Linux. The `bundled`
+> strategy ships a platform-specific runtime binary, so exporting for
+> Windows from macOS is not supported for bundled builds.
+> `auto-download`, `system`, and `container` sidestep that constraint. A
+> `bundled` or `auto-download` build targets one platform and one
+> architecture, so it stops when `platforms` or `architectures` lists
+> more than one. See the Runtime Strategies vignette for the full story.
 
 ### `icon` and `icons`
 
@@ -357,7 +371,9 @@ multi-app suite, whatever the working directory (see [File
 paths](#file-paths)).
 [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
 uses `icon` when it is set, and otherwise the `icons` entry for the
-first target platform. The `icon` argument of
+first target platform. A build for several platforms ships that one
+icon, so to give each platform its own artwork, export each platform
+separately with the `platform` argument. The `icon` argument of
 [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
 overrides both, and is relative to the working directory. If the chosen
 file does not exist,
@@ -836,6 +852,14 @@ nodejs:
   version: "22.11.0"
 ```
 
+Run this recipe on a Mac: macOS apps build only on macOS, and
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+stops when `platforms` lists `mac` on Windows or Linux. To build each
+installer on its own operating system instead, pass `platform` and
+`arch` on each CI runner, as the [GitHub
+Actions](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/github-actions.md)
+workflow does; the arguments override these lists.
+
 ### Native R app with bundled runtime
 
 Ship R inside the app:
@@ -849,14 +873,18 @@ app:
 build:
   type: "r-shiny"
   runtime_strategy: "bundled"
-  platforms:
-    - mac
-    - win
 
 dependencies:
   r:
     version: "4.4.1"
 ```
+
+A bundled build embeds R for one platform and architecture, so this
+recipe leaves out `platforms` and `architectures`, and each build
+targets the machine it runs on. Build on each operating system you ship
+to, as the [GitHub
+Actions](https://r-pkg.thecoatlessprofessor.com/shinyelectron/articles/github-actions.md)
+workflow does.
 
 ### Multi-app suite
 
@@ -891,7 +919,8 @@ than aborting the build:
 
 - Invalid `type` values warn and fall back to autodetect.
 - Invalid `runtime_strategy` values warn and fall back to `shinylive`.
-- Invalid platforms and architectures are dropped with a warning.
+- Invalid platforms and architectures are dropped with a warning. When
+  none is left, the build targets the current platform or architecture.
 - Window dimensions under 100 pixels warn and use defaults.
 - Invalid port numbers warn and use `3838`.
 - A `lifecycle.startup_timeout` or `lifecycle.shutdown_timeout` that is

@@ -1,8 +1,9 @@
 # Check Shiny Application Readiness for Export
 
 Validates that a Shiny application can be built as an Electron app.
-Checks app structure, configuration, runtime availability, dependencies,
-and signing credentials. Reports issues without aborting.
+Checks app structure, configuration, build targets, runtime
+availability, dependencies, and signing credentials. Reports issues
+without aborting.
 
 ## Usage
 
@@ -34,7 +35,12 @@ app_check(
 
 - platform:
 
-  Character vector or NULL. Target platforms override.
+  Character vector or NULL. Target platforms override. If NULL, uses
+  `build.platforms` from `_shinyelectron.yml`, then the current
+  platform, as
+  [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+  does. The architectures come from `build.architectures`, then the
+  current architecture.
 
 - sign:
 
@@ -85,6 +91,7 @@ app_check(example_app("r"))
 #> ℹ Type: "r-shiny"
 #> ℹ Runtime strategy: "shinylive"
 #> ℹ Platform(s): "linux"
+#> ℹ Architecture(s): "x64"
 #> ✔ App structure: app.R found
 #> ✔ Node.js: 22.23.2 + npm 10.9.8
 #> ✔ shinylive R package: installed
@@ -105,6 +112,7 @@ app_check(example_app("r"), app_type = "r-shiny", runtime_strategy = "system")
 #> ℹ Type: "r-shiny"
 #> ℹ Runtime strategy: "system"
 #> ℹ Platform(s): "linux"
+#> ℹ Architecture(s): "x64"
 #> ✔ App structure: app.R found
 #> ✔ Node.js: 22.23.2 + npm 10.9.8
 #> ✔ R: available at /usr/local/bin/Rscript
