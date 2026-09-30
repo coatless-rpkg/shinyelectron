@@ -62,7 +62,8 @@ export_multi_app <- function(appdir, destdir, config,
 
   # Local R packages go into the shared bundled R library, so the suite needs
   # a bundled R app. Paths resolve against the suite root, whose config is the
-  # only one read; check them before anything is copied or downloaded.
+  # only one read; check and read them before anything is copied or
+  # downloaded. The config then holds what was read, for the build to use.
   suite_bundled_r <- any(vapply(config$apps, function(a) {
     grepl("^r-", resolve_app_type(a, config)) &&
       identical(resolve_app_strategy(a, config), "bundled")
@@ -391,7 +392,8 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
       arch = arch[1],
       verbose = verbose,
       prune = prune,
-      local_packages = unlist(config$dependencies$r$local_packages) %||% character(0)
+      # The packages that export_multi_app() read.
+      local_packages = config$dependencies$r$local_packages %||% character(0)
     )
   }
   if (py_bundled) {

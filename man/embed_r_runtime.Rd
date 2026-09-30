@@ -36,10 +36,12 @@ default CRAN mirror.}
 that \code{\link[=prune_bundled_r_runtime]{prune_bundled_r_runtime()}} allowlists once the packages are
 installed. Callers pass the validated \code{dependencies.r.prune} setting.}
 
-\item{local_packages}{Character vector. Paths to local R package source
-folders or \code{.tar.gz} source tarballs to install into the bundled library
-after the repository packages. \code{\link[=export]{export()}} passes absolute paths; relative
-paths resolve against the working directory.}
+\item{local_packages}{Local R packages to install into the bundled library
+after the repository packages: the list \code{\link[=resolve_local_packages]{resolve_local_packages()}}
+returned, which is used as it was read, or paths to package source
+folders or \code{.tar.gz} source tarballs, which are read here. \code{\link[=export]{export()}}
+passes the packages it read; relative paths resolve against the working
+directory.}
 }
 \value{
 Invisibly, the path to the embedded \code{runtime/R} directory.
