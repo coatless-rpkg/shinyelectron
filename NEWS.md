@@ -124,7 +124,8 @@
   Started or Configuration Guide example that paired
   `runtime_strategy: "bundled"` with `platforms: [mac, win]`, remove
   `platforms`. A list with no valid value means the current platform or
-  architecture.
+  architecture. `wizard()` now suggests the current platform instead of
+  `mac`.
 
 * `init_config()` no longer suggests `nodejs.auto_install`, which has no effect
   yet.

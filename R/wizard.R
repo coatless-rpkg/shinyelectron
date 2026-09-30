@@ -54,11 +54,13 @@ wizard <- function(appdir) {
     "shinylive"
   )
 
-  # Platforms
+  # Platforms. export() builds for these, so offer the machine's own
+  # platform, which it builds for when none is set.
+  default_platform <- detect_current_platform()
   cat("\nTarget platforms (comma-separated):\n")
   cat("  mac, win, linux\n")
-  platform_input <- readline("Platforms [mac]: ")
-  if (!nzchar(platform_input)) platform_input <- "mac"
+  platform_input <- readline(paste0("Platforms [", default_platform, "]: "))
+  if (!nzchar(platform_input)) platform_input <- default_platform
   platforms <- trimws(strsplit(platform_input, ",")[[1]])
 
   valid_platforms <- SHINYELECTRON_DEFAULTS$valid_platforms
