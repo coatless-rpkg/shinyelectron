@@ -247,6 +247,20 @@ test_that("wizard writes the directory's slug, whatever the app name", {
   expect_equal(names(config$app), c("name", "slug", "version"))
 })
 
+test_that("wizard takes a linked directory's name and slug from the link", {
+  target <- file.path(withr::local_tempdir(), "dash-app-v2")
+  dir.create(target)
+  link <- file.path(dirname(target), "dash-app")
+  linked <- suppressWarnings(file.symlink(target, link))
+  skip_if_not(linked, "Symbolic links are not supported on this system")
+  run_wizard_quiet(link, rep("", 9L))
+
+  # As in export(), the link's name counts, not the folder it points to.
+  config <- yaml::read_yaml(file.path(link, "_shinyelectron.yml"))
+  expect_equal(config$app$name, "dash-app")
+  expect_equal(config$app$slug, "dash-app")
+})
+
 test_that("wizard says to set app.slug when no slug can be derived", {
   appdir <- file.path(withr::local_tempdir(), "\u6570\u636e")
   dir.create(appdir)

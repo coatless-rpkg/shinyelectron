@@ -402,8 +402,9 @@ test_that("show_config() names the app after the folder that '.' or '..' points 
   expect_true(any(grepl('Slug: "dash-app"', output, fixed = TRUE)))
 })
 
-test_that("a linked app directory takes its slug from the link's name", {
-  target <- local_app("dash-app-v2")
+test_that("a linked app directory is named after the link, not its target", {
+  # A config without app.slug, so the slug comes from the directory's name.
+  target <- local_app("dash-app-v2", list(app = list(name = "Sales")))
   link <- file.path(dirname(target), "dash-app")
   linked <- suppressWarnings(file.symlink(target, link))
   skip_if_not(linked, "Symbolic links are not supported on this system")
@@ -412,7 +413,11 @@ test_that("a linked app directory takes its slug from the link's name", {
   # from the link's name rather than from the folder it points to.
   expect_equal(export_args(link)$config$app$slug, "dash-app")
   checked <- testthat::capture_messages(app_check(link))
+  # The space keeps "dash-app-v2" from matching.
+  expect_true(any(grepl("App Check: dash-app\\s", checked)))
   expect_true(any(grepl('App slug: "dash-app"', checked, fixed = TRUE)))
-  init_config(link, verbose = FALSE)
+
+  # The config being replaced had the link's slug too, so nothing changes.
+  expect_no_warning(init_config(link, overwrite = TRUE, verbose = FALSE))
   expect_equal(read_config(link)$app$slug, "dash-app")
 })
