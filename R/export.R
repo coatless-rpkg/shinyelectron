@@ -6,10 +6,10 @@
 #' @param appdir Character string. Path to the directory containing the Shiny application.
 #' @param destdir Character string. Path to the destination directory where the Electron app will be created.
 #' @param app_name Character string. Display name of the application. If NULL,
-#'   uses `app.name` from `_shinyelectron.yml`, then the base name of appdir.
-#'   Unless `app.slug` is set, this argument also gives the app's slug, its
-#'   identity for installed copies and updates; without it the slug comes
-#'   from the base name of appdir, never from `app.name`.
+#'   uses `app.name` from `_shinyelectron.yml`, then the name of the app
+#'   directory. Unless `app.slug` is set, this argument also gives the app's
+#'   slug, its identity for installed copies and updates; without it the slug
+#'   comes from the name of the app directory, never from `app.name`.
 #' @param app_type Character string or NULL. Language of the Shiny app:
 #'   `"r-shiny"` or `"py-shiny"`. If NULL (default), the type is autodetected
 #'   from files in `appdir`. The legacy values `"r-shinylive"` and
@@ -110,12 +110,12 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   # build can copy it there and a missing file fails before any work starts.
   config <- resolve_installer_license(config, appdir)
 
-  # App display name: explicit argument > config app.name > directory basename
+  # App display name: explicit argument > config app.name > directory name
   # (mirrors export_multi_app(), so app.name is honored for single apps too).
   # The slug below still comes from the argument or the directory only.
   app_name_arg <- app_name
   name_from_config <- is.null(app_name) && !is.null(config$app$name)
-  app_name <- app_name %||% config$app$name %||% basename(appdir)
+  app_name <- app_name %||% config$app$name %||% app_dir_name(appdir)
   validate_app_name(app_name, field = if (name_from_config) "app.name" else "app_name")
 
   # Resolve the icon: function arg > config `icon:` > per-platform `icons:`.

@@ -24,7 +24,7 @@ build_electron_app(
 
 \item{output_dir}{Character string. Path where the built Electron app will be saved.}
 
-\item{app_name}{Character string. Name of the application. If NULL, uses the base name of app_dir.}
+\item{app_name}{Character string. Name of the application. If NULL, uses the name of the app_dir directory.}
 
 \item{app_type}{Character string. Language of the Shiny app: \code{"r-shiny"}
 (default) or \code{"py-shiny"}. Unlike \code{export()}, this function does \strong{not}
