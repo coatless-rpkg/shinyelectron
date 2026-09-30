@@ -88,7 +88,7 @@ signtool_only_keys <- c(
 
 win_build_config <- function(config, sign) {
   result <- generate_package_json("my-app", "1.0.0", "shinylive", config,
-                                  has_icon = TRUE, sign = sign)
+                                  icon = "icon.ico", sign = sign)
   jsonlite::fromJSON(result, simplifyVector = FALSE)$build$win
 }
 

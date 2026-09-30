@@ -9,7 +9,7 @@ generate_package_json(
   app_version,
   backend,
   config,
-  has_icon = FALSE,
+  icon = NULL,
   sign = FALSE,
   is_multi_app = FALSE,
   app_name = NULL
@@ -24,7 +24,10 @@ generate_package_json(
 
 \item{config}{List. The effective configuration.}
 
-\item{has_icon}{Logical. Whether an icon is provided.}
+\item{icon}{Character string or NULL. Path to the app icon, which
+\code{\link[=copy_brand_assets]{copy_brand_assets()}} copies to \code{\link[=icon_asset_path]{icon_asset_path()}}. Each platform in
+\code{\link[=icon_platforms]{icon_platforms()}} gets that copy as its icon; the others, and every
+platform when \code{NULL}, use the default Electron icon.}
 
 \item{app_name}{Character string or NULL. Display name, used as the
 electron-builder productName. \code{NULL} uses the slug.}

@@ -10,11 +10,14 @@
 #'   electron-builder productName. `NULL` uses the slug.
 #' @param backend Character string. The backend module name without .js (e.g., "shinylive", "native-r").
 #' @param config List. The effective configuration.
-#' @param has_icon Logical. Whether an icon is provided.
+#' @param icon Character string or NULL. Path to the app icon, which
+#'   [copy_brand_assets()] copies to [icon_asset_path()]. Each platform in
+#'   [icon_platforms()] gets that copy as its icon; the others, and every
+#'   platform when `NULL`, use the default Electron icon.
 #' @return Character string. The JSON content for package.json.
 #' @keywords internal
 generate_package_json <- function(app_slug, app_version, backend, config,
-                                  has_icon = FALSE, sign = FALSE,
+                                  icon = NULL, sign = FALSE,
                                   is_multi_app = FALSE, app_name = NULL) {
   metadata <- app_metadata(config)
   # electron-builder writes the product name, the copyright, and the author's
@@ -143,10 +146,15 @@ generate_package_json <- function(app_slug, app_version, backend, config,
     desktop = list(entry = list(StartupWMClass = app_slug))
   )
 
-  if (has_icon) {
-    win_config$icon <- "assets/icon.ico"
-    mac_config$icon <- "assets/icon.icns"
-    linux_config$icon <- "assets/icon.png"
+  # Name the copy of the icon that the build writes. A platform that cannot
+  # use its format gets no icon, so electron-builder uses the default one
+  # there instead of failing on the file.
+  if (!is.null(icon)) {
+    icon_path <- icon_asset_path(icon)
+    platforms <- icon_platforms(icon)
+    if ("win" %in% platforms) win_config$icon <- icon_path
+    if ("mac" %in% platforms) mac_config$icon <- icon_path
+    if ("linux" %in% platforms) linux_config$icon <- icon_path
   }
 
   # Code signing configuration
@@ -270,4 +278,43 @@ installer_license_path <- function(license_file) {
     ext <- "html"
   }
   paste0("build/installer-license.", ext)
+}
+
+#' Project path of the app icon
+#'
+#' [copy_brand_assets()] copies the app icon into the generated project
+#' under this name, and package.json and `main.js` refer to the copy. The
+#' extension is kept, lowercased: electron-builder recognizes the format of
+#' an icon file only by a lower-case extension, and stops the build when
+#' asked to make a Linux icon set from a file named, say, `icon.PNG`.
+#'
+#' @param icon Character. Path to the app icon.
+#' @return Character. The icon path relative to the Electron project, such
+#'   as `"assets/icon.png"`.
+#' @keywords internal
+icon_asset_path <- function(icon) {
+  paste0("assets/icon.", tolower(tools::file_ext(icon)))
+}
+
+#' Platforms whose icon can come from the app icon
+#'
+#' electron-builder makes each platform's icon from the file it is given.
+#' It converts a PNG to a macOS `.icns` file and a Windows `.ico` file, and
+#' an `.icns` file to a Windows icon and a Linux icon set. It cannot make a
+#' macOS icon or a Linux icon set from an `.ico` file, and stops the build
+#' when asked to, so an `.ico` file serves Windows only. It also checks the
+#' size: a PNG must be at least 512x512 pixels for macOS and 256x256 for
+#' Windows and Linux. The format is read from the extension, ignoring case.
+#'
+#' @param icon Character. Path to the app icon.
+#' @return Character vector of the platforms (`"win"`, `"mac"`, `"linux"`)
+#'   that can use `icon`, empty for another format.
+#' @keywords internal
+icon_platforms <- function(icon) {
+  switch(tolower(tools::file_ext(icon)),
+    png = ,
+    icns = c("win", "mac", "linux"),
+    ico = "win",
+    character(0)
+  )
 }

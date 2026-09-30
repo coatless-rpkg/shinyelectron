@@ -263,7 +263,7 @@ macOS apps build only on macOS, so `export()` stops when a target is `mac` on Wi
 
 ### `icon` and `icons`
 
-A single top-level `icon` entry is the simplest and recommended shape. Point it at a high-resolution PNG (1024×1024 or larger) and electron-builder will generate the per-platform variants it needs (`.icns` for macOS, `.ico` for Windows, and the PNG itself for Linux).
+A single top-level `icon` entry is the simplest and recommended shape. Point it at a high-resolution PNG (1024×1024 or larger) and electron-builder will generate the per-platform variants it needs (`.icns` for macOS, `.ico` for Windows, and the PNG itself for Linux); it stops the build if the PNG is smaller than 512×512 for macOS or 256×256 for Windows and Linux. An `.icns` file works for every platform too. An `.ico` file serves only Windows: electron-builder cannot make a macOS or Linux icon from it, so those builds show the default Electron icon.
 
 ```yaml
 icon: "branding/icon.png"

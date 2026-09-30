@@ -16,9 +16,10 @@ copy_brand_assets(output_dir, icon, config, apps = NULL)
 \item{apps}{List or \code{NULL}. The \code{apps} entries of a multi-app suite.}
 }
 \description{
-Copies the app icon, the splash image, the tray icon and, for a multi-app
-suite, each app's launcher icon (to \code{\link[=app_icon_asset]{app_icon_asset()}}). The paths are
-used as given: \code{\link[=export]{export()}} has resolved them against the app directory, and
-\code{\link[=process_templates]{process_templates()}} has dropped optional files that do not exist.
+Copies the app icon (to \code{\link[=icon_asset_path]{icon_asset_path()}}), the splash image, the tray
+icon and, for a multi-app suite, each app's launcher icon (to
+\code{\link[=app_icon_asset]{app_icon_asset()}}). The paths are used as given: \code{\link[=export]{export()}} has resolved
+them against the app directory, and \code{\link[=process_templates]{process_templates()}} has dropped
+optional files that do not exist.
 }
 \keyword{internal}

@@ -63,7 +63,7 @@ process_templates <- function(output_dir, app_name, app_type,
       app_version = config$app$version %||% SHINYELECTRON_DEFAULTS$app_version,
       backend = gsub("\\.js$", "", backend_module),
       config = config,
-      has_icon = !is.null(icon),
+      icon = icon,
       sign = sign,
       is_multi_app = is_multi_app
     ),
@@ -280,10 +280,11 @@ bake_dockerfile_dependencies <- function(output_dir, dockerfile_dest, config = N
 
 #' Copy branding assets into the build
 #'
-#' Copies the app icon, the splash image, the tray icon and, for a multi-app
-#' suite, each app's launcher icon (to [app_icon_asset()]). The paths are
-#' used as given: [export()] has resolved them against the app directory, and
-#' [process_templates()] has dropped optional files that do not exist.
+#' Copies the app icon (to [icon_asset_path()]), the splash image, the tray
+#' icon and, for a multi-app suite, each app's launcher icon (to
+#' [app_icon_asset()]). The paths are used as given: [export()] has resolved
+#' them against the app directory, and [process_templates()] has dropped
+#' optional files that do not exist.
 #'
 #' @param output_dir Character. The Electron project directory.
 #' @param icon Character path to the app icon, or `NULL`.
@@ -292,9 +293,8 @@ bake_dockerfile_dependencies <- function(output_dir, dockerfile_dest, config = N
 #' @keywords internal
 copy_brand_assets <- function(output_dir, icon, config, apps = NULL) {
   if (!is.null(icon)) {
-    icon_dest <- fs::path(output_dir, "assets",
-                          paste0("icon.", tools::file_ext(icon)))
-    fs::file_copy(icon, icon_dest, overwrite = TRUE)
+    fs::file_copy(icon, fs::path(output_dir, icon_asset_path(icon)),
+                  overwrite = TRUE)
   }
 
   splash_image <- config$splash$image

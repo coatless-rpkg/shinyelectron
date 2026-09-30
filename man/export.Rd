@@ -59,7 +59,8 @@ own list, so \code{platform = "win"} still builds for every architecture in
 \code{build.architectures}.}
 
 \item{icon}{Character string. Path to application icon file, absolute or
-relative to the working directory. Platform-specific format required.
+relative to the working directory. A PNG (1024x1024 or larger) or an
+\code{.icns} file serves every platform; an \code{.ico} file serves Windows only.
 Overrides \code{icon} and \code{icons} in \verb{_shinyelectron.yml}, whose paths are
 relative to \code{appdir}.}
 

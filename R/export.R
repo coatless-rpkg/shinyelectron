@@ -32,7 +32,8 @@
 #'   own list, so `platform = "win"` still builds for every architecture in
 #'   `build.architectures`.
 #' @param icon Character string. Path to application icon file, absolute or
-#'   relative to the working directory. Platform-specific format required.
+#'   relative to the working directory. A PNG (1024x1024 or larger) or an
+#'   `.icns` file serves every platform; an `.ico` file serves Windows only.
 #'   Overrides `icon` and `icons` in `_shinyelectron.yml`, whose paths are
 #'   relative to `appdir`.
 #' @param overwrite Logical. Whether to overwrite existing output directory. Default is FALSE.
