@@ -320,6 +320,33 @@ test_that("detect_py_dependencies reads a pyproject.toml that starts with a byte
   expect_equal(detect_py_dependencies(tmpdir), "shiny")
 })
 
+test_that("detect_py_dependencies warns when pyproject.toml has no [project] dependencies", {
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+  pyproject <- file.path(tmpdir, "pyproject.toml")
+
+  # Poetry 1 lists packages in a table that is not read.
+  writeLines(c(
+    '[tool.poetry.dependencies]',
+    'python = "^3.10"',
+    'shiny = "^1.0"'
+  ), pyproject)
+  expect_warning(
+    deps <- detect_py_dependencies(tmpdir),
+    "No packages found"
+  )
+  expect_length(deps, 0)
+
+  # A dependencies key outside any table is not the [project] one.
+  writeLines('dependencies = ["shiny"]', pyproject)
+  expect_warning(
+    deps <- detect_py_dependencies(tmpdir),
+    "No packages found"
+  )
+  expect_length(deps, 0)
+})
+
 test_that("detect_py_dependencies prefers requirements.txt over pyproject.toml", {
   tmpdir <- tempfile()
   dir.create(tmpdir)

@@ -6,7 +6,8 @@
 #' `opencv-python`) makes import parsing unreliable.
 #'
 #' Prefers `requirements.txt` over `pyproject.toml` when both exist.
-#' Warns if neither file is found.
+#' Warns if neither file is found, or if `pyproject.toml` has no packages in
+#' the `dependencies` of its `[project]` table.
 #'
 #' @param appdir Character string. Path to the app directory.
 #' @return Character vector of unique package names (sorted).
@@ -20,7 +21,15 @@ detect_py_dependencies <- function(appdir) {
   }
 
   if (file.exists(pyproject_file)) {
-    return(parse_pyproject_toml(pyproject_file))
+    packages <- parse_pyproject_toml(pyproject_file)
+    if (length(packages) == 0) {
+      cli::cli_warn(c(
+        "No packages found in the {.code [project]} dependencies of {.path {pyproject_file}}",
+        "i" = "Only the {.field dependencies} list of the {.code [project]} table is read",
+        "i" = "List the app's packages there, in a {.file requirements.txt}, or in {.field dependencies.python.packages} of {.file {CONFIG_FILENAME}}"
+      ))
+    }
+    return(packages)
   }
 
   cli::cli_warn(c(

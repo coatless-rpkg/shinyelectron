@@ -186,7 +186,8 @@
   now read, commented-out entries are skipped, and only the `dependencies` of
   the `[project]` table are used, so development tools listed in other tables,
   such as Hatch's `[tool.hatch.envs.*]` environments, are no longer installed
-  with the app.
+  with the app. A `pyproject.toml` with no packages in that list now draws a
+  warning.
 
 * Python packages listed with the version in parentheses, as in
   `"shiny (>=1.0)"`, are now read as `shiny` from `pyproject.toml` and
