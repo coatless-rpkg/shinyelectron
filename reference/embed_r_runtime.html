@@ -146,10 +146,12 @@ installed. Callers pass the validated <code>dependencies.r.prune</code> setting.
 
 
 <dt id="arg-local-packages">local_packages<a class="anchor" aria-label="anchor" href="#arg-local-packages"></a></dt>
-<dd><p>Character vector. Paths to local R package source
-folders or <code>.tar.gz</code> source tarballs to install into the bundled library
-after the repository packages. <code><a href="export.html">export()</a></code> passes absolute paths; relative
-paths resolve against the working directory.</p></dd>
+<dd><p>Local R packages to install into the bundled library
+after the repository packages: the list <code><a href="resolve_local_packages.html">resolve_local_packages()</a></code>
+returned, which is used as it was read, or paths to package source
+folders or <code>.tar.gz</code> source tarballs, which are read here. <code><a href="export.html">export()</a></code>
+passes the packages it read; relative paths resolve against the working
+directory.</p></dd>
 
 </dl></div>
     <div class="section level2">

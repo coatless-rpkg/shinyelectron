@@ -68,12 +68,14 @@ embed_r_runtime(
 
 - local_packages:
 
-  Character vector. Paths to local R package source folders or `.tar.gz`
-  source tarballs to install into the bundled library after the
-  repository packages.
+  Local R packages to install into the bundled library after the
+  repository packages: the list
+  [`resolve_local_packages()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/resolve_local_packages.md)
+  returned, which is used as it was read, or paths to package source
+  folders or `.tar.gz` source tarballs, which are read here.
   [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
-  passes absolute paths; relative paths resolve against the working
-  directory.
+  passes the packages it read; relative paths resolve against the
+  working directory.
 
 ## Value
 

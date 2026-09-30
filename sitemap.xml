@@ -25,6 +25,7 @@
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/alert_missing_slug.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_check.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_dependencies.html</loc></url>
+<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_dir_name.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_entrypoints.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_icon_asset.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_metadata.html</loc></url>
@@ -47,6 +48,7 @@
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/check_config_certificate.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/check_config_icon.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/check_installer_text.html</loc></url>
+<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/check_tray_icon.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/collect_unknown_config_keys.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/compute_sha256.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/config_file_exists.html</loc></url>
@@ -75,6 +77,7 @@
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/dist_has_platform_artifact.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/download_and_extract_portable_tool.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/drop_missing_config_files.html</loc></url>
+<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/electron_builder_env.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/electron_latest_version.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/embed_python_runtime.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/embed_r_runtime.html</loc></url>

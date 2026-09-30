@@ -18,6 +18,7 @@ process_templates(
   sign = FALSE,
   is_multi_app = FALSE,
   apps_manifest = NULL,
+  platform = NULL,
   verbose = TRUE
 )
 ```
@@ -47,6 +48,13 @@ process_templates(
 - config:
 
   List of configuration values from config file (optional)
+
+- platform:
+
+  Character vector of target platforms, used to check that the tray can
+  read its icon (see
+  [`check_tray_icon()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/check_tray_icon.md)).
+  `NULL` means the current platform.
 
 - verbose:
 

@@ -75,7 +75,11 @@ continue – electron-builder will handle the actual failure.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">validate_signing_config</span><span class="op">(</span><span class="va">config</span>, platform <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">validate_signing_config</span><span class="op">(</span></span>
+<span>  <span class="va">config</span>,</span>
+<span>  platform <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sign <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Logic.html" class="external-link">isTRUE</a></span><span class="op">(</span><span class="va">config</span><span class="op">$</span><span class="va">signing</span><span class="op">$</span><span class="va">sign</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -89,7 +93,23 @@ continue – electron-builder will handle the actual failure.</p>
 <dt id="arg-platform">platform<a class="anchor" aria-label="anchor" href="#arg-platform"></a></dt>
 <dd><p>Character string. Target platform ("mac", "win", "linux").</p></dd>
 
+
+<dt id="arg-sign">sign<a class="anchor" aria-label="anchor" href="#arg-sign"></a></dt>
+<dd><p>Logical. Whether the build is signed. <code><a href="export.html">export()</a></code> and
+<code><a href="app_check.html">app_check()</a></code> pass the value their <code>sign</code> argument resolves to, which
+can turn signing on when <code>signing.sign</code> is off. Defaults to
+<code>signing.sign</code>.</p></dd>
+
 </dl></div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>On macOS, electron-builder notarizes with the first kind of credentials it
+finds in the environment: an Apple ID (<code>APPLE_ID</code> and
+<code>APPLE_APP_SPECIFIC_PASSWORD</code>, plus a team ID from <code>APPLE_TEAM_ID</code> or
+<code>signing.mac.team_id</code>), an App Store Connect API key (<code>APPLE_API_KEY</code>,
+<code>APPLE_API_KEY_ID</code> and <code>APPLE_API_ISSUER</code>), or a <code>notarytool</code> keychain
+profile (<code>APPLE_KEYCHAIN_PROFILE</code>).</p>
+    </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

@@ -32,7 +32,11 @@ install_local_r_packages(
 
 - local_packages:
 
-  Character vector. Paths to package source folders or source tarballs.
+  List. The local packages as
+  [`resolve_local_packages()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/resolve_local_packages.md)
+  or
+  [`local_r_package_info()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/local_r_package_info.md)
+  read them from their source folders or source tarballs.
 
 - lib_path:
 

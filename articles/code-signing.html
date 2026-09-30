@@ -198,6 +198,7 @@ Side-by-side comparison of launch behaviour with and without signing on macOS, W
 <span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">APPLE_ID</span><span class="op">=</span><span class="st">"your@apple.id"</span></span>
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">APPLE_APP_SPECIFIC_PASSWORD</span><span class="op">=</span><span class="st">"xxxx-xxxx-xxxx-xxxx"</span></span>
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">APPLE_TEAM_ID</span><span class="op">=</span><span class="st">"XXXXXXXXXX"</span></span></code></pre></div>
+<p><code>APPLE_TEAM_ID</code> can stay unset when <code>_shinyelectron.yml</code> sets <code>signing.mac.team_id</code>: the build passes that value to electron-builder as <code>APPLE_TEAM_ID</code>, and a team ID already set in the variable wins. To notarize with an App Store Connect API key instead of an Apple ID, set <code>APPLE_API_KEY</code> (the path to the <code>.p8</code> key file), <code>APPLE_API_KEY_ID</code>, and <code>APPLE_API_ISSUER</code>; no team ID is needed then.</p>
 <p>Then run <code>export(..., sign = TRUE)</code>. electron-builder drives the full signing and notarization flow. You do not call <code>codesign</code> or <code>xcrun notarytool</code> yourself.</p>
 <p><strong>Without signing:</strong> Gatekeeper blocks the app on first launch with “App can’t be opened because Apple cannot check it for malicious software.” To open an unsigned <code>.app</code> during local development, strip the quarantine flag:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">xattr</span> <span class="at">-cr</span> /path/to/YourApp.app</span></code></pre></div>
@@ -344,9 +345,25 @@ Side-by-side comparison of launch behaviour with and without signing on macOS, W
 <tr class="odd">
 <td><code>APPLE_TEAM_ID</code></td>
 <td>macOS</td>
-<td>10-character Apple Developer Team ID</td>
+<td>10-character Apple Developer Team ID; wins over <code>signing.mac.team_id</code>
+</td>
 </tr>
 <tr class="even">
+<td><code>APPLE_API_KEY</code></td>
+<td>macOS</td>
+<td>Path to an App Store Connect API key (<code>.p8</code>), for notarizing without an Apple ID</td>
+</tr>
+<tr class="odd">
+<td><code>APPLE_API_KEY_ID</code></td>
+<td>macOS</td>
+<td>Key ID of that API key</td>
+</tr>
+<tr class="even">
+<td><code>APPLE_API_ISSUER</code></td>
+<td>macOS</td>
+<td>Issuer ID of that API key</td>
+</tr>
+<tr class="odd">
 <td><code>GPG_KEY</code></td>
 <td>Linux</td>
 <td>GPG key ID for AppImage signing (reserved; not yet implemented)</td>

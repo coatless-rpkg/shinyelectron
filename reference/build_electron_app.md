@@ -34,8 +34,8 @@ build_electron_app(
 
 - app_name:
 
-  Character string. Name of the application. If NULL, uses the base name
-  of app_dir.
+  Character string. Name of the application. If NULL, uses the name of
+  the app_dir directory.
 
 - app_type:
 

@@ -474,6 +474,7 @@ Three tray button configurations side by side: default (minimize hides to tray, 
 <p>On macOS, supply a <em>template</em> image: solid black with transparency. The system inverts it for light and dark mode automatically.</p>
 </blockquote>
 </div>
+<p>Electron reads a tray icon from a PNG or JPEG file on every platform, and from an ICO file only on Windows. It cannot read <code>.icns</code> files. So when the app icon is an <code>.icns</code> file, or an <code>.ico</code> file in a macOS or Linux build, set <code>tray.icon</code> to a PNG. Otherwise <code><a href="../reference/export.html">export()</a></code> warns, and on each platform that cannot read the file the tray shows a built-in icon, a small window outline. The tray also shows this icon when neither <code>tray.icon</code> nor an app icon is set.</p>
 </section></section><section class="level2"><h2 id="application-menu">Application menu<a class="anchor" aria-label="anchor" href="#application-menu"></a>
 </h2>
 <p>Users expect File, Edit, View, and Help menus and the keyboard shortcuts their OS provides. Electron does not give you these by default. shinyelectron generates one for you and follows each platform’s conventions.</p>

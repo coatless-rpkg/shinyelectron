@@ -1,6 +1,10 @@
 # Read the metadata of local R package sources
 
-Read the metadata of local R package sources
+Reads the `DESCRIPTION` of each source folder, or the one in a source
+tarball's top-level folder.
+[`resolve_local_packages()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/resolve_local_packages.md)
+calls this, and the later steps of an export take its result rather than
+reading again.
 
 ## Usage
 

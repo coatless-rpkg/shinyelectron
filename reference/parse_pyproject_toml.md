@@ -1,7 +1,11 @@
 # Parse pyproject.toml dependencies section
 
-Simple parser for the `[project] dependencies` array in pyproject.toml.
-Does not handle complex TOML – just extracts quoted dependency strings.
+Simple parser for the `[project] dependencies` array in pyproject.toml,
+where PEP 621 lists runtime dependencies. `dependencies` arrays in other
+tables, such as Hatch's `[tool.hatch.envs.*]` environments, are ignored.
+Entries may use double or single quotes, and `#` comments are skipped.
+Does not handle complex TOML such as multi-line strings, a quoted
+`["project"]` header, or a dotted `project.dependencies` key.
 
 ## Usage
 

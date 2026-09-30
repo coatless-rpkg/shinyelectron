@@ -197,6 +197,22 @@
   because electron-builder stops there instead of falling back to
   `CSC_*`.
 
+- A signed build now passes `signing.mac.team_id` to electron-builder as
+  `APPLE_TEAM_ID`, the only place electron-builder reads the
+  notarization team ID. Before, when the team ID was set only in
+  `_shinyelectron.yml`, builds that notarize with an Apple ID failed
+  with “APPLE_TEAM_ID env var needs to be set”. A team ID already set in
+  `APPLE_TEAM_ID` still wins.
+
+- `export(sign = TRUE)` and `app_check(sign = TRUE)` now check the
+  signing credentials even when `signing.sign` is off in
+  `_shinyelectron.yml`. The macOS checks also follow electron-builder:
+  an App Store Connect API key (`APPLE_API_KEY`, `APPLE_API_KEY_ID`,
+  `APPLE_API_ISSUER`) or `APPLE_KEYCHAIN_PROFILE` counts as notarization
+  credentials, a missing team ID is reported only when notarizing with
+  an Apple ID, and each warning says whether notarization will fail or
+  be skipped.
+
 - Bundled R builds now install packages with the portable R’s own
   startup files. The install no longer runs a project `.Rprofile` or
   `.Renviron` from the working directory, such as renv’s autoloader, and
@@ -204,6 +220,23 @@
   profile chosen that way skipped the portable R’s macOS library fix-up,
   so installed binary packages could crash when loaded. `~/.Renviron`
   and `~/.Rprofile` still apply.
+
+- Python dependencies are now read in full from `pyproject.toml`. In a
+  `dependencies` list that spanned several lines, a `]` inside an entry,
+  such as the extras in `"uvicorn[standard]>=0.30"`, or in a comment
+  ended the list, so the packages after it were not installed.
+  Single-quoted entries are now read, commented-out entries are skipped,
+  and only the `dependencies` of the `[project]` table are used, so
+  development tools listed in other tables, such as Hatch’s
+  `[tool.hatch.envs.*]` environments, are no longer installed with the
+  app. A `pyproject.toml` with no packages in that list now draws a
+  warning.
+
+- Python packages listed with the version in parentheses, as in
+  `"shiny (>=1.0)"`, are now read as `shiny` from `pyproject.toml` and
+  `requirements.txt`. Poetry 2 writes `pyproject.toml` entries this way.
+  They were read as `shiny (`, which pip rejects, so none of the app’s
+  Python packages were installed.
 
 - `installer.one_click`,
   `installer.allow_to_change_installation_directory`, and
@@ -248,6 +281,17 @@
   checks these files the same way and reports a missing icon as an
   error.
 
+- The system tray icon is no longer blank when `tray.icon` is not set
+  and the app icon is not a PNG. The tray looked for an `icon.png` that
+  only a PNG app icon provides; it now loads the app icon itself, such
+  as an `.ico` file on Windows. Where Electron cannot read the file (an
+  `.icns` file, or an `.ico` file on macOS or Linux), or when no icon is
+  set, the tray shows a built-in icon of a window outline instead.
+  [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+  warns about a tray icon that a target platform cannot read, with a
+  warning of class `shinyelectron_tray_icon_unsupported` that suggests
+  setting `tray.icon` to a PNG.
+
 - With `updates.auto_download` on, the update notification now says the
   new version is downloading, instead of asking the user to click to
   download.
@@ -261,6 +305,30 @@
   now stops before converting the app, and
   [`show_config()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/show_config.md)
   no longer fails on a non-ASCII `app.name`.
+
+- [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md),
+  [`build_electron_app()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/build_electron_app.md),
+  [`init_config()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/init_config.md),
+  and
+  [`show_config()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/show_config.md)
+  now name the app after its folder when the app directory is a relative
+  path such as `"."` or `".."`. The app was named `"."` or `".."`, and
+  [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+  and
+  [`build_electron_app()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/build_electron_app.md)
+  stopped because they could not derive an app slug. When `appdir` is
+  the path of a symbolic link,
+  [`app_check()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_check.md),
+  [`init_config()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/init_config.md),
+  and
+  [`wizard()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/wizard.md)
+  now take the slug from the link’s name, as
+  [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+  does, instead of from the folder it points to.
+  [`app_check()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_check.md)
+  also uses the link’s name in its report, and
+  [`wizard()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/wizard.md)
+  offers it as the default app name.
 
 ## shinyelectron 0.2.1
 

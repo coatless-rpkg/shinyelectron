@@ -291,6 +291,15 @@ built-in menu with two entries:
 > On macOS, supply a *template* image: solid black with transparency.
 > The system inverts it for light and dark mode automatically.
 
+Electron reads a tray icon from a PNG or JPEG file on every platform,
+and from an ICO file only on Windows. It cannot read `.icns` files. So
+when the app icon is an `.icns` file, or an `.ico` file in a macOS or
+Linux build, set `tray.icon` to a PNG. Otherwise
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+warns, and on each platform that cannot read the file the tray shows a
+built-in icon, a small window outline. The tray also shows this icon
+when neither `tray.icon` nor an app icon is set.
+
 ## Application menu
 
 Users expect File, Edit, View, and Help menus and the keyboard shortcuts

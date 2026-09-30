@@ -88,6 +88,7 @@ assets. Each step is a focused helper in this file.</p>
 <span>  sign <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  is_multi_app <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  apps_manifest <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  platform <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -118,6 +119,12 @@ assets. Each step is a focused helper in this file.</p>
 
 <dt id="arg-config">config<a class="anchor" aria-label="anchor" href="#arg-config"></a></dt>
 <dd><p>List of configuration values from config file (optional)</p></dd>
+
+
+<dt id="arg-platform">platform<a class="anchor" aria-label="anchor" href="#arg-platform"></a></dt>
+<dd><p>Character vector of target platforms, used to check that
+the tray can read its icon (see <code><a href="check_tray_icon.html">check_tray_icon()</a></code>). <code>NULL</code> means the
+current platform.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>

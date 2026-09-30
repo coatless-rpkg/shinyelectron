@@ -229,8 +229,9 @@ package-name mapping is unreliable (`import cv2` is `opencv-python`,
 one of two places.
 
 **`requirements.txt` or `pyproject.toml`.** A standard Python manifest
-at the suite root. All apps in the suite share one virtual environment.
-The demo’s `requirements.txt`:
+at the suite root. From `pyproject.toml`, shinyelectron reads the
+`dependencies` list in the `[project]` table. All apps in the suite
+share one virtual environment. The demo’s `requirements.txt`:
 
     shiny
     numpy

@@ -1078,8 +1078,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <td><code>mac.team_id</code></td>
 <td>string</td>
 <td><code>null</code></td>
-<td>Apple Team ID; notarization is skipped unless this or <code>APPLE_TEAM_ID</code> is set, and electron-builder reads the ID from <code>APPLE_TEAM_ID</code>
-</td>
+<td>Apple Team ID, needed to notarize with an Apple ID; the build passes it to electron-builder as <code>APPLE_TEAM_ID</code>, and a team ID already set in <code>APPLE_TEAM_ID</code> wins</td>
 </tr>
 <tr class="even">
 <td><code>mac.notarize</code></td>

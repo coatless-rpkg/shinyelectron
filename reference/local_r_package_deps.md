@@ -1,22 +1,28 @@
-# Resolve the declared dependencies of local R package paths
+# Declared dependencies of local R packages
 
-Reads `Depends`, `Imports` and `LinkingTo` from each local package's
-`DESCRIPTION` (directories and archives alike) so the repository install
-step can install them before the local package is installed from source.
-Version constraints and `R` are stripped, and base/recommended packages
-are dropped.
+The packages that each local package's `Depends`, `Imports` and
+`LinkingTo` name (directories and archives alike), so the repository
+install step can install them before the local package is installed from
+source.
+[`local_r_package_info()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/local_r_package_info.md)
+has already stripped version constraints and `R`; base/recommended
+packages are dropped here.
 
 ## Usage
 
 ``` r
-local_r_package_deps(paths)
+local_r_package_deps(packages)
 ```
 
 ## Arguments
 
-- paths:
+- packages:
 
-  Character vector. Paths to local package directories or archives.
+  List. Local packages as
+  [`resolve_local_packages()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/resolve_local_packages.md)
+  or
+  [`local_r_package_info()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/local_r_package_info.md)
+  return them.
 
 ## Value
 

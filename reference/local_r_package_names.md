@@ -1,20 +1,23 @@
-# Resolve the package names of local R package paths
+# Package names of local R packages
 
-Reads the `Package` field from each source folder's `DESCRIPTION`, or
-from the `DESCRIPTION` in a source tarball's top-level folder.
+Package names of local R packages
 
 ## Usage
 
 ``` r
-local_r_package_names(paths)
+local_r_package_names(packages)
 ```
 
 ## Arguments
 
-- paths:
+- packages:
 
-  Character vector. Paths to local package directories or archives.
+  List. Local packages as
+  [`resolve_local_packages()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/resolve_local_packages.md)
+  or
+  [`local_r_package_info()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/local_r_package_info.md)
+  return them.
 
 ## Value
 
-Character vector of package names (empty when `paths` is empty).
+Character vector of package names (empty when `packages` is empty).

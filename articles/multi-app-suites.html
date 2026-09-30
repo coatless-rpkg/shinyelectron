@@ -285,7 +285,7 @@ The launcher hands off to one backend at a time; picking a different app returns
 </section><section class="level3"><h3 id="python-apps">Python apps<a class="anchor" aria-label="anchor" href="#python-apps"></a>
 </h3>
 <p>shinyelectron does not parse <code>import</code> statements: the module-name to package-name mapping is unreliable (<code>import cv2</code> is <code>opencv-python</code>, <code>import sklearn</code> is <code>scikit-learn</code>). You declare what gets installed, in one of two places.</p>
-<p><strong><code>requirements.txt</code> or <code>pyproject.toml</code>.</strong> A standard Python manifest at the suite root. All apps in the suite share one virtual environment. The demo’s <code>requirements.txt</code>:</p>
+<p><strong><code>requirements.txt</code> or <code>pyproject.toml</code>.</strong> A standard Python manifest at the suite root. From <code>pyproject.toml</code>, shinyelectron reads the <code>dependencies</code> list in the <code>[project]</code> table. All apps in the suite share one virtual environment. The demo’s <code>requirements.txt</code>:</p>
 <pre><code><span><span class="va">shiny</span></span>
 <span><span class="va">numpy</span></span>
 <span><span class="va">matplotlib</span></span></code></pre>

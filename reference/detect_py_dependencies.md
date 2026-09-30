@@ -24,4 +24,5 @@ Character vector of unique package names (sorted).
 ## Details
 
 Prefers `requirements.txt` over `pyproject.toml` when both exist. Warns
-if neither file is found.
+if neither file is found, or if `pyproject.toml` has no packages in the
+`dependencies` of its `[project]` table.
