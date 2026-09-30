@@ -7,6 +7,9 @@
 #' Files named in `_shinyelectron.yml`, such as `icon` or `splash.image`, are
 #' looked up relative to `appdir`, as [export()] does. A missing icon is an
 #' error, because [export()] stops on it; other missing files are warnings.
+#' So is an icon that a target platform cannot use, because of its format or
+#' the size of its image, since that platform's build shows the default
+#' Electron icon.
 #'
 #' @param appdir Character string. Path to the app directory. Default ".".
 #' @param app_type Character string or NULL. App type override.
@@ -303,6 +306,17 @@ app_check <- function(appdir = ".", app_type = NULL, runtime_strategy = NULL,
     } else {
       errors <- c(errors, paste0(icon$field, " file not found: ", shown))
       if (verbose) cli::cli_alert_danger("Icon: {.field {icon$field}} file not found: {.path {shown}}")
+    }
+  }
+  # export() gives the icon of the first target platform to every target, and
+  # warns about the targets that cannot use it, for its format or the size of
+  # its image, before it builds anything.
+  used <- if (length(platform) > 0) config_icon(config, platform[1])
+  if (!is.null(used) && config_file_exists(used$path)) {
+    checked <- catch_conditions(validate_icon(used$path, platform))
+    for (msg in checked$warnings) {
+      warnings <- c(warnings, msg)
+      if (verbose) cli::cli_alert_warning("Icon: {msg}")
     }
   }
 

@@ -263,7 +263,7 @@ macOS apps build only on macOS, so `export()` stops when a target is `mac` on Wi
 
 ### `icon` and `icons`
 
-A single top-level `icon` entry is the simplest and recommended shape. Point it at a high-resolution PNG (1024×1024 or larger) and electron-builder will generate the per-platform variants it needs (`.icns` for macOS, `.ico` for Windows, and the PNG itself for Linux); it stops the build if the PNG is smaller than 512×512 for macOS or 256×256 for Windows and Linux. An `.icns` file works for every platform too. An `.ico` file serves only Windows: electron-builder cannot make a macOS or Linux icon from it, so those builds show the default Electron icon.
+A single top-level `icon` entry is the simplest and recommended shape. Point it at a high-resolution PNG (1024×1024 or larger) and electron-builder will generate the per-platform variants it needs (`.icns` for macOS, `.ico` for Windows, and the PNG itself for Linux). A smaller PNG must still be at least 512×512 for macOS and 256×256 for Windows; Linux uses the PNG as it is. An `.icns` file works for every platform too, as long as it holds an image of 256×256 or more for Windows. An `.ico` file serves only Windows, and needs a 256×256 image: electron-builder cannot make a macOS or Linux icon from it. A platform that cannot use the icon, because of its format or its size, shows the default Electron icon. `export()` warns about it before anything is built, and `app_check()` reports it.
 
 ```yaml
 icon: "branding/icon.png"
@@ -274,7 +274,7 @@ If you genuinely need different artwork on different platforms (for example, a m
 | Key | Type | Format | Description |
 |-----|------|--------|-------------|
 | `mac` | string | `.icns` | macOS icon (typically 512×512 or larger) |
-| `win` | string | `.ico` | Windows icon (multi-resolution recommended) |
+| `win` | string | `.ico` | Windows icon, with a 256×256 image (multi-resolution recommended) |
 | `linux` | string | `.png` | Linux icon (512×512 recommended) |
 
 Paths are relative to the app directory, or to the suite root of a multi-app suite, whatever the working directory (see [File paths](#file-paths)). `export()` uses `icon` when it is set, and otherwise the `icons` entry for the first target platform. A build for several platforms ships that one icon, so to give each platform its own artwork, export each platform separately with the `platform` argument. The `icon` argument of `export()` overrides both, and is relative to the working directory. If the chosen file does not exist, `export()` stops with an error that names the key and the path it checked. When no icon is set at all, the build uses the default Electron icon.

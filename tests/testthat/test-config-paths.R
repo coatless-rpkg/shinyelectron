@@ -300,6 +300,29 @@ test_that("export() checks the tray's app icon for the target platform", {
   )
 })
 
+test_that("export() gives no icon to a target platform it is too small for", {
+  # A macOS target builds only on a Mac.
+  local_mocked_bindings(detect_current_platform = function() "mac")
+  appdir <- local_config_app(list(icon = "branding/icon.png"))
+  fs::dir_create(fs::path(appdir, "branding"))
+  fs::file_copy(local_png_icon(300), fs::path(appdir, "branding", "icon.png"))
+  withr::local_dir(withr::local_tempdir())
+  local_fake_build()
+
+  # A 300x300 PNG is large enough for Linux but not for macOS.
+  w <- expect_warning(
+    result <- export(appdir, fs::path(withr::local_tempdir(), "out"),
+                     platform = c("mac", "linux"), verbose = FALSE),
+    class = "shinyelectron_icon_too_small"
+  )
+  expect_match(gsub("[[:space:]]+", " ", cli::ansi_strip(conditionMessage(w))),
+               "too small for \"mac\".", fixed = TRUE)
+  pkg <- jsonlite::fromJSON(fs::path(result$electron_app, "package.json"),
+                            simplifyVector = FALSE)
+  expect_null(pkg$build$mac$icon)
+  expect_equal(pkg$build$linux$icon, "assets/icon.png")
+})
+
 test_that("export() warns about a missing certificate only when signing Windows builds", {
   appdir <- local_config_app(list(
     signing = list(win = list(certificate_file = "certs/missing.pfx"))
@@ -438,6 +461,26 @@ test_that("app_check() fails when the configured icon does not exist", {
   result <- app_check(appdir, platform = "linux", verbose = FALSE)
   expect_false(result$pass)
   expect_true(any(grepl("icons.linux file not found", result$errors, fixed = TRUE)))
+})
+
+test_that("app_check() warns about the platforms the icon is too small for", {
+  appdir <- local_config_app(list(icon = "branding/icon.png"))
+  fs::dir_create(fs::path(appdir, "branding"))
+  fs::file_copy(local_png_icon(128), fs::path(appdir, "branding", "icon.png"))
+  withr::local_dir(withr::local_tempdir())
+
+  # Windows needs 256x256 pixels; Linux uses the PNG as it is.
+  result <- app_check(appdir, platform = c("win", "linux"), verbose = FALSE)
+  expect_true(result$pass)
+  too_small <- grepl("too small for", result$warnings, fixed = TRUE)
+  expect_equal(sum(too_small), 1)
+  msg <- gsub("[[:space:]]+", " ", cli::ansi_strip(result$warnings[too_small]))
+  expect_match(msg, "too small for \"win\".", fixed = TRUE)
+  expect_match(msg, basename(appdir), fixed = TRUE)
+
+  expect_false(any(grepl("too small for",
+                         app_check(appdir, platform = "linux", verbose = FALSE)$warnings,
+                         fixed = TRUE)))
 })
 
 test_that("app_check() reports a missing certificate when signing Windows builds", {

@@ -266,10 +266,15 @@
   default Electron icon: a PNG icon, as the documentation recommends,
   reached Linux only, and an `.icns` icon never reached Windows. Every
   platform now uses the copied file, which electron-builder converts from a
-  PNG or `.icns` icon as needed. An `.ico` icon serves Windows only, and the
-  format warning from `export()` now names just the platforms that will show
-  the default icon. A `tray.icon` file named like the copy, such as
-  `icon.png`, is now copied under another name instead of replacing it.
+  PNG or `.icns` icon as needed. An `.ico` icon serves Windows only.
+  electron-builder also stops the build when the image is too small: a PNG
+  needs at least 512x512 pixels for macOS and 256x256 for Windows, and
+  Windows needs a 256x256 image in an `.icns` or `.ico` file. A platform
+  that cannot use the icon, because of its format or its size, now gets the
+  default icon instead, and `export()` names it in a warning before anything
+  is built; `app_check()` reports it too. A `tray.icon` file named like the
+  copy, such as `icon.png`, is now copied under another name instead of
+  replacing it.
 
 * A configured splash image, tray icon, or launcher icon that does not exist
   now gives a warning naming the key and the path checked, instead of being

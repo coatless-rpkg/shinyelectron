@@ -14,12 +14,9 @@ Character vector of the platforms (\code{"win"}, \code{"mac"}, \code{"linux"})
 that can use \code{icon}, empty for another format.
 }
 \description{
-electron-builder makes each platform's icon from the file it is given.
-It converts a PNG to a macOS \code{.icns} file and a Windows \code{.ico} file, and
-an \code{.icns} file to a Windows icon and a Linux icon set. It cannot make a
-macOS icon or a Linux icon set from an \code{.ico} file, and stops the build
-when asked to, so an \code{.ico} file serves Windows only. It also checks the
-size: a PNG must be at least 512x512 pixels for macOS and 256x256 for
-Windows and Linux. The format is read from the extension, ignoring case.
+A platform can use the app icon when electron-builder can make its icon
+from the file's format and the image is large enough (see
+\code{\link[=icon_min_size]{icon_min_size()}}). When \code{\link[=icon_size]{icon_size()}} cannot read the size, the format
+alone decides.
 }
 \keyword{internal}

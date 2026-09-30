@@ -13,8 +13,8 @@ validate_icon(icon, platform = NULL)
 }
 \description{
 Checks that the icon file exists and that each target platform can use
-its format (see \code{\link[=icon_platforms]{icon_platforms()}}). A platform that cannot gets the
-default Electron icon, so this warns rather than errors and the build
-continues.
+it, for its format and for the size of its image (see
+\code{\link[=icon_platforms]{icon_platforms()}}). A platform that cannot gets the default Electron
+icon, so this warns rather than errors and the build continues.
 }
 \keyword{internal}
