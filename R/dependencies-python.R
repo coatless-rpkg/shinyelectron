@@ -6,7 +6,8 @@
 #' `opencv-python`) makes import parsing unreliable.
 #'
 #' Prefers `requirements.txt` over `pyproject.toml` when both exist.
-#' Warns if neither file is found.
+#' Warns if neither file is found, or if `pyproject.toml` has no packages in
+#' the `dependencies` of its `[project]` table.
 #'
 #' @param appdir Character string. Path to the app directory.
 #' @return Character vector of unique package names (sorted).
@@ -20,7 +21,15 @@ detect_py_dependencies <- function(appdir) {
   }
 
   if (file.exists(pyproject_file)) {
-    return(parse_pyproject_toml(pyproject_file))
+    packages <- parse_pyproject_toml(pyproject_file)
+    if (length(packages) == 0) {
+      cli::cli_warn(c(
+        "No packages found in the {.code [project]} dependencies of {.path {pyproject_file}}",
+        "i" = "Only the {.field dependencies} list of the {.code [project]} table is read",
+        "i" = "List the app's packages there, in a {.file requirements.txt}, or in {.field dependencies.python.packages} of {.file {CONFIG_FILENAME}}"
+      ))
+    }
+    return(packages)
   }
 
   cli::cli_warn(c(
@@ -52,7 +61,9 @@ parse_requirements_txt <- function(path) {
     # Bare URL with no package name: nothing usable to install by name.
     if (grepl("://", line)) next
 
-    pkg <- sub("[>=<!~;\\[,].*", "", line)
+    # The name ends at the extras, version, or marker. A version may sit in
+    # parentheses, as in "shiny (>=1.0)".
+    pkg <- sub("[>=<!~;\\[,(].*", "", line)
     pkg <- trimws(pkg)
     if (nzchar(pkg)) packages <- c(packages, pkg)
   }
@@ -62,24 +73,34 @@ parse_requirements_txt <- function(path) {
 
 #' Parse pyproject.toml dependencies section
 #'
-#' Simple parser for the `[project] dependencies` array in pyproject.toml.
-#' Does not handle complex TOML -- just extracts quoted dependency strings.
+#' Simple parser for the `[project] dependencies` array in pyproject.toml,
+#' where PEP 621 lists runtime dependencies. `dependencies` arrays in other
+#' tables, such as Hatch's `[tool.hatch.envs.*]` environments, are ignored.
+#' Entries may use double or single quotes, and `#` comments are skipped.
+#' Does not handle complex TOML such as multi-line strings, a quoted
+#' `["project"]` header, or a dotted `project.dependencies` key.
 #'
 #' @param path Character string. Path to pyproject.toml.
 #' @return Character vector of package names.
 #' @keywords internal
 parse_pyproject_toml <- function(path) {
   lines <- readLines(path, warn = FALSE)
+  # readLines() drops a UTF-8 byte order mark only in a UTF-8 locale.
+  if (length(lines)) lines[1] <- sub("^\xef\xbb\xbf", "", lines[1], useBytes = TRUE)
   packages <- character(0)
 
-  # Extract every double-quoted token on a line (handles multiple per line).
-  extract_quoted <- function(s) {
-    m <- regmatches(s, gregexpr('"[^"]*"', s))[[1]]
-    gsub('"', '', m)
+  # The strings, comments, and "]" on a line, in order. A double-quoted
+  # string may hold backslash escapes; a single-quoted (literal) one cannot.
+  # Matching whole strings keeps a "]" or "#" inside one, as in
+  # "uvicorn[standard]", from ending the array or starting a comment.
+  array_tokens <- function(s) {
+    pattern <- "\"(?:[^\"\\\\]|\\\\.)*\"|'[^']*'|#.*|\\]"
+    regmatches(s, gregexpr(pattern, s, perl = TRUE))[[1]]
   }
-  # Reduce a PEP 508 spec ("pandas>=2.0", "shiny[theme]", "x @ url") to a name.
+  # Reduce a PEP 508 spec ("pandas>=2.0", "shiny[theme]", "x @ url", or
+  # "shiny (>=1.0)" as Poetry 2 writes it) to a name.
   spec_to_name <- function(spec) {
-    trimws(sub("[>=<!~;@\\[,].*", "", spec))
+    trimws(sub("[>=<!~;@\\[,(].*", "", spec))
   }
   # The package names in a set of specs, without empty ones.
   spec_names <- function(specs) {
@@ -87,26 +108,39 @@ parse_pyproject_toml <- function(path) {
     pkgs[nzchar(pkgs)]
   }
 
+  in_project <- FALSE
   in_deps <- FALSE
   for (line in lines) {
     trimmed <- trimws(line)
 
-    if (!in_deps && grepl("^dependencies\\s*=\\s*\\[", trimmed)) {
+    if (!in_deps) {
+      # A table header such as [project] or [[tool.mypy.overrides]]: a
+      # bracketed name alone on its line, perhaps with a comment. A line of a
+      # multi-line string, such as "[Shiny] dashboard", is not one.
+      if (grepl("^\\[\\[?[^][]*\\]\\]?\\s*(#.*)?$", trimmed)) {
+        in_project <- grepl("^\\[\\s*project\\s*\\]\\s*(#.*)?$", trimmed)
+        next
+      }
+      if (!in_project || !grepl("^dependencies\\s*=\\s*\\[", trimmed)) next
       in_deps <- TRUE
-      # Capture any packages declared on the opening line itself, e.g.
+      # The rest of the opening line may already hold packages, e.g.
       # dependencies = ["shiny", "pandas"].
-      after <- sub("^dependencies\\s*=\\s*\\[", "", trimmed)
-      packages <- c(packages, spec_names(extract_quoted(after)))
-      # A single-line array closes on the same line.
-      if (grepl("\\]", after)) in_deps <- FALSE
-      next
+      trimmed <- sub("^dependencies\\s*=\\s*\\[", "", trimmed)
     }
 
-    if (in_deps) {
-      packages <- c(packages, spec_names(extract_quoted(trimmed)))
-      # The closing bracket may share a line with the last entry.
-      if (grepl("\\]", trimmed)) in_deps <- FALSE
+    tokens <- array_tokens(trimmed)
+    # The array ends at the first "]" outside a string or comment. It may
+    # share a line with the last entry, or with the opening line in a
+    # single-line array.
+    closing <- match("]", tokens)
+    if (!is.na(closing)) {
+      tokens <- tokens[seq_len(closing - 1L)]
+      in_deps <- FALSE
     }
+    # The entries are the strings without their quotes; comments are dropped.
+    strings <- tokens[!startsWith(tokens, "#")]
+    specs <- substr(strings, 2L, nchar(strings) - 1L)
+    packages <- c(packages, spec_names(specs))
   }
 
   sort(unique(packages))

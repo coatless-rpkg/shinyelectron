@@ -179,6 +179,22 @@
   skipped the portable R's macOS library fix-up, so installed binary packages
   could crash when loaded. `~/.Renviron` and `~/.Rprofile` still apply.
 
+* Python dependencies are now read in full from `pyproject.toml`. In a
+  `dependencies` list that spanned several lines, a `]` inside an entry, such
+  as the extras in `"uvicorn[standard]>=0.30"`, or in a comment ended the
+  list, so the packages after it were not installed. Single-quoted entries are
+  now read, commented-out entries are skipped, and only the `dependencies` of
+  the `[project]` table are used, so development tools listed in other tables,
+  such as Hatch's `[tool.hatch.envs.*]` environments, are no longer installed
+  with the app. A `pyproject.toml` with no packages in that list now draws a
+  warning.
+
+* Python packages listed with the version in parentheses, as in
+  `"shiny (>=1.0)"`, are now read as `shiny` from `pyproject.toml` and
+  `requirements.txt`. Poetry 2 writes `pyproject.toml` entries this way. They
+  were read as `shiny (`, which pip rejects, so none of the app's Python
+  packages were installed.
+
 * `installer.one_click`, `installer.allow_to_change_installation_directory`,
   and `installer.per_machine` are checked when the configuration is read. A
   quoted `"true"` or `"false"` (or `"yes"` or `"no"`) is read as the matching
