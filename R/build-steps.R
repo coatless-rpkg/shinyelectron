@@ -76,15 +76,44 @@ dist_has_platform_artifact <- function(output_dir, p) {
              logical(1)))
 }
 
+#' Environment for the electron-builder processes
+#'
+#' electron-builder 26 reads the notarization team ID only from the
+#' `APPLE_TEAM_ID` environment variable; its configuration has no field for
+#' it. For a signed build, `signing.mac.team_id` is therefore passed to
+#' electron-builder as `APPLE_TEAM_ID`. A team ID already set in
+#' `APPLE_TEAM_ID` wins, as the build leaves the signing variables the user
+#' set alone. An empty one counts as unset, as it does for electron-builder.
+#'
+#' @param config List. The effective configuration, or `NULL`.
+#' @param sign Logical. Whether the build is signed.
+#' @return A value for the `env` argument of [processx::run()]: the result
+#'   of [nodejs_subprocess_env()], extended with `APPLE_TEAM_ID` when the
+#'   configuration supplies it.
+#' @keywords internal
+electron_builder_env <- function(config, sign) {
+  env <- nodejs_subprocess_env()
+  team_id <- config$signing$mac$team_id
+  if (isTRUE(sign) && is_nonempty_string(team_id) &&
+      !nzchar(Sys.getenv("APPLE_TEAM_ID"))) {
+    env <- c(env %||% "current", APPLE_TEAM_ID = team_id)
+  }
+  env
+}
+
 #' Build for target platforms
 #'
 #' @param output_dir Character Electron project directory
 #' @param platform Character vector of target platforms
 #' @param arch Character vector of target architectures
 #' @param sign Logical whether to code-sign the build
+#' @param config List. The effective configuration, or `NULL`. A signed
+#'   build passes its `signing.mac.team_id` to electron-builder (see
+#'   [electron_builder_env()]).
 #' @param verbose Logical whether to show progress
 #' @keywords internal
-build_for_platforms <- function(output_dir, platform, arch, sign = FALSE, verbose = TRUE) {
+build_for_platforms <- function(output_dir, platform, arch, sign = FALSE,
+                                config = NULL, verbose = TRUE) {
   if (verbose) {
     cli::cli_alert_info("Building for platforms: {paste(platform, collapse = ', ')}")
   }
@@ -115,6 +144,9 @@ build_for_platforms <- function(output_dir, platform, arch, sign = FALSE, verbos
     }, add = TRUE)
   }
 
+  # Hand a configured signing.mac.team_id to electron-builder as APPLE_TEAM_ID
+  build_env <- electron_builder_env(config, sign)
+
   # Build for each platform/arch combination
   for (p in platform) {
     for (a in arch) {
@@ -131,7 +163,7 @@ build_for_platforms <- function(output_dir, platform, arch, sign = FALSE, verbos
         result <- processx::run(
           command = get_npm_command(),
           args = c("run", build_script),
-          env = nodejs_subprocess_env(),
+          env = build_env,
           wd = output_dir,
           echo = FALSE,
           spinner = verbose,
@@ -189,7 +221,7 @@ build_for_platforms <- function(output_dir, platform, arch, sign = FALSE, verbos
         fallback_result <- processx::run(
           command = get_npm_command(),
           args = c("run", platform_script),
-          env = nodejs_subprocess_env(),
+          env = build_env,
           wd = output_dir,
           echo = FALSE,
           spinner = verbose,

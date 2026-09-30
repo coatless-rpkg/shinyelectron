@@ -94,11 +94,11 @@ test_that("a non-ASCII app.name sets only the display name", {
 })
 
 # The messages export() prints with verbose = TRUE, with the build replaced.
-export_messages <- function(appdir) {
+export_messages <- function(appdir, ...) {
   mockery::stub(export, "convert_app_to_shinylive", function(...) tempdir())
   mockery::stub(export, "build_electron_app", function(...) tempdir())
   testthat::capture_messages(
-    export(appdir, withr::local_tempdir(), overwrite = TRUE, verbose = TRUE)
+    export(appdir, withr::local_tempdir(), overwrite = TRUE, verbose = TRUE, ...)
   )
 }
 
@@ -302,4 +302,122 @@ test_that("init_config() warns when replacing a config changes the slug", {
   )
   # A fresh config has nothing to compare with.
   expect_no_warning(init_config(local_app("new-app"), app_name = "Sales Dashboard", verbose = FALSE))
+})
+
+# --- An app directory given as "." or ".." ---
+
+# Enter a new app directory named `dir`, which also holds an empty folder
+# "sub", for the rest of the calling test.
+local_app_wd <- function(dir = "dash-app", config = NULL, env = parent.frame()) {
+  appdir <- local_app(dir, config, env = env)
+  dir.create(file.path(appdir, "sub"))
+  withr::local_dir(appdir, .local_envir = env)
+  appdir
+}
+
+test_that("resolve_app_slug takes the slug from the folder that '.' or '..' points to", {
+  local_app_wd()
+  expect_equal(resolve_app_slug(list(), NULL, "."), "dash-app")
+  expect_equal(resolve_app_slug(list(), NULL, "./"), "dash-app")
+  expect_message(
+    slug <- resolve_app_slug(list(), non_ascii_name, "."),
+    "dash-app", fixed = TRUE
+  )
+  expect_equal(slug, "dash-app")
+
+  withr::local_dir("sub")
+  expect_equal(resolve_app_slug(list(), NULL, ".."), "dash-app")
+  expect_equal(resolve_app_slug(list(), NULL, "../sub/.."), "dash-app")
+})
+
+test_that("export() names the app after the folder that '.' or '..' points to", {
+  local_app_wd()
+  # Without a build no slug is needed, but the output still shows both.
+  messages <- export_messages(".", build = FALSE)
+  expect_true(any(grepl('Application: "dash-app" (slug: "dash-app")', messages, fixed = TRUE)))
+  args <- export_args(".")
+  expect_equal(args$app_name, "dash-app")
+  expect_equal(args$config$app$slug, "dash-app")
+
+  withr::local_dir("sub")
+  messages <- export_messages("..", build = FALSE)
+  expect_true(any(grepl('Application: "dash-app" (slug: "dash-app")', messages, fixed = TRUE)))
+  args <- export_args("..")
+  expect_equal(args$app_name, "dash-app")
+  expect_equal(args$config$app$slug, "dash-app")
+})
+
+test_that("a suite given as '.' is named after its folder", {
+  local_app_wd("suite-dir")
+  config <- list(
+    build = list(type = "r-shiny", runtime_strategy = "shinylive"),
+    apps = list(list(id = "a", name = "A", path = "."), list(id = "b", name = "B", path = "."))
+  )
+  local_mocked_bindings(convert_shiny_to_shinylive = function(...) invisible(NULL))
+  messages <- testthat::capture_messages(
+    export_multi_app(".", withr::local_tempdir(), config, overwrite = TRUE, build = FALSE)
+  )
+  expect_true(any(grepl('Suite: "suite-dir" (slug: "suite-dir")', messages, fixed = TRUE)))
+})
+
+test_that("build_electron_app() names an app given as '.' after its folder", {
+  local_mocked_bindings(
+    validate_node_npm = function(...) invisible(TRUE),
+    install_npm_dependencies = function(...) invisible(TRUE),
+    build_for_platforms = function(...) invisible(TRUE),
+    validate_build_output = function(...) invisible(TRUE)
+  )
+  local_app_wd()
+  out <- build_electron_app(".", fs::path(withr::local_tempdir(), "electron-app"),
+                            verbose = FALSE)
+  pkg <- jsonlite::fromJSON(fs::path(out, "package.json"))
+  expect_equal(pkg$name, "dash-app")
+  expect_equal(pkg$build$productName, "dash-app")
+})
+
+test_that("init_config() names the app after the folder that '.' or '..' points to", {
+  local_app_wd()
+  init_config(".", verbose = FALSE)
+  config <- read_config(".")
+  expect_equal(config$app$name, "dash-app")
+  expect_equal(config$app$slug, "dash-app")
+
+  withr::local_dir("sub")
+  init_config("..", overwrite = TRUE, verbose = FALSE)
+  config <- read_config("..")
+  expect_equal(config$app$name, "dash-app")
+  expect_equal(config$app$slug, "dash-app")
+})
+
+test_that("show_config() names the app after the folder that '.' or '..' points to", {
+  local_app_wd()
+  # The app directory defaults to ".".
+  output <- cli::cli_fmt(show_config())
+  expect_true(any(grepl('Name: "dash-app"', output, fixed = TRUE)))
+  expect_true(any(grepl('Slug: "dash-app"', output, fixed = TRUE)))
+
+  withr::local_dir("sub")
+  output <- cli::cli_fmt(show_config(".."))
+  expect_true(any(grepl('Name: "dash-app"', output, fixed = TRUE)))
+  expect_true(any(grepl('Slug: "dash-app"', output, fixed = TRUE)))
+})
+
+test_that("a linked app directory is named after the link, not its target", {
+  # A config without app.slug, so the slug comes from the directory's name.
+  target <- local_app("dash-app-v2", list(app = list(name = "Sales")))
+  link <- file.path(dirname(target), "dash-app")
+  linked <- suppressWarnings(file.symlink(target, link))
+  skip_if_not(linked, "Symbolic links are not supported on this system")
+
+  # app_check() and init_config() agree with export(), which takes the slug
+  # from the link's name rather than from the folder it points to.
+  expect_equal(export_args(link)$config$app$slug, "dash-app")
+  checked <- testthat::capture_messages(app_check(link))
+  # The space keeps "dash-app-v2" from matching.
+  expect_true(any(grepl("App Check: dash-app\\s", checked)))
+  expect_true(any(grepl('App slug: "dash-app"', checked, fixed = TRUE)))
+
+  # The config being replaced had the link's slug too, so nothing changes.
+  expect_no_warning(init_config(link, overwrite = TRUE, verbose = FALSE))
+  expect_equal(read_config(link)$app$slug, "dash-app")
 })

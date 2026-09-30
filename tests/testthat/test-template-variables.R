@@ -3,10 +3,12 @@
 # its paths against the app directory, then run process_templates(). A
 # configured tray icon is created there, since the build drops a missing
 # one, and the output gets the assets folder that the project setup makes.
+# `icon` is the path to an app icon and `platform` the target platforms.
 # Returns the path to the generated main.js; the temporary directories live
 # until `env` exits.
 render_main_js <- function(config = list(), app_name = "Test App",
                            is_multi_app = FALSE, apps_manifest = NULL,
+                           icon = NULL, platform = NULL,
                            env = parent.frame()) {
   appdir <- withr::local_tempdir(.local_envir = env)
   if (length(config) > 0) {
@@ -20,10 +22,10 @@ render_main_js <- function(config = list(), app_name = "Test App",
   out <- withr::local_tempdir(.local_envir = env)
   fs::dir_create(fs::path(out, "assets"))
   process_templates(
-    out, app_name, "r-shiny", runtime_strategy = "system",
+    out, app_name, "r-shiny", runtime_strategy = "system", icon = icon,
     config = resolve_config_paths(read_config(appdir), appdir),
     is_multi_app = is_multi_app, apps_manifest = apps_manifest,
-    verbose = FALSE
+    platform = platform, verbose = FALSE
   )
   file.path(out, "main.js")
 }
@@ -829,4 +831,208 @@ test_that("Check for Updates keeps the update notification quiet", {
   )
   expect_equal(automatic$interactive, "dialog: Version 2.0.0 is downloading")
   expect_equal(automatic$startup, "notification: Version 2.0.0 is downloading.")
+})
+
+# --- System tray icon ---
+
+# An empty app icon file called `name`, which lives until `env` exits.
+local_icon <- function(name, env = parent.frame()) {
+  path <- file.path(withr::local_tempdir(.local_envir = env), name)
+  file.create(path)
+  path
+}
+
+# The lines of the rendered createTray() function.
+tray_code <- function(main) {
+  start <- grep("^function createTray\\(\\)", main)
+  end <- start + which(main[-seq_len(start)] == "}")[1]
+  main[start:end]
+}
+
+# Run the rendered createTray() under node as if on `platform` ("darwin",
+# "win32" or "linux"). Like Electron's, the fake nativeImage reads PNG and
+# JPEG files on every platform and ICO files only on Windows, and its
+# resize() drops the template flag. Returns the image the tray was given:
+# its `source` (the file name, or "default" for the default icon), `empty`
+# and `template`.
+run_create_tray <- function(main_path, platform) {
+  main <- readLines(main_path)
+  # The script sits beside main.js, so __dirname leads to the build's assets.
+  script <- withr::local_tempfile(
+    tmpdir = dirname(main_path), fileext = ".js",
+    lines = c(
+      paste0("Object.defineProperty(process, 'platform', { value: '", platform, "' });"),
+      "const path = require('path');",
+      "const fs = require('fs');",
+      "const readable = ['png', 'jpg', 'jpeg'].concat(process.platform === 'win32' ? ['ico'] : []);",
+      "const image = (source, empty) => ({",
+      "  source, empty, template: false,",
+      "  isEmpty() { return this.empty; },",
+      "  resize() { return image(this.source, this.empty); },",
+      "  setTemplateImage(on) { this.template = on; }",
+      "});",
+      "const nativeImage = {",
+      "  createEmpty: () => image('', true),",
+      "  createFromPath: (file) => image(path.basename(file),",
+      "    !fs.existsSync(file) || !readable.includes(path.extname(file).slice(1).toLowerCase())),",
+      "  createFromDataURL: (url) => image('default', !url.startsWith('data:image/png;base64,'))",
+      "};",
+      "let given = null;",
+      "class Tray { constructor(img) { given = img; } setToolTip() {} setContextMenu() {} on() {} }",
+      "const Menu = { buildFromTemplate: () => ({}) };",
+      "const app = {};",
+      "const log = () => {};",
+      "let tray = null, trayMenu = null, mainWindow = null;",
+      grep("^const DEFAULT_TRAY_ICON = ", main, value = TRUE),
+      tray_code(main),
+      "createTray();",
+      "process.stdout.write(JSON.stringify(given));"
+    )
+  )
+  jsonlite::fromJSON(processx::run("node", script)$stdout)
+}
+
+test_that("the tray icon is tray.icon, or else the app icon", {
+  tray_vars <- function(tray, icon = NULL) {
+    vars <- generate_template_variables(
+      app_name = "Test App", app_slug = "test-app", app_type = "r-shiny",
+      runtime_strategy = "system", icon = icon, backend_module = "native-r.js",
+      brand = NULL, config = list(tray = tray)
+    )
+    fields <- c("has_tray_icon", "tray_icon", "tray_icon_js")
+    lapply(stats::setNames(nm = fields), function(field) vars[[field]])
+  }
+  expect_equal(
+    tray_vars(list(enabled = TRUE, icon = "/b/Bob's tray.png"), icon = "/b/icon.icns"),
+    list(has_tray_icon = TRUE, tray_icon = "Bob's tray.png", tray_icon_js = "Bob\\'s tray.png")
+  )
+  # copy_brand_assets() copies the app icon to assets/icon.<ext>.
+  expect_equal(
+    tray_vars(list(enabled = TRUE), icon = "/b/app.icns"),
+    list(has_tray_icon = TRUE, tray_icon = "icon.icns", tray_icon_js = "icon.icns")
+  )
+  expect_equal(
+    tray_vars(list(enabled = TRUE)),
+    list(has_tray_icon = FALSE, tray_icon = NULL, tray_icon_js = NULL)
+  )
+})
+
+test_that("main.js loads the app icon for the tray when tray.icon is unset", {
+  tray <- tray_code(readLines(render_main_js(
+    list(tray = list(enabled = TRUE)), icon = local_icon("icon.ico"), platform = "win"
+  )))
+  expect_true(any(grepl("path.join(__dirname, 'assets', 'icon.ico')", tray, fixed = TRUE)))
+  expect_false(any(grepl("icon.png", tray, fixed = TRUE)))
+
+  # Without any icon, main.js loads no file.
+  none <- tray_code(readLines(render_main_js(list(tray = list(enabled = TRUE)))))
+  expect_false(any(grepl("createFromPath", none, fixed = TRUE)))
+})
+
+test_that("the tray shows a default icon where Electron cannot read its file", {
+  skip_on_cran()
+  skip_if_not(nzchar(Sys.which("node")), "Node.js not available")
+
+  tray_image <- function(icon, platform, tray = list(enabled = TRUE)) {
+    main_path <- suppressWarnings(
+      render_main_js(list(tray = tray), icon = if (!is.null(icon)) local_icon(icon)),
+      classes = "shinyelectron_tray_icon_unsupported"
+    )
+    run_create_tray(main_path, platform)
+  }
+  from_file <- function(name) list(source = name, empty = FALSE, template = FALSE)
+  # macOS draws the default icon as a template image.
+  default_icon <- function(template) list(source = "default", empty = FALSE, template = template)
+
+  # No platform reads an .icns file, and only Windows reads an .ico file.
+  expect_equal(tray_image("icon.icns", "darwin"), default_icon(TRUE))
+  expect_equal(tray_image("icon.icns", "win32"), default_icon(FALSE))
+  expect_equal(tray_image("icon.ico", "win32"), from_file("icon.ico"))
+  expect_equal(tray_image("icon.ico", "linux"), default_icon(FALSE))
+  expect_equal(tray_image("icon.png", "darwin"), from_file("icon.png"))
+  # tray.icon wins over the app icon.
+  expect_equal(
+    tray_image("icon.icns", "darwin", tray = list(enabled = TRUE, icon = "tray.png")),
+    from_file("tray.png")
+  )
+  # Without any icon, the tray still shows one.
+  expect_equal(tray_image(NULL, "linux"), default_icon(FALSE))
+})
+
+test_that("the default tray icon is a 32x32 RGBA PNG", {
+  main <- readLines(render_main_js(list(tray = list(enabled = TRUE))))
+  line <- grep("^const DEFAULT_TRAY_ICON = ", main, value = TRUE)
+  expect_length(line, 1)
+  png <- jsonlite::base64_dec(sub("^.*base64,([^']*)';$", "\\1", line))
+  expect_identical(png[1:8], as.raw(c(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)))
+
+  # The header gives the width, the height, bit depth 8 and color type 6.
+  be32 <- function(at) sum(as.integer(png[at:(at + 3)]) * 256^(3:0))
+  expect_identical(rawToChar(png[13:16]), "IHDR")
+  expect_equal(c(be32(17), be32(21), as.integer(png[25:26])), c(32, 32, 8, 6))
+
+  # The image data inflates to 32 rows of a filter byte and 32 pixels.
+  at <- 9
+  idat <- raw(0)
+  while (at < length(png)) {
+    size <- be32(at)
+    if (rawToChar(png[at + 4:7]) == "IDAT") {
+      idat <- c(idat, png[at + 7 + seq_len(size)])
+    }
+    at <- at + 12 + size
+  }
+  expect_length(memDecompress(idat, type = "gzip"), 32 * (1 + 32 * 4))
+})
+
+test_that("check_tray_icon() warns for the platforms that cannot read the tray's file", {
+  tray_on <- list(tray = list(enabled = TRUE))
+  platforms <- c("mac", "win", "linux")
+
+  # PNG and JPEG files work everywhere.
+  expect_no_warning(expect_equal(
+    check_tray_icon(tray_on, "b/icon.png", platforms), character(0)
+  ))
+  expect_no_warning(check_tray_icon(tray_on, "b/icon.JPG", platforms))
+
+  # ICO files work only on Windows, and .icns files nowhere.
+  expect_warning(
+    ico <- check_tray_icon(tray_on, "b/icon.ico", platforms),
+    class = "shinyelectron_tray_icon_unsupported"
+  )
+  expect_equal(ico, c("mac", "linux"))
+  expect_no_warning(check_tray_icon(tray_on, "b/icon.ico", "win"))
+  w <- expect_warning(
+    icns <- check_tray_icon(tray_on, "b/icon.icns", "mac"),
+    class = "shinyelectron_tray_icon_unsupported"
+  )
+  expect_equal(icns, "mac")
+  msg <- cli::ansi_strip(conditionMessage(w))
+  expect_match(msg, "app icon", fixed = TRUE)
+  expect_match(msg, "icon.icns", fixed = TRUE)
+  expect_match(msg, "Set tray.icon to a PNG file", fixed = TRUE)
+
+  # tray.icon wins over the app icon, and a warning about it names the key.
+  expect_no_warning(check_tray_icon(
+    list(tray = list(enabled = TRUE, icon = "b/tray.png")), "b/icon.icns", "mac"
+  ))
+  w <- expect_warning(
+    check_tray_icon(list(tray = list(enabled = TRUE, icon = "b/tray.ico")), "b/icon.png", "linux"),
+    class = "shinyelectron_tray_icon_unsupported"
+  )
+  expect_match(cli::ansi_strip(conditionMessage(w)), "tray.icon file", fixed = TRUE)
+
+  # Nothing to check when the tray is off or has no file to show.
+  expect_no_warning(check_tray_icon(list(tray = list(enabled = FALSE)), "b/icon.icns", "mac"))
+  expect_no_warning(check_tray_icon(list(), "b/icon.icns", "mac"))
+  expect_no_warning(check_tray_icon(tray_on, NULL, "mac"))
+})
+
+test_that("process_templates() checks the tray icon for the target platforms", {
+  icon <- local_icon("icon.ico")
+  config <- list(tray = list(enabled = TRUE))
+  expect_no_warning(render_main_js(config, icon = icon, platform = "win"))
+  expect_warning(
+    render_main_js(config, icon = icon, platform = c("win", "linux")),
+    "linux", class = "shinyelectron_tray_icon_unsupported"
+  )
 })

@@ -134,13 +134,15 @@ test_that("detect_py_dependencies strips version specifiers", {
   writeLines(c(
     "pandas>=2.0,<3.0",
     "numpy~=1.24",
-    "flask[async]>=2.0"
+    "flask[async]>=2.0",
+    "plotly (>=5.0,<6.0)"
   ), file.path(tmpdir, "requirements.txt"))
 
   deps <- detect_py_dependencies(tmpdir)
   expect_true("pandas" %in% deps)
   expect_true("numpy" %in% deps)
   expect_true("flask" %in% deps)
+  expect_true("plotly" %in% deps)
 })
 
 test_that("detect_py_dependencies reads pyproject.toml dependencies", {
@@ -162,6 +164,187 @@ test_that("detect_py_dependencies reads pyproject.toml dependencies", {
   expect_true("shiny" %in% deps)
   expect_true("pandas" %in% deps)
   expect_true("numpy" %in% deps)
+})
+
+test_that("detect_py_dependencies keeps pyproject.toml entries after one with extras", {
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+  pyproject <- file.path(tmpdir, "pyproject.toml")
+
+  writeLines(c(
+    '[project]',
+    'dependencies = [',
+    '  "uvicorn[standard]>=0.30",',
+    '  "pandas",',
+    '  "plotly",',
+    ']'
+  ), pyproject)
+  expect_equal(detect_py_dependencies(tmpdir), c("pandas", "plotly", "uvicorn"))
+
+  # Extras on the opening line, with the closing bracket after the last entry.
+  writeLines(c(
+    '[project]',
+    'dependencies = ["uvicorn[standard]>=0.30",',
+    '  "pandas"]'
+  ), pyproject)
+  expect_equal(detect_py_dependencies(tmpdir), c("pandas", "uvicorn"))
+
+  writeLines(c(
+    '[project]',
+    'dependencies = ["uvicorn[standard]>=0.30", "pandas"]'
+  ), pyproject)
+  expect_equal(detect_py_dependencies(tmpdir), c("pandas", "uvicorn"))
+})
+
+test_that("detect_py_dependencies reads single-quoted and escaped pyproject.toml entries", {
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+
+  writeLines(c(
+    '[project]',
+    'dependencies = [',
+    "  'shiny>=1.0',",
+    "  'tomli; python_version < \"3.11\"',",
+    "  \"exceptiongroup; python_version < '3.11'\",",
+    '  "pywin32; sys_platform == \\"win32\\" and python_version >= \\"3.8\\"",',
+    ']'
+  ), file.path(tmpdir, "pyproject.toml"))
+
+  deps <- detect_py_dependencies(tmpdir)
+  expect_equal(deps, c("exceptiongroup", "pywin32", "shiny", "tomli"))
+})
+
+test_that("detect_py_dependencies reads Poetry 2 style pyproject.toml entries", {
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+
+  # Poetry 2 writes the version constraint in parentheses after the name.
+  writeLines(c(
+    '[project]',
+    'dependencies = [',
+    '    "shiny (>=1.0)",',
+    '    "uvicorn[standard] (>=0.54.0,<0.55.0)",',
+    '    "plotly (>=7.1.0,<8.0.0)",',
+    '    "tomli (>=2.4.1,<3.0.0) ; python_version < \\"3.11\\""',
+    ']'
+  ), file.path(tmpdir, "pyproject.toml"))
+
+  deps <- detect_py_dependencies(tmpdir)
+  expect_equal(deps, c("plotly", "shiny", "tomli", "uvicorn"))
+})
+
+test_that("detect_py_dependencies skips comments in pyproject.toml dependencies", {
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+
+  writeLines(c(
+    '[project]',
+    'dependencies = [  # runtime packages [see README]',
+    '  "shiny",  # UI framework ]',
+    '  # "dash",  removed [2024]',
+    '  "mypkg @ https://example.com/mypkg-1.0.tar.gz#sha256=abc123",',
+    '  "pandas",',
+    ']'
+  ), file.path(tmpdir, "pyproject.toml"))
+
+  deps <- detect_py_dependencies(tmpdir)
+  expect_equal(deps, c("mypkg", "pandas", "shiny"))
+})
+
+test_that("detect_py_dependencies reads only [project] dependencies from pyproject.toml", {
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+
+  writeLines(c(
+    '[build-system]',
+    'requires = ["hatchling"]',
+    '',
+    '[tool.hatch.envs.test]',
+    'dependencies = ["pytest", "coverage"]',
+    '',
+    '[ project ]  # package metadata',
+    'name = "my-app"',
+    'dependencies = ["shiny", "pandas"]',
+    '',
+    # An extra named "dependencies" belongs to a sub-table, not to [project].
+    '[project.optional-dependencies]',
+    'dependencies = ["ruff"]',
+    '',
+    '[tool.hatch.envs.docs]',
+    'dependencies = [',
+    '  "mkdocs",',
+    ']'
+  ), file.path(tmpdir, "pyproject.toml"))
+
+  deps <- detect_py_dependencies(tmpdir)
+  expect_equal(deps, c("pandas", "shiny"))
+})
+
+test_that("detect_py_dependencies reads [project] dependencies after a multi-line string", {
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+
+  # Readme lines that start with "[" are not table headers.
+  writeLines(c(
+    '[project]',
+    'name = "my-app"',
+    'readme = {content-type = "text/markdown", text = """',
+    '[![PyPI](https://img.shields.io/pypi/v/my-app)](https://pypi.org/project/my-app)',
+    '[Shiny] dashboard',
+    '"""}',
+    'dependencies = ["shiny", "pandas"]'
+  ), file.path(tmpdir, "pyproject.toml"))
+
+  deps <- detect_py_dependencies(tmpdir)
+  expect_equal(deps, c("pandas", "shiny"))
+})
+
+test_that("detect_py_dependencies reads a pyproject.toml that starts with a byte order mark", {
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+
+  writeBin(
+    c(as.raw(c(0xef, 0xbb, 0xbf)), charToRaw('[project]\ndependencies = ["shiny"]\n')),
+    file.path(tmpdir, "pyproject.toml")
+  )
+
+  # readLines() drops the mark in a UTF-8 locale but keeps it in the C locale.
+  withr::local_locale(c(LC_CTYPE = "C"))
+  expect_equal(detect_py_dependencies(tmpdir), "shiny")
+})
+
+test_that("detect_py_dependencies warns when pyproject.toml has no [project] dependencies", {
+  tmpdir <- tempfile()
+  dir.create(tmpdir)
+  on.exit(unlink(tmpdir, recursive = TRUE))
+  pyproject <- file.path(tmpdir, "pyproject.toml")
+
+  # Poetry 1 lists packages in a table that is not read.
+  writeLines(c(
+    '[tool.poetry.dependencies]',
+    'python = "^3.10"',
+    'shiny = "^1.0"'
+  ), pyproject)
+  expect_warning(
+    deps <- detect_py_dependencies(tmpdir),
+    "No packages found"
+  )
+  expect_length(deps, 0)
+
+  # A dependencies key outside any table is not the [project] one.
+  writeLines('dependencies = ["shiny"]', pyproject)
+  expect_warning(
+    deps <- detect_py_dependencies(tmpdir),
+    "No packages found"
+  )
+  expect_length(deps, 0)
 })
 
 test_that("detect_py_dependencies prefers requirements.txt over pyproject.toml", {

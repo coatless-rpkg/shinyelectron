@@ -204,36 +204,105 @@ test_that("generate_package_json omits notarize when notarize is FALSE", {
 
 # --- validate_signing_config tests ---
 
-test_that("validate_signing_config warns about missing macOS team_id", {
-  config <- list(signing = list(
+# Unset every variable electron-builder reads for notarization, then set the
+# given ones, so the checks do not depend on the machine's environment.
+local_notarization_env <- function(..., .local_envir = parent.frame()) {
+  vars <- c("APPLE_ID", "APPLE_APP_SPECIFIC_PASSWORD", "APPLE_TEAM_ID",
+            "APPLE_API_KEY", "APPLE_API_KEY_ID", "APPLE_API_ISSUER",
+            "APPLE_KEYCHAIN", "APPLE_KEYCHAIN_PROFILE")
+  unset <- as.list(stats::setNames(rep(NA_character_, length(vars)), vars))
+  withr::local_envvar(utils::modifyList(unset, list(...)),
+                      .local_envir = .local_envir)
+}
+
+# A signed macOS config with an identity, so only notarization can warn.
+mac_signing_config <- function(...) {
+  list(signing = list(
     sign = TRUE,
-    mac = list(identity = NULL, team_id = NULL, notarize = TRUE)
+    mac = list(identity = "Developer ID Application: Test", ...)
+  ))
+}
+
+test_that("validate_signing_config warns that an Apple ID without a team ID fails notarization", {
+  local_notarization_env(APPLE_ID = "dev@example.com",
+                         APPLE_APP_SPECIFIC_PASSWORD = "not-a-password")
+
+  w <- expect_warning(
+    validate_signing_config(mac_signing_config(), platform = "mac"),
+    "no Apple team ID, so notarization will fail"
+  )
+  expect_match(conditionMessage(w), "signing.mac.team_id", fixed = TRUE)
+  expect_match(conditionMessage(w), "APPLE_TEAM_ID", fixed = TRUE)
+})
+
+test_that("validate_signing_config takes the team ID from the config or APPLE_TEAM_ID", {
+  local_notarization_env(APPLE_ID = "dev@example.com",
+                         APPLE_APP_SPECIFIC_PASSWORD = "not-a-password")
+  expect_silent(validate_signing_config(
+    mac_signing_config(team_id = "TEAM123456"), platform = "mac"
   ))
 
-  # Multiple warnings fire (team_id, notarize creds, identity) -- check for the first
-  suppressWarnings(
-    expect_warning(
-      validate_signing_config(config, platform = "mac"),
-      "APPLE_TEAM_ID"
-    )
+  withr::local_envvar(APPLE_TEAM_ID = "ENVTEAM123")
+  expect_silent(validate_signing_config(mac_signing_config(), platform = "mac"))
+})
+
+test_that("validate_signing_config names a missing Apple ID credential", {
+  local_notarization_env(APPLE_ID = "dev@example.com",
+                         APPLE_TEAM_ID = "ENVTEAM123")
+
+  expect_warning(
+    validate_signing_config(mac_signing_config(), platform = "mac"),
+    "APPLE_APP_SPECIFIC_PASSWORD`? is not set, so notarization"
   )
 })
 
-test_that("validate_signing_config warns about missing notarization credentials", {
-  config <- list(signing = list(
-    sign = TRUE,
-    mac = list(notarize = TRUE, team_id = "TEAM123")
-  ))
+test_that("validate_signing_config accepts an API key or keychain profile without a team ID", {
+  local_notarization_env(APPLE_API_KEY = "/keys/AuthKey_KEYID12345.p8",
+                         APPLE_API_KEY_ID = "KEYID12345",
+                         APPLE_API_ISSUER = "issuer-id")
+  expect_silent(validate_signing_config(mac_signing_config(), platform = "mac"))
 
-  withr::with_envvar(c(APPLE_ID = NA, APPLE_APP_SPECIFIC_PASSWORD = NA), {
-    # Also fires identity warning -- suppress it
-    suppressWarnings(
-      expect_warning(
-        validate_signing_config(config, platform = "mac"),
-        "APPLE_ID"
-      )
-    )
-  })
+  local_notarization_env(APPLE_KEYCHAIN_PROFILE = "notary-profile")
+  expect_silent(validate_signing_config(mac_signing_config(), platform = "mac"))
+})
+
+test_that("validate_signing_config names missing API key variables", {
+  local_notarization_env(APPLE_API_KEY = "/keys/AuthKey_KEYID12345.p8")
+
+  expect_warning(
+    validate_signing_config(mac_signing_config(), platform = "mac"),
+    "APPLE_API_KEY_ID`? and `?APPLE_API_ISSUER`? are not set, so notarization"
+  )
+})
+
+test_that("validate_signing_config warns that notarization is skipped without credentials", {
+  local_notarization_env()
+
+  w <- expect_warning(
+    validate_signing_config(
+      mac_signing_config(team_id = "TEAM123456", notarize = TRUE),
+      platform = "mac"
+    ),
+    "no notarization credentials, so notarization will be skipped"
+  )
+  expect_match(conditionMessage(w), "APPLE_ID", fixed = TRUE)
+  expect_match(conditionMessage(w), "APPLE_API_KEY", fixed = TRUE)
+})
+
+test_that("validate_signing_config follows its sign argument over signing.sign", {
+  local_notarization_env()
+
+  # export(sign = TRUE) signs even when the config leaves signing.sign off
+  config <- list(signing = list(
+    mac = list(identity = "Developer ID Application: Test")
+  ))
+  expect_warning(
+    validate_signing_config(config, platform = "mac", sign = TRUE),
+    "no notarization credentials"
+  )
+  expect_silent(
+    validate_signing_config(mac_signing_config(), platform = "mac", sign = FALSE)
+  )
 })
 
 test_that("validate_signing_config warns about missing Windows cert", {
@@ -339,8 +408,94 @@ test_that("validate_signing_config is silent with complete macOS config", {
     )
   ))
 
-  withr::with_envvar(c(APPLE_ID = "test@example.com",
-                       APPLE_APP_SPECIFIC_PASSWORD = "xxxx"), {
-    expect_silent(validate_signing_config(config, platform = "mac"))
-  })
+  local_notarization_env(APPLE_ID = "test@example.com",
+                         APPLE_APP_SPECIFIC_PASSWORD = "xxxx")
+  expect_silent(validate_signing_config(config, platform = "mac"))
+})
+
+# --- signing through export() and app_check() ---
+
+local_signing_app <- function(config = NULL, env = parent.frame()) {
+  appdir <- withr::local_tempdir(.local_envir = env)
+  writeLines("library(shiny)\nshinyApp(fluidPage(), function(input, output) {})",
+             fs::path(appdir, "app.R"))
+  if (!is.null(config)) {
+    yaml::write_yaml(config, fs::path(appdir, "_shinyelectron.yml"))
+  }
+  appdir
+}
+
+# Run export() without shinylive, npm or electron-builder. build_for_platforms()
+# still runs; a recorder stands in for processx::run(), so the test sees the
+# environment electron-builder would get.
+local_recorded_build <- function(env = parent.frame()) {
+  local_mocked_bindings(
+    convert_app_to_shinylive = function(appdir, destdir, ...) {
+      out <- fs::path(destdir, "shinylive-app")
+      fs::dir_create(out)
+      writeLines("<html></html>", fs::path(out, "index.html"))
+      out
+    },
+    resolve_app_dependencies = function(...) NULL,
+    validate_node_npm = function(...) invisible(NULL),
+    install_npm_dependencies = function(...) invisible(NULL),
+    nodejs_subprocess_env = function() NULL,
+    validate_build_output = function(...) invisible(NULL),
+    .env = env
+  )
+  run_rec <- mockery::mock(list(status = 0L, stdout = "", stderr = ""),
+                           cycle = TRUE)
+  local_mocked_bindings(run = run_rec, .package = "processx", .env = env)
+  run_rec
+}
+
+test_that("export() passes signing.mac.team_id to electron-builder as APPLE_TEAM_ID", {
+  # macOS targets build only on a Mac; pretend to be one on other hosts.
+  local_mocked_bindings(detect_current_platform = function() "mac")
+  appdir <- local_signing_app(mac_signing_config(team_id = "TEAM123456"))
+  local_notarization_env(APPLE_ID = "dev@example.com",
+                         APPLE_APP_SPECIFIC_PASSWORD = "not-a-password")
+  run_rec <- local_recorded_build()
+
+  export(appdir, fs::path(withr::local_tempdir(), "out"),
+         platform = "mac", arch = "arm64", verbose = FALSE)
+
+  # electron-builder 26 reads the notarization team ID only from APPLE_TEAM_ID
+  mockery::expect_called(run_rec, 1)
+  env <- mockery::mock_args(run_rec)[[1]]$env
+  expect_equal(env[names(env) == "APPLE_TEAM_ID"],
+               c(APPLE_TEAM_ID = "TEAM123456"))
+})
+
+test_that("export(sign = TRUE) checks credentials without signing.sign in the config", {
+  # macOS targets build only on a Mac; pretend to be one on other hosts.
+  local_mocked_bindings(detect_current_platform = function() "mac")
+  appdir <- local_signing_app(list(signing = list(
+    mac = list(identity = "Developer ID Application: Test")
+  )))
+  local_notarization_env()
+  local_recorded_build()
+
+  expect_no_warning(
+    export(appdir, fs::path(withr::local_tempdir(), "out"),
+           platform = "mac", arch = "arm64", verbose = FALSE)
+  )
+  expect_warning(
+    export(appdir, fs::path(withr::local_tempdir(), "out"),
+           platform = "mac", arch = "arm64", sign = TRUE, verbose = FALSE),
+    "no notarization credentials"
+  )
+})
+
+test_that("app_check(sign = TRUE) checks credentials without signing.sign in the config", {
+  appdir <- local_signing_app(list(signing = list(
+    mac = list(identity = "Developer ID Application: Test")
+  )))
+  local_notarization_env()
+
+  expect_no_warning(app_check(appdir, platform = "mac", verbose = FALSE))
+  expect_warning(
+    app_check(appdir, platform = "mac", sign = TRUE, verbose = FALSE),
+    "no notarization credentials"
+  )
 })

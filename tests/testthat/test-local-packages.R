@@ -14,12 +14,18 @@ write_local_pkg <- function(parent, name, fields = character(), dir_name = name,
   dir
 }
 
-# Pack `<parent>/<folder>` into a gzipped tarball `<parent>/<file>`.
-tar_local_pkg <- function(parent, folder, file) {
+# Pack `<parent>/<folder>` into a tarball `<parent>/<file>`, gzipped unless
+# `compression` says otherwise.
+tar_local_pkg <- function(parent, folder, file, compression = "gzip") {
   withr::with_dir(parent, utils::tar(
-    file, files = folder, compression = "gzip", tar = "internal"
+    file, files = folder, compression = compression, tar = "internal"
   ))
   file.path(parent, file)
+}
+
+# The source paths of local packages that resolve_local_packages() read.
+local_pkg_paths <- function(packages) {
+  vapply(packages, `[[`, character(1), "path", USE.NAMES = FALSE)
 }
 
 # Write a single-app directory whose config sets `config`.
@@ -44,7 +50,7 @@ write_suite_with_config <- function(suite, config) {
   suite
 }
 
-test_that("local_r_package_names resolves directories and archives", {
+test_that("local_r_package_info reads package names from directories and archives", {
   parent <- withr::local_tempdir()
   dir <- write_local_pkg(parent, "MyPkg")
   # GitHub archives name their top-level folder <repo>-<ref>; the package name
@@ -52,12 +58,12 @@ test_that("local_r_package_names resolves directories and archives", {
   write_local_pkg(parent, "SeuratExplorer", dir_name = "SeuratExplorer-main")
   archive <- tar_local_pkg(parent, "SeuratExplorer-main", "SeuratExplorer_0.1.9.tar.gz")
 
-  expect_equal(local_r_package_names(dir), "MyPkg")
+  expect_equal(local_r_package_names(local_r_package_info(dir)), "MyPkg")
   expect_equal(
-    local_r_package_names(c(dir, archive)),
+    local_r_package_names(local_r_package_info(c(dir, archive))),
     c("MyPkg", "SeuratExplorer")
   )
-  expect_equal(local_r_package_names(character(0)), character(0))
+  expect_equal(local_r_package_names(local_r_package_info(character(0))), character(0))
   expect_equal(local_r_package_names(list()), character(0))
 })
 
@@ -74,7 +80,7 @@ test_that("local_r_package_deps reads declared deps and drops base packages", {
   ), file.path(dir, "DESCRIPTION"))
   writeLines("", file.path(dir, "NAMESPACE"))
 
-  deps <- local_r_package_deps(dir)
+  deps <- local_r_package_deps(local_r_package_info(dir))
   expect_true(all(c("shiny", "Seurat", "Rcpp", "RcppArmadillo") %in% deps))
   expect_false("R" %in% deps)
   expect_false("stats" %in% deps)
@@ -98,30 +104,30 @@ test_that("an archive's name comes from its top-level DESCRIPTION only", {
   write_local_pkg(file.path(parent, "TopPkg"), "NestedPkg", dir_name = "AAA")
   archive <- tar_local_pkg(parent, "TopPkg", "TopPkg_0.0.1.tar.gz")
 
-  expect_equal(local_r_package_names(archive), "TopPkg")
+  expect_equal(local_r_package_names(local_r_package_info(archive)), "TopPkg")
 })
 
-test_that("a tarball's DESCRIPTION is read once until the file changes", {
-  skip_if_not_installed("mockery")
+test_that("a rebuilt tarball is read again, even with the same size and time", {
   parent <- withr::local_tempdir()
-  write_local_pkg(parent, "OncePkg")
-  archive <- tar_local_pkg(parent, "OncePkg", "OncePkg_0.0.1.tar.gz")
-  # Called once per listing of the archive.
-  listings <- mockery::mock()
-  real_untar <- utils::untar
-  mockery::stub(local_read_archive_description, "utils::untar", function(tarfile, ...) {
-    if (isTRUE(list(...)$list)) listings()
-    real_untar(tarfile, ...)
-  })
-
-  for (i in 1:3) {
-    expect_equal(unname(local_read_archive_description(archive)[1, "Package"]), "OncePkg")
+  desc <- file.path(write_local_pkg(parent, "SamePkg"), "DESCRIPTION")
+  # Uncompressed, the tarball keeps its size when the version changes, and
+  # every build gets the same modification time.
+  when <- as.POSIXct("2026-01-01", tz = "UTC")
+  build <- function() {
+    unlink(file.path(parent, "SamePkg.tar.gz"))
+    archive <- tar_local_pkg(parent, "SamePkg", "SamePkg.tar.gz", compression = "none")
+    Sys.setFileTime(archive, when)
+    archive
   }
-  mockery::expect_called(listings, 1)
 
-  Sys.setFileTime(archive, Sys.time() + 10)
-  local_read_archive_description(archive)
-  mockery::expect_called(listings, 2)
+  archive <- build()
+  size <- file.size(archive)
+  expect_equal(local_r_package_info(archive)$SamePkg$version, "0.0.1")
+
+  writeLines(sub("0.0.1", "0.0.2", readLines(desc), fixed = TRUE), desc)
+  archive <- build()
+  expect_equal(file.size(archive), size)
+  expect_equal(local_r_package_info(archive)$SamePkg$version, "0.0.2")
 })
 
 test_that("a git archive tarball is read with R's own tar", {
@@ -143,7 +149,7 @@ test_that("a git archive tarball is read with R's own tar", {
   # git archive writes a pax global header, which R's own tar warns about.
   withr::local_envvar(TAR = "internal")
 
-  expect_equal(local_r_package_names(archive), "GitPkg")
+  expect_equal(local_r_package_names(local_r_package_info(archive)), "GitPkg")
 })
 
 test_that("resolve_local_packages resolves relative paths against the app directory", {
@@ -158,10 +164,12 @@ test_that("resolve_local_packages resolves relative paths against the app direct
     list("pkgs/InApp", file.path("..", basename(sibling), "Sibling")),
     base_dir = appdir
   )
+  paths <- local_pkg_paths(resolved)
 
-  expect_true(all(fs::is_absolute_path(resolved)))
+  expect_equal(names(resolved), c("InApp", "Sibling"))
+  expect_true(all(fs::is_absolute_path(paths)))
   expect_equal(
-    normalizePath(resolved),
+    normalizePath(paths),
     normalizePath(c(file.path(appdir, "pkgs", "InApp"), file.path(sibling, "Sibling")))
   )
 })
@@ -226,8 +234,24 @@ test_that("resolve_local_packages requires a bundled R app", {
     resolve_local_packages("pkgs/MyPkg", tempdir(), bundled_r = FALSE),
     class = "shinyelectron_local_packages_strategy"
   )
-  expect_equal(resolve_local_packages(list(), tempdir(), bundled_r = FALSE), character(0))
-  expect_equal(resolve_local_packages(NULL, tempdir(), bundled_r = FALSE), character(0))
+  expect_length(resolve_local_packages(list(), tempdir(), bundled_r = FALSE), 0)
+  expect_length(resolve_local_packages(NULL, tempdir(), bundled_r = FALSE), 0)
+})
+
+test_that("resolve_local_packages passes back what it read without reading again", {
+  skip_if_not_installed("mockery")
+  appdir <- withr::local_tempdir()
+  write_local_pkg(appdir, "MyPkg")
+  resolved <- resolve_local_packages("MyPkg", appdir)
+  reads <- mockery::mock()
+  local_mocked_bindings(local_read_description = function(path) reads(path))
+
+  expect_identical(resolve_local_packages(resolved, withr::local_tempdir()), resolved)
+  mockery::expect_called(reads, 0)
+  expect_error(
+    resolve_local_packages(resolved, appdir, bundled_r = FALSE),
+    class = "shinyelectron_local_packages_strategy"
+  )
 })
 
 test_that("export() rejects local packages unless the R app uses the bundled strategy", {
@@ -270,7 +294,8 @@ test_that("export() resolves local packages against the app directory", {
   export(appdir, file.path(root, "out"), build = FALSE, verbose = FALSE)
 
   captured <- mockery::mock_args(prep)[[1]]$local_packages
-  expect_equal(normalizePath(captured), normalizePath(file.path(root, "MyPkg")))
+  expect_equal(normalizePath(local_pkg_paths(captured)),
+               normalizePath(file.path(root, "MyPkg")))
 })
 
 test_that("export() rejects local packages in a suite without a bundled R app", {
@@ -317,7 +342,8 @@ test_that("export() resolves suite local packages against the suite root", {
          platform = "mac", arch = "arm64", verbose = FALSE)
 
   captured <- mockery::mock_args(build)[[1]]$local_packages
-  expect_equal(normalizePath(captured), normalizePath(file.path(suite, "pkgs", "MyPkg")))
+  expect_equal(normalizePath(local_pkg_paths(captured)),
+               normalizePath(file.path(suite, "pkgs", "MyPkg")))
   # Local package names are kept out of the system-requirements lookup.
   # The manifest is generated more than once; check the last one.
   manifest_args <- mockery::mock_args(manifest)
@@ -366,6 +392,105 @@ test_that("export() keeps local packages out of the sysreqs lookup", {
     expect_true("shiny" %in% pkgs)
     expect_false("MyPkg" %in% pkgs)
   }
+})
+
+# A source folder and a source tarball in `<root>/pkgs`, listed as the config
+# of a folder next to `pkgs` lists them.
+write_local_pkg_sources <- function(root) {
+  pkgs <- file.path(root, "pkgs")
+  write_local_pkg(pkgs, "DirPkg")
+  write_local_pkg(pkgs, "TarPkg")
+  tar_local_pkg(pkgs, "TarPkg", "TarPkg_0.0.1.tar.gz")
+  list("../pkgs/DirPkg", "../pkgs/TarPkg_0.0.1.tar.gz")
+}
+
+# Stub what a bundled R export downloads, builds or installs, so its local
+# package steps run for real up to each package's install, which records the
+# package. Returns recorders for the DESCRIPTION reads and the installs.
+local_offline_export <- function(frame = parent.frame()) {
+  reads <- mockery::mock()
+  installs <- mockery::mock()
+  read_description <- local_read_description
+  # A portable R whose library already holds shiny, so no repository install
+  # runs.
+  portable_r <- withr::local_tempdir(.local_envir = frame)
+  dir.create(file.path(portable_r, "bin"))
+  writeLines("#!/bin/sh", file.path(portable_r, "bin", "Rscript"))
+  dir.create(file.path(portable_r, "library", "shiny"), recursive = TRUE)
+  # The real embed_r_runtime(), without repository lookups.
+  embed <- embed_r_runtime
+  mockery::stub(embed, "utils::available.packages", function(...) NULL)
+  mockery::stub(embed, "tools::package_dependencies", function(...) list())
+  local_mocked_bindings(
+    local_read_description = function(path) {
+      reads(path)
+      read_description(path)
+    },
+    resolve_app_dependencies = function(appdir, app_type, runtime_strategy, config) {
+      list(language = "r", packages = c("shiny", "DirPkg", "TarPkg"), repos = list())
+    },
+    query_sysreqs = function(pkgs, distribution, release) character(0),
+    embed_r_runtime = embed,
+    resolve_runtime_version = function(...) "4.6.1",
+    install_r_portable = function(...) portable_r,
+    r_executable = function(...) file.path(portable_r, "bin", "Rscript"),
+    build_local_r_package = function(pkg, rscript, build_dir, env, timeout, verbose) {
+      file.path(build_dir, paste0(pkg$package, "_", pkg$version, ".tar.gz"))
+    },
+    install_local_r_package = function(rscript, pkg, source, lib, env, timeout, verbose) {
+      installs(pkg)
+      invisible(TRUE)
+    },
+    validate_node_npm = function(...) invisible(TRUE),
+    setup_electron_project = function(...) invisible(TRUE),
+    process_templates = function(...) invisible(TRUE),
+    install_npm_dependencies = function(...) invisible(TRUE),
+    build_for_platforms = function(...) invisible(TRUE),
+    validate_build_output = function(...) invisible(TRUE),
+    .env = frame
+  )
+  list(reads = reads, installs = installs)
+}
+
+test_that("an export reads each local package's DESCRIPTION once", {
+  # macOS targets build only on a Mac; pretend to be one on other hosts.
+  local_mocked_bindings(detect_current_platform = function() "mac")
+  skip_if_not_installed("mockery")
+  root <- withr::local_tempdir()
+  appdir <- write_app_with_config(file.path(root, "app"), list(
+    build = list(runtime_strategy = "bundled"),
+    dependencies = list(r = list(local_packages = write_local_pkg_sources(root)))
+  ))
+  recorded <- local_offline_export()
+
+  export(appdir, file.path(root, "out"), platform = "mac", arch = "arm64",
+         verbose = FALSE)
+
+  reads <- vapply(mockery::mock_args(recorded$reads), `[[`, character(1), 1)
+  expect_equal(sort(basename(reads)), c("DirPkg", "TarPkg_0.0.1.tar.gz"))
+  # The install step got as far as both packages without reading them again.
+  installs <- vapply(mockery::mock_args(recorded$installs), `[[`, character(1), 1)
+  expect_equal(installs, c("DirPkg", "TarPkg"))
+})
+
+test_that("a suite export reads each local package's DESCRIPTION once", {
+  # macOS targets build only on a Mac; pretend to be one on other hosts.
+  local_mocked_bindings(detect_current_platform = function() "mac")
+  skip_if_not_installed("mockery")
+  root <- withr::local_tempdir()
+  suite <- write_suite_with_config(file.path(root, "suite"), list(
+    build = list(type = "r-shiny", runtime_strategy = "bundled"),
+    dependencies = list(r = list(local_packages = write_local_pkg_sources(root)))
+  ))
+  recorded <- local_offline_export()
+
+  export(suite, file.path(root, "out"), platform = "mac", arch = "arm64",
+         verbose = FALSE)
+
+  reads <- vapply(mockery::mock_args(recorded$reads), `[[`, character(1), 1)
+  expect_equal(sort(basename(reads)), c("DirPkg", "TarPkg_0.0.1.tar.gz"))
+  installs <- vapply(mockery::mock_args(recorded$installs), `[[`, character(1), 1)
+  expect_equal(installs, c("DirPkg", "TarPkg"))
 })
 
 test_that("embed_r_runtime checks local packages before downloading R", {
@@ -536,7 +661,8 @@ test_that("install_local_r_packages installs local packages in dependency order"
   before <- list.files(src, recursive = TRUE, all.files = TRUE)
 
   # Listed before the package it imports.
-  installed <- install_local_r_packages(rscript, c(hello, dep), lib, verbose = FALSE)
+  installed <- install_local_r_packages(rscript, local_r_package_info(c(hello, dep)), lib,
+                                        verbose = FALSE)
 
   expect_equal(installed, c("depPkg", "hello"))
   expect_true(file.exists(file.path(lib, "hello", "DESCRIPTION")))
@@ -564,7 +690,8 @@ expect_build_time_dependency_install <- function(rscript) {
     "\\description{Two is \\Sexpr[stage=build]{1 + 1}.}"
   ), file.path(pkg, "man", "b.Rd"))
 
-  installed <- install_local_r_packages(rscript, c(pkg, dep), lib, verbose = FALSE)
+  installed <- install_local_r_packages(rscript, local_r_package_info(c(pkg, dep)), lib,
+                                        verbose = FALSE)
 
   expect_equal(installed, c("depA", "pkgB"))
   expect_true(file.exists(file.path(lib, "pkgB", "DESCRIPTION")))
@@ -629,7 +756,7 @@ test_that("install_local_r_packages aborts when a package fails to load", {
   )
 
   expect_error(
-    install_local_r_packages(rscript, broken, lib, verbose = FALSE),
+    install_local_r_packages(rscript, local_r_package_info(broken), lib, verbose = FALSE),
     "boom from onLoad", class = "shinyelectron_local_packages_install"
   )
   expect_false(dir.exists(file.path(lib, "onloadpkg")))
@@ -659,11 +786,11 @@ test_that("build_electron_app passes the configured local packages to embed_r_ru
     invisible(fs::path(output_dir, "runtime", "R"))
   })
 
-  local_packages <- c("/abs/pkgs/MyPkg", "/abs/vendor/other_1.0.tar.gz")
+  local_packages <- list("/abs/pkgs/MyPkg", "/abs/vendor/other_1.0.tar.gz")
   build_electron_app(
     app_dir, fs::path(tmp, "out"), app_name = "test", app_type = "r-shiny",
     runtime_strategy = "bundled", platform = "mac", arch = "arm64",
-    config = list(dependencies = list(r = list(local_packages = as.list(local_packages)))),
+    config = list(dependencies = list(r = list(local_packages = local_packages))),
     verbose = FALSE
   )
 
@@ -711,7 +838,7 @@ test_that("build_multi_app passes the configured local packages to embed_r_runti
   )
 
   captured <- mockery::mock_args(embed)[[1]]
-  expect_equal(captured$local_packages, "/abs/pkgs/MyPkg")
+  expect_equal(captured$local_packages, list("/abs/pkgs/MyPkg"))
   expect_true(captured$prune)   # dependencies.r.prune defaults to TRUE
 })
 

@@ -19,7 +19,7 @@ export_multi_app <- function(appdir, destdir, config,
   force(slug_pinned)
 
   name_from_config <- is.null(app_name) && !is.null(config$app$name)
-  app_name <- app_name %||% config$app$name %||% basename(appdir)
+  app_name <- app_name %||% config$app$name %||% app_dir_name(appdir)
   validate_app_name(app_name, field = if (name_from_config) "app.name" else "app_name")
   config$app$slug <- resolve_app_slug(config, app_name, appdir)
   if (build) check_app_slug(config$app$slug)
@@ -77,7 +77,8 @@ export_multi_app <- function(appdir, destdir, config,
 
   # Local R packages go into the shared bundled R library, so the suite needs
   # a bundled R app. Paths resolve against the suite root, whose config is the
-  # only one read; check them before anything is copied or downloaded.
+  # only one read; check and read them before anything is copied or
+  # downloaded. The config then holds what was read, for the build to use.
   suite_bundled_r <- any(vapply(config$apps, function(a) {
     grepl("^r-", resolve_app_type(a, config)) &&
       identical(resolve_app_strategy(a, config), "bundled")
@@ -396,7 +397,8 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
       arch = arch[1],
       verbose = verbose,
       prune = prune,
-      local_packages = unlist(config$dependencies$r$local_packages) %||% character(0)
+      # The packages that export_multi_app() read.
+      local_packages = config$dependencies$r$local_packages %||% character(0)
     )
   }
   if (py_bundled) {
@@ -442,13 +444,15 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
                     icon = icon, config = config, sign = sign,
                     is_multi_app = TRUE,
                     apps_manifest = apps_manifest,
+                    platform = platform,
                     verbose = verbose)
 
   # Install npm dependencies
   install_npm_dependencies(output_dir, verbose = verbose)
 
   # Build for platforms
-  build_for_platforms(output_dir, platform, arch, sign = sign, verbose = verbose)
+  build_for_platforms(output_dir, platform, arch, sign = sign,
+                      config = config, verbose = verbose)
 
   # Validate the assembled build output (mirrors the single-app pipeline).
   validate_build_output(output_dir, platform)

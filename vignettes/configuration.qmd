@@ -551,7 +551,7 @@ Code signing for release builds. Passwords and other credentials never go in thi
 |-----|------|---------|-------------|
 | `sign` | boolean | `false` | Sign the builds `export()` makes; `export(sign = TRUE)` signs even when this is `false` |
 | `mac.identity` | string | `null` | Signing identity, e.g. `"Developer ID Application: Your Name (TEAMID)"`; `null` lets electron-builder find one |
-| `mac.team_id` | string | `null` | Apple Team ID; notarization is skipped unless this or `APPLE_TEAM_ID` is set, and electron-builder reads the ID from `APPLE_TEAM_ID` |
+| `mac.team_id` | string | `null` | Apple Team ID, needed to notarize with an Apple ID; the build passes it to electron-builder as `APPLE_TEAM_ID`, and a team ID already set in `APPLE_TEAM_ID` wins |
 | `mac.notarize` | boolean | `false` | Notarize with Apple; signed builds also notarize when `APPLE_ID` and `APPLE_APP_SPECIFIC_PASSWORD` are set |
 | `win.certificate_file` | string | `null` | Path to a `.pfx` or `.p12` certificate; `null` uses `WIN_CSC_LINK` or `CSC_LINK` |
 | `linux.gpg_sign` | boolean | `false` | Reserved for GPG-signing the AppImage; has no effect yet |

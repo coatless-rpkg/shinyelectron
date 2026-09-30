@@ -179,7 +179,8 @@ test_that("embed_r_runtime installs local packages after the repository packages
   expect_equal(steps, c("repository", "local", "prune"))
   local_args <- mockery::mock_args(local_rec)[[1]]
   expect_equal(local_args$rscript, cached_rscript)
-  expect_equal(normalizePath(local_args$local_packages), normalizePath(local_pkg))
+  expect_equal(names(local_args$local_packages), "MyPkg")
+  expect_equal(normalizePath(local_args$local_packages$MyPkg$path), normalizePath(local_pkg))
   expect_equal(local_args$lib_path, fs::path(out, "runtime", "R", "library"))
 })
 

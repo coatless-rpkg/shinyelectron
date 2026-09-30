@@ -20,6 +20,7 @@ module-name-to-package-name mapping (e.g., \verb{import cv2} maps to
 }
 \details{
 Prefers \code{requirements.txt} over \code{pyproject.toml} when both exist.
-Warns if neither file is found.
+Warns if neither file is found, or if \code{pyproject.toml} has no packages in
+the \code{dependencies} of its \verb{[project]} table.
 }
 \keyword{internal}

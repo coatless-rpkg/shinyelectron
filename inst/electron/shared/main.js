@@ -129,16 +129,30 @@ let trayMenu = null;
 {{/tray_enabled}}
 
 {{#tray_enabled}}
-function createTray() {
-  const iconPath = path.join(__dirname, 'assets', '{{#tray_icon}}{{{tray_icon_js}}}{{/tray_icon}}{{^tray_icon}}icon.png{{/tray_icon}}');
+// The tray's default icon, a 32x32 PNG of a window outline.
+const DEFAULT_TRAY_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAgklEQVR42u3XMQ6AIAyF4R6CK5hwL4/n2GM5MnRETGhCCDhZyvCGf9GEfouh0nHe5BkBAED3IJa4JKX8c1LPjjPA+yIZDO5LLaIF8ILhGo8AshAgI0Be3L4A608PAAAAAACAfQF6HQfD4eHrOtaF5DJChHr2dCFxX8ncl1L8FwDg0gOu1ddlhApUYgAAAABJRU5ErkJggg==';
 
-  let trayIcon;
-  if (fs.existsSync(iconPath)) {
-    trayIcon = nativeImage.createFromPath(iconPath);
-    trayIcon = trayIcon.resize({ width: 16, height: 16 });
-  } else {
-    // Create a simple default icon if none exists
-    trayIcon = nativeImage.createEmpty();
+function createTray() {
+  // The tray shows tray.icon, or else the app icon. Electron reads PNG and
+  // JPEG files on every platform and ICO files only on Windows, and cannot
+  // read an .icns file. A file it cannot read loads as an empty image, which
+  // would leave the tray blank, so the default icon takes its place.
+  let trayIcon = nativeImage.createEmpty();
+  {{#has_tray_icon}}
+  trayIcon = nativeImage.createFromPath(path.join(__dirname, 'assets', '{{{tray_icon_js}}}'));
+  if (trayIcon.isEmpty()) {
+    log('warn', 'Cannot read the tray icon {{{tray_icon_js}}} on ' + process.platform + '; showing the default icon');
+  }
+  {{/has_tray_icon}}
+  const useDefault = trayIcon.isEmpty();
+  if (useDefault) {
+    trayIcon = nativeImage.createFromDataURL(DEFAULT_TRAY_ICON);
+  }
+  trayIcon = trayIcon.resize({ width: 16, height: 16 });
+  // macOS draws a template image in the menu bar's text color. resize()
+  // returns an image without the template flag, so set it afterwards.
+  if (useDefault && process.platform === 'darwin') {
+    trayIcon.setTemplateImage(true);
   }
 
   tray = new Tray(trayIcon);

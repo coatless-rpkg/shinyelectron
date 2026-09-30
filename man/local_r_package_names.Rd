@@ -2,18 +2,18 @@
 % Please edit documentation in R/build-runtime.R
 \name{local_r_package_names}
 \alias{local_r_package_names}
-\title{Resolve the package names of local R package paths}
+\title{Package names of local R packages}
 \usage{
-local_r_package_names(paths)
+local_r_package_names(packages)
 }
 \arguments{
-\item{paths}{Character vector. Paths to local package directories or archives.}
+\item{packages}{List. Local packages as \code{\link[=resolve_local_packages]{resolve_local_packages()}} or
+\code{\link[=local_r_package_info]{local_r_package_info()}} return them.}
 }
 \value{
-Character vector of package names (empty when \code{paths} is empty).
+Character vector of package names (empty when \code{packages} is empty).
 }
 \description{
-Reads the \code{Package} field from each source folder's \code{DESCRIPTION}, or from
-the \code{DESCRIPTION} in a source tarball's top-level folder.
+Package names of local R packages
 }
 \keyword{internal}

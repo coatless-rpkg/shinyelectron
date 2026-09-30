@@ -5,7 +5,7 @@
 #'
 #' @param app_dir Character string. Path to the converted Shiny/shinylive application.
 #' @param output_dir Character string. Path where the built Electron app will be saved.
-#' @param app_name Character string. Name of the application. If NULL, uses the base name of app_dir.
+#' @param app_name Character string. Name of the application. If NULL, uses the name of the app_dir directory.
 #' @param app_type Character string. Language of the Shiny app: `"r-shiny"`
 #'   (default) or `"py-shiny"`. Unlike `export()`, this function does **not**
 #'   autodetect the language from source files -- the default `"r-shiny"` is
@@ -86,7 +86,7 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
   validate_runtime_strategy(runtime_strategy)
 
   if (is.null(app_name)) {
-    app_name <- basename(app_dir)
+    app_name <- app_dir_name(app_dir)
   }
   validate_app_name(app_name)
 
@@ -185,7 +185,9 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
         arch = arch[1],
         verbose = verbose,
         prune = prune,
-        local_packages = unlist(config$dependencies$r$local_packages) %||% character(0)
+        # The packages that export() read, or the entries of a config passed
+        # in directly, which embed_r_runtime() reads.
+        local_packages = config$dependencies$r$local_packages %||% character(0)
       )
     }
 
@@ -219,7 +221,7 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
     process_templates(output_dir, app_name, app_type,
                       runtime_strategy = runtime_strategy,
                       icon = icon, config = config, sign = sign,
-                      verbose = verbose)
+                      platform = platform, verbose = verbose)
 
     # Step 4: Install npm dependencies
     if (verbose) cli::cli_progress_update(id = pb, set = 4)
@@ -227,7 +229,8 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
 
     # Step 5: Build for target platforms
     if (verbose) cli::cli_progress_update(id = pb, set = 5)
-    build_for_platforms(output_dir, platform, arch, sign = sign, verbose = verbose)
+    build_for_platforms(output_dir, platform, arch, sign = sign,
+                        config = config, verbose = verbose)
 
     # Step 6: Validate build output
     if (verbose) cli::cli_progress_update(id = pb, set = 6)

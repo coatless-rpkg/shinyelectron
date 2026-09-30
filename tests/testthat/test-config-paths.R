@@ -269,6 +269,37 @@ test_that("export() warns about a missing splash image or tray icon and builds w
   expect_false(any(grepl("tray.png", main_js, fixed = TRUE)))
 })
 
+test_that("export() checks the tray's app icon for the target platform", {
+  # The check must follow the target platform, not the build machine.
+  local_mocked_bindings(detect_current_platform = function() "linux")
+  appdir <- local_config_app(list(
+    icons = list(win = "branding/icon.ico", mac = "branding/icon.icns"),
+    tray = list(enabled = TRUE)
+  ))
+  write_png(fs::path(appdir, "branding", "icon.ico"))
+  write_png(fs::path(appdir, "branding", "icon.icns"))
+  withr::local_dir(withr::local_tempdir())
+  local_fake_build()
+
+  # Windows reads the .ico app icon, so the tray loads it.
+  expect_no_warning(
+    win <- export(appdir, fs::path(withr::local_tempdir(), "out"),
+                  platform = "win", verbose = FALSE)
+  )
+  main_js <- readLines(fs::path(win$electron_app, "main.js"))
+  expect_true(any(grepl("createFromPath(path.join(__dirname, 'assets', 'icon.ico'))",
+                        main_js, fixed = TRUE)))
+
+  # No platform reads an .icns file. A macOS target builds only on a Mac.
+  local_mocked_bindings(detect_current_platform = function() "mac")
+  expect_warning(
+    export(appdir, fs::path(withr::local_tempdir(), "out"), platform = "mac",
+           verbose = FALSE),
+    "app icon",
+    class = "shinyelectron_tray_icon_unsupported"
+  )
+})
+
 test_that("export() warns about a missing certificate only when signing Windows builds", {
   appdir <- local_config_app(list(
     signing = list(win = list(certificate_file = "certs/missing.pfx"))

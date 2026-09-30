@@ -141,6 +141,17 @@ test_that("wizard uses basename of appdir as default app name", {
   expect_equal(config$app$name, basename(tmp))
 })
 
+test_that("wizard names the app after the folder that '.' points to", {
+  tmp <- file.path(withr::local_tempdir(), "dash-app")
+  dir.create(tmp)
+  withr::local_dir(tmp)
+  run_wizard_quiet(".", rep("", 9L))
+
+  config <- yaml::read_yaml("_shinyelectron.yml")
+  expect_equal(config$app$name, "dash-app")
+  expect_equal(config$app$slug, "dash-app")
+})
+
 # ---------------------------------------------------------------------------
 # Language / strategy choices
 # ---------------------------------------------------------------------------
@@ -248,6 +259,20 @@ test_that("wizard writes the directory's slug, whatever the app name", {
   expect_equal(config$app$name, "Sales Dashboard")
   expect_equal(config$app$slug, "dash-app")
   expect_equal(names(config$app), c("name", "slug", "version"))
+})
+
+test_that("wizard takes a linked directory's name and slug from the link", {
+  target <- file.path(withr::local_tempdir(), "dash-app-v2")
+  dir.create(target)
+  link <- file.path(dirname(target), "dash-app")
+  linked <- suppressWarnings(file.symlink(target, link))
+  skip_if_not(linked, "Symbolic links are not supported on this system")
+  run_wizard_quiet(link, rep("", 9L))
+
+  # As in export(), the link's name counts, not the folder it points to.
+  config <- yaml::read_yaml(file.path(link, "_shinyelectron.yml"))
+  expect_equal(config$app$name, "dash-app")
+  expect_equal(config$app$slug, "dash-app")
 })
 
 test_that("wizard says to set app.slug when no slug can be derived", {

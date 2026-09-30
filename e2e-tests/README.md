@@ -55,16 +55,16 @@ npm run test:r-container    # r-shiny container: Docker/Podman
 ## How It Works
 
 1. `beforeAll` calls `buildApp()` which runs `shinyelectron::export()` via `Rscript` to build a real Electron app in a temp directory
-2. `beforeEach` launches the built app with Playwright's Electron support
+2. `beforeEach` launches the built app with Playwright's Electron support, with a temporary user data folder (`--user-data-dir`) in place of the app's folder in `~/Library/Application Support`, `%APPDATA%` or `~/.config`
 3. Tests interact with the app windows (click buttons, fill inputs, check text)
-4. `afterAll` cleans up temp directories
+4. Closing the app removes its user data folder, and `afterAll` cleans up temp directories
 
 ## Test Helpers
 
 | Function | Description |
 |----------|-------------|
 | `buildApp({ appdir, destdir, app_type, runtime_strategy })` | Build an Electron app from a Shiny app directory |
-| `launchApp(electronDir)` | Launch the built Electron app with Playwright |
+| `launchApp(electronDir)` | Launch the built Electron app with Playwright in a temporary user data folder, removed when the app closes |
 | `createTestApp(dir, rCode)` | Create a temp R Shiny app with given code |
 | `createPythonTestApp(dir, pyCode)` | Create a temp Python Shiny app with given code |
 | `createMultiAppProject(dir, apps)` | Create a multi-app project with YAML config |

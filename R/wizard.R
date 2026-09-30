@@ -23,7 +23,7 @@ wizard <- function(appdir) {
   cat("\n")
 
   # App name
-  default_name <- basename(normalizePath(appdir, mustWork = FALSE))
+  default_name <- app_dir_name(appdir)
   app_name <- readline(paste0("App name [", default_name, "]: "))
   if (!nzchar(app_name)) app_name <- default_name
 
@@ -174,7 +174,7 @@ wizard <- function(appdir) {
   # Build the YAML content. The slug is written out so the app keeps its
   # identity when the name changes later. As in export(), it comes from the
   # directory name; the app name only sets the display name.
-  slug <- resolve_app_slug(list(), NULL, normalizePath(appdir, mustWork = FALSE))
+  slug <- resolve_app_slug(list(), NULL, appdir)
   config <- list(
     app = Filter(Negate(is.null), list(name = app_name, slug = slug, version = app_version)),
     build = Filter(Negate(is.null), list(type = app_type, platforms = platforms))

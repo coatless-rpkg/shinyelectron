@@ -133,30 +133,66 @@ validate_build_output <- function(output_dir, platform) {
 #' Issues warnings (not errors) for missing credentials so the build can
 #' continue -- electron-builder will handle the actual failure.
 #'
+#' On macOS, electron-builder notarizes with the first kind of credentials it
+#' finds in the environment: an Apple ID (`APPLE_ID` and
+#' `APPLE_APP_SPECIFIC_PASSWORD`, plus a team ID from `APPLE_TEAM_ID` or
+#' `signing.mac.team_id`), an App Store Connect API key (`APPLE_API_KEY`,
+#' `APPLE_API_KEY_ID` and `APPLE_API_ISSUER`), or a `notarytool` keychain
+#' profile (`APPLE_KEYCHAIN_PROFILE`).
+#'
 #' @param config List. The effective configuration.
 #' @param platform Character string. Target platform ("mac", "win", "linux").
+#' @param sign Logical. Whether the build is signed. [export()] and
+#'   [app_check()] pass the value their `sign` argument resolves to, which
+#'   can turn signing on when `signing.sign` is off. Defaults to
+#'   `signing.sign`.
 #' @keywords internal
-validate_signing_config <- function(config, platform = NULL) {
-  signing <- config$signing %||% SHINYELECTRON_DEFAULTS$signing
-
-  if (!isTRUE(signing$sign)) {
+validate_signing_config <- function(config, platform = NULL,
+                                    sign = isTRUE(config$signing$sign)) {
+  if (!isTRUE(sign)) {
     return(invisible(NULL))
   }
 
+  signing <- config$signing %||% SHINYELECTRON_DEFAULTS$signing
   platform <- platform %||% detect_current_platform()
 
   if (platform == "mac") {
-    team_id <- signing$mac$team_id %||% Sys.getenv("APPLE_TEAM_ID", "")
-    if (!nzchar(team_id)) {
-      cli::cli_warn("macOS: {.envvar APPLE_TEAM_ID} not set and {.field signing.mac.team_id} not configured -- notarization will be skipped")
-    }
+    # Mirror electron-builder's notarization lookup. It uses the first kind of
+    # credentials that has any variable set and stops the build when that set
+    # is incomplete; with none set, it skips notarization. The team ID may
+    # also come from signing.mac.team_id, which build_for_platforms() passes
+    # on as APPLE_TEAM_ID.
+    is_set <- function(vars) nzchar(Sys.getenv(vars))
+    apple_id_vars <- c("APPLE_ID", "APPLE_APP_SPECIFIC_PASSWORD")
+    api_key_vars <- c("APPLE_API_KEY", "APPLE_API_KEY_ID", "APPLE_API_ISSUER")
 
-    if (isTRUE(signing$mac$notarize)) {
-      apple_id <- Sys.getenv("APPLE_ID", "")
-      apple_pw <- Sys.getenv("APPLE_APP_SPECIFIC_PASSWORD", "")
-      if (!nzchar(apple_id) || !nzchar(apple_pw)) {
-        cli::cli_warn("macOS: {.envvar APPLE_ID} and/or {.envvar APPLE_APP_SPECIFIC_PASSWORD} not set -- notarization will fail")
+    if (any(is_set(apple_id_vars))) {
+      missing <- apple_id_vars[!is_set(apple_id_vars)]
+      if (length(missing) > 0) {
+        cli::cli_warn(c(
+          "macOS: {.envvar {missing}} is not set, so notarization will fail.",
+          "i" = "Notarizing with an Apple ID needs both {.envvar APPLE_ID} and {.envvar APPLE_APP_SPECIFIC_PASSWORD}."
+        ))
       }
+      if (!is_set("APPLE_TEAM_ID") && !is_nonempty_string(signing$mac$team_id)) {
+        cli::cli_warn(c(
+          "macOS: no Apple team ID, so notarization will fail.",
+          "i" = "Set {.field signing.mac.team_id} or {.envvar APPLE_TEAM_ID}."
+        ))
+      }
+    } else if (any(is_set(api_key_vars))) {
+      missing <- api_key_vars[!is_set(api_key_vars)]
+      if (length(missing) > 0) {
+        cli::cli_warn(c(
+          "macOS: {.envvar {missing}} {?is/are} not set, so notarization will fail.",
+          "i" = "Notarizing with an API key needs {.envvar APPLE_API_KEY}, {.envvar APPLE_API_KEY_ID}, and {.envvar APPLE_API_ISSUER}."
+        ))
+      }
+    } else if (!is_set("APPLE_KEYCHAIN_PROFILE")) {
+      cli::cli_warn(c(
+        "macOS: no notarization credentials, so notarization will be skipped.",
+        "i" = "Set {.envvar APPLE_ID}, {.envvar APPLE_APP_SPECIFIC_PASSWORD}, and a team ID in {.field signing.mac.team_id} or {.envvar APPLE_TEAM_ID}; or set {.envvar APPLE_API_KEY}, {.envvar APPLE_API_KEY_ID}, and {.envvar APPLE_API_ISSUER}."
+      ))
     }
 
     identity <- signing$mac$identity
