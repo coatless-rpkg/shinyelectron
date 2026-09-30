@@ -68,10 +68,13 @@ generate_template_variables <- function(app_name, app_slug, app_type,
   # `*_js` entry below.
   app_version <- config$app$version %||% SHINYELECTRON_DEFAULTS$app_version
   tray_tooltip <- config$tray$tooltip %||% app_name
-  # copy_brand_assets() writes the tray icon to assets/<basename>, and
-  # main.js joins it under assets/, so the template must carry only the
-  # basename (mirrors the splash image handling below).
-  tray_icon <- if (!is.null(config$tray$icon)) basename(config$tray$icon) else NULL
+  # copy_brand_assets() copies the app icon to assets/icon.<ext>, keeping its
+  # extension (icon.ico, icon.icns or icon.png).
+  icon_file <- if (!is.null(icon)) paste0("icon.", tools::file_ext(icon))
+  # The tray shows tray.icon, which copy_brand_assets() copies to
+  # assets/<basename>, or else the app icon. main.js joins the name under
+  # assets/, so the template carries only the file name.
+  tray_icon <- if (!is.null(config$tray$icon)) basename(config$tray$icon) else icon_file
   help_url <- config$menu$help_url %||% ""
   log_level <- config$app$log_level %||% SHINYELECTRON_DEFAULTS$logging$log_level
   log_dir <- config$app$log_dir %||% ""
@@ -102,9 +105,8 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     has_about_credits = is_nonempty_string(metadata$description) ||
       is_nonempty_string(metadata$author$name),
     has_icon = !is.null(icon),
-    # copy_brand_assets() preserves the icon's extension (icon.ico/.icns/.png);
-    # carry the real filename so the BrowserWindow icon path is not broken.
-    icon_file = if (!is.null(icon)) paste0("icon.", tools::file_ext(icon)) else "icon.png",
+    # Carry the real file name so the BrowserWindow icon path is not broken.
+    icon_file = icon_file %||% "icon.png",
     window_width = config$window$width %||% SHINYELECTRON_DEFAULTS$window_width,
     window_height = config$window$height %||% SHINYELECTRON_DEFAULTS$window_height,
     server_port = config$server$port %||% SHINYELECTRON_DEFAULTS$server_port,
@@ -126,6 +128,7 @@ generate_template_variables <- function(app_name, app_slug, app_type,
     close_to_tray = config$tray$close_to_tray %||% SHINYELECTRON_DEFAULTS$tray$close_to_tray,
     tray_tooltip = tray_tooltip,
     tray_tooltip_js = js_str(tray_tooltip),
+    has_tray_icon = !is.null(tray_icon),
     tray_icon = tray_icon,
     tray_icon_js = js_str(tray_icon),
 

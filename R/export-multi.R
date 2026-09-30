@@ -437,6 +437,7 @@ build_multi_app <- function(apps_dir, output_dir, app_name,
                     icon = icon, config = config, sign = sign,
                     is_multi_app = TRUE,
                     apps_manifest = apps_manifest,
+                    platform = platform,
                     verbose = verbose)
 
   # Install npm dependencies

@@ -568,6 +568,39 @@ test_that("build_multi_app rejects a bad dependencies.r.prune before creating or
   expect_false(dir.exists(output_dir))
 })
 
+test_that("build_multi_app passes the target platforms to process_templates", {
+  skip_if_not_installed("mockery")
+
+  templates_rec <- mockery::mock()
+  local_mocked_bindings(
+    validate_node_npm = function(...) invisible(TRUE),
+    setup_electron_project = function(...) invisible(TRUE),
+    process_templates = templates_rec,
+    install_npm_dependencies = function(...) invisible(TRUE),
+    build_for_platforms = function(...) invisible(TRUE),
+    validate_build_output = function(...) invisible(TRUE)
+  )
+  config <- list(
+    build = list(type = "r-shiny", runtime_strategy = "system"),
+    apps = list(
+      list(id = "dash",   name = "Dash",   path = "./apps/dash"),
+      list(id = "report", name = "Report", path = "./apps/report")
+    )
+  )
+
+  build_multi_app(
+    apps_dir = withr::local_tempdir(),
+    output_dir = file.path(withr::local_tempdir(), "electron-app"),
+    app_name = "Suite", apps_manifest = list(), default_type = "r-shiny",
+    runtime_strategy = "system", sign = FALSE,
+    platform = c("mac", "win"), arch = "arm64", icon = NULL, config = config,
+    overwrite = TRUE, verbose = FALSE
+  )
+
+  mockery::expect_called(templates_rec, 1)
+  expect_equal(mockery::mock_args(templates_rec)[[1]]$platform, c("mac", "win"))
+})
+
 test_that("build_multi_app writes runtime-manifest.json into each auto-download app dir", {
   skip_if_not_installed("mockery")
 

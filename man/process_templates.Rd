@@ -14,6 +14,7 @@ process_templates(
   sign = FALSE,
   is_multi_app = FALSE,
   apps_manifest = NULL,
+  platform = NULL,
   verbose = TRUE
 )
 }
@@ -29,6 +30,10 @@ process_templates(
 \item{icon}{Character path to icon file or NULL}
 
 \item{config}{List of configuration values from config file (optional)}
+
+\item{platform}{Character vector of target platforms, used to check that
+the tray can read its icon (see \code{\link[=check_tray_icon]{check_tray_icon()}}). \code{NULL} means the
+current platform.}
 
 \item{verbose}{Logical whether to show progress}
 }
