@@ -211,6 +211,16 @@
   `app_check()` checks these files the same way and reports a missing icon as
   an error.
 
+* The system tray icon is no longer blank when `tray.icon` is not set and the
+  app icon is not a PNG. The tray looked for an `icon.png` that only a PNG app
+  icon provides; it now loads the app icon itself, such as an `.ico` file on
+  Windows. Where Electron cannot read the file (an `.icns` file, or an `.ico`
+  file on macOS or Linux), or when no icon is set, the tray shows a built-in
+  icon of a window outline instead. `export()` warns about a tray icon that a
+  target platform cannot read, with a warning of class
+  `shinyelectron_tray_icon_unsupported` that suggests setting `tray.icon` to a
+  PNG.
+
 * With `updates.auto_download` on, the update notification now says the new
   version is downloading, instead of asking the user to click to download.
 

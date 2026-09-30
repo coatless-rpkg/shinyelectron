@@ -11,19 +11,23 @@
 #' @param runtime_strategy Character resolved runtime strategy
 #' @param icon Character path to icon file or NULL
 #' @param config List of configuration values from config file (optional)
+#' @param platform Character vector of target platforms, used to check that
+#'   the tray can read its icon (see [check_tray_icon()]). `NULL` means the
+#'   current platform.
 #' @param verbose Logical whether to show progress
 #' @keywords internal
 process_templates <- function(output_dir, app_name, app_type,
                               runtime_strategy = "shinylive",
                               icon = NULL, config = NULL, sign = FALSE,
                               is_multi_app = FALSE, apps_manifest = NULL,
-                              verbose = TRUE) {
+                              platform = NULL, verbose = TRUE) {
   if (verbose) cli::cli_alert_info("Processing Electron templates...")
 
   # export() has already dropped missing files. This catches a config passed
   # straight to build_electron_app(), whose paths are relative to the working
   # directory, before the templates refer to a file that is never copied.
   config <- drop_missing_config_files(config)
+  check_tray_icon(config, icon, platform)
 
   app_slug <- config$app$slug %||% slugify(app_name)
   validate_slug(app_slug)
@@ -313,6 +317,47 @@ copy_brand_assets <- function(output_dir, icon, config, apps = NULL) {
       fs::file_copy(app[["icon"]], dest, overwrite = TRUE)
     }
   }
+}
+
+#' Warn when the tray cannot read its icon on a target platform
+#'
+#' The tray shows `tray.icon`, or else the app icon. `main.js` loads the file
+#' with Electron's `nativeImage`, which reads PNG and JPEG files on every
+#' platform and ICO files only on Windows, and cannot read an `.icns` file.
+#' Where it cannot read the file, the tray shows a default icon instead. When
+#' the tray is enabled, this warns about the target platforms where that
+#' happens, judging the file by its extension.
+#'
+#' @param config List. The effective configuration.
+#' @param icon Character path to the app icon, or `NULL`.
+#' @param platform Character vector of target platforms (`"mac"`, `"win"`,
+#'   `"linux"`), or `NULL` for the current platform.
+#' @return Invisibly, the target platforms where the tray cannot read the
+#'   file, or `character(0)`.
+#' @keywords internal
+check_tray_icon <- function(config, icon, platform = NULL) {
+  tray_icon <- config$tray$icon
+  file <- tray_icon %||% icon
+  if (!isTRUE(config$tray$enabled) || is.null(file)) {
+    return(invisible(character(0)))
+  }
+
+  platform <- platform %||% detect_current_platform()
+  ext <- tolower(tools::file_ext(file))
+  readable <- ext %in% c("png", "jpg", "jpeg") | (ext == "ico" & platform == "win")
+  unreadable <- platform[!readable]
+  if (length(unreadable) > 0) {
+    cli::cli_warn(c(
+      if (is.null(tray_icon)) {
+        "The tray cannot read the app icon on {.val {unreadable}}: {.path {file}}"
+      } else {
+        "The tray cannot read the {.field tray.icon} file on {.val {unreadable}}: {.path {file}}"
+      },
+      "i" = "Electron reads tray icons from PNG and JPEG files, and from ICO files only on Windows.",
+      "i" = "The tray shows a default icon there instead. Set {.field tray.icon} to a PNG file to show your own."
+    ), class = "shinyelectron_tray_icon_unsupported")
+  }
+  invisible(unreadable)
 }
 
 #' Copy the Windows installer license into the build

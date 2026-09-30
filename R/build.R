@@ -223,7 +223,7 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
     process_templates(output_dir, app_name, app_type,
                       runtime_strategy = runtime_strategy,
                       icon = icon, config = config, sign = sign,
-                      verbose = verbose)
+                      platform = platform, verbose = verbose)
 
     # Step 4: Install npm dependencies
     if (verbose) cli::cli_progress_update(id = pb, set = 4)
