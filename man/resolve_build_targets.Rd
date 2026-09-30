@@ -12,12 +12,15 @@ resolve_build_targets(platform, arch, config)
 \item{config}{List. The effective configuration.}
 }
 \value{
-A list with the character vectors \code{platform} and \code{arch}.
+A list with the character vectors \code{platform} and \code{arch}, and
+\code{from_config}, the settings that supplied them (\code{"build.platforms"},
+\code{"build.architectures"}, both or neither), for error messages.
 }
 \description{
 The \code{platform} and \code{arch} arguments of \code{\link[=export]{export()}} win over
 \code{build.platforms} and \code{build.architectures} in \verb{_shinyelectron.yml}, which
-win over the platform and architecture of the build machine. The result is
+win over the platform and architecture of the build machine. Each argument
+replaces only its own list, and repeated values are dropped. The result is
 checked as \code{\link[=build_electron_app]{build_electron_app()}} checks its arguments, so an invalid value
 stops the export before anything is converted or built.
 }

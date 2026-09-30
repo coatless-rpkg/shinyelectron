@@ -21,7 +21,10 @@ If NULL, reads from config or autodetects from files in \code{appdir}.}
 
 \item{runtime_strategy}{Character string or NULL. Runtime strategy override.}
 
-\item{platform}{Character vector or NULL. Target platforms override.}
+\item{platform}{Character vector or NULL. Target platforms override. If
+NULL, uses \code{build.platforms} from \verb{_shinyelectron.yml}, then the current
+platform, as \code{\link[=export]{export()}} does. The architectures come from
+\code{build.architectures}, then the current architecture.}
 
 \item{sign}{Logical or NULL. Signing override.}
 
@@ -36,8 +39,8 @@ Invisible list with:
 }
 \description{
 Validates that a Shiny application can be built as an Electron app.
-Checks app structure, configuration, runtime availability, dependencies,
-and signing credentials. Reports issues without aborting.
+Checks app structure, configuration, build targets, runtime availability,
+dependencies, and signing credentials. Reports issues without aborting.
 }
 \details{
 Files named in \verb{_shinyelectron.yml}, such as \code{icon} or \code{splash.image}, are

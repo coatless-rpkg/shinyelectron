@@ -17,7 +17,11 @@
 #'   `"bundled"`, `"system"`, `"auto-download"`, or `"container"`. Default
 #'   `"shinylive"`.
 #' @param platform Character vector. Target platforms: "win", "mac", "linux". If NULL, builds for current platform.
+#'   The `build.platforms` key of `config` is not read here; [export()]
+#'   reads it.
 #' @param arch Character vector. Target architectures: "x64", "arm64". If NULL, uses current architecture.
+#'   The `build.architectures` key of `config` is not read here; [export()]
+#'   reads it.
 #' @param icon Character string. Path to application icon file, absolute or
 #'   relative to the working directory. Platform-specific format required.
 #'   The `icon` and `icons` keys of `config` are not read here.
@@ -112,15 +116,7 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
   # Bundled and auto-download native runtimes embed a single platform/arch
   # runtime (or manifest) that would be copied into every installer, so they
   # cannot target multiple platforms or architectures in one build.
-  if (runtime_strategy %in% c("bundled", "auto-download") &&
-      grepl("^(r|py)-", app_type) &&
-      (length(platform) > 1 || length(arch) > 1)) {
-    cli::cli_abort(c(
-      "The {.val {runtime_strategy}} strategy supports only one platform and architecture per build.",
-      "i" = "It embeds a {.val {platform[1]}}/{.val {arch[1]}} runtime that would be packaged into every installer.",
-      "i" = "Build each target separately, or use the {.val system}, {.val container}, or {.val shinylive} strategy for multi-platform builds."
-    ))
-  }
+  check_single_target(runtime_strategy, platform, arch)
 
   if (verbose) {
     cli::cli_alert_info("Platform(s): {.val {platform}}")

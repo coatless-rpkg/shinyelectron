@@ -24,10 +24,13 @@
 #'   from environment variables or the config file. Default is FALSE.
 #' @param platform Character vector. Target platforms: "win", "mac", "linux".
 #'   If NULL, uses `build.platforms` from `_shinyelectron.yml`, then the
-#'   current platform.
+#'   current platform. macOS apps build only on macOS, so a `"mac"` target
+#'   stops the export on Windows and Linux unless `build = FALSE`.
 #' @param arch Character vector. Target architectures: "x64", "arm64". If
 #'   NULL, uses `build.architectures` from `_shinyelectron.yml`, then the
-#'   current architecture.
+#'   current architecture. Each of `platform` and `arch` replaces only its
+#'   own list, so `platform = "win"` still builds for every architecture in
+#'   `build.architectures`.
 #' @param icon Character string. Path to application icon file, absolute or
 #'   relative to the working directory. Platform-specific format required.
 #'   Overrides `icon` and `icons` in `_shinyelectron.yml`, whose paths are
@@ -125,27 +128,28 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   # Target platforms and architectures: function arg > config
   # build.platforms and build.architectures > the build machine. The icon,
   # signing and installer text checks below and the build itself all use
-  # them, for single apps and suites alike.
+  # them, for single apps and suites alike. A macOS target stops a build on
+  # another system now, since electron-builder would fail there without
+  # stopping the export.
   targets <- resolve_build_targets(platform, arch, config)
-  platform <- targets$platform
-  arch <- targets$arch
+  if (build) check_build_host(targets$platform, targets$from_config)
 
   # Resolve the icon: function arg > config `icon:` > the `icons:` entry for
   # the first target platform. Wiring the YAML keys here makes them effective
   # for both single and multi-app builds. The argument stays relative to the
   # working directory, like any path argument. A configured icon that does not
   # exist stops the export now, as a missing argument does in validate_icon().
-  icon <- icon %||% check_config_icon(config, platform[1], base_dir = appdir)
+  icon <- icon %||% check_config_icon(config, targets$platform[1], base_dir = appdir)
 
   # Resolve signing before the multi-app branch so suites honor
   # `signing: sign: true`. The function arg can force signing on and the
   # config can enable it; there is no way to force signing off via the arg.
   sign <- sign || isTRUE(config$signing$sign)
   if (sign && build) {
-    for (p in platform) {
+    for (p in targets$platform) {
       validate_signing_config(config, platform = p)
     }
-    if ("win" %in% platform) {
+    if ("win" %in% targets$platform) {
       check_config_certificate(config, base_dir = appdir)
     }
   }
@@ -172,9 +176,12 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
 
   # The Windows installer cannot hold a $ in the app's name or metadata; stop
   # a Windows build here, before any conversion or runtime download.
-  check_installer_text(app_name, config, windows = build && "win" %in% platform)
+  check_installer_text(app_name, config,
+                       windows = build && "win" %in% targets$platform)
 
-  # Detect multi-app mode (skip single-app structure validation)
+  # Detect multi-app mode (skip single-app structure validation). The suite
+  # gets the platform and arch arguments as given and resolves the same
+  # targets from the same config, so its errors can name the settings.
   if (is_multi_app(config)) {
     return(export_multi_app(appdir, destdir, config,
                             app_name = app_name,
@@ -208,12 +215,20 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
 
   # Validate icon file if provided
   if (!is.null(icon)) {
-    validate_icon(icon, platform)
+    validate_icon(icon, targets$platform)
   }
 
   # Resolve runtime strategy: function param > config file > shinylive default
   runtime_strategy <- runtime_strategy %||% config$build$runtime_strategy %||% "shinylive"
   validate_runtime_strategy(runtime_strategy)
+
+  # A bundled or auto-download build takes one target. build_electron_app()
+  # stops on more, but only after the app is copied and its dependencies
+  # resolved, so check here first.
+  if (build) {
+    check_single_target(runtime_strategy, targets$platform, targets$arch,
+                        from_config = targets$from_config)
+  }
 
   # Local R packages only go into a bundled R library. Resolve them against
   # the app directory and check them before anything is copied or downloaded.
@@ -305,7 +320,7 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
     } else {
       prep <- prepare_native_app_files(
         appdir, destdir, app_type, runtime_strategy,
-        platform, arch, config, verbose = verbose
+        targets$platform, targets$arch, config, verbose = verbose
       )
       converted_app_dir <- prep$converted_app
       result$converted_app <- prep$converted_app
@@ -325,8 +340,8 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
         app_type = app_type,
         runtime_strategy = runtime_strategy,
         sign = sign,
-        platform = platform,
-        arch = arch,
+        platform = targets$platform,
+        arch = targets$arch,
         icon = icon,
         config = config,
         overwrite = TRUE,

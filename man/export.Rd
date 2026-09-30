@@ -49,11 +49,14 @@ from environment variables or the config file. Default is FALSE.}
 
 \item{platform}{Character vector. Target platforms: "win", "mac", "linux".
 If NULL, uses \code{build.platforms} from \verb{_shinyelectron.yml}, then the
-current platform.}
+current platform. macOS apps build only on macOS, so a \code{"mac"} target
+stops the export on Windows and Linux unless \code{build = FALSE}.}
 
 \item{arch}{Character vector. Target architectures: "x64", "arm64". If
 NULL, uses \code{build.architectures} from \verb{_shinyelectron.yml}, then the
-current architecture.}
+current architecture. Each of \code{platform} and \code{arch} replaces only its
+own list, so \code{platform = "win"} still builds for every architecture in
+\code{build.architectures}.}
 
 \item{icon}{Character string. Path to application icon file, absolute or
 relative to the working directory. Platform-specific format required.

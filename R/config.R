@@ -368,9 +368,10 @@ validate_config <- function(config) {
   }
 
   # Validate platforms and architectures, the targets export() builds for.
-  # Invalid entries are dropped with a warning and the rest kept as a
-  # character vector. A list with nothing left counts as unset, so export()
-  # builds for the current platform or architecture rather than for none.
+  # Invalid entries are dropped with a warning and the rest kept once each,
+  # as a character vector. A list with nothing left counts as unset, so
+  # export() builds for the current platform or architecture rather than for
+  # none.
   targets <- list(
     platforms = list(valid = valid_platforms, what = "platform"),
     architectures = list(valid = valid_arch, what = "architecture")
@@ -388,7 +389,7 @@ validate_config <- function(config) {
         "i" = if (!any(ok)) "Falling back to the current {what}"
       ))
     }
-    values <- as.character(unlist(values[ok], use.names = FALSE))
+    values <- unique(as.character(unlist(values[ok], use.names = FALSE)))
     config$build[[key]] <- if (length(values) > 0) values
   }
 
@@ -737,7 +738,10 @@ build:
   # Default is "shinylive" (in-browser WebAssembly, no runtime on disk).
   # Other options: "bundled", "system", "auto-download", "container".
   # runtime_strategy: "shinylive"
-  # Uncomment to specify target platforms (default: current platform)
+  # Uncomment to specify target platforms and architectures (default: those
+  # of the machine running export()). macOS builds need a Mac, and the
+  # bundled and auto-download strategies take one platform and one
+  # architecture.
   # platforms:
   #   - mac
   #   - win
