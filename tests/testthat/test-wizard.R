@@ -194,6 +194,18 @@ test_that("wizard accepts multiple valid platform tokens", {
   expect_true("win" %in% unlist(config$build$platforms))
 })
 
+test_that("wizard asks again for one platform with the bundled strategy", {
+  # name, version, language, strategy = 4 (bundled), two platforms, then
+  # one, width, height, port, advanced
+  tmp <- withr::local_tempdir()
+  run_wizard_quiet(tmp, c("", "", "1", "4", "mac, win", "win", "", "", "", ""))
+
+  config <- yaml::read_yaml(file.path(tmp, "_shinyelectron.yml"))
+  expect_equal(config$build$runtime_strategy, "bundled")
+  expect_identical(config$build$platforms, "win")
+  expect_equal(config$server$port, 3838L)
+})
+
 # ---------------------------------------------------------------------------
 # Advanced path: auto-updates with github provider
 # ---------------------------------------------------------------------------

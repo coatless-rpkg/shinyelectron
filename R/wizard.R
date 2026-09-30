@@ -55,13 +55,21 @@ wizard <- function(appdir) {
   )
 
   # Platforms. export() builds for these, so offer the machine's own
-  # platform, which it builds for when none is set.
+  # platform, which it builds for when none is set. A bundled or
+  # auto-download build embeds a runtime for one platform, so for those
+  # strategies ask again until the answer names one.
   default_platform <- detect_current_platform()
+  one_platform <- runtime_strategy %in% c("bundled", "auto-download")
   cat("\nTarget platforms (comma-separated):\n")
   cat("  mac, win, linux\n")
-  platform_input <- readline(paste0("Platforms [", default_platform, "]: "))
-  if (!nzchar(platform_input)) platform_input <- default_platform
-  platforms <- trimws(strsplit(platform_input, ",")[[1]])
+  repeat {
+    platform_input <- readline(paste0("Platforms [", default_platform, "]: "))
+    if (!nzchar(platform_input)) platform_input <- default_platform
+    platforms <- unique(trimws(strsplit(platform_input, ",")[[1]]))
+    if (!one_platform || length(platforms) == 1) break
+    cat(sprintf("  The %s strategy builds one platform at a time. Enter one platform.\n",
+                runtime_strategy))
+  }
 
   valid_platforms <- SHINYELECTRON_DEFAULTS$valid_platforms
   invalid_platforms <- platforms[!platforms %in% valid_platforms]
