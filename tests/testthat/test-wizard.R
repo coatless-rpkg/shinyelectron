@@ -112,16 +112,15 @@ test_that("wizard default config has r-shiny type and shinylive strategy", {
   expect_equal(config$build$runtime_strategy, "shinylive")
 })
 
-test_that("wizard default config targets the current platform", {
-  # export() builds for the listed platforms, so the default must be one the
-  # machine can build.
-  local_mocked_bindings(detect_current_platform = function() "linux")
+test_that("wizard leaves platforms out by default", {
+  # export() builds for the listed platforms. Without a list, each build
+  # targets the machine it runs on, so the default config must not pin one.
   tmp <- withr::local_tempdir()
   run_wizard_quiet(tmp, rep("", 9L))
 
   config <- yaml::read_yaml(file.path(tmp, "_shinyelectron.yml"))
-  # yaml::read_yaml returns a single-element character vector, not a list
-  expect_identical(config$build$platforms, "linux")
+  expect_null(config$build$platforms)
+  expect_false("platforms" %in% names(config$build))
 })
 
 test_that("wizard default config window dimensions and port match constants", {
@@ -216,7 +215,7 @@ test_that("wizard advanced path records github as the update provider", {
   #   2  version        -> "" (default)
   #   3  language       -> "" (default: r-shiny)
   #   4  strategy       -> "" (default: shinylive)
-  #   5  platforms      -> "" (default: current platform)
+  #   5  platforms      -> "" (default: the machine that runs export())
   #   6  width          -> "" (default)
   #   7  height         -> "" (default)
   #   8  port           -> "" (default)

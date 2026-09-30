@@ -33,8 +33,9 @@
   machine. Check the lists in your configuration files. Earlier versions of
   `wizard()` suggested `mac` and wrote it to `build.platforms`, so a file
   written with them on Windows or Linux may list `platforms: mac`; change or
-  remove `platforms` there. `wizard()` now suggests the current platform. If
-  you copied the Getting Started or Configuration Guide example that paired
+  remove `platforms` there. `wizard()` now leaves `platforms` out unless you
+  name some, so each build targets the machine it runs on. If you copied the
+  Getting Started or Configuration Guide example that paired
   `runtime_strategy: "bundled"` with `platforms: [mac, win]`, remove
   `platforms`, since a `bundled` or `auto-download` build stops when the
   targets name more than one platform or architecture. A list with no valid
