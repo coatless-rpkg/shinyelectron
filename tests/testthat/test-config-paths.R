@@ -290,7 +290,8 @@ test_that("export() checks the tray's app icon for the target platform", {
   expect_true(any(grepl("createFromPath(path.join(__dirname, 'assets', 'icon.ico'))",
                         main_js, fixed = TRUE)))
 
-  # No platform reads an .icns file.
+  # No platform reads an .icns file. A macOS target builds only on a Mac.
+  local_mocked_bindings(detect_current_platform = function() "mac")
   expect_warning(
     export(appdir, fs::path(withr::local_tempdir(), "out"), platform = "mac",
            verbose = FALSE),
