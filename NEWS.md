@@ -114,6 +114,18 @@
   `shinyelectron_logging_conflict`. `init_config()` now suggests the
   `logging` form.
 
+* `export()` now builds for `build.platforms` and `build.architectures` in
+  `_shinyelectron.yml` when its `platform` and `arch` arguments are not
+  given, for single apps and multi-app suites alike. Before, the lists had no
+  effect: the build, the choice of icon, and the signing and Windows
+  installer checks all used the current machine. A `bundled` or
+  `auto-download` build stops when the lists name more than one platform or
+  architecture, as it does for the arguments, so if you copied the Getting
+  Started or Configuration Guide example that paired
+  `runtime_strategy: "bundled"` with `platforms: [mac, win]`, remove
+  `platforms`. A list with no valid value means the current platform or
+  architecture.
+
 * `init_config()` no longer suggests `nodejs.auto_install`, which has no effect
   yet.
 

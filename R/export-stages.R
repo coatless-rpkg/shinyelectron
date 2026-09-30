@@ -1,3 +1,23 @@
+#' Resolve the platforms and architectures to build for
+#'
+#' The `platform` and `arch` arguments of [export()] win over
+#' `build.platforms` and `build.architectures` in `_shinyelectron.yml`, which
+#' win over the platform and architecture of the build machine. The result is
+#' checked as [build_electron_app()] checks its arguments, so an invalid value
+#' stops the export before anything is converted or built.
+#'
+#' @param platform,arch Character vectors or `NULL`. The arguments.
+#' @param config List. The effective configuration.
+#' @return A list with the character vectors `platform` and `arch`.
+#' @keywords internal
+resolve_build_targets <- function(platform, arch, config) {
+  platform <- platform %||% config$build$platforms %||% detect_current_platform()
+  arch <- arch %||% config$build$architectures %||% detect_current_arch()
+  validate_platform(platform)
+  validate_arch(arch)
+  list(platform = platform, arch = arch)
+}
+
 #' Convert a Shiny app to the shinylive format
 #'
 #' Dispatches to the R or Python shinylive converter based on language.

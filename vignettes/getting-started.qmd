@@ -214,7 +214,7 @@ app:
 
 build:
   type: "r-shiny"
-  runtime_strategy: "bundled"
+  runtime_strategy: "shinylive"
   platforms: [mac, win]
 ```
 
@@ -224,6 +224,8 @@ build:
 #| eval: false
 export(appdir = "my-app", destdir = "output")
 ```
+
+The `platform` and `arch` arguments override `platforms` and `architectures` in the file, so adding `platform = "win"` to that call builds only the Windows installer.
 
 See the [Configuration Guide](configuration.html) for every option.
 

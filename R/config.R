@@ -367,28 +367,29 @@ validate_config <- function(config) {
     config$build$runtime_strategy <- NULL
   }
 
-  # Validate platforms
-  if (!is.null(config$build$platforms)) {
-    invalid <- config$build$platforms[!config$build$platforms %in% valid_platforms]
-    if (length(invalid) > 0) {
+  # Validate platforms and architectures, the targets export() builds for.
+  # Invalid entries are dropped with a warning and the rest kept as a
+  # character vector. A list with nothing left counts as unset, so export()
+  # builds for the current platform or architecture rather than for none.
+  targets <- list(
+    platforms = list(valid = valid_platforms, what = "platform"),
+    architectures = list(valid = valid_arch, what = "architecture")
+  )
+  for (key in names(targets)) {
+    values <- config$build[[key]]
+    if (is.null(values)) next
+    valid <- targets[[key]]$valid
+    what <- targets[[key]]$what
+    ok <- values %in% valid
+    if (!all(ok)) {
       cli::cli_warn(c(
-        "Invalid platform(s) in config: {.val {invalid}}",
-        "i" = "Valid platforms: {.val {valid_platforms}}"
+        "Invalid {what}(s) in config: {.val {values[!ok]}}",
+        "i" = "Valid {what}s: {.val {valid}}",
+        "i" = if (!any(ok)) "Falling back to the current {what}"
       ))
-      config$build$platforms <- config$build$platforms[config$build$platforms %in% valid_platforms]
     }
-  }
-
-  # Validate architectures
-  if (!is.null(config$build$architectures)) {
-    invalid <- config$build$architectures[!config$build$architectures %in% valid_arch]
-    if (length(invalid) > 0) {
-      cli::cli_warn(c(
-        "Invalid architecture(s) in config: {.val {invalid}}",
-        "i" = "Valid architectures: {.val {valid_arch}}"
-      ))
-      config$build$architectures <- config$build$architectures[config$build$architectures %in% valid_arch]
-    }
+    values <- as.character(unlist(values[ok], use.names = FALSE))
+    config$build[[key]] <- if (length(values) > 0) values
   }
 
   # Validate window dimensions using centralized defaults

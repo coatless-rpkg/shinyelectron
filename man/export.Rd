@@ -47,9 +47,13 @@ sets one.}
 When TRUE, electron-builder will attempt to sign the app using credentials
 from environment variables or the config file. Default is FALSE.}
 
-\item{platform}{Character vector. Target platforms: "win", "mac", "linux". If NULL, builds for current platform.}
+\item{platform}{Character vector. Target platforms: "win", "mac", "linux".
+If NULL, uses \code{build.platforms} from \verb{_shinyelectron.yml}, then the
+current platform.}
 
-\item{arch}{Character vector. Target architectures: "x64", "arm64". If NULL, uses current architecture.}
+\item{arch}{Character vector. Target architectures: "x64", "arm64". If
+NULL, uses \code{build.architectures} from \verb{_shinyelectron.yml}, then the
+current architecture.}
 
 \item{icon}{Character string. Path to application icon file, absolute or
 relative to the working directory. Platform-specific format required.

@@ -30,6 +30,13 @@ export_multi_app <- function(appdir, destdir, config,
   config <- resolve_config_paths(config, appdir)
   config <- drop_missing_config_files(config, base_dir = appdir)
 
+  # Target platforms and architectures: argument > build.platforms and
+  # build.architectures > the build machine. export() passes them resolved;
+  # resolving again covers a config passed in directly.
+  targets <- resolve_build_targets(platform, arch, config)
+  platform <- targets$platform
+  arch <- targets$arch
+
   # Validate the icon up front, matching the single-app path.
   if (!is.null(icon)) {
     validate_icon(icon, platform)

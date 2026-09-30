@@ -22,8 +22,12 @@
 #' @param sign Logical. Whether to enable code signing for the built application.
 #'   When TRUE, electron-builder will attempt to sign the app using credentials
 #'   from environment variables or the config file. Default is FALSE.
-#' @param platform Character vector. Target platforms: "win", "mac", "linux". If NULL, builds for current platform.
-#' @param arch Character vector. Target architectures: "x64", "arm64". If NULL, uses current architecture.
+#' @param platform Character vector. Target platforms: "win", "mac", "linux".
+#'   If NULL, uses `build.platforms` from `_shinyelectron.yml`, then the
+#'   current platform.
+#' @param arch Character vector. Target architectures: "x64", "arm64". If
+#'   NULL, uses `build.architectures` from `_shinyelectron.yml`, then the
+#'   current architecture.
 #' @param icon Character string. Path to application icon file, absolute or
 #'   relative to the working directory. Platform-specific format required.
 #'   Overrides `icon` and `icons` in `_shinyelectron.yml`, whose paths are
@@ -118,24 +122,30 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   app_name <- app_name %||% config$app$name %||% basename(appdir)
   validate_app_name(app_name, field = if (name_from_config) "app.name" else "app_name")
 
-  # Resolve the icon: function arg > config `icon:` > per-platform `icons:`.
-  # Wiring the YAML keys here makes them effective for both single and
-  # multi-app builds. The argument stays relative to the working directory,
-  # like any path argument. A configured icon that does not exist stops the
-  # export now, as a missing argument does in validate_icon().
-  icon_platform <- (platform %||% detect_current_platform())[1]
-  icon <- icon %||% check_config_icon(config, icon_platform, base_dir = appdir)
+  # Target platforms and architectures: function arg > config
+  # build.platforms and build.architectures > the build machine. The icon,
+  # signing and installer text checks below and the build itself all use
+  # them, for single apps and suites alike.
+  targets <- resolve_build_targets(platform, arch, config)
+  platform <- targets$platform
+  arch <- targets$arch
+
+  # Resolve the icon: function arg > config `icon:` > the `icons:` entry for
+  # the first target platform. Wiring the YAML keys here makes them effective
+  # for both single and multi-app builds. The argument stays relative to the
+  # working directory, like any path argument. A configured icon that does not
+  # exist stops the export now, as a missing argument does in validate_icon().
+  icon <- icon %||% check_config_icon(config, platform[1], base_dir = appdir)
 
   # Resolve signing before the multi-app branch so suites honor
   # `signing: sign: true`. The function arg can force signing on and the
   # config can enable it; there is no way to force signing off via the arg.
   sign <- sign || isTRUE(config$signing$sign)
   if (sign && build) {
-    sign_platforms <- platform %||% detect_current_platform()
-    for (p in sign_platforms) {
+    for (p in platform) {
       validate_signing_config(config, platform = p)
     }
-    if ("win" %in% sign_platforms) {
+    if ("win" %in% platform) {
       check_config_certificate(config, base_dir = appdir)
     }
   }
@@ -162,10 +172,7 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
 
   # The Windows installer cannot hold a $ in the app's name or metadata; stop
   # a Windows build here, before any conversion or runtime download.
-  check_installer_text(
-    app_name, config,
-    windows = build && "win" %in% (platform %||% detect_current_platform())
-  )
+  check_installer_text(app_name, config, windows = build && "win" %in% platform)
 
   # Detect multi-app mode (skip single-app structure validation)
   if (is_multi_app(config)) {
