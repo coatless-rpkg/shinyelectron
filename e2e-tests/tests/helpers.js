@@ -2,6 +2,7 @@ const { _electron: electron } = require('@playwright/test');
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 /**
  * Build a shinyelectron app and return the Electron app directory path.
@@ -45,16 +46,35 @@ function buildApp({ appdir, destdir, app_type = 'r-shiny', runtime_strategy }) {
 
 /**
  * Launch an Electron app with Playwright.
+ *
+ * Electron keeps an app's browser profile, logs and window state in a folder
+ * named after the app in the user's application data directory
+ * (~/Library/Application Support, %APPDATA% or ~/.config), which outlives the
+ * test run. Each launch passes --user-data-dir to use a new temporary folder
+ * instead, removed when the app closes, so no launch sees an earlier one's
+ * state either.
  * @param {string} electronAppDir - Path to the electron-app directory.
  * @returns {Promise<import('@playwright/test').ElectronApplication>}
  */
 async function launchApp(electronAppDir) {
   const electronPath = require('electron');
-  const app = await electron.launch({
-    args: [electronAppDir],
-    executablePath: electronPath,
-  });
-  return app;
+  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shinyelectron-e2e-user-data-'));
+  const removeUserData = () => {
+    try {
+      fs.rmSync(userDataDir, { recursive: true, force: true, maxRetries: 5 });
+    } catch { /* best-effort: the folder is in the temp directory */ }
+  };
+  try {
+    const app = await electron.launch({
+      args: [electronAppDir, `--user-data-dir=${userDataDir}`],
+      executablePath: electronPath,
+    });
+    app.on('close', removeUserData);
+    return app;
+  } catch (err) {
+    removeUserData();
+    throw err;
+  }
 }
 
 /**

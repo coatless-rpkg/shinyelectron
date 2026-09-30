@@ -109,4 +109,17 @@ test.describe('Single App - r-shiny system', () => {
     // If we get here without error, the button is clickable
     expect(true).toBe(true);
   });
+
+  test('user data goes to a temporary folder removed on close', async () => {
+    const { appData, userData } = await electronApp.evaluate(({ app }) => ({
+      appData: app.getPath('appData'),
+      userData: app.getPath('userData'),
+    }));
+    // Electron's default, <appData>/<app name>, would outlive the test.
+    expect(path.dirname(userData)).not.toBe(appData);
+    expect(fs.existsSync(userData)).toBe(true);
+
+    await electronApp.close();
+    await expect.poll(() => fs.existsSync(userData)).toBe(false);
+  });
 });

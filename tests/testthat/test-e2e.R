@@ -169,7 +169,12 @@ test_that("e2e: r-shiny native Electron app starts and emits lifecycle events", 
   skip_if_not(nzchar(Sys.which("npx")), "npx not available")
 
   d <- tempfile(); dir.create(d); o <- tempfile()
-  on.exit(unlink(c(d, o), TRUE))
+  # Electron keeps the app's browser profile and logs in a folder named after
+  # the app (here the random name of `d`) in the user's app data directory:
+  # ~/Library/Application Support, %APPDATA% or ~/.config. Every run would
+  # leave a new one there, so --user-data-dir points Electron at `u` instead.
+  u <- tempfile("user-data-")
+  on.exit(unlink(c(d, o, u), TRUE))
   writeLines("library(shiny)\nshinyApp(ui=fluidPage(h1('Launch')), server=function(i,o){})",
              file.path(d, "app.R"))
 
@@ -182,7 +187,7 @@ test_that("e2e: r-shiny native Electron app starts and emits lifecycle events", 
   # SHINYELECTRON_DEBUG=1 surfaces the backend diagnostic log lines
   # we grep for below -- otherwise the app runs silently by design.
   result <- processx::run(
-    "npx", c("electron", "."),
+    "npx", c("electron", ".", paste0("--user-data-dir=", u)),
     wd = electron_dir,
     timeout = 15,
     error_on_status = FALSE,
@@ -195,4 +200,8 @@ test_that("e2e: r-shiny native Electron app starts and emits lifecycle events", 
   # The exact lifecycle event format may vary with backend changes
   app_started <- grepl("server_ready|Listening on|Shiny server|R Shiny server ready", output)
   expect_true(app_started)
+
+  # The app kept its logs and browser profile in `u`
+  expect_true(dir.exists(file.path(u, "logs")))
+  expect_true(dir.exists(file.path(u, "Partitions")))
 })
