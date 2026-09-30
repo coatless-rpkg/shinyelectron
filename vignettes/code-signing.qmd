@@ -98,7 +98,7 @@ export APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"
 export APPLE_TEAM_ID="XXXXXXXXXX"
 ```
 
-`APPLE_TEAM_ID` can stay unset when `_shinyelectron.yml` sets `signing.mac.team_id`: the build passes that value to electron-builder as `APPLE_TEAM_ID`, and a team ID already set in the variable wins.
+`APPLE_TEAM_ID` can stay unset when `_shinyelectron.yml` sets `signing.mac.team_id`: the build passes that value to electron-builder as `APPLE_TEAM_ID`, and a team ID already set in the variable wins. To notarize with an App Store Connect API key instead of an Apple ID, set `APPLE_API_KEY` (the path to the `.p8` key file), `APPLE_API_KEY_ID`, and `APPLE_API_ISSUER`; no team ID is needed then.
 
 Then run `export(..., sign = TRUE)`. electron-builder drives the full signing and notarization flow. You do not call `codesign` or `xcrun notarytool` yourself.
 
@@ -225,6 +225,9 @@ One canonical table for every variable the signing pipeline reads.
 | `APPLE_ID` | macOS | Apple ID email used for notarization |
 | `APPLE_APP_SPECIFIC_PASSWORD` | macOS | App-specific password from `appleid.apple.com` |
 | `APPLE_TEAM_ID` | macOS | 10-character Apple Developer Team ID; wins over `signing.mac.team_id` |
+| `APPLE_API_KEY` | macOS | Path to an App Store Connect API key (`.p8`), for notarizing without an Apple ID |
+| `APPLE_API_KEY_ID` | macOS | Key ID of that API key |
+| `APPLE_API_ISSUER` | macOS | Issuer ID of that API key |
 | `GPG_KEY` | Linux | GPG key ID for AppImage signing (reserved; not yet implemented) |
 
 ## Next steps

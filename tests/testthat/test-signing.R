@@ -223,36 +223,86 @@ mac_signing_config <- function(...) {
   ))
 }
 
-test_that("validate_signing_config warns about missing macOS team_id", {
-  config <- list(signing = list(
-    sign = TRUE,
-    mac = list(identity = NULL, team_id = NULL, notarize = TRUE)
+test_that("validate_signing_config warns that an Apple ID without a team ID fails notarization", {
+  local_notarization_env(APPLE_ID = "dev@example.com",
+                         APPLE_APP_SPECIFIC_PASSWORD = "not-a-password")
+
+  w <- expect_warning(
+    validate_signing_config(mac_signing_config(), platform = "mac"),
+    "no Apple team ID, so notarization will fail"
+  )
+  expect_match(conditionMessage(w), "signing.mac.team_id", fixed = TRUE)
+  expect_match(conditionMessage(w), "APPLE_TEAM_ID", fixed = TRUE)
+})
+
+test_that("validate_signing_config takes the team ID from the config or APPLE_TEAM_ID", {
+  local_notarization_env(APPLE_ID = "dev@example.com",
+                         APPLE_APP_SPECIFIC_PASSWORD = "not-a-password")
+  expect_silent(validate_signing_config(
+    mac_signing_config(team_id = "TEAM123456"), platform = "mac"
   ))
 
-  # Multiple warnings fire (team_id, notarize creds, identity) -- check for the first
-  suppressWarnings(
-    expect_warning(
-      validate_signing_config(config, platform = "mac"),
-      "APPLE_TEAM_ID"
-    )
+  withr::local_envvar(APPLE_TEAM_ID = "ENVTEAM123")
+  expect_silent(validate_signing_config(mac_signing_config(), platform = "mac"))
+})
+
+test_that("validate_signing_config names a missing Apple ID credential", {
+  local_notarization_env(APPLE_ID = "dev@example.com",
+                         APPLE_TEAM_ID = "ENVTEAM123")
+
+  expect_warning(
+    validate_signing_config(mac_signing_config(), platform = "mac"),
+    "APPLE_APP_SPECIFIC_PASSWORD`? is not set, so notarization"
   )
 })
 
-test_that("validate_signing_config warns about missing notarization credentials", {
-  config <- list(signing = list(
-    sign = TRUE,
-    mac = list(notarize = TRUE, team_id = "TEAM123")
-  ))
+test_that("validate_signing_config accepts an API key or keychain profile without a team ID", {
+  local_notarization_env(APPLE_API_KEY = "/keys/AuthKey_KEYID12345.p8",
+                         APPLE_API_KEY_ID = "KEYID12345",
+                         APPLE_API_ISSUER = "issuer-id")
+  expect_silent(validate_signing_config(mac_signing_config(), platform = "mac"))
 
-  withr::with_envvar(c(APPLE_ID = NA, APPLE_APP_SPECIFIC_PASSWORD = NA), {
-    # Also fires identity warning -- suppress it
-    suppressWarnings(
-      expect_warning(
-        validate_signing_config(config, platform = "mac"),
-        "APPLE_ID"
-      )
-    )
-  })
+  local_notarization_env(APPLE_KEYCHAIN_PROFILE = "notary-profile")
+  expect_silent(validate_signing_config(mac_signing_config(), platform = "mac"))
+})
+
+test_that("validate_signing_config names missing API key variables", {
+  local_notarization_env(APPLE_API_KEY = "/keys/AuthKey_KEYID12345.p8")
+
+  expect_warning(
+    validate_signing_config(mac_signing_config(), platform = "mac"),
+    "APPLE_API_KEY_ID`? and `?APPLE_API_ISSUER`? are not set, so notarization"
+  )
+})
+
+test_that("validate_signing_config warns that notarization is skipped without credentials", {
+  local_notarization_env()
+
+  w <- expect_warning(
+    validate_signing_config(
+      mac_signing_config(team_id = "TEAM123456", notarize = TRUE),
+      platform = "mac"
+    ),
+    "no notarization credentials, so notarization will be skipped"
+  )
+  expect_match(conditionMessage(w), "APPLE_ID", fixed = TRUE)
+  expect_match(conditionMessage(w), "APPLE_API_KEY", fixed = TRUE)
+})
+
+test_that("validate_signing_config follows its sign argument over signing.sign", {
+  local_notarization_env()
+
+  # export(sign = TRUE) signs even when the config leaves signing.sign off
+  config <- list(signing = list(
+    mac = list(identity = "Developer ID Application: Test")
+  ))
+  expect_warning(
+    validate_signing_config(config, platform = "mac", sign = TRUE),
+    "no notarization credentials"
+  )
+  expect_silent(
+    validate_signing_config(mac_signing_config(), platform = "mac", sign = FALSE)
+  )
 })
 
 test_that("validate_signing_config warns about missing Windows cert", {
@@ -358,10 +408,9 @@ test_that("validate_signing_config is silent with complete macOS config", {
     )
   ))
 
-  withr::with_envvar(c(APPLE_ID = "test@example.com",
-                       APPLE_APP_SPECIFIC_PASSWORD = "xxxx"), {
-    expect_silent(validate_signing_config(config, platform = "mac"))
-  })
+  local_notarization_env(APPLE_ID = "test@example.com",
+                         APPLE_APP_SPECIFIC_PASSWORD = "xxxx")
+  expect_silent(validate_signing_config(config, platform = "mac"))
 })
 
 # --- signing through export() and app_check() ---
@@ -414,4 +463,35 @@ test_that("export() passes signing.mac.team_id to electron-builder as APPLE_TEAM
   env <- mockery::mock_args(run_rec)[[1]]$env
   expect_equal(env[names(env) == "APPLE_TEAM_ID"],
                c(APPLE_TEAM_ID = "TEAM123456"))
+})
+
+test_that("export(sign = TRUE) checks credentials without signing.sign in the config", {
+  appdir <- local_signing_app(list(signing = list(
+    mac = list(identity = "Developer ID Application: Test")
+  )))
+  local_notarization_env()
+  local_recorded_build()
+
+  expect_no_warning(
+    export(appdir, fs::path(withr::local_tempdir(), "out"),
+           platform = "mac", arch = "arm64", verbose = FALSE)
+  )
+  expect_warning(
+    export(appdir, fs::path(withr::local_tempdir(), "out"),
+           platform = "mac", arch = "arm64", sign = TRUE, verbose = FALSE),
+    "no notarization credentials"
+  )
+})
+
+test_that("app_check(sign = TRUE) checks credentials without signing.sign in the config", {
+  appdir <- local_signing_app(list(signing = list(
+    mac = list(identity = "Developer ID Application: Test")
+  )))
+  local_notarization_env()
+
+  expect_no_warning(app_check(appdir, platform = "mac", verbose = FALSE))
+  expect_warning(
+    app_check(appdir, platform = "mac", sign = TRUE, verbose = FALSE),
+    "no notarization credentials"
+  )
 })

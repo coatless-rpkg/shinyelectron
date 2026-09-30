@@ -178,6 +178,14 @@
   that notarize with an Apple ID failed with "APPLE_TEAM_ID env var needs to
   be set". A team ID already set in `APPLE_TEAM_ID` still wins.
 
+* `export(sign = TRUE)` and `app_check(sign = TRUE)` now check the signing
+  credentials even when `signing.sign` is off in `_shinyelectron.yml`. The
+  macOS checks also follow electron-builder: an App Store Connect API key
+  (`APPLE_API_KEY`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER`) or
+  `APPLE_KEYCHAIN_PROFILE` counts as notarization credentials, a missing team
+  ID is reported only when notarizing with an Apple ID, and each warning says
+  whether notarization will fail or be skipped.
+
 * Bundled R builds now install packages with the portable R's own startup
   files. The install no longer runs a project `.Rprofile` or `.Renviron` from
   the working directory, such as renv's autoloader, and ignores `R_ENVIRON`

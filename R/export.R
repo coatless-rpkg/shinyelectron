@@ -133,7 +133,7 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   if (sign && build) {
     sign_platforms <- platform %||% detect_current_platform()
     for (p in sign_platforms) {
-      validate_signing_config(config, platform = p)
+      validate_signing_config(config, platform = p, sign = sign)
     }
     if ("win" %in% sign_platforms) {
       check_config_certificate(config, base_dir = appdir)
