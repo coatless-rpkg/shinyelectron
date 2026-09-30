@@ -46,6 +46,10 @@ dependencies, and signing credentials. Reports issues without aborting.
 Files named in \verb{_shinyelectron.yml}, such as \code{icon} or \code{splash.image}, are
 looked up relative to \code{appdir}, as \code{\link[=export]{export()}} does. A missing icon is an
 error, because \code{\link[=export]{export()}} stops on it; other missing files are warnings.
+So is an icon that a target platform cannot use, because of its format or
+the size of its image, since that platform's build shows the default
+Electron icon, and an \code{icons} entry that the build leaves out, since it
+gives one icon to every target platform.
 }
 \examples{
 \donttest{

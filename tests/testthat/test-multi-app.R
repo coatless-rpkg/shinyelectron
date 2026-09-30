@@ -886,3 +886,67 @@ test_that("export_multi_app does not include container-app packages in bundled e
   expect_true(embed_args$prune)   # dependencies.r.prune defaults to TRUE
   expect_equal(embed_args$local_packages, character(0))   # no dependencies.r.local_packages
 })
+
+# --- App icon in the suite's package.json ---
+
+test_that("build_multi_app points package.json at the icon it copies", {
+  apps_dir <- withr::local_tempdir()
+  for (id in c("dash", "admin")) {
+    fs::dir_create(fs::path(apps_dir, id))
+    writeLines("library(shiny)", fs::path(apps_dir, id, "app.R"))
+  }
+  config <- list(
+    build = list(type = "r-shiny", runtime_strategy = "system"),
+    apps = list(
+      list(id = "dash",  name = "Dash",  path = "./apps/dash"),
+      list(id = "admin", name = "Admin", path = "./apps/admin")
+    )
+  )
+  apps_manifest <- lapply(config$apps, function(app) {
+    list(id = app$id, name = app$name, type = "r-shiny",
+         runtime_strategy = "system",
+         serve = list(kind = "native", path = paste0("src/apps/", app$id),
+                      runtime_strategy = "system"))
+  })
+
+  local_mocked_bindings(
+    validate_node_npm        = function(...) invisible(TRUE),
+    install_npm_dependencies = function(...) invisible(TRUE),
+    build_for_platforms      = function(...) invisible(TRUE),
+    validate_build_output    = function(...) invisible(TRUE)
+  )
+
+  # Build the suite for every platform with an icon named `name`; return the
+  # icon each platform's build config names and the files in assets/.
+  build_suite <- function(name) {
+    icon <- fs::path(withr::local_tempdir(), name)
+    writeBin(as.raw(1:16), icon)
+    output_dir <- fs::path(withr::local_tempdir(), "electron-app")
+    build_multi_app(
+      apps_dir = apps_dir, output_dir = output_dir, app_name = "Suite",
+      apps_manifest = apps_manifest, default_type = "r-shiny",
+      runtime_strategy = "system", sign = FALSE,
+      platform = c("win", "mac", "linux"), arch = "x64", icon = icon,
+      config = config, overwrite = TRUE, verbose = FALSE
+    )
+    pkg <- jsonlite::fromJSON(fs::path(output_dir, "package.json"),
+                              simplifyVector = FALSE)
+    list(
+      icons = lapply(pkg$build[c("win", "mac", "linux")], function(p) p$icon),
+      assets = list.files(fs::path(output_dir, "assets"))
+    )
+  }
+
+  png <- build_suite("suite.png")
+  expect_equal(
+    png$icons,
+    list(win = "assets/icon.png", mac = "assets/icon.png",
+         linux = "assets/icon.png")
+  )
+  expect_contains(png$assets, "icon.png")
+
+  # electron-builder cannot make a macOS or Linux icon from an .ico file.
+  ico <- build_suite("suite.ico")
+  expect_equal(ico$icons, list(win = "assets/icon.ico", mac = NULL, linux = NULL))
+  expect_contains(ico$assets, "icon.ico")
+})

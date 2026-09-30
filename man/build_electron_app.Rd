@@ -50,7 +50,8 @@ The \code{build.architectures} key of \code{config} is not read here; \code{\lin
 reads it.}
 
 \item{icon}{Character string. Path to application icon file, absolute or
-relative to the working directory. Platform-specific format required.
+relative to the working directory. A PNG (1024x1024 or larger) or an
+\code{.icns} file serves every platform; an \code{.ico} file serves Windows only.
 The \code{icon} and \code{icons} keys of \code{config} are not read here.}
 
 \item{config}{List. Configuration from _shinyelectron.yml file (optional). Used for

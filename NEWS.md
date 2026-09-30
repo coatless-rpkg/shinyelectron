@@ -259,6 +259,29 @@
   into the build so the launcher can show them. `~` and absolute paths work.
   The `icon` argument of `export()` stays relative to the working directory.
 
+* The app icon now reaches every platform that can use it. The generated
+  `package.json` pointed Windows, macOS, and Linux at `assets/icon.ico`,
+  `assets/icon.icns`, and `assets/icon.png`, but the build copies only the
+  icon's own file, so a platform whose file was missing quietly got the
+  default Electron icon: a PNG icon, as the documentation recommends,
+  reached Linux only, and an `.icns` icon never reached Windows. Every
+  platform now uses the copied file, which electron-builder converts from a
+  PNG or `.icns` icon as needed. An `.ico` icon serves Windows only.
+  electron-builder also stops the build when the image is too small: a PNG
+  needs at least 512x512 pixels for macOS and 256x256 for Windows, and
+  Windows needs a 256x256 image in an `.icns` or `.ico` file. A platform
+  that cannot use the icon, because of its format or its size, now gets the
+  default icon instead, and `export()` names it in a warning before anything
+  is built; `app_check()` reports it too. A `tray.icon` file named like the
+  copy, such as `icon.png`, is now copied under another name instead of
+  replacing it.
+
+* `export()` and `app_check()` now warn about the `icons` entries that an
+  export leaves out. One export gives one app icon, the `icons` entry for its
+  first target platform, to every platform, so a different entry for another
+  target platform is not used. Export each platform separately to give it
+  its own icon.
+
 * A configured splash image, tray icon, or launcher icon that does not exist
   now gives a warning naming the key and the path checked, instead of being
   skipped silently, and the build uses the default. A missing configured app

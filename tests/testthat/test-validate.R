@@ -336,3 +336,71 @@ test_that("export stops on a missing license file before building anything", {
   )
   expect_false(dir.exists(destdir))
 })
+
+# --- validate_icon ---
+
+test_that("validate_icon accepts a PNG or .icns icon for every platform", {
+  for (ext in c(".png", ".icns", ".PNG")) {
+    icon <- withr::local_tempfile(fileext = ext)
+    writeBin(as.raw(1:16), icon)
+    expect_no_warning(validate_icon(icon, c("win", "mac", "linux")))
+  }
+})
+
+test_that("validate_icon warns that an .ico icon serves Windows only", {
+  icon <- withr::local_tempfile(fileext = ".ico")
+  writeBin(as.raw(1:16), icon)
+  expect_no_warning(validate_icon(icon, "win"))
+
+  w <- expect_warning(
+    validate_icon(icon, c("win", "mac", "linux")),
+    class = "shinyelectron_icon_unsupported"
+  )
+  # cli wraps the message to the console width.
+  msg <- gsub("[[:space:]]+", " ", cli::ansi_strip(conditionMessage(w)))
+  expect_match(msg, "\"mac\" and \"linux\"", fixed = TRUE)
+  expect_no_match(msg, "\"win\"", fixed = TRUE)
+  expect_match(msg, "default Electron icon", fixed = TRUE)
+})
+
+test_that("validate_icon warns about a format no platform can use", {
+  icon <- withr::local_tempfile(fileext = ".svg")
+  writeBin(as.raw(1:16), icon)
+  expect_warning(validate_icon(icon, "linux"),
+                 class = "shinyelectron_icon_unsupported")
+})
+
+test_that("validate_icon warns about the platforms an image is too small for", {
+  every <- c("win", "mac", "linux")
+  expect_no_warning(validate_icon(local_png_icon(1024), every))
+  expect_no_warning(validate_icon(local_png_icon(300), c("win", "linux")))
+
+  w <- expect_warning(
+    validate_icon(local_png_icon(300), every),
+    class = "shinyelectron_icon_too_small"
+  )
+  expect_s3_class(w, "shinyelectron_icon_unsupported")
+  # cli wraps the message to the console width.
+  msg <- gsub("[[:space:]]+", " ", cli::ansi_strip(conditionMessage(w)))
+  expect_match(msg, "too small for \"mac\".", fixed = TRUE)
+  expect_match(msg, "at least 512x512 pixels for macOS.", fixed = TRUE)
+  expect_match(msg, "The \"mac\" build will show the default Electron icon.",
+               fixed = TRUE)
+
+  # Windows needs an image of 256x256 or more in an .icns or .ico file.
+  expect_no_warning(validate_icon(local_icns_icon("ic10"), every))
+  w <- expect_warning(
+    validate_icon(local_icns_icon("ic07"), every),
+    class = "shinyelectron_icon_too_small"
+  )
+  msg <- gsub("[[:space:]]+", " ", cli::ansi_strip(conditionMessage(w)))
+  expect_match(msg, "too small for \"win\".", fixed = TRUE)
+  expect_match(msg, "at least 256x256 pixels for Windows.", fixed = TRUE)
+  expect_warning(validate_icon(local_ico_icon(48), "win"),
+                 class = "shinyelectron_icon_too_small")
+})
+
+test_that("validate_icon leaves out values that are not platforms", {
+  # app_check() passes on a platform argument that it reports as invalid.
+  expect_no_warning(validate_icon(local_png_icon(1024), c("win", "macos")))
+})

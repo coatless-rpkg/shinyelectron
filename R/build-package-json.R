@@ -10,11 +10,14 @@
 #'   electron-builder productName. `NULL` uses the slug.
 #' @param backend Character string. The backend module name without .js (e.g., "shinylive", "native-r").
 #' @param config List. The effective configuration.
-#' @param has_icon Logical. Whether an icon is provided.
+#' @param icon Character string or NULL. Path to the app icon, which
+#'   [copy_brand_assets()] copies to [icon_asset_path()]. Each platform in
+#'   [icon_platforms()] gets that copy as its icon; the others, and every
+#'   platform when `NULL`, use the default Electron icon.
 #' @return Character string. The JSON content for package.json.
 #' @keywords internal
 generate_package_json <- function(app_slug, app_version, backend, config,
-                                  has_icon = FALSE, sign = FALSE,
+                                  icon = NULL, sign = FALSE,
                                   is_multi_app = FALSE, app_name = NULL) {
   metadata <- app_metadata(config)
   # electron-builder writes the product name, the copyright, and the author's
@@ -143,10 +146,15 @@ generate_package_json <- function(app_slug, app_version, backend, config,
     desktop = list(entry = list(StartupWMClass = app_slug))
   )
 
-  if (has_icon) {
-    win_config$icon <- "assets/icon.ico"
-    mac_config$icon <- "assets/icon.icns"
-    linux_config$icon <- "assets/icon.png"
+  # Name the copy of the icon that the build writes. A platform that cannot
+  # use its format gets no icon, so electron-builder uses the default one
+  # there instead of failing on the file.
+  if (!is.null(icon)) {
+    icon_path <- icon_asset_path(icon)
+    platforms <- icon_platforms(icon)
+    if ("win" %in% platforms) win_config$icon <- icon_path
+    if ("mac" %in% platforms) mac_config$icon <- icon_path
+    if ("linux" %in% platforms) linux_config$icon <- icon_path
   }
 
   # Code signing configuration
@@ -270,4 +278,148 @@ installer_license_path <- function(license_file) {
     ext <- "html"
   }
   paste0("build/installer-license.", ext)
+}
+
+#' Project path of the app icon
+#'
+#' [copy_brand_assets()] copies the app icon into the generated project
+#' under this name, and package.json and `main.js` refer to the copy. The
+#' extension is kept, lowercased: up to version 26.14, electron-builder
+#' recognizes the format of an icon file only by a lower-case extension, and
+#' stops the build when asked to make a Linux icon set from a file named,
+#' say, `icon.PNG`.
+#'
+#' @param icon Character. Path to the app icon.
+#' @return Character. The icon path relative to the Electron project, such
+#'   as `"assets/icon.png"`.
+#' @keywords internal
+icon_asset_path <- function(icon) {
+  paste0("assets/icon.", tolower(tools::file_ext(icon)))
+}
+
+#' Platforms whose icon can come from the app icon
+#'
+#' A platform can use the app icon when electron-builder can make its icon
+#' from the file's format and the image is large enough (see
+#' [icon_min_size()]). When [icon_size()] cannot read the size, the format
+#' alone decides.
+#'
+#' @param icon Character. Path to the app icon.
+#' @return Character vector of the platforms (`"win"`, `"mac"`, `"linux"`)
+#'   that can use `icon`, empty for another format.
+#' @keywords internal
+icon_platforms <- function(icon) {
+  min_size <- icon_min_size(icon)
+  size <- icon_size(icon)
+  as.character(names(min_size)[is.na(size) | size >= min_size])
+}
+
+#' Smallest icon image each platform takes
+#'
+#' electron-builder makes each platform's icon from the file it is given.
+#' It converts a PNG to a macOS `.icns` file and a Windows `.ico` file, and
+#' uses it as it is for Linux. It converts an `.icns` file to a Windows icon
+#' and a Linux icon set, and gives it to macOS as it is. It cannot make a
+#' macOS icon or a Linux icon set from an `.ico` file, and stops the build
+#' when asked to, so an `.ico` file serves Windows only.
+#'
+#' It also stops the build when the image is too small. A PNG must be at
+#' least 512x512 pixels for macOS and 256x256 for Windows, and an `.icns` or
+#' `.ico` file must hold an image of 256x256 pixels or more for Windows (a
+#' PNG image, in an `.icns` file). Up to version 26.14, electron-builder
+#' needs both sides of a PNG to be that large; later versions look at the
+#' longer side. Linux is not checked. Since version 26.15, which
+#' `npm install` picks for the generated project, electron-builder uses a
+#' PNG of any size as it is for Linux; whether it makes a Linux icon set
+#' from an `.icns` file without such a PNG image depends on the version. The
+#' format is read from the extension, ignoring case.
+#'
+#' @param icon Character. Path to the app icon.
+#' @return Named numeric vector. For each platform that can use the format
+#'   of `icon`, the smallest size, in pixels, that it takes, to compare with
+#'   [icon_size()]. Empty for another format.
+#' @keywords internal
+icon_min_size <- function(icon) {
+  switch(tolower(tools::file_ext(icon)),
+    png = c(win = 256, mac = 512, linux = 0),
+    icns = c(win = 256, mac = 0, linux = 0),
+    ico = c(win = 256),
+    numeric(0)
+  )
+}
+
+#' Size of an icon file's image
+#'
+#' Reads the header of the file, which electron-builder checks against
+#' [icon_min_size()] before it converts the icon: the width and height of a
+#' PNG, the images listed in an `.ico` file, and, in an `.icns` file, the
+#' PNG images of 256x256 pixels or more, which are the ones electron-builder
+#' makes a Windows icon from.
+#'
+#' @param icon Character. Path to the app icon.
+#' @return Numeric. The side, in pixels, of the largest square image the
+#'   file gives: the shorter side of a PNG, or the largest image of an
+#'   `.ico` file or of those in an `.icns` file (0 when there are none).
+#'   `NA` when the file cannot be read as the format its extension names.
+#' @keywords internal
+icon_size <- function(icon) {
+  bytes <- tryCatch(readBin(icon, "raw", n = file.size(icon)),
+                    error = function(e) raw(0),
+                    warning = function(w) raw(0))
+  n <- length(bytes)
+  png_signature <- as.raw(c(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a))
+  # A big-endian unsigned integer
+  number <- function(b) sum(as.numeric(b) * 256^(rev(seq_along(b)) - 1))
+
+  switch(tolower(tools::file_ext(icon)),
+    png = {
+      if (n < 24 || !identical(bytes[1:8], png_signature) ||
+          !identical(bytes[13:16], charToRaw("IHDR"))) {
+        return(NA_real_)
+      }
+      min(number(bytes[17:20]), number(bytes[21:24]))
+    },
+    ico = {
+      if (n < 6 || !identical(bytes[1:4], as.raw(c(0, 0, 1, 0)))) {
+        return(NA_real_)
+      }
+      # The header ends with the number of images, little-endian. A 16-byte
+      # entry per image follows. It starts with the width and the height,
+      # where 0 stands for 256.
+      count <- as.numeric(bytes[5]) + 256 * as.numeric(bytes[6])
+      count <- min(count, (n - 6) %/% 16)
+      at <- 6 + 16 * (seq_len(count) - 1)
+      width <- as.numeric(bytes[at + 1])
+      height <- as.numeric(bytes[at + 2])
+      width[width == 0] <- 256
+      height[height == 0] <- 256
+      max(pmin(width, height), 0)
+    },
+    icns = {
+      if (n < 8 || !identical(bytes[1:4], charToRaw("icns"))) {
+        return(NA_real_)
+      }
+      # After the 8-byte header, each entry has a 4-byte type and a 4-byte
+      # length that counts those 8 bytes too, then the image data.
+      large <- c(ic08 = 256, ic13 = 256, ic09 = 512, ic14 = 512, ic10 = 1024)
+      size <- 0
+      at <- 9
+      while (at + 7 <= n) {
+        type <- bytes[at:(at + 3)]
+        type <- if (all(type != 0)) rawToChar(type) else ""
+        entry_length <- number(bytes[(at + 4):(at + 7)])
+        if (entry_length < 8) {
+          return(NA_real_)
+        }
+        is_png <- entry_length >= 16 &&
+          identical(bytes[at + 8:15], png_signature)
+        if (type %in% names(large) && is_png) {
+          size <- max(size, large[[type]])
+        }
+        at <- at + entry_length
+      }
+      size
+    },
+    NA_real_
+  )
 }

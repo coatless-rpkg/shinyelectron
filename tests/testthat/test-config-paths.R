@@ -213,6 +213,67 @@ test_that("export() picks the icons entry for the target platform", {
   expect_true(fs::file_exists(fs::path(result$electron_app, "assets", "icon.png")))
 })
 
+test_that("check_unused_icons() names the icons entries one export leaves out", {
+  config <- list(icons = list(win = "a.ico", mac = "b.icns", linux = "c.png"))
+  expect_no_warning(check_unused_icons(config, "mac"))
+  # The same file for every target, or a top-level icon, which wins
+  expect_no_warning(check_unused_icons(
+    list(icons = list(win = "a.png", mac = "a.png")), c("win", "mac")
+  ))
+  expect_no_warning(check_unused_icons(c(config, icon = "d.png"),
+                                       c("win", "mac", "linux")))
+
+  w <- expect_warning(
+    unused <- check_unused_icons(config, c("win", "mac", "linux")),
+    class = "shinyelectron_icons_unused"
+  )
+  expect_equal(unused, c("icons.mac", "icons.linux"))
+  msg <- gsub("[[:space:]]+", " ", cli::ansi_strip(conditionMessage(w)))
+  expect_match(msg, "icons.win, the entry for the first target platform",
+               fixed = TRUE)
+  expect_match(msg, "icons.mac and icons.linux are not used.", fixed = TRUE)
+  expect_match(msg, "platform = \"mac\"", fixed = TRUE)
+
+  # Without an entry for the first target platform, the build has no icon.
+  w <- expect_warning(
+    unused <- check_unused_icons(list(icons = list(mac = "b.icns")),
+                                 c("win", "mac")),
+    class = "shinyelectron_icons_unused"
+  )
+  expect_equal(unused, "icons.mac")
+  expect_match(gsub("[[:space:]]+", " ", cli::ansi_strip(conditionMessage(w))),
+               "\"win\". That entry is not set, so the build has no app icon.",
+               fixed = TRUE)
+})
+
+test_that("export() warns about the icons entries it leaves out", {
+  appdir <- local_config_app(list(
+    icons = list(linux = "icons/icon.png", win = "icons/icon.ico")
+  ))
+  write_png(fs::path(appdir, "icons", "icon.png"), "linux")
+  write_png(fs::path(appdir, "icons", "icon.ico"), "win")
+  withr::local_dir(withr::local_tempdir())
+  local_fake_build()
+
+  expect_warning(
+    result <- export(appdir, fs::path(withr::local_tempdir(), "out"),
+                     platform = c("linux", "win"), verbose = FALSE),
+    class = "shinyelectron_icons_unused"
+  )
+  # Windows gets the icons.linux PNG too.
+  pkg <- jsonlite::fromJSON(fs::path(result$electron_app, "package.json"),
+                            simplifyVector = FALSE)
+  expect_equal(pkg$build$win$icon, "assets/icon.png")
+  expect_equal(pkg$build$linux$icon, "assets/icon.png")
+
+  # The icon argument overrides icons, so nothing is left out by mistake.
+  expect_no_warning(
+    export(appdir, fs::path(withr::local_tempdir(), "out"),
+           icon = fs::path(appdir, "icons", "icon.png"),
+           platform = c("linux", "win"), verbose = FALSE)
+  )
+})
+
 test_that("export() stops when the configured icon does not exist", {
   appdir <- local_config_app(list(icons = list(linux = "icons/missing.png")))
   wd <- withr::local_tempdir()
@@ -298,6 +359,29 @@ test_that("export() checks the tray's app icon for the target platform", {
     "app icon",
     class = "shinyelectron_tray_icon_unsupported"
   )
+})
+
+test_that("export() gives no icon to a target platform it is too small for", {
+  # A macOS target builds only on a Mac.
+  local_mocked_bindings(detect_current_platform = function() "mac")
+  appdir <- local_config_app(list(icon = "branding/icon.png"))
+  fs::dir_create(fs::path(appdir, "branding"))
+  fs::file_copy(local_png_icon(300), fs::path(appdir, "branding", "icon.png"))
+  withr::local_dir(withr::local_tempdir())
+  local_fake_build()
+
+  # A 300x300 PNG is large enough for Linux but not for macOS.
+  w <- expect_warning(
+    result <- export(appdir, fs::path(withr::local_tempdir(), "out"),
+                     platform = c("mac", "linux"), verbose = FALSE),
+    class = "shinyelectron_icon_too_small"
+  )
+  expect_match(gsub("[[:space:]]+", " ", cli::ansi_strip(conditionMessage(w))),
+               "too small for \"mac\".", fixed = TRUE)
+  pkg <- jsonlite::fromJSON(fs::path(result$electron_app, "package.json"),
+                            simplifyVector = FALSE)
+  expect_null(pkg$build$mac$icon)
+  expect_equal(pkg$build$linux$icon, "assets/icon.png")
 })
 
 test_that("export() warns about a missing certificate only when signing Windows builds", {
@@ -438,6 +522,42 @@ test_that("app_check() fails when the configured icon does not exist", {
   result <- app_check(appdir, platform = "linux", verbose = FALSE)
   expect_false(result$pass)
   expect_true(any(grepl("icons.linux file not found", result$errors, fixed = TRUE)))
+})
+
+test_that("app_check() warns about the platforms the icon is too small for", {
+  appdir <- local_config_app(list(icon = "branding/icon.png"))
+  fs::dir_create(fs::path(appdir, "branding"))
+  fs::file_copy(local_png_icon(128), fs::path(appdir, "branding", "icon.png"))
+  withr::local_dir(withr::local_tempdir())
+
+  # Windows needs 256x256 pixels; Linux uses the PNG as it is.
+  result <- app_check(appdir, platform = c("win", "linux"), verbose = FALSE)
+  expect_true(result$pass)
+  too_small <- grepl("too small for", result$warnings, fixed = TRUE)
+  expect_equal(sum(too_small), 1)
+  msg <- gsub("[[:space:]]+", " ", cli::ansi_strip(result$warnings[too_small]))
+  expect_match(msg, "too small for \"win\".", fixed = TRUE)
+  expect_match(msg, basename(appdir), fixed = TRUE)
+
+  expect_false(any(grepl("too small for",
+                         app_check(appdir, platform = "linux", verbose = FALSE)$warnings,
+                         fixed = TRUE)))
+})
+
+test_that("app_check() warns about the icons entries export() leaves out", {
+  appdir <- local_config_app(list(
+    icons = list(linux = "icons/icon.png", win = "icons/icon.ico")
+  ))
+  write_png(fs::path(appdir, "icons", "icon.png"))
+  write_png(fs::path(appdir, "icons", "icon.ico"))
+  withr::local_dir(withr::local_tempdir())
+
+  result <- app_check(appdir, platform = c("linux", "win"), verbose = FALSE)
+  expect_true(result$pass)
+  expect_true(any(grepl("icons.win is not used", result$warnings, fixed = TRUE)))
+  expect_false(any(grepl("not used",
+                         app_check(appdir, platform = "win", verbose = FALSE)$warnings,
+                         fixed = TRUE)))
 })
 
 test_that("app_check() reports a missing certificate when signing Windows builds", {

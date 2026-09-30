@@ -68,13 +68,17 @@ generate_template_variables <- function(app_name, app_slug, app_type,
   # `*_js` entry below.
   app_version <- config$app$version %||% SHINYELECTRON_DEFAULTS$app_version
   tray_tooltip <- config$tray$tooltip %||% app_name
-  # copy_brand_assets() copies the app icon to assets/icon.<ext>, keeping its
-  # extension (icon.ico, icon.icns or icon.png).
-  icon_file <- if (!is.null(icon)) paste0("icon.", tools::file_ext(icon))
+  # copy_brand_assets() copies the app icon to icon_asset_path(), which keeps
+  # its extension in lower case (icon.ico, icon.icns or icon.png).
+  icon_file <- if (!is.null(icon)) basename(icon_asset_path(icon))
   # The tray shows tray.icon, which copy_brand_assets() copies to
-  # assets/<basename>, or else the app icon. main.js joins the name under
-  # assets/, so the template carries only the file name.
-  tray_icon <- if (!is.null(config$tray$icon)) basename(config$tray$icon) else icon_file
+  # assets/<tray_icon_file()>, or else the app icon. main.js joins the name
+  # under assets/, so the template carries only the file name.
+  tray_icon <- if (!is.null(config$tray$icon)) {
+    tray_icon_file(config$tray$icon, icon)
+  } else {
+    icon_file
+  }
   help_url <- config$menu$help_url %||% ""
   log_level <- config$app$log_level %||% SHINYELECTRON_DEFAULTS$logging$log_level
   log_dir <- config$app$log_dir %||% ""

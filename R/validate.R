@@ -261,9 +261,10 @@ validate_signing_config <- function(config, platform = NULL,
 
 #' Validate icon file for target platform
 #'
-#' Checks that the icon file exists and has the correct format for the
-#' target platform. Issues warnings (not errors) for format mismatches
-#' so the build can continue.
+#' Checks that the icon file exists and that each target platform can use
+#' it, for its format and for the size of its image (see
+#' [icon_platforms()]). A platform that cannot gets the default Electron
+#' icon, so this warns rather than errors and the build continues.
 #'
 #' @param icon Character path to icon file.
 #' @param platform Character vector of target platforms.
@@ -278,23 +279,29 @@ validate_icon <- function(icon, platform = NULL) {
     ))
   }
 
-  ext <- tolower(tools::file_ext(icon))
   platform <- platform %||% detect_current_platform()
-
-  for (p in platform) {
-    expected <- switch(p,
-      "mac" = "icns",
-      "win" = "ico",
-      "linux" = "png",
-      NULL
-    )
-    if (!is.null(expected) && ext != expected) {
-      cli::cli_warn(c(
-        "Icon format mismatch for {.val {p}} platform",
-        "x" = "Got {.file .{ext}} but {.val {p}} expects {.file .{expected}}",
-        "i" = "electron-builder may fail or use a default icon"
-      ))
-    }
+  # app_check() passes on a platform argument that it reports as invalid.
+  platform <- intersect(platform, SHINYELECTRON_DEFAULTS$valid_platforms)
+  # generate_package_json() gives these platforms no icon.
+  min_size <- icon_min_size(icon)
+  unsupported <- setdiff(platform, names(min_size))
+  if (length(unsupported) > 0) {
+    cli::cli_warn(c(
+      "The icon {.path {icon}} cannot be used for {.val {unsupported}}.",
+      "i" = "electron-builder makes the icon for every platform from a PNG (1024x1024 or larger) or an {.file .icns} file, and uses an {.file .ico} file only for Windows.",
+      "i" = "The {.val {unsupported}} build{?s} will show the default Electron icon."
+    ), class = "shinyelectron_icon_unsupported")
+  }
+  too_small <- setdiff(intersect(platform, names(min_size)), icon_platforms(icon))
+  if (length(too_small) > 0) {
+    os <- c(win = "Windows", mac = "macOS", linux = "Linux")[too_small]
+    needs <- paste0(min_size[too_small], "x", min_size[too_small],
+                    " pixels for ", os)
+    cli::cli_warn(c(
+      "The icon {.path {icon}} is too small for {.val {too_small}}.",
+      "i" = "electron-builder needs an image of at least {needs}.",
+      "i" = "The {.val {too_small}} build{?s} will show the default Electron icon."
+    ), class = c("shinyelectron_icon_too_small", "shinyelectron_icon_unsupported"))
   }
 
   # Check reasonable file size (icons shouldn't be > 10MB)

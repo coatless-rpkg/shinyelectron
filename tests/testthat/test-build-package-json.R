@@ -60,19 +60,187 @@ test_that("generate_package_json includes all build scripts", {
   expect_true("build-mac-arm64" %in% names(parsed$scripts))
 })
 
-test_that("generate_package_json handles icon config", {
-  result <- generate_package_json(
-    app_slug = "my-app",
-    app_version = "1.0.0",
-    backend = "shinylive",
-    config = list(),
-    has_icon = TRUE
+# The icon that each platform's build config names, NULL when unset.
+package_json_icons <- function(icon) {
+  parsed <- jsonlite::fromJSON(
+    generate_package_json("my-app", "1.0.0", "shinylive", list(), icon = icon),
+    simplifyVector = FALSE
   )
-  parsed <- jsonlite::fromJSON(result, simplifyVector = FALSE)
+  lapply(parsed$build[c("win", "mac", "linux")], function(p) p$icon)
+}
 
-  expect_equal(parsed$build$win$icon, "assets/icon.ico")
-  expect_equal(parsed$build$mac$icon, "assets/icon.icns")
-  expect_equal(parsed$build$linux$icon, "assets/icon.png")
+test_that("generate_package_json points every platform at a PNG icon", {
+  expect_equal(
+    package_json_icons("branding/logo.png"),
+    list(win = "assets/icon.png", mac = "assets/icon.png",
+         linux = "assets/icon.png")
+  )
+})
+
+test_that("generate_package_json points every platform at an .icns icon", {
+  expect_equal(
+    package_json_icons("branding/logo.icns"),
+    list(win = "assets/icon.icns", mac = "assets/icon.icns",
+         linux = "assets/icon.icns")
+  )
+})
+
+test_that("generate_package_json gives an .ico icon to Windows only", {
+  # electron-builder stops the build when asked to make a macOS icon or a
+  # Linux icon set from an .ico file; with no icon it uses its default.
+  expect_equal(
+    package_json_icons("branding/logo.ico"),
+    list(win = "assets/icon.ico", mac = NULL, linux = NULL)
+  )
+})
+
+test_that("generate_package_json names no icon without a usable one", {
+  none <- list(win = NULL, mac = NULL, linux = NULL)
+  expect_equal(package_json_icons(NULL), none)
+  expect_equal(package_json_icons("branding/logo.svg"), none)
+})
+
+test_that("icon_asset_path lowercases the extension", {
+  # electron-builder up to 26.14 reads the icon format from a lower-case
+  # extension only.
+  expect_equal(icon_asset_path("branding/logo.png"), "assets/icon.png")
+  expect_equal(icon_asset_path("C:/Art/LOGO.ICNS"), "assets/icon.icns")
+  expect_equal(
+    package_json_icons("Logo.ICO"),
+    list(win = "assets/icon.ico", mac = NULL, linux = NULL)
+  )
+})
+
+test_that("icon_platforms lists the platforms that can use each format", {
+  expect_equal(icon_platforms("logo.png"), c("win", "mac", "linux"))
+  expect_equal(icon_platforms("logo.PNG"), c("win", "mac", "linux"))
+  expect_equal(icon_platforms("logo.icns"), c("win", "mac", "linux"))
+  expect_equal(icon_platforms("logo.ico"), "win")
+  expect_equal(icon_platforms("logo.svg"), character(0))
+  expect_equal(icon_platforms("logo"), character(0))
+})
+
+test_that("icon_size reads the size of the image from the file header", {
+  expect_equal(icon_size(local_png_icon(1024)), 1024)
+  expect_equal(icon_size(local_png_icon(512, fileext = ".PNG")), 512)
+  # The shorter side of a PNG
+  expect_equal(icon_size(local_png_icon(1024, 300)), 300)
+  # The largest image of an .ico file
+  expect_equal(icon_size(local_ico_icon(c(16, 256, 48))), 256)
+  expect_equal(icon_size(local_ico_icon(c(16, 48))), 48)
+  # The largest PNG image of 256x256 or more in an .icns file, 0 without one
+  expect_equal(icon_size(local_icns_icon(c("ic07", "ic13", "ic10"))), 1024)
+  expect_equal(icon_size(local_icns_icon(c("info", "ic08"))), 256)
+  expect_equal(icon_size(local_icns_icon(c("is32", "il32", "ic07"))), 0)
+  expect_equal(icon_size(local_icns_icon("ic10", png = FALSE)), 0)
+})
+
+test_that("icon_size is NA when it cannot read the file as its format", {
+  expect_identical(icon_size(fs::path(withr::local_tempdir(), "icon.png")),
+                   NA_real_)
+  expect_identical(icon_size("logo.svg"), NA_real_)
+  for (ext in c(".png", ".ico", ".icns")) {
+    fake <- withr::local_tempfile(fileext = ext)
+    writeBin(as.raw(1:16), fake)
+    expect_identical(icon_size(fake), NA_real_)
+  }
+  # An .icns entry whose length is shorter than its own header
+  broken <- withr::local_tempfile(fileext = ".icns")
+  writeBin(c(charToRaw("icns"), icon_uint32(16), charToRaw("ic10"),
+             icon_uint32(0)), broken)
+  expect_identical(icon_size(broken), NA_real_)
+})
+
+test_that("icon_platforms leaves out the platforms the image is too small for", {
+  every <- c("win", "mac", "linux")
+  # Both sides of a PNG must be 512 pixels or more for macOS and 256 or more
+  # for Windows. Linux uses the PNG as it is.
+  expect_equal(icon_platforms(local_png_icon(1024)), every)
+  expect_equal(icon_platforms(local_png_icon(512)), every)
+  expect_equal(icon_platforms(local_png_icon(511)), c("win", "linux"))
+  expect_equal(icon_platforms(local_png_icon(256)), c("win", "linux"))
+  expect_equal(icon_platforms(local_png_icon(255)), "linux")
+  expect_equal(icon_platforms(local_png_icon(1024, 300)), c("win", "linux"))
+
+  # Windows needs an image of 256x256 or more in an .icns or .ico file, a
+  # PNG one in an .icns file. macOS takes an .icns file as it is, and Linux
+  # is not checked.
+  expect_equal(icon_platforms(local_icns_icon("ic08")), every)
+  expect_equal(icon_platforms(local_icns_icon(c("is32", "ic07"))),
+               c("mac", "linux"))
+  expect_equal(icon_platforms(local_icns_icon("ic10", png = FALSE)),
+               c("mac", "linux"))
+  expect_equal(icon_platforms(local_ico_icon(c(256, 48))), "win")
+  expect_equal(icon_platforms(local_ico_icon(48)), character(0))
+})
+
+test_that("generate_package_json gives no icon to a platform it is too small for", {
+  # electron-builder stops the build on an image that is too small; with no
+  # icon it uses its default.
+  expect_equal(
+    package_json_icons(local_png_icon(300)),
+    list(win = "assets/icon.png", mac = NULL, linux = "assets/icon.png")
+  )
+  expect_equal(
+    package_json_icons(local_icns_icon("ic07")),
+    list(win = NULL, mac = "assets/icon.icns", linux = "assets/icon.icns")
+  )
+  expect_equal(
+    package_json_icons(local_ico_icon(48)),
+    list(win = NULL, mac = NULL, linux = NULL)
+  )
+})
+
+test_that("package.json and main.js name the icon file the build copies", {
+  # The platforms whose build config should name the icon.
+  cases <- list(
+    logo.png = c("win", "mac", "linux"),
+    logo.icns = c("win", "mac", "linux"),
+    logo.ico = "win",
+    Logo.PNG = c("win", "mac", "linux")
+  )
+  for (name in names(cases)) {
+    icon <- fs::path(withr::local_tempdir(), name)
+    writeBin(as.raw(1:16), icon)
+    out <- withr::local_tempdir()
+    setup_electron_project(out, "Icon App", "r-shiny", verbose = FALSE)
+    # Without tray.icon the tray loads the app icon. Electron cannot read an
+    # .icns file there, which process_templates() warns about.
+    suppressWarnings(
+      process_templates(out, "Icon App", "r-shiny", runtime_strategy = "system",
+                        icon = icon,
+                        config = list(app = list(version = "1.0.0"),
+                                      tray = list(enabled = TRUE)),
+                        platform = "win", verbose = FALSE),
+      classes = "shinyelectron_tray_icon_unsupported"
+    )
+
+    # Compare with the listing, which keeps the case of the file name even
+    # on a case-insensitive file system.
+    copied <- list.files(fs::path(out, "assets"))
+
+    pkg <- jsonlite::fromJSON(fs::path(out, "package.json"),
+                              simplifyVector = FALSE)
+    icons <- unlist(lapply(pkg$build[c("win", "mac", "linux")],
+                           function(p) p$icon))
+    expect_setequal(names(icons), cases[[name]])
+    expect_contains(paste0("assets/", copied), unname(icons))
+
+    # The files that main.js loads from assets/ for the BrowserWindow icon
+    # and for the tray
+    main <- readLines(fs::path(out, "main.js"))
+    loaded <- function(call) {
+      pattern <- paste0(call, "\\(__dirname, 'assets', '([^']+)'\\)")
+      matches <- regmatches(main, regexec(pattern, main))
+      vapply(Filter(length, matches), `[`, character(1), 2)
+    }
+    window_icon <- loaded("icon: path\\.join")
+    expect_length(window_icon, 1)
+    expect_contains(copied, window_icon)
+    tray_icon <- loaded("createFromPath\\(path\\.join")
+    expect_length(tray_icon, 1)
+    expect_contains(copied, tray_icon)
+  }
 })
 
 test_that("generate_package_json includes lifecycle.html and preload.js in files", {

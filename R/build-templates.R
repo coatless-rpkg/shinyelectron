@@ -63,7 +63,7 @@ process_templates <- function(output_dir, app_name, app_type,
       app_version = config$app$version %||% SHINYELECTRON_DEFAULTS$app_version,
       backend = gsub("\\.js$", "", backend_module),
       config = config,
-      has_icon = !is.null(icon),
+      icon = icon,
       sign = sign,
       is_multi_app = is_multi_app
     ),
@@ -280,9 +280,10 @@ bake_dockerfile_dependencies <- function(output_dir, dockerfile_dest, config = N
 
 #' Copy branding assets into the build
 #'
-#' Copies the app icon, the splash image, the tray icon and, for a multi-app
-#' suite, each app's launcher icon (to [app_icon_asset()]). The paths are
-#' used as given: [export()] has resolved them against the app directory, and
+#' Copies the app icon (to [icon_asset_path()]), the splash image, the tray
+#' icon (to [tray_icon_file()]) and, for a multi-app suite, each app's
+#' launcher icon (to [app_icon_asset()]). The paths are used as given:
+#' [export()] has resolved them against the app directory, and
 #' [process_templates()] has dropped optional files that do not exist.
 #'
 #' @param output_dir Character. The Electron project directory.
@@ -292,9 +293,8 @@ bake_dockerfile_dependencies <- function(output_dir, dockerfile_dest, config = N
 #' @keywords internal
 copy_brand_assets <- function(output_dir, icon, config, apps = NULL) {
   if (!is.null(icon)) {
-    icon_dest <- fs::path(output_dir, "assets",
-                          paste0("icon.", tools::file_ext(icon)))
-    fs::file_copy(icon, icon_dest, overwrite = TRUE)
+    fs::file_copy(icon, fs::path(output_dir, icon_asset_path(icon)),
+                  overwrite = TRUE)
   }
 
   splash_image <- config$splash$image
@@ -305,7 +305,8 @@ copy_brand_assets <- function(output_dir, icon, config, apps = NULL) {
 
   tray_icon <- config$tray$icon
   if (!is.null(tray_icon)) {
-    fs::file_copy(tray_icon, fs::path(output_dir, "assets", basename(tray_icon)),
+    fs::file_copy(tray_icon,
+                  fs::path(output_dir, "assets", tray_icon_file(tray_icon, icon)),
                   overwrite = TRUE)
   }
 
@@ -317,6 +318,27 @@ copy_brand_assets <- function(output_dir, icon, config, apps = NULL) {
       fs::file_copy(app[["icon"]], dest, overwrite = TRUE)
     }
   }
+}
+
+#' File name of the tray icon in the build
+#'
+#' [copy_brand_assets()] copies `tray.icon` into `assets/` under this name,
+#' and `main.js` loads it from there. The file keeps its own name unless
+#' that is the name of the app icon's copy (see [icon_asset_path()]),
+#' ignoring case. Then it gets a `tray-` prefix, so that neither copy
+#' replaces the other: every platform's build takes its icon from the app
+#' icon's copy.
+#'
+#' @param tray_icon Character. Path to the tray icon.
+#' @param icon Character path to the app icon, or `NULL`.
+#' @return Character. The file name of the copy in `assets/`.
+#' @keywords internal
+tray_icon_file <- function(tray_icon, icon = NULL) {
+  name <- basename(tray_icon)
+  if (!is.null(icon) && tolower(name) == basename(icon_asset_path(icon))) {
+    name <- paste0("tray-", name)
+  }
+  name
 }
 
 #' Warn when the tray cannot read its icon on a target platform

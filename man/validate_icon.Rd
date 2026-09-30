@@ -12,8 +12,9 @@ validate_icon(icon, platform = NULL)
 \item{platform}{Character vector of target platforms.}
 }
 \description{
-Checks that the icon file exists and has the correct format for the
-target platform. Issues warnings (not errors) for format mismatches
-so the build can continue.
+Checks that the icon file exists and that each target platform can use
+it, for its format and for the size of its image (see
+\code{\link[=icon_platforms]{icon_platforms()}}). A platform that cannot gets the default Electron
+icon, so this warns rather than errors and the build continues.
 }
 \keyword{internal}

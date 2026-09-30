@@ -906,10 +906,20 @@ test_that("the tray icon is tray.icon, or else the app icon", {
     tray_vars(list(enabled = TRUE, icon = "/b/Bob's tray.png"), icon = "/b/icon.icns"),
     list(has_tray_icon = TRUE, tray_icon = "Bob's tray.png", tray_icon_js = "Bob\\'s tray.png")
   )
-  # copy_brand_assets() copies the app icon to assets/icon.<ext>.
+  # copy_brand_assets() copies the app icon to assets/icon.<ext>, with the
+  # extension in lower case.
   expect_equal(
     tray_vars(list(enabled = TRUE), icon = "/b/app.icns"),
     list(has_tray_icon = TRUE, tray_icon = "icon.icns", tray_icon_js = "icon.icns")
+  )
+  expect_equal(
+    tray_vars(list(enabled = TRUE), icon = "/b/Logo.PNG"),
+    list(has_tray_icon = TRUE, tray_icon = "icon.png", tray_icon_js = "icon.png")
+  )
+  # A tray.icon named like that copy is copied under another name.
+  expect_equal(
+    tray_vars(list(enabled = TRUE, icon = "/t/Icon.png"), icon = "/b/Logo.PNG"),
+    list(has_tray_icon = TRUE, tray_icon = "tray-Icon.png", tray_icon_js = "tray-Icon.png")
   )
   expect_equal(
     tray_vars(list(enabled = TRUE)),
@@ -927,6 +937,32 @@ test_that("main.js loads the app icon for the tray when tray.icon is unset", {
   # Without any icon, main.js loads no file.
   none <- tray_code(readLines(render_main_js(list(tray = list(enabled = TRUE)))))
   expect_false(any(grepl("createFromPath", none, fixed = TRUE)))
+})
+
+test_that("a tray icon named like the app icon's copy does not replace it", {
+  # Both Logo.PNG and a tray icon called icon.png would be copied to
+  # assets/icon.png, which every platform's build takes its icon from.
+  icon <- fs::path(withr::local_tempdir(), "Logo.PNG")
+  writeBin(charToRaw("app icon"), icon)
+  tray <- fs::path(withr::local_tempdir(), "icon.png")
+  writeBin(charToRaw("tray icon"), tray)
+  out <- withr::local_tempdir()
+  fs::dir_create(fs::path(out, "assets"))
+  process_templates(
+    out, "Test App", "r-shiny", runtime_strategy = "system", icon = icon,
+    config = list(tray = list(enabled = TRUE, icon = tray)),
+    platform = "linux", verbose = FALSE
+  )
+
+  assets <- fs::path(out, "assets")
+  expect_setequal(list.files(assets), c("icon.png", "tray-icon.png"))
+  expect_identical(readBin(fs::path(assets, "icon.png"), "raw", 100),
+                   charToRaw("app icon"))
+  expect_identical(readBin(fs::path(assets, "tray-icon.png"), "raw", 100),
+                   charToRaw("tray icon"))
+  tray_js <- tray_code(readLines(fs::path(out, "main.js")))
+  expect_true(any(grepl("path.join(__dirname, 'assets', 'tray-icon.png')",
+                        tray_js, fixed = TRUE)))
 })
 
 test_that("the tray shows a default icon where Electron cannot read its file", {
