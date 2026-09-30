@@ -179,7 +179,7 @@ export(
 
 Not every combination is portable. Two rules to keep in mind:
 
-- **macOS apps build only on macOS.** Apple's signing and `.app` packaging run through native tools. Windows and Linux installers are not reliably cross-compiled from a macOS host; each platform's installer is most reliably produced by building on that platform's own OS.
+- **macOS apps build only on macOS.** Apple's signing and `.app` packaging run through native tools, so `export()` stops when asked for a `mac` target on Windows or Linux. Windows and Linux installers are not reliably cross-compiled from a macOS host; each platform's installer is most reliably produced by building on that platform's own OS.
 - **The `bundled` and `auto-download` strategies need a per-platform build.** Both embed a single platform-specific runtime (or a manifest pointing to one) at export time and abort when more than one platform or architecture is requested. Build each target separately, or use `system`, `container`, or `shinylive` for multi-platform builds from a single host.
 
 In practice, if you want a single workstation to emit installers for every OS, reach for `system`, `container`, or `shinylive`. If you want `bundled` everywhere, hand the job to CI (see the [GitHub Actions](github-actions.html) article).
@@ -215,7 +215,6 @@ app:
 build:
   type: "r-shiny"
   runtime_strategy: "shinylive"
-  platforms: [mac, win]
 ```
 
 `export()` picks it up automatically.
@@ -225,7 +224,15 @@ build:
 export(appdir = "my-app", destdir = "output")
 ```
 
-The `platform` and `arch` arguments override `platforms` and `architectures` in the file, so adding `platform = "win"` to that call builds only the Windows installer.
+Without `platforms` and `architectures` in the file, `export()` builds for the machine it runs on. List them to build several targets in one call. The rules above still apply, so this example needs a Mac:
+
+```yaml
+build:
+  platforms: [mac, win]
+  architectures: [x64, arm64]
+```
+
+Leave out `architectures` and every platform is built for the architecture of the machine you are on. On an Apple Silicon Mac, that means Windows installers for arm64, which most Windows PCs cannot run. The `platform` and `arch` arguments override these lists, each its own, so adding `platform = "win"` to the call builds only the Windows installers, still for both architectures.
 
 See the [Configuration Guide](configuration.html) for every option.
 
