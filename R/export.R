@@ -209,7 +209,8 @@ export <- function(appdir, destdir, app_name = NULL, app_type = NULL,
   validate_runtime_strategy(runtime_strategy)
 
   # Local R packages only go into a bundled R library. Resolve them against
-  # the app directory and check them before anything is copied or downloaded.
+  # the app directory, then check and read them before anything is copied or
+  # downloaded. The config then holds what was read, for the later steps.
   local_packages <- resolve_local_packages(
     config$dependencies$r$local_packages,
     base_dir = appdir,

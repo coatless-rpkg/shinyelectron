@@ -51,6 +51,7 @@ prepare_native_app_files <- function(appdir, destdir, app_type, runtime_strategy
       language = dep_info$language,
       repos = dep_info$repos,
       index_urls = dep_info$index_urls,
+      # The local packages that export() read into the config.
       local_packages = local_r_package_names(config$dependencies$r$local_packages)
     )
     writeLines(manifest, fs::path(app_copy_dir, "dependencies.json"))

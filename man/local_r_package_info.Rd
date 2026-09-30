@@ -16,6 +16,8 @@ holds \code{path}, \code{package}, \code{version}, \code{deps} (the package name
 \code{Depends}, \code{Imports} and \code{LinkingTo}, without \code{R}) and \code{is_dir}.
 }
 \description{
-Read the metadata of local R package sources
+Reads the \code{DESCRIPTION} of each source folder, or the one in a source
+tarball's top-level folder. \code{\link[=resolve_local_packages]{resolve_local_packages()}} calls this, and the
+later steps of an export take its result rather than reading again.
 }
 \keyword{internal}

@@ -2,20 +2,22 @@
 % Please edit documentation in R/build-runtime.R
 \name{local_r_package_deps}
 \alias{local_r_package_deps}
-\title{Resolve the declared dependencies of local R package paths}
+\title{Declared dependencies of local R packages}
 \usage{
-local_r_package_deps(paths)
+local_r_package_deps(packages)
 }
 \arguments{
-\item{paths}{Character vector. Paths to local package directories or archives.}
+\item{packages}{List. Local packages as \code{\link[=resolve_local_packages]{resolve_local_packages()}} or
+\code{\link[=local_r_package_info]{local_r_package_info()}} return them.}
 }
 \value{
 Character vector of dependency package names.
 }
 \description{
-Reads \code{Depends}, \code{Imports} and \code{LinkingTo} from each local package's
-\code{DESCRIPTION} (directories and archives alike) so the repository install step
-can install them before the local package is installed from source. Version
-constraints and \code{R} are stripped, and base/recommended packages are dropped.
+The packages that each local package's \code{Depends}, \code{Imports} and
+\code{LinkingTo} name (directories and archives alike), so the repository
+install step can install them before the local package is installed from
+source. \code{\link[=local_r_package_info]{local_r_package_info()}} has already stripped version constraints
+and \code{R}; base/recommended packages are dropped here.
 }
 \keyword{internal}

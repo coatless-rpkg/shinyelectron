@@ -189,7 +189,9 @@ build_electron_app <- function(app_dir, output_dir, app_name = NULL, app_type = 
         arch = arch[1],
         verbose = verbose,
         prune = prune,
-        local_packages = unlist(config$dependencies$r$local_packages) %||% character(0)
+        # The packages that export() read, or the entries of a config passed
+        # in directly, which embed_r_runtime() reads.
+        local_packages = config$dependencies$r$local_packages %||% character(0)
       )
     }
 

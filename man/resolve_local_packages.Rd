@@ -2,12 +2,13 @@
 % Please edit documentation in R/build-runtime.R
 \name{resolve_local_packages}
 \alias{resolve_local_packages}
-\title{Resolve and check the configured local R package sources}
+\title{Resolve, check and read the configured local R package sources}
 \usage{
 resolve_local_packages(local_packages, base_dir, bundled_r = TRUE)
 }
 \arguments{
-\item{local_packages}{Character vector or list. The configured entries.}
+\item{local_packages}{Character vector or list. The configured entries, or
+a list that this function returned.}
 
 \item{base_dir}{Character. Directory that relative entries resolve against.}
 
@@ -16,15 +17,19 @@ strategy. Local packages are only installed into a bundled R library, so
 a non-empty list aborts when this is \code{FALSE}.}
 }
 \value{
-Character vector of absolute paths (empty when nothing is set).
+The packages as \code{\link[=local_r_package_info]{local_r_package_info()}} reads them, with absolute
+paths, in a list of class \code{shinyelectron_local_packages} (empty when
+nothing is set).
 }
 \description{
 Turns the \code{dependencies.r.local_packages} entries into absolute paths and
-checks them before anything is copied or downloaded. \code{\link[=export]{export()}} and the
-multi-app export call this with the directory that holds
-\verb{_shinyelectron.yml} (the app directory, or the suite root), and
-\code{\link[=embed_r_runtime]{embed_r_runtime()}} calls it again for direct callers. Each entry must be a
-package source folder (with a \code{DESCRIPTION}) or a \code{.tar.gz} / \code{.tgz} source
-tarball.
+reads each package's \code{DESCRIPTION} before anything is copied or
+downloaded. \code{\link[=export]{export()}} and the multi-app export call this with the
+directory that holds \verb{_shinyelectron.yml} (the app directory, or the suite
+root) and put the result in the configuration, so the later steps of the
+export use what was read here instead of reading each source again.
+\code{\link[=embed_r_runtime]{embed_r_runtime()}} calls it again for direct callers; a list that this
+function returned comes back unchanged. Each entry must be a package source
+folder (with a \code{DESCRIPTION}) or a \code{.tar.gz} / \code{.tgz} source tarball.
 }
 \keyword{internal}

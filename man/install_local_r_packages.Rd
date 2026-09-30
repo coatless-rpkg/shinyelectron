@@ -15,8 +15,9 @@ install_local_r_packages(
 \arguments{
 \item{rscript}{Character. Path to the cached portable \code{Rscript}.}
 
-\item{local_packages}{Character vector. Paths to package source folders or
-source tarballs.}
+\item{local_packages}{List. The local packages as
+\code{\link[=resolve_local_packages]{resolve_local_packages()}} or \code{\link[=local_r_package_info]{local_r_package_info()}} read them from
+their source folders or source tarballs.}
 
 \item{lib_path}{Character. Destination library (the bundled library).}
 

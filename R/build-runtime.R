@@ -21,10 +21,12 @@
 #' @param prune Logical. Whether to remove the test and documentation files
 #'   that [prune_bundled_r_runtime()] allowlists once the packages are
 #'   installed. Callers pass the validated `dependencies.r.prune` setting.
-#' @param local_packages Character vector. Paths to local R package source
-#'   folders or `.tar.gz` source tarballs to install into the bundled library
-#'   after the repository packages. [export()] passes absolute paths; relative
-#'   paths resolve against the working directory.
+#' @param local_packages Local R packages to install into the bundled library
+#'   after the repository packages: the list [resolve_local_packages()]
+#'   returned, which is used as it was read, or paths to package source
+#'   folders or `.tar.gz` source tarballs, which are read here. [export()]
+#'   passes the packages it read; relative paths resolve against the working
+#'   directory.
 #' @return Invisibly, the path to the embedded `runtime/R` directory.
 #' @keywords internal
 embed_r_runtime <- function(output_dir, packages, repos, version,
@@ -40,8 +42,9 @@ embed_r_runtime <- function(output_dir, packages, repos, version,
   if (verbose) cli::cli_alert_info("Embedding R runtime for bundled strategy...")
 
   # Check the local package sources before anything is downloaded. export()
-  # has already resolved them against the app directory; relative paths from
-  # a direct call resolve against the working directory.
+  # has already resolved and read them against the app directory, so they
+  # are not read again; paths from a direct call are read here, and relative
+  # ones resolve against the working directory.
   local_packages <- resolve_local_packages(local_packages, base_dir = getwd())
   local_names <- local_r_package_names(local_packages)
   # Local packages may not be part of the detected/repo set; resolve their
@@ -305,28 +308,33 @@ embed_python_runtime <- function(output_dir, packages, index_urls, version,
   invisible(runtime_dest)
 }
 
-#' Resolve and check the configured local R package sources
+#' Resolve, check and read the configured local R package sources
 #'
 #' Turns the `dependencies.r.local_packages` entries into absolute paths and
-#' checks them before anything is copied or downloaded. [export()] and the
-#' multi-app export call this with the directory that holds
-#' `_shinyelectron.yml` (the app directory, or the suite root), and
-#' [embed_r_runtime()] calls it again for direct callers. Each entry must be a
-#' package source folder (with a `DESCRIPTION`) or a `.tar.gz` / `.tgz` source
-#' tarball.
+#' reads each package's `DESCRIPTION` before anything is copied or
+#' downloaded. [export()] and the multi-app export call this with the
+#' directory that holds `_shinyelectron.yml` (the app directory, or the suite
+#' root) and put the result in the configuration, so the later steps of the
+#' export use what was read here instead of reading each source again.
+#' [embed_r_runtime()] calls it again for direct callers; a list that this
+#' function returned comes back unchanged. Each entry must be a package source
+#' folder (with a `DESCRIPTION`) or a `.tar.gz` / `.tgz` source tarball.
 #'
-#' @param local_packages Character vector or list. The configured entries.
+#' @param local_packages Character vector or list. The configured entries, or
+#'   a list that this function returned.
 #' @param base_dir Character. Directory that relative entries resolve against.
 #' @param bundled_r Logical. Whether an R app in this build uses the bundled
 #'   strategy. Local packages are only installed into a bundled R library, so
 #'   a non-empty list aborts when this is `FALSE`.
-#' @return Character vector of absolute paths (empty when nothing is set).
+#' @return The packages as [local_r_package_info()] reads them, with absolute
+#'   paths, in a list of class `shinyelectron_local_packages` (empty when
+#'   nothing is set).
 #' @keywords internal
 resolve_local_packages <- function(local_packages, base_dir, bundled_r = TRUE) {
   entries <- local_packages %||% list()
   if (!is.list(entries)) entries <- as.list(entries)
   if (length(entries) == 0) {
-    return(character(0))
+    return(structure(list(), class = "shinyelectron_local_packages"))
   }
 
   if (!isTRUE(bundled_r)) {
@@ -334,6 +342,11 @@ resolve_local_packages <- function(local_packages, base_dir, bundled_r = TRUE) {
       "{.field dependencies.r.local_packages} only works for R apps that use the {.val bundled} runtime strategy.",
       "i" = "Set {.field build.runtime_strategy} to {.val bundled}, or remove {.field dependencies.r.local_packages}."
     ), class = "shinyelectron_local_packages_strategy")
+  }
+
+  # The class marks packages that were resolved and read already.
+  if (inherits(local_packages, "shinyelectron_local_packages")) {
+    return(local_packages)
   }
 
   is_path <- vapply(entries, function(p) {
@@ -362,7 +375,8 @@ resolve_local_packages <- function(local_packages, base_dir, bundled_r = TRUE) {
 
   # Reads every DESCRIPTION, which rejects anything that is not a package
   # source folder or source tarball.
-  pkgs <- local_r_package_names(paths)
+  info <- local_r_package_info(paths)
+  pkgs <- local_r_package_names(info)
   dupes <- unique(pkgs[duplicated(pkgs)])
   if (length(dupes) > 0) {
     cli::cli_abort(
@@ -371,10 +385,14 @@ resolve_local_packages <- function(local_packages, base_dir, bundled_r = TRUE) {
     )
   }
 
-  paths
+  structure(info, class = "shinyelectron_local_packages")
 }
 
 #' Read the metadata of local R package sources
+#'
+#' Reads the `DESCRIPTION` of each source folder, or the one in a source
+#' tarball's top-level folder. [resolve_local_packages()] calls this, and the
+#' later steps of an export take its result rather than reading again.
 #'
 #' @param paths Character vector. Paths to package source folders or `.tar.gz`
 #'   / `.tgz` source tarballs.
@@ -400,31 +418,29 @@ local_r_package_info <- function(paths) {
   info
 }
 
-#' Resolve the package names of local R package paths
+#' Package names of local R packages
 #'
-#' Reads the `Package` field from each source folder's `DESCRIPTION`, or from
-#' the `DESCRIPTION` in a source tarball's top-level folder.
-#'
-#' @param paths Character vector. Paths to local package directories or archives.
-#' @return Character vector of package names (empty when `paths` is empty).
+#' @param packages List. Local packages as [resolve_local_packages()] or
+#'   [local_r_package_info()] return them.
+#' @return Character vector of package names (empty when `packages` is empty).
 #' @keywords internal
-local_r_package_names <- function(paths) {
-  vapply(local_r_package_info(paths), `[[`, character(1), "package",
-         USE.NAMES = FALSE)
+local_r_package_names <- function(packages) {
+  vapply(packages, `[[`, character(1), "package", USE.NAMES = FALSE)
 }
 
-#' Resolve the declared dependencies of local R package paths
+#' Declared dependencies of local R packages
 #'
-#' Reads `Depends`, `Imports` and `LinkingTo` from each local package's
-#' `DESCRIPTION` (directories and archives alike) so the repository install step
-#' can install them before the local package is installed from source. Version
-#' constraints and `R` are stripped, and base/recommended packages are dropped.
+#' The packages that each local package's `Depends`, `Imports` and
+#' `LinkingTo` name (directories and archives alike), so the repository
+#' install step can install them before the local package is installed from
+#' source. [local_r_package_info()] has already stripped version constraints
+#' and `R`; base/recommended packages are dropped here.
 #'
-#' @param paths Character vector. Paths to local package directories or archives.
+#' @inheritParams local_r_package_names
 #' @return Character vector of dependency package names.
 #' @keywords internal
-local_r_package_deps <- function(paths) {
-  deps <- as.character(unlist(lapply(local_r_package_info(paths), `[[`, "deps")))
+local_r_package_deps <- function(packages) {
+  deps <- as.character(unlist(lapply(packages, `[[`, "deps")))
   setdiff(unique(deps), BASE_R_PACKAGES)
 }
 
@@ -498,23 +514,11 @@ local_read_description <- function(path) {
   dcf
 }
 
-# DESCRIPTION fields already read from source tarballs, keyed by path, size
-# and modification time, so an export lists each tarball once.
-local_archive_descriptions <- new.env(parent = emptyenv())
-
 # Read `<top>/DESCRIPTION` from a source tarball, extracting only that file.
 # Returns NULL when it cannot be read. R's own tar warns about headers it
 # skips, such as the pax global header that git archive writes, so warnings
 # are silenced rather than treated as a failure.
 local_read_archive_description <- function(path) {
-  stamp <- file.info(path)
-  key <- paste(normalizePath(path, winslash = "/", mustWork = FALSE),
-               stamp$size, format(as.numeric(stamp$mtime), digits = 17),
-               sep = "|")
-  if (!is.null(local_archive_descriptions[[key]])) {
-    return(local_archive_descriptions[[key]])
-  }
-
   entries <- tryCatch(
     suppressWarnings(utils::untar(path, list = TRUE)),
     error = function(e) NULL
@@ -538,11 +542,7 @@ local_read_archive_description <- function(path) {
   if (!file.exists(desc)) {
     return(NULL)
   }
-  dcf <- tryCatch(read.dcf(desc), error = function(e) NULL)
-  if (!is.null(dcf)) {
-    assign(key, dcf, envir = local_archive_descriptions)
-  }
-  dcf
+  tryCatch(read.dcf(desc), error = function(e) NULL)
 }
 
 #' Order local R packages so each installs after the local packages it needs
@@ -610,8 +610,9 @@ local_r_install_order <- function(info) {
 #' default staged install keeps a failed package out of the library.
 #'
 #' @param rscript Character. Path to the cached portable `Rscript`.
-#' @param local_packages Character vector. Paths to package source folders or
-#'   source tarballs.
+#' @param local_packages List. The local packages as
+#'   [resolve_local_packages()] or [local_r_package_info()] read them from
+#'   their source folders or source tarballs.
 #' @param lib_path Character. Destination library (the bundled library).
 #' @param verbose Logical. Whether to display progress.
 #' @param timeout Numeric. Seconds allowed for building or installing one
@@ -621,11 +622,10 @@ local_r_install_order <- function(info) {
 #' @keywords internal
 install_local_r_packages <- function(rscript, local_packages, lib_path,
                                      verbose = TRUE, timeout = 1800) {
-  info <- local_r_package_info(local_packages)
-  if (length(info) == 0) {
+  if (length(local_packages) == 0) {
     return(invisible(character(0)))
   }
-  info <- info[local_r_install_order(info)]
+  info <- local_packages[local_r_install_order(local_packages)]
   lib <- normalizePath(lib_path, winslash = "/", mustWork = TRUE)
   env <- local_r_env(lib)
 
