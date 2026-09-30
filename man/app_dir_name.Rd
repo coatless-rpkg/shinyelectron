@@ -13,10 +13,13 @@ app_dir_name(appdir)
 Character string. The directory's name.
 }
 \description{
-The last part of the directory's absolute path, so a relative path such as
-\code{"."} or \code{"app/.."} gives the name of the folder it points to, where
-\code{\link[base:basename]{base::basename()}} gives \code{"."} or \code{".."}. The path is made absolute without
-resolving symbolic links, so a linked directory keeps the name of the link,
-as with \code{\link[base:basename]{base::basename()}}.
+The last part of the directory's absolute path, where \code{\link[base:basename]{base::basename()}}
+gives \code{"."} or \code{".."} for a path such as \code{"."} or \code{"app/.."}. The path is
+made absolute from its text alone, without resolving symbolic links: a link
+named in \code{appdir} keeps the link's name, and \code{"link/.."} gives the name of
+the folder that holds the link, not of the parent of its target. A relative
+path starts from the working directory that \code{\link[base:getwd]{base::getwd()}} reports, which
+on macOS and Linux has its links resolved, so \code{"."} in a linked directory
+gives the name of the folder the link points to.
 }
 \keyword{internal}

@@ -90,11 +90,14 @@ slug_or_null <- function(name) {
 
 #' Name of the app directory
 #'
-#' The last part of the directory's absolute path, so a relative path such as
-#' `"."` or `"app/.."` gives the name of the folder it points to, where
-#' [base::basename()] gives `"."` or `".."`. The path is made absolute without
-#' resolving symbolic links, so a linked directory keeps the name of the link,
-#' as with [base::basename()].
+#' The last part of the directory's absolute path, where [base::basename()]
+#' gives `"."` or `".."` for a path such as `"."` or `"app/.."`. The path is
+#' made absolute from its text alone, without resolving symbolic links: a link
+#' named in `appdir` keeps the link's name, and `"link/.."` gives the name of
+#' the folder that holds the link, not of the parent of its target. A relative
+#' path starts from the working directory that [base::getwd()] reports, which
+#' on macOS and Linux has its links resolved, so `"."` in a linked directory
+#' gives the name of the folder the link points to.
 #'
 #' @param appdir Character string. Path to the app directory.
 #' @return Character string. The directory's name.
