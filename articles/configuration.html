@@ -426,7 +426,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <code>icon</code> and <code>icons</code>
 <a class="anchor" aria-label="anchor" href="#icon-and-icons"></a>
 </h3>
-<p>A single top-level <code>icon</code> entry is the simplest and recommended shape. Point it at a high-resolution PNG (1024×1024 or larger) and electron-builder will generate the per-platform variants it needs (<code>.icns</code> for macOS, <code>.ico</code> for Windows, and the PNG itself for Linux).</p>
+<p>A single top-level <code>icon</code> entry is the simplest and recommended shape. Point it at a high-resolution PNG (1024×1024 or larger) and electron-builder will generate the per-platform variants it needs (<code>.icns</code> for macOS, <code>.ico</code> for Windows, and the PNG itself for Linux). A smaller PNG must still be at least 512×512 for macOS and 256×256 for Windows; Linux uses the PNG as it is. An <code>.icns</code> file works for every platform too, as long as it holds an image of 256×256 or more for Windows. An <code>.ico</code> file serves only Windows, and needs a 256×256 image: electron-builder cannot make a macOS or Linux icon from it. A platform that cannot use the icon, because of its format or its size, shows the default Electron icon. <code><a href="../reference/export.html">export()</a></code> warns about it before anything is built, and <code><a href="../reference/app_check.html">app_check()</a></code> reports it.</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">icon</span><span class="kw">:</span><span class="at"> </span><span class="st">"branding/icon.png"</span></span></code></pre></div>
 <p>If you genuinely need different artwork on different platforms (for example, a monochrome Windows icon alongside a full-color macOS icon), use the per-platform <code>icons</code> map instead of <code>icon</code>:</p>
 <table class="table caption-top">
@@ -453,7 +453,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 <td><code>win</code></td>
 <td>string</td>
 <td><code>.ico</code></td>
-<td>Windows icon (multi-resolution recommended)</td>
+<td>Windows icon, with a 256×256 image (multi-resolution recommended)</td>
 </tr>
 <tr class="odd">
 <td><code>linux</code></td>
@@ -463,7 +463,7 @@ Every <code>_shinyelectron.yml</code> section at a glance: nine knobs that shape
 </tr>
 </tbody>
 </table>
-<p>Paths are relative to the app directory, or to the suite root of a multi-app suite, whatever the working directory (see <a href="#file-paths">File paths</a>). <code><a href="../reference/export.html">export()</a></code> uses <code>icon</code> when it is set, and otherwise the <code>icons</code> entry for the first target platform. A build for several platforms ships that one icon, so to give each platform its own artwork, export each platform separately with the <code>platform</code> argument. The <code>icon</code> argument of <code><a href="../reference/export.html">export()</a></code> overrides both, and is relative to the working directory. If the chosen file does not exist, <code><a href="../reference/export.html">export()</a></code> stops with an error that names the key and the path it checked. When no icon is set at all, the build uses the default Electron icon.</p>
+<p>Paths are relative to the app directory, or to the suite root of a multi-app suite, whatever the working directory (see <a href="#file-paths">File paths</a>). <code><a href="../reference/export.html">export()</a></code> uses <code>icon</code> when it is set, and otherwise the <code>icons</code> entry for the first target platform. A build for several platforms ships that one icon to every platform that can use it, and <code><a href="../reference/export.html">export()</a></code> warns about the <code>icons</code> entries it leaves out. To give each platform its own artwork, export each platform separately with the <code>platform</code> argument. The <code>icon</code> argument of <code><a href="../reference/export.html">export()</a></code> overrides both, and is relative to the working directory. If the chosen file does not exist, <code><a href="../reference/export.html">export()</a></code> stops with an error that names the key and the path it checked. When no icon is set at all, the build uses the default Electron icon.</p>
 <div>
 <blockquote>
 <p><strong>Creating icons</strong></p>

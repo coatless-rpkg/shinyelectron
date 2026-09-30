@@ -236,15 +236,18 @@ article).
 
 ## Give the app a custom icon
 
-Point `icon` at a single file. Each platform wants its own format:
-`.icns` for macOS, `.ico` for Windows, `.png` for Linux.
+Point `icon` at a single file. A PNG of 1024×1024 pixels or larger works
+for every platform: electron-builder converts it to `.icns` for macOS
+and `.ico` for Windows. An `.icns` file works everywhere too. An `.ico`
+file serves only Windows; the other platforms then show the default
+Electron icon.
 
 ``` r
 
 export(
   appdir = "my-app",
   destdir = "my-electron-app",
-  icon = "icon.icns"
+  icon = "icon.png"
 )
 ```
 

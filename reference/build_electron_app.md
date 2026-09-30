@@ -79,7 +79,8 @@ build_electron_app(
 - icon:
 
   Character string. Path to application icon file, absolute or relative
-  to the working directory. Platform-specific format required. The
+  to the working directory. A PNG (1024x1024 or larger) or an `.icns`
+  file serves every platform; an `.ico` file serves Windows only. The
   `icon` and `icons` keys of `config` are not read here.
 
 - config:

@@ -51,6 +51,7 @@
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/check_installer_text.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/check_single_target.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/check_tray_icon.html</loc></url>
+<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/check_unused_icons.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/collect_unknown_config_keys.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/compute_sha256.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/config_file_exists.html</loc></url>
@@ -102,6 +103,10 @@
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/generate_template_variables.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/get_node_command.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/get_npm_command.html</loc></url>
+<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/icon_asset_path.html</loc></url>
+<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/icon_min_size.html</loc></url>
+<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/icon_platforms.html</loc></url>
+<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/icon_size.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/index.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/init_config.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/install_local_r_packages.html</loc></url>
@@ -201,6 +206,7 @@
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/slug_or_null.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/slugify.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/smart_quotes.html</loc></url>
+<url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/tray_icon_file.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/validate_app_name.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/validate_app_type.html</loc></url>
 <url><loc>https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/validate_arch.html</loc></url>

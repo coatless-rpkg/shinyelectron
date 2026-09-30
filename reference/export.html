@@ -148,7 +148,8 @@ own list, so <code>platform = "win"</code> still builds for every architecture i
 
 <dt id="arg-icon">icon<a class="anchor" aria-label="anchor" href="#arg-icon"></a></dt>
 <dd><p>Character string. Path to application icon file, absolute or
-relative to the working directory. Platform-specific format required.
+relative to the working directory. A PNG (1024x1024 or larger) or an
+<code>.icns</code> file serves every platform; an <code>.ico</code> file serves Windows only.
 Overrides <code>icon</code> and <code>icons</code> in <code>_shinyelectron.yml</code>, whose paths are
 relative to <code>appdir</code>.</p></dd>
 

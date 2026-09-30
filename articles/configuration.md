@@ -350,7 +350,18 @@ vignette for the full discussion.
 A single top-level `icon` entry is the simplest and recommended shape.
 Point it at a high-resolution PNG (1024×1024 or larger) and
 electron-builder will generate the per-platform variants it needs
-(`.icns` for macOS, `.ico` for Windows, and the PNG itself for Linux).
+(`.icns` for macOS, `.ico` for Windows, and the PNG itself for Linux). A
+smaller PNG must still be at least 512×512 for macOS and 256×256 for
+Windows; Linux uses the PNG as it is. An `.icns` file works for every
+platform too, as long as it holds an image of 256×256 or more for
+Windows. An `.ico` file serves only Windows, and needs a 256×256 image:
+electron-builder cannot make a macOS or Linux icon from it. A platform
+that cannot use the icon, because of its format or its size, shows the
+default Electron icon.
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+warns about it before anything is built, and
+[`app_check()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_check.md)
+reports it.
 
 ``` yaml
 icon: "branding/icon.png"
@@ -360,20 +371,23 @@ If you genuinely need different artwork on different platforms (for
 example, a monochrome Windows icon alongside a full-color macOS icon),
 use the per-platform `icons` map instead of `icon`:
 
-| Key     | Type   | Format  | Description                                 |
-|---------|--------|---------|---------------------------------------------|
-| `mac`   | string | `.icns` | macOS icon (typically 512×512 or larger)    |
-| `win`   | string | `.ico`  | Windows icon (multi-resolution recommended) |
-| `linux` | string | `.png`  | Linux icon (512×512 recommended)            |
+| Key | Type | Format | Description |
+|----|----|----|----|
+| `mac` | string | `.icns` | macOS icon (typically 512×512 or larger) |
+| `win` | string | `.ico` | Windows icon, with a 256×256 image (multi-resolution recommended) |
+| `linux` | string | `.png` | Linux icon (512×512 recommended) |
 
 Paths are relative to the app directory, or to the suite root of a
 multi-app suite, whatever the working directory (see [File
 paths](#file-paths)).
 [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
 uses `icon` when it is set, and otherwise the `icons` entry for the
-first target platform. A build for several platforms ships that one
-icon, so to give each platform its own artwork, export each platform
-separately with the `platform` argument. The `icon` argument of
+first target platform. A build for several platforms ships that one icon
+to every platform that can use it, and
+[`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
+warns about the `icons` entries it leaves out. To give each platform its
+own artwork, export each platform separately with the `platform`
+argument. The `icon` argument of
 [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
 overrides both, and is relative to the working directory. If the chosen
 file does not exist,

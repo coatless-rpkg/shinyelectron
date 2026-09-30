@@ -1,8 +1,10 @@
 # Validate icon file for target platform
 
-Checks that the icon file exists and has the correct format for the
-target platform. Issues warnings (not errors) for format mismatches so
-the build can continue.
+Checks that the icon file exists and that each target platform can use
+it, for its format and for the size of its image (see
+[`icon_platforms()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/icon_platforms.md)).
+A platform that cannot gets the default Electron icon, so this warns
+rather than errors and the build continues.
 
 ## Usage
 

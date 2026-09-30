@@ -80,7 +80,7 @@ to avoid fragile JSON + Mustache comma handling.</p>
 <span>  <span class="va">app_version</span>,</span>
 <span>  <span class="va">backend</span>,</span>
 <span>  <span class="va">config</span>,</span>
-<span>  has_icon <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  icon <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sign <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  is_multi_app <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  app_name <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -107,8 +107,11 @@ to avoid fragile JSON + Mustache comma handling.</p>
 <dd><p>List. The effective configuration.</p></dd>
 
 
-<dt id="arg-has-icon">has_icon<a class="anchor" aria-label="anchor" href="#arg-has-icon"></a></dt>
-<dd><p>Logical. Whether an icon is provided.</p></dd>
+<dt id="arg-icon">icon<a class="anchor" aria-label="anchor" href="#arg-icon"></a></dt>
+<dd><p>Character string or NULL. Path to the app icon, which
+<code><a href="copy_brand_assets.html">copy_brand_assets()</a></code> copies to <code><a href="icon_asset_path.html">icon_asset_path()</a></code>. Each platform in
+<code><a href="icon_platforms.html">icon_platforms()</a></code> gets that copy as its icon; the others, and every
+platform when <code>NULL</code>, use the default Electron icon.</p></dd>
 
 
 <dt id="arg-app-name">app_name<a class="anchor" aria-label="anchor" href="#arg-app-name"></a></dt>

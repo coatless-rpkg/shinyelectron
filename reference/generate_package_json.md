@@ -12,7 +12,7 @@ generate_package_json(
   app_version,
   backend,
   config,
-  has_icon = FALSE,
+  icon = NULL,
   sign = FALSE,
   is_multi_app = FALSE,
   app_name = NULL
@@ -38,9 +38,16 @@ generate_package_json(
 
   List. The effective configuration.
 
-- has_icon:
+- icon:
 
-  Logical. Whether an icon is provided.
+  Character string or NULL. Path to the app icon, which
+  [`copy_brand_assets()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/copy_brand_assets.md)
+  copies to
+  [`icon_asset_path()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/icon_asset_path.md).
+  Each platform in
+  [`icon_platforms()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/icon_platforms.md)
+  gets that copy as its icon; the others, and every platform when
+  `NULL`, use the default Electron icon.
 
 - app_name:
 

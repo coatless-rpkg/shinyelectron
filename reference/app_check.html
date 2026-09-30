@@ -137,7 +137,11 @@ platform, as <code><a href="export.html">export()</a></code> does. The architect
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Files named in <code>_shinyelectron.yml</code>, such as <code>icon</code> or <code>splash.image</code>, are
 looked up relative to <code>appdir</code>, as <code><a href="export.html">export()</a></code> does. A missing icon is an
-error, because <code><a href="export.html">export()</a></code> stops on it; other missing files are warnings.</p>
+error, because <code><a href="export.html">export()</a></code> stops on it; other missing files are warnings.
+So is an icon that a target platform cannot use, because of its format or
+the size of its image, since that platform's build shows the default
+Electron icon, and an <code>icons</code> entry that the build leaves out, since it
+gives one icon to every target platform.</p>
     </div>
 
     <div class="section level2">

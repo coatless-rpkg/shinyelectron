@@ -303,13 +303,13 @@ Three execution modes: Shinylive runs entirely in-browser, Native spawns a real 
 <p>In practice, if you want a single workstation to emit installers for every OS, reach for <code>system</code>, <code>container</code>, or <code>shinylive</code>. If you want <code>bundled</code> everywhere, hand the job to CI (see the <a href="github-actions.html">GitHub Actions</a> article).</p>
 </section><section class="level2"><h2 id="give-the-app-a-custom-icon">Give the app a custom icon<a class="anchor" aria-label="anchor" href="#give-the-app-a-custom-icon"></a>
 </h2>
-<p>Point <code>icon</code> at a single file. Each platform wants its own format: <code>.icns</code> for macOS, <code>.ico</code> for Windows, <code>.png</code> for Linux.</p>
+<p>Point <code>icon</code> at a single file. A PNG of 1024×1024 pixels or larger works for every platform: electron-builder converts it to <code>.icns</code> for macOS and <code>.ico</code> for Windows. An <code>.icns</code> file works everywhere too. An <code>.ico</code> file serves only Windows; the other platforms then show the default Electron icon.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/export.html">export</a></span><span class="op">(</span></span>
 <span>  appdir <span class="op">=</span> <span class="st">"my-app"</span>,</span>
 <span>  destdir <span class="op">=</span> <span class="st">"my-electron-app"</span>,</span>
-<span>  icon <span class="op">=</span> <span class="st">"icon.icns"</span></span>
+<span>  icon <span class="op">=</span> <span class="st">"icon.png"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="capture-build-settings-in-a-config-file">Capture build settings in a config file<a class="anchor" aria-label="anchor" href="#capture-build-settings-in-a-config-file"></a>

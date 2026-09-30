@@ -1,7 +1,10 @@
 # Copy branding assets into the build
 
-Copies the app icon, the splash image, the tray icon and, for a
-multi-app suite, each app's launcher icon (to
+Copies the app icon (to
+[`icon_asset_path()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/icon_asset_path.md)),
+the splash image, the tray icon (to
+[`tray_icon_file()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/tray_icon_file.md))
+and, for a multi-app suite, each app's launcher icon (to
 [`app_icon_asset()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/app_icon_asset.md)).
 The paths are used as given:
 [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)

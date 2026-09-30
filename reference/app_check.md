@@ -77,7 +77,11 @@ are looked up relative to `appdir`, as
 [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
 does. A missing icon is an error, because
 [`export()`](https://r-pkg.thecoatlessprofessor.com/shinyelectron/reference/export.md)
-stops on it; other missing files are warnings.
+stops on it; other missing files are warnings. So is an icon that a
+target platform cannot use, because of its format or the size of its
+image, since that platform's build shows the default Electron icon, and
+an `icons` entry that the build leaves out, since it gives one icon to
+every target platform.
 
 ## Examples
 
