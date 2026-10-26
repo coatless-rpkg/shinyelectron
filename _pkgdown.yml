@@ -10,9 +10,12 @@ template:
 
 navbar:
   structure:
-    left: [intro, articles, reference, news]
+    left: [intro, articles, reference, news, blog]
     right: [search, github, lightswitch]
   components:
+    blog:
+      text: Blog posts
+      href: https://blog.thecoatlessprofessor.com/projects/shinyelectron/
     intro:
       text: Get Started
       href: articles/getting-started.html
