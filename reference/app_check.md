@@ -97,7 +97,7 @@ app_check(example_app("r"))
 #> ℹ Platform(s): "linux"
 #> ℹ Architecture(s): "x64"
 #> ✔ App structure: app.R found
-#> ✔ Node.js: 22.23.2 + npm 10.9.8
+#> ✔ Node.js: 22.23.3 + npm 10.9.9
 #> ✔ shinylive R package: installed
 #> ✔ Dependencies: bslib, shiny
 #> ℹ Code signing: "disabled"
@@ -118,7 +118,7 @@ app_check(example_app("r"), app_type = "r-shiny", runtime_strategy = "system")
 #> ℹ Platform(s): "linux"
 #> ℹ Architecture(s): "x64"
 #> ✔ App structure: app.R found
-#> ✔ Node.js: 22.23.2 + npm 10.9.8
+#> ✔ Node.js: 22.23.3 + npm 10.9.9
 #> ✔ R: available at /usr/local/bin/Rscript
 #> ✔ Dependencies: bslib, shiny
 #> ℹ Code signing: "disabled"
